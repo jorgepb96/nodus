@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { AudioClip } from '@shared/types';
 import type { TtsEvent, TtsSpeakRequest, TtsSpeakStarted } from '@shared/api/tts';
-import type { TtsFragmentEvent, TtsJobProgress, TtsStatus } from '@shared/ttsModels';
+import { TTS_MODELS, type TtsFragmentEvent, type TtsJobProgress, type TtsStatus } from '@shared/ttsModels';
 
 /**
  * The renderer's single subscription to narration events. Jobs, downloads and the engine
@@ -118,8 +118,10 @@ export function subscribeTtsEvents(listener: EventListener): () => void {
 
 /** Whether narration can start right away: runtime installed and the chosen model on disk. */
 export function ttsReady(status: TtsStatus | null, modelId?: string | null): boolean {
-  if (!status?.runtime.installed) return false;
-  const models = status.models.filter((model) => model.downloaded);
+  if (!status) return false;
+  // Each engine has its own environment: Phonon checkpoints need Phonon's, Ming's need Ming's.
+  const runtimeFor = (id: string) => (TTS_MODELS.find((model) => model.id === id)?.engine === 'phonon' ? status.phononRuntime : status.runtime).installed;
+  const models = status.models.filter((model) => model.downloaded && runtimeFor(model.id));
   return modelId ? models.some((model) => model.id === modelId) : models.length > 0;
 }
 

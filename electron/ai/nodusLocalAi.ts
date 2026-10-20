@@ -534,7 +534,9 @@ async function downloadFile(
   expectedBytes: number | undefined,
   expectedSha256: string | undefined,
   onBytes: (bytes: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  /** Extra request headers, e.g. a user's Hugging Face token for a gated repository. */
+  extraHeaders?: Record<string, string>
 ): Promise<void> {
   const qaProxy = process.env.NODUS_LOCAL_AI_QA_ASSET_PROXY;
   if (qaProxy) {
@@ -570,7 +572,7 @@ async function downloadFile(
     response = await fetch(url, {
       redirect: 'follow',
       signal,
-      headers: resumedBytes > 0 ? { Range: `bytes=${resumedBytes}-` } : undefined,
+      headers: { ...(extraHeaders ?? {}), ...(resumedBytes > 0 ? { Range: `bytes=${resumedBytes}-` } : {}) },
     });
   } catch (error) {
     if (signal?.aborted) throw downloadCancelledError();

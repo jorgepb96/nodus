@@ -2115,7 +2115,11 @@ export interface AppSettings {
   audioVoice: string;
   /** Playback/synthesis speed multiplier (1.0 = natural). Clamped 0.7–1.3. */
   audioSpeed: number;
-  /** Ming checkpoint narration loads (`shared/ttsModels.ts`); empty picks the platform default. */
+  /** Phonon voice (`phonon:<catalogue id>`), used whenever the selected model is a Phonon checkpoint. */
+  ttsPhononVoiceId: string;
+  /** Models whose non-commercial (CC BY-NC) terms the user accepted before downloading them. */
+  ttsAcceptedLicenses: string[];
+  /** Checkpoint narration loads (`shared/ttsModels.ts`); empty picks the platform default. */
   ttsModelId: string;
   /** Voice library id: `user:…`, `cc0:…` or `ming:…` (`shared/ttsVoices.ts`). */
   ttsVoiceId: string;

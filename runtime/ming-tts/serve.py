@@ -311,6 +311,28 @@ class Server:
         cached["text"] = text
         return cached
 
+    def phonon_voice(self, voice: dict):
+        """A Phonon voice name: a catalogue embedding registered by path, a local clone on
+        checkpoints that support it, or the checkpoint's default voice."""
+        kind = voice.get("kind")
+        if kind == "embedding":
+            path = _require(voice, "path")
+            if not pathlib.Path(path).is_file():
+                raise RequestError(f"no voice file at {path}")
+            name = str(voice.get("name") or pathlib.Path(path).stem)
+            self.backend.register_voice(name, path)
+            return name
+        if kind == "clone":
+            if not self.backend.supports_cloning():
+                raise RequestError("this Phonon checkpoint cannot clone voices from a recording")
+            name = f"clone-{_require(voice, 'voice_id')}"
+            audio = self.backend.load_audio(_require(voice, "wav_path"), self.backend.sample_rate)
+            self.backend.clone_voice(name, audio)
+            return name
+        if kind == "builtin":
+            return None
+        raise RequestError("voice.kind must be 'embedding', 'clone' or 'builtin'")
+
     def prepare_voice(self, msg: dict) -> None:
         started = time.perf_counter()
         voice = {key: msg.get(key) for key in ("voice_id", "wav_path", "text", "cache_dir")}
@@ -352,14 +374,18 @@ class Server:
         text = _require(msg, "text")
         out_dir = pathlib.Path(_require(msg, "out_dir"))
         lang = str(msg.get("lang") or "en").strip().lower()
-        if lang not in ming_text.LANGUAGES:
-            raise RequestError(f"unsupported lang {lang!r}; expected one of {', '.join(ming_text.LANGUAGES)}")
+        phonon = self.backend.name == "phonon"
+        languages = PHONON_LANGUAGES if phonon else ming_text.LANGUAGES
+        if lang not in languages:
+            raise RequestError(f"unsupported lang {lang!r}; expected one of {', '.join(languages)}")
         voice = msg.get("voice")
         if not isinstance(voice, dict):
             raise RequestError("'voice' is required")
         kind = voice.get("kind")
         conditioning = {}
-        if kind == "clone":
+        if phonon:
+            conditioning = {"lang": lang, "voice": self.phonon_voice(voice)}
+        elif kind == "clone":
             use_spk_emb = bool(msg.get("use_spk_emb", False))
             cached = self.voice_prompt(voice, use_spk_emb)
             conditioning = {
@@ -410,8 +436,11 @@ _PACKAGES = {
     "mlx": ("mlx", "mlx-metal", "mlx-audio", "transformers", "tokenizers", "onnxruntime", "numpy"),
     "torch": ("torch", "torchaudio", "transformers", "tokenizers", "x-transformers", "diffusers",
               "accelerate", "onnxruntime", "soundfile", "numpy"),
+    "phonon": ("ptts", "numpy"),
     "fake": (),
 }
+
+PHONON_LANGUAGES = ("en", "fr", "de", "es", "pt")
 
 
 def self_check(backend: str, device: str) -> int:
@@ -453,6 +482,11 @@ def self_check(backend: str, device: str) -> int:
             if kind == "cuda":
                 detail = torch.cuda.get_device_name(0)
                 torch.ones(4, device="cuda").sum().item()
+        elif backend == "phonon":
+            import ptts
+
+            ptts.build_info()
+            kind = "cpu"
         else:
             kind = "cpu"
         versions = {"python": platform.python_version()}
@@ -471,7 +505,7 @@ def self_check(backend: str, device: str) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Nodus Ming-3.0 TTS sidecar")
-    parser.add_argument("--backend", choices=("mlx", "torch", "fake"), required=True)
+    parser.add_argument("--backend", choices=("mlx", "torch", "phonon", "fake"), required=True)
     parser.add_argument("--models-dir")
     parser.add_argument("--device", choices=("auto", "cuda", "cpu"), default="auto", help="torch only")
     # fp32 by default: on the one CPU measured (Apple M2, qnnpack) int8 was no
@@ -512,6 +546,9 @@ def main() -> None:
         if args.backend == "mlx":
             from backend_mlx import MlxBackend
             server.backend = MlxBackend()
+        elif args.backend == "phonon":
+            from backend_phonon import PhononBackend
+            server.backend = PhononBackend()
         elif args.backend == "torch":
             from backend_torch import TorchBackend
             server.backend = TorchBackend(args.device, args.cpu_quant)

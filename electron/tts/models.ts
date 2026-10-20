@@ -31,7 +31,7 @@ export class TtsModelStore {
   async isReady(model: TtsModelDefinition): Promise<boolean> {
     try {
       const marker = JSON.parse(await fs.readFile(path.join(this.dir(model.id), 'ready.json'), 'utf8')) as { files?: string[] };
-      return model.assets.every((asset) => marker.files?.includes(`${asset.file}:${asset.sha256}`));
+      return model.assets.every((asset) => marker.files?.includes(`${asset.file}:${asset.sha256 ?? asset.bytes}`));
     } catch { return false; }
   }
 
@@ -49,7 +49,7 @@ export class TtsModelStore {
     return Promise.all(TTS_MODELS.filter((model) => !model.unpublished).map((model) => this.status(model)));
   }
 
-  download(model: TtsModelDefinition, onProgress?: (status: TtsModelStatus) => void): Promise<void> {
+  download(model: TtsModelDefinition, onProgress?: (status: TtsModelStatus) => void, token?: string | null): Promise<void> {
     if (model.unpublished || !model.assets.length) return Promise.reject(new Error('TTS_MODEL_UNAVAILABLE'));
     const running = active.get(model.id);
     if (running) return this.follow(running, onProgress);
@@ -70,10 +70,10 @@ export class TtsModelStore {
           const now = Date.now();
           // ~4 events a second is plenty for a progress bar and keeps IPC traffic negligible.
           if (now - lastEmit > 250) { lastEmit = now; emit(); }
-        }, controller.signal);
+        }, controller.signal, token ? { Authorization: `Bearer ${token}` } : undefined);
       }
       const marker = path.join(dir, 'ready.json');
-      await fs.writeFile(`${marker}.tmp`, JSON.stringify({ files: model.assets.map((asset) => `${asset.file}:${asset.sha256}`) }));
+      await fs.writeFile(`${marker}.tmp`, JSON.stringify({ files: model.assets.map((asset) => `${asset.file}:${asset.sha256 ?? asset.bytes}`) }));
       await fs.rename(`${marker}.tmp`, marker);
     })().finally(() => {
       active.delete(model.id);

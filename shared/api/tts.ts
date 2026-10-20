@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The narration (Ming TTS) slice of the window.nodus contract, paired with
 // electron/ipc/tts.ts and electron/preload/tts.ts.
-import type { TtsFragmentEvent, TtsJobProgress, TtsLanguage, TtsLanguageSetting, TtsModelStatus, TtsStatus } from '../ttsModels';
+import type { TtsEngine, TtsFragmentEvent, TtsJobProgress, TtsLanguage, TtsLanguageSetting, TtsModelStatus, TtsStatus } from '../ttsModels';
 import type { TtsVoice, TtsVoiceSaveInput } from '../ttsVoices';
 import type { AudioClip, AudioEntityKind } from '../types';
 
@@ -28,9 +28,12 @@ export type TtsEvent =
 
 export interface TtsApi {
   ttsStatus(): Promise<TtsStatus>;
-  ttsInstallRuntime(): Promise<TtsStatus>;
+  ttsInstallRuntime(engine?: TtsEngine): Promise<TtsStatus>;
   ttsCancelInstall(): Promise<void>;
-  ttsRemoveRuntime(): Promise<TtsStatus>;
+  ttsRemoveRuntime(engine?: TtsEngine): Promise<TtsStatus>;
+  /** Stores (or, with an empty string, clears) the user's Hugging Face token for gated models; never returned to the renderer. */
+  ttsSetHuggingFaceToken(token: string): Promise<boolean>;
+  ttsHasHuggingFaceToken(): Promise<boolean>;
   ttsDownloadModel(modelId: string): Promise<TtsStatus>;
   ttsCancelModelDownload(modelId: string): Promise<void>;
   ttsDeleteModel(modelId: string): Promise<TtsStatus>;

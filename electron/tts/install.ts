@@ -14,19 +14,20 @@ const pythonAt = (root: string, platform: NodeJS.Platform) => path.join(root, pl
 const basePythonAt = (root: string, platform: NodeJS.Platform) => path.join(root, 'python', platform === 'win32' ? 'python.exe' : 'bin/python3');
 
 /** Which hash-locked dependency set an environment is built from. */
-export type TtsLockFlavor = 'mlx' | 'torch-cpu' | 'torch-cuda';
+export type TtsLockFlavor = 'mlx' | 'torch-cpu' | 'torch-cuda' | 'phonon';
 
 const LOCK_FILES: Record<TtsLockFlavor, string> = {
   mlx: 'requirements-mlx.lock',
   'torch-cpu': 'requirements-torch-cpu.lock',
   'torch-cuda': 'requirements-torch-cuda.lock',
+  phonon: 'requirements-phonon.lock',
 };
 const EXTRA_INDEX: Partial<Record<TtsLockFlavor, string>> = {
   'torch-cpu': 'https://download.pytorch.org/whl/cpu',
   'torch-cuda': 'https://download.pytorch.org/whl/cu124',
 };
 /** pip timeouts: the CUDA torch wheels alone are ~2.5 GB. */
-const PIP_TIMEOUT_MS: Record<TtsLockFlavor, number> = { mlx: 900_000, 'torch-cpu': 1_200_000, 'torch-cuda': 3_600_000 };
+const PIP_TIMEOUT_MS: Record<TtsLockFlavor, number> = { mlx: 900_000, 'torch-cpu': 1_200_000, 'torch-cuda': 3_600_000, phonon: 300_000 };
 
 export type TtsInstallPhase = 'checking' | 'python' | 'environment' | 'dependencies' | 'verifying' | 'ready';
 export interface TtsInstallProgress { phase: TtsInstallPhase; fraction: number }
@@ -68,6 +69,8 @@ export class TtsInstaller {
     readonly bundledRuntime: string,
     private host: TtsHost,
     private findPython = () => findSystemPython('3.12', (minor) => minor === '3.12'),
+    /** Phonon gets its own small environment (the `ptts` runtime), separate from Ming's. */
+    readonly engine: 'ming' | 'phonon' = 'ming',
   ) {}
 
   get busy(): boolean { return this.controller !== null; }
@@ -95,6 +98,7 @@ export class TtsInstaller {
     try {
       progress({ phase: 'checking', fraction: 0 });
       await fs.mkdir(this.root, { recursive: true, mode: 0o700 });
+      if (this.engine === 'phonon') return await this.build('phonon', signal, progress);
       const appleSilicon = this.host.platform === 'darwin' && this.host.arch === 'arm64';
       if (appleSilicon) return await this.build('mlx', signal, progress);
       if (await this.host.hasNvidia().catch(() => false)) {
@@ -145,7 +149,7 @@ export class TtsInstaller {
         '--timeout', '60', '--retries', '2', '-r', lockPath], { signal, timeout: PIP_TIMEOUT_MS[flavor], maxBuffer: 8 * 1024 * 1024, windowsHide: true });
       progress({ phase: 'verifying', fraction: 0.92 });
       await run(python, ['-I', '-m', 'pip', '--isolated', 'check'], { signal, timeout: 60_000, windowsHide: true });
-      const backend: TtsBackend = flavor === 'mlx' ? 'mlx' : 'torch';
+      const backend: TtsBackend = flavor === 'mlx' ? 'mlx' : flavor === 'phonon' ? 'phonon' : 'torch';
       const check = await this.selfCheck(python, backend, signal);
       signal.throwIfAborted();
       const runtime: TtsInstalledRuntime = { python, digest, flavor, backend, device: check.device, ...(fallbackReason ? { fallbackReason } : {}) };

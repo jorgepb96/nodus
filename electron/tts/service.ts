@@ -2,9 +2,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
-  TTS_MODELS, defaultTtsModelId, ttsBackendForPlatform, ttsModelsForPlatform,
-  type TtsFragmentEvent, type TtsJobProgress, type TtsStatus,
+  TTS_MODELS, defaultTtsModelId, ttsBackendForModel, ttsBackendForPlatform, ttsModelsForPlatform,
+  type TtsBackend, type TtsEngine, type TtsFragmentEvent, type TtsJobProgress, type TtsRuntimeStatus, type TtsStatus,
 } from '@shared/ttsModels';
+import { PHONON_VOICES, phononVoiceUrl } from '@shared/phononVoices';
+import { downloadVerifiedNodusAsset } from '../ai/nodusLocalAi';
+import { clearAudioKey, getAudioKey, hasAudioKey, setAudioKey } from '../secrets/secretStore';
 import { resolveTtsLanguage } from '@shared/ttsLanguage';
 import type { TtsEvent, TtsSpeakRequest, TtsSpeakStarted } from '@shared/api/tts';
 import type { TtsVoiceSaveInput } from '@shared/ttsVoices';
@@ -14,7 +17,7 @@ import { saveClipAsync, deleteClip } from '../audio/audioService';
 import { audioClipBytesByKind, listExpiredAudioClips, setAudioClipPinned } from '../db/audioClipsRepo';
 import { TtsInstaller, type TtsInstalledRuntime } from './install';
 import { TtsModelStore } from './models';
-import { TtsEngineHost } from './host';
+import { TtsEngineHost, type TtsVoiceRef } from './host';
 import { TtsVoiceLibrary } from './voices';
 import { concatWavFiles } from './wavConcat';
 import { liveFragmentUrl } from './audioUrls';
@@ -34,19 +37,25 @@ export class TtsService {
     arch: process.arch,
     hasNvidia: async () => (await probeNvidia())?.detected === true,
   });
+  readonly phononInstaller = new TtsInstaller(path.join(ttsRuntimeDir(), 'phonon'), ttsAssetsDir(), ttsBundledPythonRoot(), {
+    platform: process.platform, arch: process.arch, hasNvidia: async () => false,
+  }, undefined, 'phonon');
   readonly voices = new TtsVoiceLibrary(ttsVoicesDir(), ttsBundledVoicesDir());
   readonly host: TtsEngineHost;
   readonly models: TtsModelStore;
   private listeners = new Set<(event: TtsEvent) => void>();
   private runtime: TtsInstalledRuntime | null = null;
-  private install: { phase: string; fraction: number } | null = null;
-  private installError: string | undefined;
+  private phononRuntime: TtsInstalledRuntime | null = null;
+  private install: { phase: string; fraction: number; engine: TtsEngine } | null = null;
+  private installError: { engine: TtsEngine; message: string } | undefined;
   private jobs = new Map<string, { progress: TtsJobProgress; started: number }>();
 
   constructor() {
     this.host = new TtsEngineHost({
-      python: async () => (this.runtime ??= await this.installer.installed())?.python ?? null,
-      backend: () => ttsBackendForPlatform(process.platform, process.arch),
+      python: async (backend: TtsBackend) => backend === 'phonon'
+        ? (this.phononRuntime ??= await this.phononInstaller.installed())?.python ?? null
+        : (this.runtime ??= await this.installer.installed())?.python ?? null,
+      backend: (modelId) => ttsBackendForModel(TTS_MODELS.find((model) => model.id === modelId), process.platform, process.arch),
       serveScript: path.join(ttsAssetsDir(), 'serve.py'),
       modelPath: (modelId) => this.models.dir(modelId),
       liveDir: ttsLiveDir(),
@@ -78,34 +87,47 @@ export class TtsService {
     return available.some((model) => model.id === saved) ? saved : defaultTtsModelId(process.platform, process.arch);
   }
 
+  private runtimeStatus(engineName: TtsEngine): TtsRuntimeStatus {
+    const runtime = engineName === 'phonon' ? this.phononRuntime : this.runtime;
+    const installer = engineName === 'phonon' ? this.phononInstaller : this.installer;
+    const install = this.install?.engine === engineName ? this.install : null;
+    const error = this.installError?.engine === engineName ? this.installError.message : undefined;
+    return {
+      engine: engineName,
+      backend: engineName === 'phonon' ? 'phonon' : ttsBackendForPlatform(process.platform, process.arch),
+      installed: !!runtime,
+      installing: installer.busy,
+      ...(install ? { phase: install.phase, progress: install.fraction } : {}),
+      ...(runtime ? { device: runtime.device, fallbackReason: runtime.fallbackReason } : {}),
+      ...(error ? { error } : {}),
+    };
+  }
+
   async status(): Promise<TtsStatus> {
     this.runtime ??= await this.installer.installed();
+    this.phononRuntime ??= await this.phononInstaller.installed();
     const engine = this.host.snapshot();
     const supported = ['darwin', 'win32', 'linux'].includes(process.platform) && ['arm64', 'x64'].includes(process.arch);
     return {
       platformSupported: supported,
-      runtime: {
-        backend: ttsBackendForPlatform(process.platform, process.arch),
-        installed: !!this.runtime,
-        installing: this.installer.busy,
-        ...(this.install ? { phase: this.install.phase, progress: this.install.fraction } : {}),
-        ...(this.runtime ? { device: engine.device ?? this.runtime.device, fallbackReason: this.runtime.fallbackReason } : {}),
-        ...(this.installError ? { error: this.installError } : {}),
-      },
+      runtime: this.runtimeStatus('ming'),
+      phononRuntime: this.runtimeStatus('phonon'),
       models: (await this.models.statuses()).filter((model) => ttsModelsForPlatform(process.platform, process.arch).some((entry) => entry.id === model.id)),
       engine: { state: engine.state, modelId: engine.modelId, idleUnloadAt: engine.idleUnloadAt, ...(engine.error ? { error: engine.error } : {}) },
     };
   }
 
-  async installRuntime(): Promise<TtsStatus> {
+  async installRuntime(engineName: TtsEngine = 'ming'): Promise<TtsStatus> {
     this.installError = undefined;
+    const installer = engineName === 'phonon' ? this.phononInstaller : this.installer;
     try {
-      this.runtime = await this.installer.install((progress) => {
-        this.install = progress;
+      const runtime = await installer.install((progress) => {
+        this.install = { ...progress, engine: engineName };
         this.emit({ kind: 'install', phase: progress.phase, fraction: progress.fraction });
       });
+      if (engineName === 'phonon') this.phononRuntime = runtime; else this.runtime = runtime;
     } catch (error) {
-      this.installError = error instanceof Error ? error.message : String(error);
+      this.installError = { engine: engineName, message: error instanceof Error ? error.message : String(error) };
       throw error;
     } finally {
       this.install = null;
@@ -114,10 +136,10 @@ export class TtsService {
     return this.status();
   }
 
-  async removeRuntime(): Promise<TtsStatus> {
+  async removeRuntime(engineName: TtsEngine = 'ming'): Promise<TtsStatus> {
     await this.host.unload();
-    await this.installer.remove();
-    this.runtime = null;
+    if (engineName === 'phonon') { await this.phononInstaller.remove(); this.phononRuntime = null; }
+    else { await this.installer.remove(); this.runtime = null; }
     void this.emitStatus();
     return this.status();
   }
@@ -125,8 +147,12 @@ export class TtsService {
   async downloadModel(modelId: string): Promise<TtsStatus> {
     const model = TTS_MODELS.find((entry) => entry.id === modelId);
     if (!model) throw new Error('TTS_MODEL_UNAVAILABLE');
+    // CC BY-NC weights are never fetched until the user accepted their terms in Nodus.
+    if (model.nonCommercial && !getSettings().ttsAcceptedLicenses.includes(model.id)) throw new Error('TTS_LICENSE_NOT_ACCEPTED');
+    const token = model.gated ? getAudioKey('huggingface') : null;
+    if (model.gated && !token) throw new Error('TTS_HF_TOKEN_REQUIRED');
     try {
-      await this.models.download(model, (status) => this.emit({ kind: 'model', status }));
+      await this.models.download(model, (status) => this.emit({ kind: 'model', status }), token);
     } finally { void this.emitStatus(); }
     return this.status();
   }
@@ -153,6 +179,11 @@ export class TtsService {
   private async assertModelReady(modelId: string): Promise<void> {
     const model = TTS_MODELS.find((entry) => entry.id === modelId);
     if (!model || !(await this.models.isReady(model))) throw new Error('TTS_MODEL_NOT_DOWNLOADED');
+    if (model.engine === 'phonon') {
+      this.phononRuntime ??= await this.phononInstaller.installed();
+      if (!this.phononRuntime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
+      return;
+    }
     this.runtime ??= await this.installer.installed();
     if (!this.runtime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
   }
@@ -163,9 +194,14 @@ export class TtsService {
     const settings = getSettings();
     const modelId = this.selectedModelId();
     await this.assertModelReady(modelId);
-    const voiceId = request.voiceId || settings.ttsVoiceId;
-    const { ref, language: voiceLanguage } = await this.voices.resolve(voiceId);
-    const language = resolveTtsLanguage(request.language ?? settings.ttsLanguage, text, voiceLanguage);
+    const model = TTS_MODELS.find((entry) => entry.id === modelId)!;
+    const phonon = model.engine === 'phonon';
+    const voiceId = request.voiceId || (phonon ? settings.ttsPhononVoiceId : settings.ttsVoiceId);
+    if (phonon !== voiceId.startsWith('phonon:')) throw new Error('TTS_VOICE_ENGINE_MISMATCH');
+    const { ref, language: voiceLanguage } = phonon ? await this.phononVoice(voiceId) : await this.voices.resolve(voiceId);
+    const detected = resolveTtsLanguage(request.language ?? settings.ttsLanguage, text, voiceLanguage);
+    // A checkpoint only speaks its own languages: a single-language model always uses its one.
+    const language = model.languages.includes(detected) ? detected : model.languages[0];
     const started = Date.now();
     const { jobId, done } = this.host.synth(modelId, { text, voice: ref, language, priority: request.priority ?? 0 }, {
       onStart: (id) => this.progress(id, { state: 'generating' }),
@@ -217,6 +253,22 @@ export class TtsService {
   }
 
   async saveVoice(input: TtsVoiceSaveInput) { return this.voices.save(input); }
+
+  /** A Phonon catalogue voice, downloaded on first use (pinned revision, size and SHA-256). */
+  private async phononVoice(voiceId: string): Promise<{ ref: TtsVoiceRef; language: import('@shared/ttsModels').TtsLanguage }> {
+    const voice = PHONON_VOICES.find((entry) => `phonon:${entry.id}` === voiceId);
+    if (!voice) throw new Error('TTS_VOICE_NOT_FOUND');
+    const file = path.join(ttsVoicesDir(), 'phonon', `${voice.id}.safetensors`);
+    await downloadVerifiedNodusAsset(phononVoiceUrl(voice), file, voice.bytes, voice.sha256, () => {});
+    return { ref: { kind: 'embedding', name: voice.id, path: file }, language: voice.language };
+  }
+
+  setHuggingFaceToken(token: string): boolean {
+    if (token.trim()) setAudioKey('huggingface', token.trim()); else clearAudioKey('huggingface');
+    return hasAudioKey('huggingface');
+  }
+
+  hasHuggingFaceToken(): boolean { return hasAudioKey('huggingface'); }
 
   pinClip(clipId: string, pinned: boolean): void { setAudioClipPinned(clipId, pinned); }
 

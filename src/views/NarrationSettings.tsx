@@ -55,10 +55,14 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const [confirm, setConfirm] = useState<null | { kind: 'model'; model: TtsModelDefinition } | { kind: 'runtime' } | { kind: 'voice'; voice: TtsVoice } | { kind: 'sweep' }>(null);
   const [usage, setUsage] = useState<{ clips: Record<string, number>; voices: number; runtime: number; models: number } | null>(null);
   const [notice, setNotice] = useState('');
+  const [hfToken, setHfToken] = useState('');
+  const [hasHfToken, setHasHfToken] = useState(false);
+  useEffect(() => { void window.nodus.ttsHasHuggingFaceToken().then(setHasHfToken).catch(() => {}); }, []);
 
   const platformModels = useMemo(() => {
     const backend = status?.runtime.backend;
-    return TTS_MODELS.filter((model) => !backend || model.backend === backend);
+    // Phonon runs on every platform; Ming's checkpoints follow this machine's backend.
+    return TTS_MODELS.filter((model) => model.engine === 'phonon' || !backend || model.backend === backend);
   }, [status?.runtime.backend]);
   const modelStatus = useMemo(() => new Map(status?.models.map((model) => [model.id, model]) ?? []), [status]);
   const selectedModelId = settings.ttsModelId || platformModels.find((model) => !model.unpublished)?.id || '';
@@ -120,6 +124,28 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       </div>
     </div>
 
+    {/* 1b · Phonon engine: a small runtime of its own (no PyTorch), for the Phonon checkpoints */}
+    <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 text-xs dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="narration-runtime-phonon">
+      <div className="flex flex-wrap items-center gap-2">
+        <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Motor Phonon')}</h5>
+        {status?.phononRuntime.installed && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('Instalado')} · {t('Procesador (CPU)')}</span>}
+      </div>
+      <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Phonon (Gradium) es muy ligero y genera mucho más rápido que el tiempo real en el procesador, también en Windows y Linux. Usa su catálogo de voces; no clona grabaciones propias.')}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {!status?.phononRuntime.installed && !status?.phononRuntime.installing && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime('phonon'))}><Icon name="download" size={11} />{t('Instalar motor Phonon')}</button>}
+        {status?.phononRuntime.installing && <span className="text-neutral-500">{t(INSTALL_PHASES[install?.phase ?? 'checking'] ?? 'Instalando…')}</span>}
+        {status?.phononRuntime.installed && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('phonon'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>}
+      </div>
+      <div className="mt-3 border-t border-neutral-200 pt-2 dark:border-neutral-800" data-testid="narration-hf-token">
+        <p className="text-neutral-600 dark:text-neutral-400">{t('Los modelos Phonon de 40M están restringidos: acepta sus términos en su página de Hugging Face y pega aquí un token de lectura de tu cuenta. Se guarda cifrado en este equipo y solo se envía a Hugging Face al descargar.')}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <input type="password" className="input h-7 w-64 text-xs" placeholder={hasHfToken ? t('Token guardado; escribe para sustituirlo') : 'hf_…'} value={hfToken} onChange={(event) => setHfToken(event.target.value)} />
+          <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={!hfToken.trim()} onClick={() => void run(async () => { setHasHfToken(await window.nodus.ttsSetHuggingFaceToken(hfToken)); setHfToken(''); })}>{t('Guardar token')}</button>
+          {hasHfToken && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(async () => setHasHfToken(await window.nodus.ttsSetHuggingFaceToken('')))}>{t('Eliminar token')}</button>}
+        </div>
+      </div>
+    </div>
+
     {/* 2 · Models */}
     <div className="mt-5">
       <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Modelos')}</h5>
@@ -154,7 +180,13 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
                 ? <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => setConfirm({ kind: 'model', model })}><Icon name="trash" size={10} />{t('Eliminar')}</button>
                 : local?.downloading
                   ? <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelModelDownload(model.id)}>{t('Cancelar')}</button>
-                  : <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void run(async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings.ttsModelId) await patch({ ttsModelId: model.id }); })}><Icon name="download" size={10} />{t('Descargar')}</button>)}
+                  : <>
+                    {model.nonCommercial && <label className="flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400" title={t('La licencia CC BY-NC 4.0 no permite el uso comercial de estos pesos ni del audio que generan.')}>
+                      <input type="checkbox" checked={settings.ttsAcceptedLicenses.includes(model.id)} onChange={(event) => void patch({ ttsAcceptedLicenses: event.target.checked ? [...settings.ttsAcceptedLicenses, model.id] : settings.ttsAcceptedLicenses.filter((id) => id !== model.id) })} />
+                      {t('Acepto la licencia (uso no comercial)')}
+                    </label>}
+                    <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={(model.nonCommercial && !settings.ttsAcceptedLicenses.includes(model.id)) || (model.gated && !hasHfToken)} title={model.gated && !hasHfToken ? t('Guarda primero un token de Hugging Face') : undefined} onClick={() => void run(async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings.ttsModelId) await patch({ ttsModelId: model.id }); })}><Icon name="download" size={10} />{t('Descargar')}</button>
+                  </>)}
             </div>
           </article>;
         })}
@@ -190,7 +222,8 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
     <VoiceLibrary
       voices={voices}
       selectedVoiceId={settings.ttsVoiceId}
-      onSelect={(voiceId) => void patch({ ttsVoiceId: voiceId })}
+      phononVoiceId={settings.ttsPhononVoiceId}
+      onSelect={(voiceId) => void patch(voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : { ttsVoiceId: voiceId })}
       onChanged={() => void refreshVoices()}
       onDelete={(voice) => setConfirm({ kind: 'voice', voice })}
       onError={(message) => setError(message)}
@@ -241,9 +274,10 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   </div>;
 }
 
-function VoiceLibrary({ voices, selectedVoiceId, onSelect, onChanged, onDelete, onError, sttModel }: {
+function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChanged, onDelete, onError, sttModel }: {
   voices: TtsVoice[];
   selectedVoiceId: string;
+  phononVoiceId: string;
   onSelect: (voiceId: string) => void;
   onChanged: () => void;
   onDelete: (voice: TtsVoice) => void;
@@ -324,9 +358,11 @@ function VoiceLibrary({ voices, selectedVoiceId, onSelect, onChanged, onDelete, 
   const own = voices.filter((voice) => voice.origin === 'recorded' || voice.origin === 'uploaded');
   const bundled = voices.filter((voice) => voice.origin === 'bundled');
   const builtin = voices.filter((voice) => voice.origin === 'builtin' && (!builtinFilter || String(voice.name ?? '').toLowerCase().includes(builtinFilter.toLowerCase())));
+  const [phononLanguage, setPhononLanguage] = useState<string>('es');
+  const phonon = voices.filter((voice) => voice.origin === 'phonon' && (voice.language === phononLanguage));
 
   const row = (voice: TtsVoice) => {
-    const selected = voice.id === selectedVoiceId;
+    const selected = voice.id === (voice.origin === 'phonon' ? phononVoiceId : selectedVoiceId);
     const isEditing = editing?.id === voice.id;
     return <article key={voice.id} data-testid={`narration-voice-${voice.id}`} className={settingsModelRowClass(selected, true, 'flex flex-wrap items-start gap-2')} onClick={() => !selected && onSelect(voice.id)}>
       <SettingsModelDot selected={selected} />
@@ -345,13 +381,14 @@ function VoiceLibrary({ voices, selectedVoiceId, onSelect, onChanged, onDelete, 
             <div className="text-[10px] text-neutral-500">
               {TTS_LANGUAGES.find((entry) => entry.code === voice.language)?.label}
               {voice.durationS ? ` · ${voice.durationS.toFixed(1)} s` : ''}
+              {voice.locale ? ` · ${voice.locale}` : ''}
               {voice.attribution ? ` · ${voice.attribution}` : ''}
             </div>
             {voice.transcript && <p className="mt-0.5 line-clamp-2 text-[11px] text-neutral-500">«{voice.transcript}»</p>}
           </>}
       </div>
       {!isEditing && <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
-        {voice.origin !== 'builtin' && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={t('Escuchar la grabación de referencia')} onClick={() => play(voice)}><Icon name="play" size={12} /></button>}
+        {voice.origin !== 'builtin' && voice.origin !== 'phonon' && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={t('Escuchar la grabación de referencia')} onClick={() => play(voice)}><Icon name="play" size={12} /></button>}
         {!voice.readOnly && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={t('Editar nombre y transcripción')} onClick={() => setEditing({ id: voice.id, name: voice.name, transcript: voice.transcript ?? '' })}><Icon name="edit" size={12} /></button>}
         {!voice.readOnly && <button className="rounded p-1 text-neutral-500 hover:text-red-400" title={t('Eliminar voz')} onClick={() => onDelete(voice)}><Icon name="trash" size={12} /></button>}
       </div>}
@@ -411,6 +448,14 @@ function VoiceLibrary({ voices, selectedVoiceId, onSelect, onChanged, onDelete, 
       <h6 className="mt-4 text-[11px] font-medium text-neutral-500">{t('Mis voces')}</h6>
       <SettingsModelList className="mt-1">{own.map(row)}</SettingsModelList>
     </>}
+    <div className="mt-4 flex items-center gap-2">
+      <h6 className="text-[11px] font-medium text-neutral-500">{t('Voces de Phonon')}</h6>
+      <select className="input h-6 py-0 text-[11px]" value={phononLanguage} onChange={(event) => setPhononLanguage(event.target.value)} aria-label={t('Idioma')}>
+        {TTS_LANGUAGES.filter((entry) => ['es', 'en', 'fr', 'de', 'pt'].includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+      </select>
+    </div>
+    <p className="mt-1 text-[10px] text-neutral-500">{t('Se usan con los modelos Phonon; tus voces grabadas funcionan con Ming. Cada voz se descarga la primera vez que la usas.')}</p>
+    <SettingsModelList className="mt-1 max-h-72 overflow-y-auto">{phonon.map(row)}</SettingsModelList>
     <h6 className="mt-4 text-[11px] font-medium text-neutral-500">{t('Voces de ejemplo (dominio público)')}</h6>
     <SettingsModelList className="mt-1">{bundled.map(row)}</SettingsModelList>
     <div className="mt-4 flex items-center gap-2">

@@ -126,8 +126,11 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
 
   const modelId = settings?.ttsModelId || status?.models.find((model) => model.downloaded)?.id || status?.models[0]?.id || '';
   const model = TTS_MODELS.find((entry) => entry.id === modelId);
+  const phononModel = model?.engine === 'phonon';
+  const downloadedModels = TTS_MODELS.filter((entry) => status?.models.some((m) => m.id === entry.id && m.downloaded));
   const modelStatus = status?.models.find((entry) => entry.id === modelId);
   const ready = ttsReady(status, modelId);
+  const runtimeInstalled = phononModel ? status?.phononRuntime.installed : status?.runtime.installed;
   const engine = status?.engine;
   const engineActive = engine?.state === 'ready' || engine?.state === 'busy';
   const unloadTime = engine?.idleUnloadAt ? new Date(engine.idleUnloadAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -147,13 +150,13 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
     setError('');
     const segmentRequest: AudioSegmentRequest = { ...(target.segmentRequest ?? {}), ...(target.markdown ? { markdown: target.markdown(), title: '' } : {}) };
     const input = {
-      kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId: settings.ttsVoiceId, language,
+      kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId: phononModel ? settings.ttsPhononVoiceId : settings.ttsVoiceId, language,
       labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
     };
     if (settings.ttsStreaming) { startNarration(player, input, source); return; }
     // Without streaming: generate everything in the background, then play the saved clips.
     player.stop();
-    const job = startAudioGeneration({ entityKind: target.kind, entityId: target.id, voiceId: settings.ttsVoiceId, segmentRequest, labels: input.labels }, segmentNarrator(input, null));
+    const job = startAudioGeneration({ entityKind: target.kind, entityId: target.id, voiceId: input.voiceId, segmentRequest, labels: input.labels }, segmentNarrator(input, null));
     const unsubscribe = subscribeBackgroundJob<AudioGenerationRequest, AudioGenerationProgress, AudioGenerationResult>(audioGenerationJobKey(target.kind, target.id), (next) => {
       if (!next || next.id !== job.id || next.status === 'running') return;
       queueMicrotask(unsubscribe);
@@ -168,8 +171,9 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
 
   const setVoice = (voiceId: string) => {
     if (!settings) return;
-    setSettings({ ...settings, ttsVoiceId: voiceId });
-    void window.nodus.updateSettings({ ttsVoiceId: voiceId });
+    const patch = voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : { ttsVoiceId: voiceId };
+    setSettings({ ...settings, ...patch });
+    void window.nodus.updateSettings(patch);
   };
 
   const removeClip = async (clip: AudioClip) => {
@@ -190,6 +194,7 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
   const own = voices.filter((voice) => voice.origin === 'recorded' || voice.origin === 'uploaded');
   const bundled = voices.filter((voice) => voice.origin === 'bundled');
   const builtin = voices.filter((voice) => voice.origin === 'builtin');
+  const phonon = voices.filter((voice) => voice.origin === 'phonon');
   const retentionDays = settings ? retentionFor(settings, target.kind) : null;
   const generating = progress != null;
   const totalDuration = clips.reduce((sum, clip) => sum + clip.durationSec, 0);
@@ -200,14 +205,15 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
         {/* Engine */}
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="listen-engine">
           {!status && <span className="text-neutral-500">{t('Comprobando el motor de voz…')}</span>}
-          {status && !status.runtime.installed && <div className="flex items-center justify-between gap-2">
-            <span className="text-neutral-600 dark:text-neutral-400">{status.runtime.installing ? t('Instalando el motor de voz…') : t('El motor de voz no está instalado.')}</span>
-            {!status.runtime.installing && <button className="btn btn-primary h-7 px-2 text-[11px]" disabled={!!busy} onClick={() => void act('install', () => window.nodus.ttsInstallRuntime())}><Icon name="download" size={11} />{t('Instalar')}</button>}
+          {status && !runtimeInstalled && <div className="flex items-center justify-between gap-2">
+            <span className="text-neutral-600 dark:text-neutral-400">{(phononModel ? status.phononRuntime : status.runtime).installing ? t('Instalando el motor de voz…') : t('El motor de voz no está instalado.')}</span>
+            {!(phononModel ? status.phononRuntime : status.runtime).installing && <button className="btn btn-primary h-7 px-2 text-[11px]" disabled={!!busy} onClick={() => void act('install', () => window.nodus.ttsInstallRuntime(phononModel ? 'phonon' : 'ming'))}><Icon name="download" size={11} />{t('Instalar')}</button>}
           </div>}
-          {status?.runtime.installed && modelStatus && !modelStatus.downloaded && <div className="grid gap-1.5">
+          {runtimeInstalled && modelStatus && !modelStatus.downloaded && <div className="grid gap-1.5">
             <div className="flex items-center justify-between gap-2">
               <span className="text-neutral-600 dark:text-neutral-400">{modelStatus.downloading ? t('Descargando el modelo…') : tx('Falta el modelo {model}', { model: model?.label ?? '' })}</span>
-              {!modelStatus.downloading && model && <button className="btn btn-primary h-7 px-2 text-[11px]" onClick={() => void act('download', async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings?.ttsModelId) await window.nodus.updateSettings({ ttsModelId: model.id }); })}><Icon name="download" size={11} />{tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })}</button>}
+              {!modelStatus.downloading && model && (model.gated || model.nonCommercial) && <button className="btn btn-ghost h-7 px-2 text-[11px]" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>{t('Abrir Ajustes')}</button>}
+              {!modelStatus.downloading && model && !model.gated && !model.nonCommercial && <button className="btn btn-primary h-7 px-2 text-[11px]" onClick={() => void act('download', async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings?.ttsModelId) await window.nodus.updateSettings({ ttsModelId: model.id }); })}><Icon name="download" size={11} />{tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })}</button>}
             </div>
             {modelStatus.downloading && <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, modelStatus.progress * 100)}%` }} /></div>}
           </div>}
@@ -223,16 +229,26 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
           </div>}
         </div>
 
-        {/* Voice and language */}
+        {/* Model, voice and language */}
+        {downloadedModels.length > 1 && <select className="input h-8 py-0 text-xs" aria-label={t('Modelo')} value={modelId} data-testid="listen-model"
+          onChange={(event) => { const next = event.target.value; setSettings(settings ? { ...settings, ttsModelId: next } : settings); void window.nodus.updateSettings({ ttsModelId: next }); }}>
+          {downloadedModels.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+        </select>}
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <select className="input h-8 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
-            {own.length > 0 && <optgroup label={t('Mis voces')}>{own.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>}
-            <optgroup label={t('Castellano (dominio público)')}>{bundled.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
-            <optgroup label={t('Integradas de Ming')}>{builtin.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
-          </select>
+          {phononModel
+            ? <select className="input h-8 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsPhononVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
+              {TTS_LANGUAGES.filter((entry) => model?.languages.includes(entry.code)).map((entry) => <optgroup key={entry.code} label={entry.label}>
+                {phonon.filter((voice) => voice.language === entry.code).map((voice) => <option key={voice.id} value={voice.id}>{voice.name}{voice.locale ? ` · ${voice.locale}` : ''}</option>)}
+              </optgroup>)}
+            </select>
+            : <select className="input h-8 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
+              {own.length > 0 && <optgroup label={t('Mis voces')}>{own.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>}
+              <optgroup label={t('Castellano (dominio público)')}>{bundled.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
+              <optgroup label={t('Integradas de Ming')}>{builtin.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
+            </select>}
           <select className="input h-8 py-0 text-xs" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">
             <option value="auto">{t('Auto')}</option>
-            {TTS_LANGUAGES.map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+            {TTS_LANGUAGES.filter((entry) => !model || model.languages.includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
           </select>
         </div>
         <button className="justify-self-start text-[11px] text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>

@@ -20,7 +20,8 @@ import type { TtsBackend, TtsDevice, TtsEngineState, TtsLanguage } from '@shared
 
 export type TtsVoiceRef =
   | { kind: 'clone'; voiceId: string; wavPath: string; text: string; cacheDir: string }
-  | { kind: 'builtin'; name: string };
+  | { kind: 'builtin'; name: string }
+  | { kind: 'embedding'; name: string; path: string };
 
 export interface TtsSynthRequest {
   text: string;
@@ -40,8 +41,10 @@ export interface TtsJobResult { jobId: string; fragments: TtsFragment[]; audioS:
 export interface TtsEngineSnapshot { state: TtsEngineState; modelId: string | null; idleUnloadAt: number | null; device: TtsDevice | null; error?: string }
 
 export interface TtsHostOptions {
-  python: () => Promise<string | null>;
-  backend: () => TtsBackend;
+  /** The interpreter of the environment that serves `backend`. */
+  python: (backend: TtsBackend) => Promise<string | null>;
+  /** The sidecar backend a model needs (Ming: MLX or torch; Phonon: phonon). */
+  backend: (modelId: string) => TtsBackend;
   serveScript: string;
   modelPath: (modelId: string) => string;
   liveDir: string;
@@ -73,6 +76,7 @@ interface QueuedJob {
 
 interface Running {
   child: ChildProcess;
+  backend: TtsBackend;
   modelId: string | null;
   buffer: string;
   waiters: Map<string, { resolve: (message: Message) => void; reject: (error: Error) => void; expect: string }>;
@@ -191,9 +195,10 @@ export class TtsEngineHost {
     const running = await this.ensureRunning();
     const outDir = path.join(this.options.liveDir, job.jobId);
     await fs.mkdir(outDir, { recursive: true });
-    const voice = job.request.voice.kind === 'clone'
-      ? { kind: 'clone', voice_id: job.request.voice.voiceId, wav_path: job.request.voice.wavPath, text: job.request.voice.text, cache_dir: job.request.voice.cacheDir }
-      : { kind: 'builtin', name: job.request.voice.name };
+    const ref = job.request.voice;
+    const voice = ref.kind === 'clone'
+      ? { kind: 'clone', voice_id: ref.voiceId, wav_path: ref.wavPath, text: ref.text, cache_dir: ref.cacheDir }
+      : ref.kind === 'embedding' ? { kind: 'embedding', name: ref.name, path: ref.path } : { kind: 'builtin', name: ref.name };
     return new Promise<TtsJobResult>((resolve, reject) => {
       const onMessage = (message: Message) => {
         if (message.job_id !== job.jobId) return false;
@@ -231,7 +236,10 @@ export class TtsEngineHost {
 
   private async ensureModel(modelId: string): Promise<void> {
     if (this.loading) await this.loading.catch(() => {});
-    const running = await this.ensureRunning();
+    // Another engine needs another process: the running one is stopped first.
+    const backend = this.options.backend(modelId);
+    if (this.running && !this.running.exited && this.running.backend !== backend) await this.stop();
+    const running = await this.ensureRunning(backend);
     if (running.modelId === modelId) return;
     this.loading = (async () => {
       this.setState('loading');
@@ -250,20 +258,21 @@ export class TtsEngineHost {
     } finally { this.loading = null; }
   }
 
-  private ensureRunning(): Promise<Running> {
+  private ensureRunning(backend?: TtsBackend): Promise<Running> {
     if (this.running && !this.running.exited) return Promise.resolve(this.running);
     if (this.starting) return this.starting;
-    this.starting = this.start().finally(() => { this.starting = null; });
+    const target = backend ?? this.options.backend(this.current?.modelId ?? '');
+    this.starting = this.start(target).finally(() => { this.starting = null; });
     return this.starting;
   }
 
-  private async start(): Promise<Running> {
-    const python = await this.options.python();
+  private async start(backend: TtsBackend): Promise<Running> {
+    const python = await this.options.python(backend);
     if (!python) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
     this.setState('starting');
     await fs.mkdir(path.dirname(this.options.logPath), { recursive: true });
     const spawn = this.options.spawn ?? nodeSpawn;
-    const child = spawn(python, ['-I', '-B', this.options.serveScript, '--backend', this.options.backend()], {
+    const child = spawn(python, ['-I', '-B', this.options.serveScript, '--backend', backend], {
       stdio: ['pipe', 'pipe', 'pipe'],
       // POSIX: the sidecar leads its own process group so a kill takes any helper it started.
       detached: process.platform !== 'win32',
@@ -271,7 +280,7 @@ export class TtsEngineHost {
       env: scrubbedEnv(),
     });
     if (child.pid) (this.options.lowerPriority ?? defaultLowerPriority)(child.pid);
-    const running: Running = { child, modelId: null, buffer: '', waiters: new Map(), exited: false };
+    const running: Running = { child, backend, modelId: null, buffer: '', waiters: new Map(), exited: false };
     this.running = running;
     child.stdout?.setEncoding('utf8');
     child.stdout?.on('data', (chunk: string) => this.onStdout(running, chunk));

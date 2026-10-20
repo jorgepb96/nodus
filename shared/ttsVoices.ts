@@ -6,8 +6,9 @@ import type { TtsLanguage } from './ttsModels';
  *   `user:<uuid>`   recorded or uploaded by the user (clone)
  *   `cc0:<name>`    reference recordings that ship with Nodus (clone, read-only)
  *   `ming:<name>`   Ming's built-in voices (no reference audio)
+ *   `phonon:<id>`   Phonon's catalogue voices (speaker embeddings)
  */
-export type TtsVoiceOrigin = 'recorded' | 'uploaded' | 'bundled' | 'builtin';
+export type TtsVoiceOrigin = 'recorded' | 'uploaded' | 'bundled' | 'builtin' | 'phonon';
 
 export interface TtsVoice {
   id: string;
@@ -20,6 +21,10 @@ export interface TtsVoice {
   createdAt?: string;
   /** Shown for bundled voices. */
   attribution?: string;
+  /** Phonon catalogue: locale (es-es, es-mx, en-us…) and gender. */
+  locale?: string;
+  gender?: 'male' | 'female' | 'none';
+  description?: string;
   readOnly: boolean;
 }
 
@@ -73,6 +78,9 @@ export const TTS_SAMPLE_PARAGRAPHS: Readonly<Record<TtsLanguage, readonly string
   ],
   ko: [
     '이 장에서는 연구의 주요 가설을 분석합니다. 결과에 따르면 아연 농도가 공정의 효율에 직접적인 영향을 미치지만, 신중하게 해석할 필요가 있습니다.',
+  ],
+  pt: [
+    'Neste capítulo analisaremos a hipótese principal do estudo. Os resultados sugerem que a concentração de zinco influencia diretamente a eficácia do processo, embora convenha interpretá-los com cautela.',
   ],
 };
 

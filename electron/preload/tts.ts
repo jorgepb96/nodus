@@ -6,9 +6,11 @@ import type { TtsApi, TtsEvent } from '@shared/api/tts';
 
 export const ttsApi: TtsApi = {
   ttsStatus: () => ipcRenderer.invoke('tts:status'),
-  ttsInstallRuntime: () => ipcRenderer.invoke('tts:runtime:install'),
+  ttsInstallRuntime: (engine) => ipcRenderer.invoke('tts:runtime:install', engine),
   ttsCancelInstall: () => ipcRenderer.invoke('tts:runtime:cancel'),
-  ttsRemoveRuntime: () => ipcRenderer.invoke('tts:runtime:remove'),
+  ttsRemoveRuntime: (engine) => ipcRenderer.invoke('tts:runtime:remove', engine),
+  ttsSetHuggingFaceToken: (token) => ipcRenderer.invoke('tts:hfToken:set', token),
+  ttsHasHuggingFaceToken: () => ipcRenderer.invoke('tts:hfToken:status'),
   ttsDownloadModel: (modelId) => ipcRenderer.invoke('tts:model:download', modelId),
   ttsCancelModelDownload: (modelId) => ipcRenderer.invoke('tts:model:cancel', modelId),
   ttsDeleteModel: (modelId) => ipcRenderer.invoke('tts:model:delete', modelId),

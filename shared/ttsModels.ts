@@ -7,21 +7,32 @@
  * (CUDA when an NVIDIA GPU answers, CPU otherwise).
  */
 
-export type TtsBackend = 'mlx' | 'torch';
+export type TtsBackend = 'mlx' | 'torch' | 'phonon';
+export type TtsEngine = 'ming' | 'phonon';
 export type TtsDevice = 'metal' | 'cuda' | 'cpu';
 
 export interface TtsModelAsset {
   file: string;
   url: string;
   bytes: number;
-  sha256: string;
+  /** Absent only for small text files of gated repos, whose hash cannot be read without a token; the size is still enforced. */
+  sha256?: string;
 }
 
 export interface TtsModelDefinition {
   id: string;
   label: string;
+  engine: TtsEngine;
   backend: TtsBackend;
-  quantization: '8bit' | '4bit' | 'bf16';
+  quantization: '8bit' | '4bit' | 'bf16' | 'q8';
+  /** Languages the checkpoint speaks. */
+  languages: readonly TtsLanguage[];
+  /** Gated on Hugging Face: the user accepts the terms there and gives Nodus a token. */
+  gated?: boolean;
+  /** Not for commercial use (CC BY-NC): the user must accept it in Nodus before downloading. */
+  nonCommercial?: boolean;
+  /** Can clone a voice from a reference recording locally. */
+  cloning: boolean;
   description: string;
   sourceUrl: string;
   licenseLabel: string;
@@ -34,13 +45,16 @@ export interface TtsModelDefinition {
 const HF_REVISIONS: Record<string, string> = {
   'mlx-community/Ming-3.0-tts-0.5B-8bit': 'c807b99d2ea77d896fcffc917f0330d36470bb29',
   'inclusionAI/Ming-3.0-tts-0.5B': 'e5bd8da31ecf1b9276cdbdda821fa891068f1368',
+  'gradium/phonon-31m-en': '52433c46975bfa13144c56204c9f4ee1c5b148aa',
+  'gradium/phonon-40m-es': 'eceb8758b5ed899bd661febecffdc6be61d8e1e6',
+  'gradium/phonon-40m-multilingual': '1267486cbcb55d2eaa61ba521c2ed8e4d22923c2',
 };
 
 const hf = (repo: string, file: string) =>
   `https://huggingface.co/${repo}/resolve/${HF_REVISIONS[repo] ?? 'main'}/${file}?download=true`;
 
 const assets = (repo: string, files: ReadonlyArray<readonly [string, number, string]>): TtsModelAsset[] =>
-  files.map(([file, bytes, sha256]) => ({ file, url: hf(repo, file), bytes, sha256 }));
+  files.map(([file, bytes, sha256]) => ({ file, url: hf(repo, file), bytes, ...(sha256 ? { sha256 } : {}) }));
 
 /** Tokenizer files shared by every Ming-3.0 0.5B checkpoint (identical hashes upstream). */
 const TOKENIZER = [
@@ -54,13 +68,19 @@ const TOKENIZER = [
 ] as const;
 
 const MING_LICENSE = { licenseLabel: 'MIT', licenseUrl: 'https://github.com/inclusionAI/Ming-3.0-tts/blob/main/LICENSE' } as const;
+const MING_LANGUAGES: readonly TtsLanguage[] = ['es', 'en', 'zh', 'fr', 'de', 'ja', 'ko'];
+const PHONON_DEFAULT_VOICE = ['default-voice.safetensors', 256136, 'f739e8c4c76ee7f92e7c94a82002748c8cd22e99582ac49f7b9b94cd63786e18'] as const;
+const CC_BY_NC = { licenseLabel: 'CC BY-NC 4.0 · no comercial', licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/' } as const;
 
 export const TTS_MODELS: readonly TtsModelDefinition[] = [
   {
     id: 'ming3-0.5b-mlx-8bit',
     label: 'Ming 3.0 · 0.5B · 8-bit',
+    engine: 'ming',
     backend: 'mlx',
     quantization: '8bit',
+    languages: MING_LANGUAGES,
+    cloning: true,
     description: 'Recomendado en Mac con Apple Silicon. Clona voces y habla siete idiomas.',
     sourceUrl: 'https://huggingface.co/mlx-community/Ming-3.0-tts-0.5B-8bit',
     ...MING_LICENSE,
@@ -80,8 +100,11 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
   {
     id: 'ming3-0.5b-mlx-4bit',
     label: 'Ming 3.0 · 0.5B · 4-bit',
+    engine: 'ming',
     backend: 'mlx',
     quantization: '4bit',
+    languages: MING_LANGUAGES,
+    cloning: true,
     description: 'Más ligero y rápido en Mac con Apple Silicon, con algo menos de calidad.',
     sourceUrl: 'https://github.com/inclusionAI/Ming-3.0-tts',
     ...MING_LICENSE,
@@ -92,8 +115,11 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
   {
     id: 'ming3-0.5b-torch',
     label: 'Ming 3.0 · 0.5B',
+    engine: 'ming',
     backend: 'torch',
     quantization: 'bf16',
+    languages: MING_LANGUAGES,
+    cloning: true,
     description: 'Para Windows, Linux y Mac Intel. Usa la GPU NVIDIA si la hay; si no, el procesador.',
     sourceUrl: 'https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B',
     ...MING_LICENSE,
@@ -104,16 +130,80 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
       ...TOKENIZER,
     ]),
   },
+  {
+    id: 'phonon-31m-en',
+    label: 'Phonon S · 31M · inglés',
+    engine: 'phonon',
+    backend: 'phonon',
+    quantization: 'q8',
+    languages: ['en'],
+    cloning: false,
+    description: 'Muy ligero y mucho más rápido que el tiempo real incluso en el procesador. Solo inglés.',
+    sourceUrl: 'https://huggingface.co/gradium/phonon-31m-en',
+    licenseLabel: 'Apache-2.0',
+    licenseUrl: 'https://huggingface.co/gradium/phonon-31m-en',
+    assets: assets('gradium/phonon-31m-en', [
+      ['config.json', 2851, '7062ea376e6b158543c8abec8e5af67df171c49ad70eb7e2a0fb25c16f265e06'],
+      ['tokenizer.json', 277967, '691a00068fa7b989f2f3e5ae5daa2d1a5bb319f2d5360deafcfb19a8bb6e7936'],
+      ['model.q8.gguf', 64512352, 'a7d9aad2cd6dc66473f24a08bc6d2939030ef4d751ef82349361fbef3272dbae'],
+      PHONON_DEFAULT_VOICE,
+    ]),
+  },
+  {
+    id: 'phonon-40m-es',
+    label: 'Phonon · 40M · español',
+    engine: 'phonon',
+    backend: 'phonon',
+    quantization: 'q8',
+    languages: ['es'],
+    cloning: false,
+    gated: true,
+    nonCommercial: true,
+    description: 'Español muy rápido incluso en el procesador. Uso no comercial; requiere aceptar la licencia en Hugging Face.',
+    sourceUrl: 'https://huggingface.co/gradium/phonon-40m-es',
+    ...CC_BY_NC,
+    assets: assets('gradium/phonon-40m-es', [
+      ['config.json', 2851, ''],
+      ['tokenizer.json', 278837, ''],
+      ['model.q8.gguf', 74553568, 'b90d5897e5e663c56a8975a8b2d6f7db557b9bad59ad82a82361ac56614c2a5c'],
+      PHONON_DEFAULT_VOICE,
+    ]),
+  },
+  {
+    id: 'phonon-40m-multilingual',
+    label: 'Phonon · 40M · multilingüe',
+    engine: 'phonon',
+    backend: 'phonon',
+    quantization: 'q8',
+    languages: ['es', 'en', 'fr', 'de', 'pt'],
+    cloning: false,
+    gated: true,
+    nonCommercial: true,
+    description: 'Español, inglés, francés, alemán y portugués en un solo modelo. Uso no comercial; requiere aceptar la licencia en Hugging Face.',
+    sourceUrl: 'https://huggingface.co/gradium/phonon-40m-multilingual',
+    ...CC_BY_NC,
+    assets: assets('gradium/phonon-40m-multilingual', [
+      ['config.json', 2891, ''],
+      ['tokenizer.json', 277749, ''],
+      ['model.q8.gguf', 74553568, '96fa067813244e0c6c5997b98ec2596b65ec8574b14916b48e97db056ff97e27'],
+      PHONON_DEFAULT_VOICE,
+    ]),
+  },
 ];
 
 export function ttsModelBytes(model: TtsModelDefinition): number {
   return model.assets.reduce((sum, asset) => sum + asset.bytes, 0);
 }
 
-/** The checkpoints that can run on this platform, published ones only. */
+/** The checkpoints that can run on this platform, published ones only. Phonon runs everywhere. */
 export function ttsModelsForPlatform(platform: string, arch: string): TtsModelDefinition[] {
   const appleSilicon = platform === 'darwin' && arch === 'arm64';
-  return TTS_MODELS.filter((model) => !model.unpublished && (model.backend === 'torch' || appleSilicon));
+  return TTS_MODELS.filter((model) => !model.unpublished && (model.backend !== 'mlx' || appleSilicon));
+}
+
+/** The sidecar backend a checkpoint needs: Phonon has its own; Ming's depends on the machine. */
+export function ttsBackendForModel(model: TtsModelDefinition | undefined, platform: string, arch: string): TtsBackend {
+  return model?.engine === 'phonon' ? 'phonon' : ttsBackendForPlatform(platform, arch);
 }
 
 export function defaultTtsModelId(platform: string, arch: string): string {
@@ -128,7 +218,7 @@ export function ttsBackendForPlatform(platform: string, arch: string): TtsBacken
  * Languages Ming-3.0 speaks. Chinese and English need no language line; the other five
  * require one (`Target language:`), which also keeps them away from the zh/en normalizer.
  */
-export type TtsLanguage = 'es' | 'en' | 'zh' | 'fr' | 'de' | 'ja' | 'ko';
+export type TtsLanguage = 'es' | 'en' | 'zh' | 'fr' | 'de' | 'ja' | 'ko' | 'pt';
 export const TTS_LANGUAGES: ReadonlyArray<{ code: TtsLanguage; label: string; requiresLanguageLine: boolean }> = [
   { code: 'es', label: 'Español', requiresLanguageLine: true },
   { code: 'en', label: 'English', requiresLanguageLine: false },
@@ -137,6 +227,8 @@ export const TTS_LANGUAGES: ReadonlyArray<{ code: TtsLanguage; label: string; re
   { code: 'de', label: 'Deutsch', requiresLanguageLine: true },
   { code: 'ja', label: '日本語', requiresLanguageLine: true },
   { code: 'ko', label: '한국어', requiresLanguageLine: true },
+  // Phonon only; Ming does not speak Portuguese.
+  { code: 'pt', label: 'Português', requiresLanguageLine: false },
 ];
 export type TtsLanguageSetting = TtsLanguage | 'auto';
 
@@ -210,6 +302,7 @@ export interface TtsModelStatus {
 export type TtsEngineState = 'unloaded' | 'starting' | 'loading' | 'ready' | 'busy' | 'error';
 
 export interface TtsRuntimeStatus {
+  engine: TtsEngine;
   backend: TtsBackend;
   installed: boolean;
   installing: boolean;
@@ -223,7 +316,10 @@ export interface TtsRuntimeStatus {
 
 export interface TtsStatus {
   platformSupported: boolean;
+  /** Ming's environment (MLX or PyTorch). */
   runtime: TtsRuntimeStatus;
+  /** Phonon's environment (the small `ptts` runtime). */
+  phononRuntime: TtsRuntimeStatus;
   models: TtsModelStatus[];
   engine: { state: TtsEngineState; modelId: string | null; idleUnloadAt: number | null; error?: string };
 }

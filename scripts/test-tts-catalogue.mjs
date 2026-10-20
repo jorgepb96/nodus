@@ -17,6 +17,7 @@ try {
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/ttsModels.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/ttsLanguage.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/mingBuiltinVoices.ts'))};`,
+    `export * from ${JSON.stringify(path.join(repoRoot, 'shared/phononVoices.ts'))};`,
   ].join('\n'));
   const outfile = path.join(tmp, 'tts.mjs');
   await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
@@ -26,9 +27,10 @@ try {
   for (const model of tts.TTS_MODELS) {
     assert.ok(model.licenseLabel && model.licenseUrl, `${model.id} shows its license before download`);
     if (model.unpublished) { assert.equal(model.assets.length, 0); continue; }
-    assert.ok(model.assets.some((a) => a.file === 'model.safetensors'), `${model.id} has weights`);
+    assert.ok(model.assets.some((a) => a.file === 'model.safetensors' || a.file === 'model.q8.gguf'), `${model.id} has weights`);
     for (const asset of model.assets) {
       assert.match(asset.url, /^https:\/\/huggingface\.co\/[^/]+\/[^/]+\/resolve\/[0-9a-f]{40}\//, `${asset.file} pins a revision`);
+      if (model.gated && asset.bytes < 1_000_000 && !asset.sha256) continue; // gated small text files: size only
       assert.match(asset.sha256, /^[0-9a-f]{64}$/, `${asset.file} has a SHA-256`);
       assert.ok(Number.isInteger(asset.bytes) && asset.bytes > 0, `${asset.file} has an exact size`);
     }
@@ -39,10 +41,20 @@ try {
   assert.ok(mac.includes('ming3-0.5b-mlx-8bit'));
   assert.ok(!mac.includes('ming3-0.5b-mlx-4bit'), 'unpublished models are never offered');
   for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'x64']]) {
-    assert.deepEqual(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend), ['torch']);
+    assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], ['torch', 'phonon']);
     assert.equal(tts.ttsBackendForPlatform(platform, arch), 'torch');
   }
   assert.equal(tts.defaultTtsModelId('darwin', 'arm64'), 'ming3-0.5b-mlx-8bit');
+
+  // ── Phonon: licences, gating and the voice backend per model ───────────────
+  for (const model of tts.TTS_MODELS.filter((m) => m.engine === 'phonon')) {
+    assert.equal(tts.ttsBackendForModel(model, 'darwin', 'arm64'), 'phonon');
+    assert.equal(Boolean(model.nonCommercial), model.licenseLabel.startsWith('CC BY-NC'), `${model.id} flags non-commercial terms`);
+    assert.equal(Boolean(model.gated), Boolean(model.nonCommercial));
+    assert.equal(model.cloning, false, 'public Phonon checkpoints cannot clone locally');
+  }
+  assert.deepEqual(tts.TTS_MODELS.find((m) => m.id === 'phonon-31m-en').languages, ['en']);
+  assert.ok(tts.TTS_MODELS.find((m) => m.id === 'phonon-40m-es').languages.includes('es'));
 
   // ── Language detection and resolution ───────────────────────────────────────
   assert.equal(tts.detectTtsLanguage('Los resultados sugieren que la concentración de zinc influye en la eficacia del proceso.'), 'es');
@@ -56,7 +68,7 @@ try {
   assert.equal(tts.resolveTtsLanguage('fr', 'Hola, ¿qué tal estás hoy?', 'es'), 'fr', 'an explicit choice wins');
   assert.equal(tts.resolveTtsLanguage('auto', 'Hola', 'en'), 'en', 'falls back to the voice language');
   for (const language of tts.TTS_LANGUAGES) {
-    assert.equal(language.requiresLanguageLine, !['zh', 'en'].includes(language.code), `${language.code} language line matches Ming`);
+    assert.equal(language.requiresLanguageLine, !['zh', 'en', 'pt'].includes(language.code), `${language.code} language line matches Ming`);
   }
 
   // ── Retention: defaults, inheritance, overrides, sanitizing ─────────────────
@@ -84,6 +96,9 @@ try {
     if (voice.emotions) assert.notEqual(invocation, voice.id, `${voice.id} is invoked through a variant`);
   }
   assert.ok(tts.MING_BUILTIN_VOICES.filter((v) => v.language === 'en').length === 5);
+  assert.equal(tts.PHONON_VOICES.length, 102);
+  assert.ok(tts.PHONON_VOICES.filter((v) => v.locale === 'es-es').length >= 10, 'Castilian voices are listed');
+  for (const voice of tts.PHONON_VOICES) assert.match(voice.sha256, /^[0-9a-f]{64}$/);
   console.log('tts catalogue tests passed');
 } finally {
   await rm(tmp, { recursive: true, force: true });

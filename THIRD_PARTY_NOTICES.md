@@ -344,6 +344,19 @@ a clip of the `es_ES/dave` dataset from https://github.com/OHF-Voice/voice-datas
 dedicated to the public domain under CC0 1.0. Nodus leaves out Ming's built-in
 voices that imitate characters from films, series and cartoons.
 
+Narration can also use Phonon by Gradium. The `ptts` runtime (gradium-ai/xn-ptts) is
+installed from PyPI under MIT OR Apache-2.0 (`runtime/ming-tts/requirements-phonon.lock`). Its
+weights are downloaded only when the user asks, never bundled:
+
+- Phonon S 31M (`gradium/phonon-31m-en`): Apache-2.0.
+- Phonon 40M Spanish and multilingual (`gradium/phonon-40m-es`, `gradium/phonon-40m-multilingual`):
+  **CC BY-NC 4.0, non-commercial**. These repositories are gated on Hugging Face. Nodus downloads
+  them only after the user accepts the licence in Settings and supplies their own Hugging Face
+  token. CC BY-NC terms are not compatible with redistribution under AGPL-3.0, so Nodus never
+  ships or redistributes these weights.
+- Voice catalogue (`gradium/phonon-voices`): Apache-2.0. Each voice embedding is downloaded on
+  first use.
+
 Nodus is free and open-source software. LFM2.5 is governed by the LFM Open
 License v1.0, which contains a separate condition for legal entities with at
 least USD 10 million in annual revenue. Users remain responsible for uses

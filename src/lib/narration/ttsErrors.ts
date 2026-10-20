@@ -28,6 +28,9 @@ const MESSAGES: Record<string, string> = {
   TTS_VOICE_BAD_AUDIO: 'La grabación no tiene un formato válido.',
   TTS_VOICE_BAD_LENGTH: 'La grabación debe durar entre 3 y 30 segundos.',
   TTS_VOICE_READ_ONLY: 'Esta voz no se puede modificar.',
+  TTS_LICENSE_NOT_ACCEPTED: 'Acepta la licencia de uso no comercial del modelo antes de descargarlo.',
+  TTS_HF_TOKEN_REQUIRED: 'Este modelo está restringido: acepta sus términos en Hugging Face y guarda un token en Ajustes → Modelos → Voz y narración.',
+  TTS_VOICE_ENGINE_MISMATCH: 'La voz elegida no sirve para este modelo. Elige una voz del modelo en el selector.',
 };
 
 export function ttsErrorMessage(error: unknown): string {

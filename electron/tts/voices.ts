@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { isTtsLanguage, type TtsLanguage } from '@shared/ttsModels';
 import { MING_BUILTIN_VOICES, mingBuiltinInvocation } from '@shared/mingBuiltinVoices';
+import { PHONON_VOICES } from '@shared/phononVoices';
 import {
   TTS_VOICE_MAX_BYTES, TTS_VOICE_MAX_S, TTS_VOICE_MIN_S, builtinVoiceId, isBuiltinVoiceId, isUserVoiceId, readWavInfo,
   type TtsVoice, type TtsVoiceSaveInput,
@@ -58,6 +59,9 @@ export class TtsVoiceLibrary {
     }
     for (const voice of MING_BUILTIN_VOICES) {
       voices.push({ id: builtinVoiceId(voice.id), name: voice.id, origin: 'builtin', language: voice.language, readOnly: true });
+    }
+    for (const voice of PHONON_VOICES) {
+      voices.push({ id: `phonon:${voice.id}`, name: voice.name, origin: 'phonon', language: voice.language, locale: voice.locale, gender: voice.gender, description: voice.description, attribution: 'Gradium · Apache-2.0', readOnly: true });
     }
     return voices;
   }

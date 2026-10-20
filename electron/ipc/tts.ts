@@ -19,9 +19,11 @@ export function registerTtsIpc({ h, getWindow }: IpcContext): void {
   const trusted = (event: Electron.IpcMainInvokeEvent) => assertTrustedNodusMainFrame(event, getWindow());
 
   h('tts:status', async (event) => { trusted(event); return service.status(); });
-  h('tts:runtime:install', async (event) => { trusted(event); return service.installRuntime(); });
-  h('tts:runtime:cancel', async (event) => { trusted(event); service.installer.cancel(); });
-  h('tts:runtime:remove', async (event) => { trusted(event); return service.removeRuntime(); });
+  h('tts:runtime:install', async (event, engine?: string) => { trusted(event); return service.installRuntime(engine === 'phonon' ? 'phonon' : 'ming'); });
+  h('tts:runtime:cancel', async (event) => { trusted(event); service.installer.cancel(); service.phononInstaller.cancel(); });
+  h('tts:runtime:remove', async (event, engine?: string) => { trusted(event); return service.removeRuntime(engine === 'phonon' ? 'phonon' : 'ming'); });
+  h('tts:hfToken:set', async (event, token: string) => { trusted(event); return service.setHuggingFaceToken(String(token ?? '')); });
+  h('tts:hfToken:status', async (event) => { trusted(event); return service.hasHuggingFaceToken(); });
   h('tts:model:download', async (event, modelId: string) => { trusted(event); return service.downloadModel(String(modelId)); });
   h('tts:model:cancel', async (event, modelId: string) => { trusted(event); service.models.cancel(String(modelId)); });
   h('tts:model:delete', async (event, modelId: string) => { trusted(event); return service.deleteModel(String(modelId)); });

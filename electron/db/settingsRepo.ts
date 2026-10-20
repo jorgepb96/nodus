@@ -161,6 +161,8 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   audioSpeed: 1,
   ttsModelId: '',
   ttsVoiceId: 'cc0:es-dave',
+  ttsPhononVoiceId: 'phonon:b6FvJAiokjdqIti4',
+  ttsAcceptedLicenses: [],
   ttsLanguage: 'auto',
   ttsStreaming: true,
   ttsIdleUnloadMin: 5,
@@ -415,6 +417,8 @@ export function getSettings(): AppSettings {
   merged.ttsVoiceId = typeof merged.ttsVoiceId === 'string' && /^(user|cc0|ming):.{1,120}$/.test(merged.ttsVoiceId) ? merged.ttsVoiceId : 'cc0:es-dave';
   merged.ttsLanguage = merged.ttsLanguage === 'auto' || isTtsLanguage(merged.ttsLanguage) ? merged.ttsLanguage : 'auto';
   merged.ttsStreaming = merged.ttsStreaming !== false;
+  merged.ttsPhononVoiceId = typeof merged.ttsPhononVoiceId === 'string' && merged.ttsPhononVoiceId.startsWith('phonon:') ? merged.ttsPhononVoiceId : DEFAULTS.ttsPhononVoiceId;
+  merged.ttsAcceptedLicenses = Array.isArray(merged.ttsAcceptedLicenses) ? merged.ttsAcceptedLicenses.filter((id): id is string => TTS_MODELS.some((model) => model.id === id && model.nonCommercial)) : [];
   merged.ttsIdleUnloadMin = Math.max(1, Math.min(120, Math.round(Number(merged.ttsIdleUnloadMin) || 5)));
   merged.ttsRetention = sanitizeTtsRetention(merged.ttsRetention);
   // The browser connector stores one canonical extension origin. Treat malformed or

@@ -280,12 +280,16 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
         </select>}
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
           <VoicePicker options={voiceOptions} value={selectedVoiceId} selectedName={selectedVoiceName} onSelect={chooseVoice} disabled={!settings || !voiceOptions.length} />
-          <select className="input h-8 min-w-0 py-0 text-xs" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">
-            <option value="auto">{t('Auto')}</option>
-            {TTS_LANGUAGES.filter((entry) => phononModel
-              ? (PHONON_LANGUAGES as readonly string[]).includes(entry.code)
-              : !model || model.languages.includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
-          </select>
+          <label className="voice-picker-language" title={t('Idioma')}>
+            <Icon name="globe" size={13} />
+            <select className="voice-picker-language-select" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">
+              <option value="auto">{t('Auto')}</option>
+              {TTS_LANGUAGES.filter((entry) => phononModel
+                ? (PHONON_LANGUAGES as readonly string[]).includes(entry.code)
+                : !model || model.languages.includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+            </select>
+            <Icon name="chevronDown" size={12} />
+          </label>
         </div>
         <button className="justify-self-start text-[11px] text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>
           <Icon name="microphone" size={10} /> {t('Grabar o subir una voz…')}

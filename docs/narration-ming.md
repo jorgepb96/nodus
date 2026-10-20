@@ -21,10 +21,12 @@ opens the same Listen balloon and starts the saved clip or generation on the fir
 the per-answer icon still opens the balloon without starting.
 
 The balloon's voice selector is a styled list, not a native select: it has a search box and
-model/language filters. It lists the voices of every platform-supported checkpoint and
-selecting one carries the checkpoint that speaks its language (Phonon's per-language model
-first, otherwise its multilingual one; Kokoro has one checkpoint for both languages), so
-choosing a voice can switch the model.
+model/language filters that accept one or several choices (Ming, Phonon, Kokoro; any
+combination of languages). The narration language select uses the same styled surface. The
+picker lists the voices of every platform-supported checkpoint and selecting one carries
+the checkpoint that speaks its language (Phonon's per-language model first, otherwise its
+multilingual one; Kokoro has one checkpoint for both languages), so choosing a voice can
+switch the model.
 
 ## Architecture
 

@@ -29,8 +29,9 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [engine, setEngine] = useState<'all' | 'ming' | 'phonon' | 'kokoro'>('all');
-  const [language, setLanguage] = useState<'all' | TtsLanguage>('all');
+  const [engineFilter, setEngineFilter] = useState<Array<'ming' | 'phonon' | 'kokoro'>>([]);
+  const [languageFilter, setLanguageFilter] = useState<TtsLanguage[]>([]);
+  const [openFilter, setOpenFilter] = useState<'engine' | 'language' | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const popup = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
@@ -50,8 +51,8 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
   const filtered = useMemo(() => {
     const needle = normalize(query.trim());
     return options.filter((option) => {
-      if (engine !== 'all' && option.engine !== engine) return false;
-      if (language !== 'all' && option.voice.language !== language) return false;
+      if (engineFilter.length && !engineFilter.includes(option.engine)) return false;
+      if (languageFilter.length && !languageFilter.includes(option.voice.language)) return false;
       if (!needle) return true;
       const languageLabel = TTS_LANGUAGES.find((entry) => entry.code === option.voice.language)?.label ?? '';
       return normalize([option.voice.name, option.voice.locale ?? '', option.voice.description ?? '', languageLabel].join(' ')).includes(needle);
@@ -60,13 +61,25 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
       return order[a.engine] - order[b.engine]
         || a.voice.name.localeCompare(b.voice.name, undefined, { sensitivity: 'base', numeric: true });
     });
-  }, [options, engine, language, query]);
+  }, [options, engineFilter, languageFilter, query]);
 
   const groups = useMemo(() => {
     const byEngine = new Map<'ming' | 'phonon' | 'kokoro', VoicePickerOption[]>();
     for (const option of filtered) byEngine.set(option.engine, [...(byEngine.get(option.engine) ?? []), option]);
     return [...byEngine.entries()];
   }, [filtered]);
+
+  const engineSummary = engineFilter.length === 0
+    ? t('Todos')
+    : engineFilter.length === 1
+      ? engines.find(([id]) => id === engineFilter[0])?.[1] ?? t('Todos')
+      : `${engines.find(([id]) => id === engineFilter[0])?.[1] ?? ''} +${engineFilter.length - 1}`;
+  const languageSummary = languageFilter.length === 0
+    ? t('Todos')
+    : languageFilter.length === 1
+      ? languages.find((entry) => entry.code === languageFilter[0])?.label ?? t('Todos')
+      : `${languages.find((entry) => entry.code === languageFilter[0])?.label ?? ''} +${languageFilter.length - 1}`;
+  const toggle = <T,>(list: T[], value: T) => list.includes(value) ? list.filter((entry) => entry !== value) : [...list, value];
 
   const close = (restoreFocus = true) => {
     setOpen(false);
@@ -130,10 +143,11 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
 
   return <div className="voice-picker" onKeyDown={(event) => {
     if (event.key === 'Escape' && open) {
-      // The header balloon closes on a handled Escape too; keep the picker layer first.
+      // First close the filter panel, then the picker; never the header balloon.
       event.preventDefault();
       event.stopPropagation();
-      close();
+      if (openFilter) setOpenFilter(null);
+      else close();
     }
   }}>
     <button
@@ -179,23 +193,30 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
         />
       </label>
       <div className="voice-picker-filters">
-        <label className="voice-picker-filter">
-          <span>{t('Modelo')}</span>
-          <select aria-label={t('Modelo')} value={engine} onChange={(event) => setEngine(event.target.value as typeof engine)} data-testid="listen-voice-filter-model">
-            <option value="all">{t('Todos')}</option>
-            {engines.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
-        </label>
-        <label className="voice-picker-filter">
-          <span>{t('Idioma')}</span>
-          <select aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as typeof language)} data-testid="listen-voice-filter-language">
-            <option value="all">{t('Todos')}</option>
-            {languages.map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
-          </select>
-        </label>
-        {(engine !== 'all' || language !== 'all' || query) && <button type="button" className="voice-picker-clear" onClick={() => { setEngine('all'); setLanguage('all'); setQuery(''); }} title={t('Limpiar')} aria-label={t('Limpiar')}><Icon name="x" size={12} /></button>}
+        <div className="voice-picker-filter">
+          <span className="voice-picker-filter-label">{t('Modelo')}</span>
+          <button type="button" className={`voice-picker-filter-trigger ${openFilter === 'engine' ? 'is-open' : ''}`} aria-label={t('Modelo')} aria-haspopup="listbox" aria-expanded={openFilter === 'engine'} data-testid="listen-voice-filter-model" onClick={() => setOpenFilter((value) => value === 'engine' ? null : 'engine')}>
+            <span>{engineSummary}</span><Icon name="chevronDown" size={12} />
+          </button>
+        </div>
+        <div className="voice-picker-filter">
+          <span className="voice-picker-filter-label">{t('Idioma')}</span>
+          <button type="button" className={`voice-picker-filter-trigger ${openFilter === 'language' ? 'is-open' : ''}`} aria-label={t('Idioma')} aria-haspopup="listbox" aria-expanded={openFilter === 'language'} data-testid="listen-voice-filter-language" onClick={() => setOpenFilter((value) => value === 'language' ? null : 'language')}>
+            <span>{languageSummary}</span><Icon name="chevronDown" size={12} />
+          </button>
+        </div>
+        {(engineFilter.length > 0 || languageFilter.length > 0 || query) && <button type="button" className="voice-picker-clear" onClick={() => { setEngineFilter([]); setLanguageFilter([]); setQuery(''); setOpenFilter(null); }} title={t('Limpiar')} aria-label={t('Limpiar')}><Icon name="x" size={12} /></button>}
       </div>
-      <div className="voice-picker-list" id={listId} role="listbox" aria-label={t('Todas las voces')}>
+      {openFilter === 'engine' || openFilter === 'language' ? <div className="voice-picker-choice-panel" role="listbox" aria-multiselectable="true" aria-label={openFilter === 'engine' ? t('Modelo') : t('Idioma')} data-testid="listen-voice-filter-panel">
+        <div className="voice-picker-choice-head"><strong>{openFilter === 'engine' ? t('Modelo') : t('Idioma')}</strong><button type="button" className="voice-picker-choice-close" aria-label={t('Cerrar')} title={t('Cerrar')} onClick={() => setOpenFilter(null)}><Icon name="x" size={12} /></button></div>
+        <label className="voice-picker-choice">
+          <input type="checkbox" checked={(openFilter === 'engine' ? engineFilter : languageFilter).length === 0} onChange={() => { if (openFilter === 'engine') setEngineFilter([]); else setLanguageFilter([]); }} />
+          <span>{t('Todos')}</span>
+        </label>
+        {openFilter === 'engine'
+          ? engines.map(([id, name]) => <label key={id} className="voice-picker-choice"><input type="checkbox" checked={engineFilter.includes(id)} onChange={() => setEngineFilter((current) => toggle(current, id))} /><span>{name}</span></label>)
+          : languages.map((entry) => <label key={entry.code} className="voice-picker-choice"><input type="checkbox" checked={languageFilter.includes(entry.code)} onChange={() => setLanguageFilter((current) => toggle(current, entry.code))} /><span>{entry.label}</span></label>)}
+      </div> : <div className="voice-picker-list" id={listId} role="listbox" aria-label={t('Todas las voces')}>
         {groups.map(([group, entries]) => <div key={group} className="voice-picker-group">
           <div className="voice-picker-group-label">{group === 'ming' ? 'Ming' : group === 'phonon' ? 'Phonon' : 'Kokoro'}</div>
           {entries.map((option) => {
@@ -220,7 +241,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
           })}
         </div>)}
         {!filtered.length && <p className="voice-picker-empty">{t('Ninguna voz coincide con los filtros.')}</p>}
-      </div>
+      </div>}
     </div>}
   </div>;
 }

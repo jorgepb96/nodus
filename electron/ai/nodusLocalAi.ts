@@ -193,7 +193,7 @@ function nvidiaSmiPath(): string | null {
  * Vulkan build, so the diagnostics can answer "was CUDA detected?" without ever
  * claiming CUDA is being used. Best-effort and cached; never fatal.
  */
-async function probeNvidia(): Promise<{ detected: boolean; driver: string | null } | null> {
+export async function probeNvidia(): Promise<{ detected: boolean; driver: string | null } | null> {
   const executable = nvidiaSmiPath();
   if (!executable) return null;
   try {

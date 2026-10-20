@@ -411,6 +411,17 @@
           "requirements.lock",
           "requirements.txt"
         ]
+      },
+      {
+        "from": "runtime/ming-tts",
+        "to": "ming-tts",
+        "filter": [
+          "*.py",
+          "*.lock",
+          "LICENSE*",
+          "ming_official/**/*",
+          "!**/__pycache__/**"
+        ]
       }
     ],
     "files": [

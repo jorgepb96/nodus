@@ -163,7 +163,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 204;
+export const SCHEMA_VERSION = 205;
 
 // What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
 // (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
@@ -9640,6 +9640,35 @@ export const migrations: Migration[] = [
   ` },
   { version: 203, up: EMBEDDING_INDEX_SQL, after: migrateEmbeddingIndexes },
   { version: 204, up: EMBEDDING_RUNS_SQL },
+  { version: 205, up: /* sql */ `
+    -- Ming narration: research-chat messages and dictionary entries can be narrated too, and
+    -- a clip can be kept (pinned) so automatic retention never removes it. SQLite cannot
+    -- widen a CHECK constraint in place, so the table is rebuilt. Existing clips keep their
+    -- provider label (piper/kokoro/hume) and stay playable: they are plain WAV files.
+    CREATE TABLE audio_clips_v205 (
+      id            TEXT PRIMARY KEY,
+      entity_kind   TEXT NOT NULL CHECK (entity_kind IN ('immersion', 'deep_research', 'chat_message', 'dictionary_entry')),
+      entity_id     TEXT NOT NULL,
+      segment_index INTEGER NOT NULL,
+      segment_label TEXT NOT NULL DEFAULT '',
+      provider      TEXT NOT NULL DEFAULT 'ming',
+      voice         TEXT NOT NULL DEFAULT '',
+      language      TEXT NOT NULL DEFAULT '',
+      file_name     TEXT NOT NULL,
+      bytes         INTEGER NOT NULL DEFAULT 0,
+      duration_sec  REAL NOT NULL DEFAULT 0,
+      sample_rate   INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT NOT NULL,
+      model_id      TEXT NOT NULL DEFAULT '',
+      pinned        INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO audio_clips_v205 (id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at)
+      SELECT id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at FROM audio_clips;
+    DROP TABLE audio_clips;
+    ALTER TABLE audio_clips_v205 RENAME TO audio_clips;
+    CREATE INDEX idx_audio_clips_entity ON audio_clips(entity_kind, entity_id, segment_index);
+    CREATE INDEX idx_audio_clips_retention ON audio_clips(entity_kind, pinned, created_at);
+  ` },
 ];
 
 /**

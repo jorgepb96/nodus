@@ -141,6 +141,12 @@ export const SHARED_MODEL_KEYS = [
   'audioProvider',
   'audioVoice',
   'audioSpeed',
+  'ttsModelId',
+  'ttsVoiceId',
+  'ttsLanguage',
+  'ttsStreaming',
+  'ttsIdleUnloadMin',
+  'ttsRetention',
 ] as const;
 export type SharedModelKey = (typeof SHARED_MODEL_KEYS)[number];
 

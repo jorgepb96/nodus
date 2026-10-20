@@ -70,6 +70,11 @@ import { prefetchAgentRuntimesInUse } from './ai/agentRuntime';
 import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscription';
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
 import { killSearxngSync } from './websearch/searxngService';
+import { registerAudioProtocol, registerAudioSchemePrivileges } from './tts/audioProtocol';
+import { killTtsSync, ttsService } from './tts/service';
+import { scheduleNarrationRetention } from './tts/retention';
+import { audioClipPath } from './audio/audioService';
+import { ttsLiveDir } from './tts/paths';
 import { ensureDatabaseDeepResearchLane } from './ai/databaseDeepResearchLane';
 import { installProcessSafetyNet } from './util/processSafety';
 import { restoreAppWindows } from './windowLifecycle';
@@ -118,6 +123,7 @@ if (!process.env.NODUS_USERDATA && !app.isDefaultProtocolClient('nodus')) {
 registerImageSchemePrivileges();
 registerArchiveSchemePrivileges();
 registerLibrarySchemePrivileges();
+registerAudioSchemePrivileges();
 registerCapabilitySchemePrivileges();
 
 if (process.platform === 'linux') {
@@ -1081,6 +1087,13 @@ app.whenReady().then(async () => {
   registerImageProtocol();
   registerArchiveProtocol();
   registerLibraryProtocol();
+  registerAudioProtocol({
+    liveDir: ttsLiveDir,
+    clipPath: (clipId) => audioClipPath(clipId),
+    voicePath: (voiceId) => ttsService().voices.referencePath(voiceId),
+  });
+  // Narration retention: unpinned clips older than each surface's rule go, in small batches.
+  scheduleNarrationRetention(() => ttsService().sweepNow());
   reconcileAuthorLayerOnce(); // one-time: collapse duplicate author nodes onto Zotero identity
   reconcileAuthorRolesOnce(); // one-time: stop crediting volume editors as authors
   repairGraphIntegrityOnce(); // one-time: drop links to deleted themes, put edge-only ideas back to sleep
@@ -1288,6 +1301,8 @@ app.on('window-all-closed', () => {
     killNodusLocalServerSync();
   // Research Chat's search server: stdin closes too, so it would also exit on its own.
   killSearxngSync();
+  // Ming narration sidecar: its stdin closes too; the process group is killed regardless.
+  killTtsSync();
     documentIndexQueue.stop();
     closeDb();
     app.quit();
@@ -1350,6 +1365,8 @@ app.on('before-quit', event => {
   killNodusLocalServerSync();
   // Research Chat's search server: stdin closes too, so it would also exit on its own.
   killSearxngSync();
+  // Ming narration sidecar: its stdin closes too; the process group is killed regardless.
+  killTtsSync();
   destroyBrowserSubsystem();
   closeGlobalLibraryRuntime();
   documentIndexQueue.stop();
@@ -1372,6 +1389,8 @@ updateAwareApp.on('before-quit-for-update', () => {
   killNodusLocalServerSync();
   // Research Chat's search server: stdin closes too, so it would also exit on its own.
   killSearxngSync();
+  // Ming narration sidecar: its stdin closes too; the process group is killed regardless.
+  killTtsSync();
   if (updateCheckTimer) clearInterval(updateCheckTimer);
   if (announcementsFirstTimer) clearTimeout(announcementsFirstTimer);
   if (autoBackupTimer) clearInterval(autoBackupTimer);

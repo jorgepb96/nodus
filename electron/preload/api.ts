@@ -34,6 +34,7 @@ import { reactionIndexApi } from './reactionIndex';
 import { compassApi } from './compass';
 import { logsApi } from './logs';
 import { driftApi } from './drift';
+import { ttsApi } from './tts';
 
 // Tracks the Nodi chat stream currently in flight so `cancelNodiChat` can abort
 // it without the renderer having to juggle request ids. Only one chat stream
@@ -86,6 +87,7 @@ export const nodusApi: NodusApi = {
   ...browserApi,
   ...logsApi,
   ...driftApi,
+  ...ttsApi,
   ...radarApi,
   ...reactionIndexApi,
   ...compassApi,

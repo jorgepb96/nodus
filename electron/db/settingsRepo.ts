@@ -13,6 +13,7 @@ import {
   normalizeEmbeddingProvider,
 } from '@shared/providers';
 import { isOpenAiStudySttModel } from '@shared/sttModels';
+import { DEFAULT_TTS_RETENTION, TTS_MODELS, isTtsLanguage, sanitizeTtsRetention } from '@shared/ttsModels';
 import { NODI_ORB_DEFAULT_COLOR } from '@shared/nodiOrb';
 import { NODI_DEFAULT_SCALE, normalizeNodiScale } from '@shared/nodiSize';
 import { lockedApiKeyProviders, providerKeyMap } from '../secrets/secretStore';
@@ -156,6 +157,12 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   audioProvider: 'piper',
   audioVoice: '',
   audioSpeed: 1,
+  ttsModelId: '',
+  ttsVoiceId: 'cc0:es-dave',
+  ttsLanguage: 'auto',
+  ttsStreaming: true,
+  ttsIdleUnloadMin: 5,
+  ttsRetention: DEFAULT_TTS_RETENTION,
   syncMode: 'manual',
   readTag: 'leído',
   autoLightScan: false,
@@ -402,6 +409,12 @@ export function getSettings(): AppSettings {
     merged.aiConcurrencyVersion = 1;
   }
   merged.concurrency = Math.max(1, Math.min(8, Math.trunc(Number(merged.concurrency) || 1)));
+  merged.ttsModelId = TTS_MODELS.some((model) => model.id === merged.ttsModelId) ? merged.ttsModelId : '';
+  merged.ttsVoiceId = typeof merged.ttsVoiceId === 'string' && /^(user|cc0|ming):.{1,120}$/.test(merged.ttsVoiceId) ? merged.ttsVoiceId : 'cc0:es-dave';
+  merged.ttsLanguage = merged.ttsLanguage === 'auto' || isTtsLanguage(merged.ttsLanguage) ? merged.ttsLanguage : 'auto';
+  merged.ttsStreaming = merged.ttsStreaming !== false;
+  merged.ttsIdleUnloadMin = Math.max(1, Math.min(120, Math.round(Number(merged.ttsIdleUnloadMin) || 5)));
+  merged.ttsRetention = sanitizeTtsRetention(merged.ttsRetention);
   // The browser connector stores one canonical extension origin. Treat malformed or
   // hand-edited values as unpaired so they can never authorize a capability endpoint.
   const browserOrigin = typeof merged.browserConnectorOrigin === 'string'
@@ -645,6 +658,7 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   if ('academicLearningProgress' in patch) patch = { ...patch, academicLearningProgress: sanitizeLearningProgress(patch.academicLearningProgress) };
   if ('academicPracticeSession' in patch) patch = { ...patch, academicPracticeSession: sanitizePracticeSession(patch.academicPracticeSession) };
   if (patch.headerActionVisibility !== undefined) patch = { ...patch, headerActionVisibility: sanitizeHeaderActionVisibility(patch.headerActionVisibility) };
+  if (patch.ttsRetention !== undefined) patch = { ...patch, ttsRetention: sanitizeTtsRetention(patch.ttsRetention) };
   if (patch.academicInterfaceProfile !== undefined && !['simple', 'intermediate', 'advanced', 'custom'].includes(patch.academicInterfaceProfile)) throw new Error('Invalid academic interface profile.');
   const previous = getSettings();
   if (patch.embeddingProvider !== undefined || patch.embeddingModel !== undefined) {

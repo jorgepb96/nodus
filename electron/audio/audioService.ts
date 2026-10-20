@@ -144,10 +144,26 @@ export interface SaveClipInput {
 
 /** Persist one generated segment as a WAV file plus a metadata row, returning the clip. */
 export function saveClip(kind: AudioEntityKind, id: string, input: SaveClipInput): AudioClip {
-  const dir = audioDir();
-  const fileName = `${kind}_${id}_${String(input.segmentIndex).padStart(3, '0')}_${randomUUID().slice(0, 8)}.wav`;
+  const fileName = clipFileName(kind, id, input.segmentIndex);
   const buffer = Buffer.from(input.bytes);
-  fs.writeFileSync(path.join(dir, fileName), buffer);
+  fs.writeFileSync(path.join(audioDir(), fileName), buffer);
+  return recordClip(kind, id, input, fileName, buffer);
+}
+
+/** The same as `saveClip`, writing the file asynchronously: narration clips can be several MB. */
+export async function saveClipAsync(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput, 'bytes'> & { bytes: Buffer }): Promise<AudioClip> {
+  const fileName = clipFileName(kind, id, input.segmentIndex);
+  await fs.promises.writeFile(path.join(audioDir(), fileName), input.bytes);
+  return recordClip(kind, id, input, fileName, input.bytes);
+}
+
+function clipFileName(kind: AudioEntityKind, id: string, segmentIndex: number): string {
+  // Ids from chats and dictionaries are free-form; only the safe characters reach the file name.
+  const safeId = id.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'item';
+  return `${kind}_${safeId}_${String(segmentIndex).padStart(3, '0')}_${randomUUID().slice(0, 8)}.wav`;
+}
+
+function recordClip(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput, 'bytes'>, fileName: string, buffer: Buffer): AudioClip {
   const meta = parseWavMeta(buffer);
   const clip: AudioClip = {
     id: randomUUID(),

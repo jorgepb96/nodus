@@ -1,0 +1,99 @@
+// Pure pieces of the Ming narration engine, bundled from the real sources with esbuild:
+// the nodus-audio:// URL mapping (no path can escape its directory), WAV fragment
+// concatenation (header surgery only) and the retention sweep (pinned clips survive,
+// each surface follows its own rule, work is batched).
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const tmp = await mkdtemp(path.join(os.tmpdir(), 'nodus-tts-units-test-'));
+
+function wav(samples, sampleRate = 44100) {
+  const data = Buffer.alloc(samples.length * 2);
+  samples.forEach((value, i) => data.writeInt16LE(value, i * 2));
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0, 'ascii'); header.writeUInt32LE(36 + data.length, 4); header.write('WAVE', 8, 'ascii');
+  header.write('fmt ', 12, 'ascii'); header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20); header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(sampleRate, 24); header.writeUInt32LE(sampleRate * 2, 28); header.writeUInt16LE(2, 32); header.writeUInt16LE(16, 34);
+  header.write('data', 36, 'ascii'); header.writeUInt32LE(data.length, 40);
+  return Buffer.concat([header, data]);
+}
+
+try {
+  const entry = path.join(tmp, 'entry.ts');
+  await writeFile(entry, [
+    `export * from ${JSON.stringify(path.join(repoRoot, 'electron/tts/audioUrls.ts'))};`,
+    `export * from ${JSON.stringify(path.join(repoRoot, 'electron/tts/wavConcat.ts'))};`,
+    `export { sweepNarrationClips, SURFACE_KINDS } from ${JSON.stringify(path.join(repoRoot, 'electron/tts/retention.ts'))};`,
+    `export { readWavInfo } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsVoices.ts'))};`,
+    `export { sanitizeTtsRetention } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsModels.ts'))};`,
+  ].join('\n'));
+  const outfile = path.join(tmp, 'units.mjs');
+  await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent', alias: { '@shared': path.join(repoRoot, 'shared') } });
+  const u = await import(pathToFileURL(outfile).href);
+
+  // ── nodus-audio:// mapping ───────────────────────────────────────────────────
+  const live = path.join(tmp, 'live');
+  const resolvers = { liveDir: () => live, clipPath: (id) => (id === 'clip-1' ? '/vault/audio/a.wav' : null), voicePath: (id) => (id === 'user:x' ? '/voices/user_x/reference.wav' : null) };
+  const job = '0b4c4f1e-1111-2222-3333-444455556666';
+  assert.equal(u.resolveAudioUrl(u.liveFragmentUrl(job, '/anything/007.wav'), resolvers), path.join(live, job, '007.wav'));
+  assert.equal(u.resolveAudioUrl(u.clipAudioUrl('clip-1'), resolvers), '/vault/audio/a.wav');
+  assert.equal(u.resolveAudioUrl(u.voiceAudioUrl('user:x'), resolvers), '/voices/user_x/reference.wav');
+  for (const bad of [
+    `nodus-audio://live/${job}/../../etc/passwd`,
+    `nodus-audio://live/${job}/%2e%2e%2fsecret.wav`,
+    'nodus-audio://live/../007.wav',
+    `nodus-audio://live/${job}/007.mp3`,
+    'nodus-audio://clip/a/b',
+    'nodus-audio://other/x',
+    'https://example.com/x.wav',
+    'nodus-audio://clip/unknown',
+  ]) assert.equal(u.resolveAudioUrl(bad, resolvers), null, `refused: ${bad}`);
+
+  // ── WAV concatenation ─────────────────────────────────────────────────────────
+  await mkdir(path.join(tmp, 'frag'));
+  const a = path.join(tmp, 'frag/000.wav'); const b = path.join(tmp, 'frag/001.wav');
+  await writeFile(a, wav([1, 2, 3])); await writeFile(b, wav([4, 5]));
+  const joined = await u.concatWavFiles([a, b], 0);
+  const info = u.readWavInfo(new Uint8Array(joined));
+  assert.equal(info.sampleRate, 44100);
+  assert.equal(Math.round(info.durationS * 44100), 5, 'samples are concatenated');
+  assert.deepEqual([...Array(5)].map((_, i) => joined.readInt16LE(44 + i * 2)), [1, 2, 3, 4, 5]);
+  const gapped = await u.concatWavFiles([a, b], 1000);
+  assert.equal(Math.round(u.readWavInfo(new Uint8Array(gapped)).durationS * 44100), 5 + 44100, 'a pause is inserted between fragments');
+  const c = path.join(tmp, 'frag/002.wav');
+  await writeFile(c, wav([9], 24000));
+  await assert.rejects(u.concatWavFiles([a, c]), /TTS_FRAGMENT_FORMAT_MISMATCH/);
+  await writeFile(c, Buffer.from('not a wav at all, definitely not one'));
+  await assert.rejects(u.concatWavFiles([c]), /TTS_BAD_FRAGMENT/);
+
+  // ── Retention sweep ───────────────────────────────────────────────────────────
+  const now = Date.parse('2026-10-20T12:00:00Z');
+  const day = 86_400_000;
+  const clips = [
+    { id: 'chat-old', kind: 'chat_message', created: now - 3 * day, pinned: false },
+    { id: 'chat-new', kind: 'chat_message', created: now - 0.5 * day, pinned: false },
+    { id: 'dr-old', kind: 'deep_research', created: now - 10 * day, pinned: false },
+    { id: 'dr-old-kept', kind: 'deep_research', created: now - 30 * day, pinned: true },
+    { id: 'dict-old', kind: 'dictionary_entry', created: now - 100 * day, pinned: false },
+    { id: 'study-old', kind: 'study_document', created: now - 400 * day, pinned: false },
+    ...Array.from({ length: 250 }, (_, i) => ({ id: `imm-${i}`, kind: 'immersion', created: now - 8 * day - i, pinned: false })),
+  ];
+  const store = {
+    listExpired: (kind, cutoff, limit) => clips.filter((c) => c.kind === kind && !c.pinned && new Date(c.created).toISOString() < cutoff).slice(0, limit),
+    remove: (id) => { clips.splice(clips.findIndex((c) => c.id === id), 1); },
+  };
+  const settings = u.sanitizeTtsRetention({ enabled: true, days: 7, perSurface: { research_chat: { mode: 'days', days: 1 }, dictionary: { mode: 'off' } } });
+  const removed = await u.sweepNarrationClips(settings, store, now, 100);
+  const left = new Set(clips.map((c) => c.id));
+  assert.equal(removed, 252, 'chat-old, dr-old and all 250 immersion clips (in batches)');
+  for (const kept of ['chat-new', 'dr-old-kept', 'dict-old', 'study-old']) assert.ok(left.has(kept), `${kept} survives`);
+  assert.ok(!Object.values(u.SURFACE_KINDS).includes('study_document'), 'study clips are never swept');
+  console.log('tts engine unit tests passed');
+} finally {
+  await rm(tmp, { recursive: true, force: true });
+}

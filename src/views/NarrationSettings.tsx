@@ -6,6 +6,7 @@ import {
 } from '@shared/ttsModels';
 import {
   TTS_SAMPLE_PARAGRAPHS, TTS_VOICE_RECOMMENDED_MAX_S, TTS_VOICE_RECOMMENDED_MIN_S, TTS_VOICE_MIN_S, TTS_VOICE_MAX_S,
+  TTS_VOICE_MIN_TRANSCRIPT_CHARS, minimumVoiceTranscriptChars,
   type TtsVoice,
 } from '@shared/ttsVoices';
 import { t, tx } from '../i18n';
@@ -311,6 +312,8 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChan
 
   const paragraphs = TTS_SAMPLE_PARAGRAPHS[language];
   const paragraph = paragraphs[paragraphIndex % paragraphs.length];
+  const minimumTranscript = draft ? minimumVoiceTranscriptChars(draft.durationS) : TTS_VOICE_MIN_TRANSCRIPT_CHARS;
+  const transcriptTooShort = transcript.trim().length < minimumTranscript;
 
   const accept = async (blob: Blob, origin: 'recorded' | 'uploaded') => {
     setBusy('prepare');
@@ -397,6 +400,11 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChan
               {voice.attribution ? ` · ${voice.attribution}` : ''}
             </div>
             {voice.transcript && <p className="mt-0.5 line-clamp-2 text-[11px] text-neutral-500">«{voice.transcript}»</p>}
+            {voice.transcript && voice.durationS && voice.transcript.length < minimumVoiceTranscriptChars(voice.durationS) && (
+              <p className="mt-0.5 text-[10px] leading-4 text-amber-700 dark:text-amber-400">
+                {t('La transcripción es demasiado corta para el audio. Escribe exactamente lo que se dice en la grabación.')}
+              </p>
+            )}
           </>}
       </div>
       {!isEditing && <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
@@ -444,13 +452,16 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChan
           </span>
         </div>
         <input className="input h-8 text-xs" placeholder={t('Nombre de la voz')} value={name} onChange={(event) => setName(event.target.value)} />
-        <textarea className="input min-h-[4rem] text-xs" placeholder={t('Transcripción exacta de lo que se oye en la grabación')} value={transcript} onChange={(event) => setTranscript(event.target.value)} />
+        <textarea className="input min-h-[4rem] text-xs" placeholder={t('Transcripción exacta de lo que se oye en la grabación')} value={transcript} onChange={(event) => setTranscript(event.target.value)} aria-invalid={transcriptTooShort} />
+        {transcriptTooShort && <p className="text-[10px] leading-4 text-amber-700 dark:text-amber-400" data-testid="narration-voice-transcript-hint">
+          {t('La transcripción es demasiado corta para el audio. Escribe exactamente lo que se dice en la grabación.')} ({transcript.trim().length}/{minimumTranscript})
+        </p>}
         <label className="flex items-start gap-2 text-neutral-600 dark:text-neutral-400">
           <input type="checkbox" className="mt-0.5" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
           {t('Es mi voz o tengo permiso de su titular para usarla en una voz sintética.')}
         </label>
         <div className="flex gap-2">
-          <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!consent || !transcript.trim() || busy === 'save'} onClick={() => void save()}>{t('Guardar voz')}</button>
+          <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!consent || !transcript.trim() || transcriptTooShort || busy === 'save'} onClick={() => void save()}>{t('Guardar voz')}</button>
           <button className="btn btn-ghost h-7 px-2 text-[11px]" onClick={() => { URL.revokeObjectURL(draft.previewUrl); setDraft(null); }}>{t('Descartar')}</button>
         </div>
       </div>}

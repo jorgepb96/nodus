@@ -29,7 +29,8 @@ try {
     `export * from ${JSON.stringify(path.join(repoRoot, 'electron/tts/audioUrls.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'electron/tts/wavConcat.ts'))};`,
     `export { sweepNarrationClips, SURFACE_KINDS } from ${JSON.stringify(path.join(repoRoot, 'electron/tts/retention.ts'))};`,
-    `export { readWavInfo } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsVoices.ts'))};`,
+    `export { readWavInfo, minimumVoiceTranscriptChars } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsVoices.ts'))};`,
+    `export { TtsVoiceLibrary } from ${JSON.stringify(path.join(repoRoot, 'electron/tts/voices.ts'))};`,
     `export { sanitizeTtsRetention } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsModels.ts'))};`,
     `export { liveStartThreshold } from ${JSON.stringify(path.join(repoRoot, 'src/components/AudioPlayer.tsx'))};`,
     `export { mergeTtsModelStatus } from ${JSON.stringify(path.join(repoRoot, 'src/lib/narration/ttsClient.ts'))};`,
@@ -72,6 +73,23 @@ try {
   assert.equal(merged.models[1], before.models[1], 'other models are untouched');
   assert.equal(merged.runtime, before.runtime, 'engine status is preserved');
   assert.equal(u.mergeTtsModelStatus(null, progress), null, 'no cached status yet, nothing to update');
+
+  // ── Reference transcript length ─────────────────────────────────────────────
+  // A file name such as "Example" is not a transcript. A 12.48 s clip needs at least
+  // 38 characters; the old validation accepted any non-empty string and the prompt then
+  // mismatched the reference audio.
+  assert.equal(u.minimumVoiceTranscriptChars(3), 12);
+  assert.equal(u.minimumVoiceTranscriptChars(12.48), 38);
+  assert.equal(u.minimumVoiceTranscriptChars(30), 90);
+  assert.equal(u.minimumVoiceTranscriptChars(Number.NaN), 12);
+  const voiceLibrary = new u.TtsVoiceLibrary(path.join(tmp, 'voice-library'), path.join(tmp, 'bundled-voices'));
+  const voiceWav = new Uint8Array(wav(new Array(4 * 44100).fill(0)));
+  const voice = { name: 'Example', language: 'es', origin: 'uploaded', wav: voiceWav, consent: true };
+  await assert.rejects(() => voiceLibrary.save({ ...voice, transcript: 'Example' }), /TTS_VOICE_TRANSCRIPT_TOO_SHORT/, 'a name is not a transcript');
+  const savedVoice = await voiceLibrary.save({ ...voice, transcript: 'En este capítulo analizaremos la hipótesis principal del estudio.' });
+  await assert.rejects(() => voiceLibrary.update(savedVoice.id, { transcript: 'Example' }), /TTS_VOICE_TRANSCRIPT_TOO_SHORT/, 'editing cannot erase the transcript either');
+  await assert.rejects(() => voiceLibrary.update(savedVoice.id, { transcript: '   ' }), /TTS_VOICE_INVALID/, 'an empty edit is refused instead of silently ignored');
+  assert.equal((await voiceLibrary.list()).find((entry) => entry.id === savedVoice.id)?.transcript, 'En este capítulo analizaremos la hipótesis principal del estudio.');
 
   // ── nodus-audio:// mapping ───────────────────────────────────────────────────
   const live = path.join(tmp, 'live');

@@ -44,6 +44,18 @@ export const TTS_VOICE_RECOMMENDED_MIN_S = 6;
 export const TTS_VOICE_RECOMMENDED_MAX_S = 15;
 export const TTS_VOICE_MAX_S = 30;
 export const TTS_VOICE_MAX_BYTES = 12 * 1024 * 1024;
+/** Even a 3 s reference needs a real sentence, not a file name or a word. */
+export const TTS_VOICE_MIN_TRANSCRIPT_CHARS = 12;
+
+/**
+ * How much exact transcript a reference clip needs. Speech runs at roughly 3–5
+ * characters per second in the languages Nodus narrates; three is deliberately
+ * conservative, and the floor still rejects labels such as the file name.
+ */
+export function minimumVoiceTranscriptChars(durationS: number): number {
+  const seconds = Number.isFinite(durationS) && durationS > 0 ? durationS : TTS_VOICE_MIN_S;
+  return Math.max(TTS_VOICE_MIN_TRANSCRIPT_CHARS, Math.ceil(seconds * 3));
+}
 
 export const isUserVoiceId = (id: string) => id.startsWith('user:');
 export const isBuiltinVoiceId = (id: string) => id.startsWith('ming:');

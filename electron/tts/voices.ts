@@ -6,7 +6,7 @@ import { isTtsLanguage, type TtsLanguage } from '@shared/ttsModels';
 import { MING_BUILTIN_VOICES, mingBuiltinInvocation } from '@shared/mingBuiltinVoices';
 import { PHONON_VOICES } from '@shared/phononVoices';
 import {
-  TTS_VOICE_MAX_BYTES, TTS_VOICE_MAX_S, TTS_VOICE_MIN_S, builtinVoiceId, isBuiltinVoiceId, isUserVoiceId, readWavInfo,
+  TTS_VOICE_MAX_BYTES, TTS_VOICE_MAX_S, TTS_VOICE_MIN_S, builtinVoiceId, isBuiltinVoiceId, isUserVoiceId, minimumVoiceTranscriptChars, readWavInfo,
   type TtsVoice, type TtsVoiceSaveInput,
 } from '@shared/ttsVoices';
 import type { TtsVoiceRef } from './host';
@@ -77,6 +77,7 @@ export class TtsVoiceLibrary {
     const info = readWavInfo(bytes);
     if (!info || info.channels !== 1 || info.bitsPerSample !== 16) throw new Error('TTS_VOICE_BAD_AUDIO');
     if (info.durationS < TTS_VOICE_MIN_S || info.durationS > TTS_VOICE_MAX_S) throw new Error('TTS_VOICE_BAD_LENGTH');
+    if (transcript.length < minimumVoiceTranscriptChars(info.durationS)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
     const id = `user:${randomUUID()}`;
     const dir = this.dir(id);
     const staging = `${dir}.tmp-${randomUUID()}`;
@@ -99,7 +100,12 @@ export class TtsVoiceLibrary {
     const meta = JSON.parse(await fs.readFile(file, 'utf8')) as StoredMeta;
     const next: StoredMeta = { ...meta };
     if (typeof patch.name === 'string' && patch.name.trim()) next.name = patch.name.trim().slice(0, 80);
-    if (typeof patch.transcript === 'string' && patch.transcript.trim()) next.transcript = patch.transcript.trim().slice(0, 2000);
+    if (typeof patch.transcript === 'string') {
+      const transcript = patch.transcript.trim().slice(0, 2000);
+      if (!transcript) throw new Error('TTS_VOICE_INVALID');
+      if (transcript.length < minimumVoiceTranscriptChars(meta.durationS)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
+      next.transcript = transcript;
+    }
     if (isTtsLanguage(patch.language)) next.language = patch.language;
     await fs.writeFile(`${file}.tmp`, JSON.stringify(next), { mode: 0o600 });
     await fs.rename(`${file}.tmp`, file);

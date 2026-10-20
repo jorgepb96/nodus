@@ -24,6 +24,7 @@ const MESSAGES: Record<string, string> = {
   TTS_VOICE_NOT_FOUND: 'La voz elegida ya no existe. Elige otra en Ajustes.',
   TTS_VOICE_CONSENT_REQUIRED: 'Confirma que la voz es tuya o que tienes permiso para usarla.',
   TTS_VOICE_INVALID: 'Faltan el nombre o la transcripción de la voz.',
+  TTS_VOICE_TRANSCRIPT_TOO_SHORT: 'La transcripción es demasiado corta para el audio. Escribe exactamente lo que se dice en la grabación.',
   TTS_VOICE_TOO_LARGE: 'La grabación es demasiado grande.',
   TTS_VOICE_BAD_AUDIO: 'La grabación no tiene un formato válido.',
   TTS_VOICE_BAD_LENGTH: 'La grabación debe durar entre 3 y 30 segundos.',

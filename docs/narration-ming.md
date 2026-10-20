@@ -67,7 +67,10 @@ SHA-256) into `userData/local-tts/models/<id>/`; `ready.json` marks a verified d
 
 - `user:<uuid>` — recorded (through `useLocalAudioRecorder`, after the microphone privacy
   notice) or uploaded; prepared in the renderer to mono 44.1 kHz, trimmed and normalized;
-  saving requires the consent checkbox.
+  saving requires the consent checkbox. Both paths need the exact transcript: save and
+  update reject one shorter than three characters per second of audio (minimum 12), because
+  Ming conditions the cloned prompt on that text and a file name produces stuttering and
+  partial audio.
 - `cc0:es-dave` — a Castilian clip from OHF-Voice/voice-datasets (CC0), bundled in
   `electron/assets/tts/voices/`.
 - `ming:<name>` — Ming's built-in voices (`shared/mingBuiltinVoices.ts`), without the

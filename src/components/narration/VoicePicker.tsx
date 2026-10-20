@@ -55,7 +55,11 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
       if (!needle) return true;
       const languageLabel = TTS_LANGUAGES.find((entry) => entry.code === option.voice.language)?.label ?? '';
       return normalize([option.voice.name, option.voice.locale ?? '', option.voice.description ?? '', languageLabel].join(' ')).includes(needle);
-    }).sort((a, b) => a.engine === b.engine ? a.voice.name.localeCompare(b.voice.name, undefined, { sensitivity: 'base', numeric: true }) : a.engine === 'ming' ? -1 : 1);
+    }).sort((a, b) => {
+      const order = { ming: 0, phonon: 1, kokoro: 2 } as const;
+      return order[a.engine] - order[b.engine]
+        || a.voice.name.localeCompare(b.voice.name, undefined, { sensitivity: 'base', numeric: true });
+    });
   }, [options, engine, language, query]);
 
   const groups = useMemo(() => {

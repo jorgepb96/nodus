@@ -19,6 +19,7 @@ test('the voice picker has a search box and model/language filters', () => {
   assert.match(picker, /option\.engine !== engine/, 'the model filter narrows the list');
   assert.match(picker, /option\.voice\.language !== language/, 'the language filter narrows the list');
   assert.match(picker, /normalize\(\[option\.voice\.name/, 'search covers name and metadata');
+  assert.match(picker, /order = \{ ming: 0, phonon: 1, kokoro: 2 \}/, 'model groups keep a stable order');
   assert.match(picker, /role="option"/);
   assert.match(picker, /aria-selected=\{active\}/);
   assert.match(picker, /showPopover\(\)/, 'the list escapes the balloon scroll container');

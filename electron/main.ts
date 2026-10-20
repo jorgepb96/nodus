@@ -78,6 +78,7 @@ import { ttsLiveDir } from './tts/paths';
 import { ensureDatabaseDeepResearchLane } from './ai/databaseDeepResearchLane';
 import { installProcessSafetyNet } from './util/processSafety';
 import { restoreAppWindows } from './windowLifecycle';
+import { startEventLoopBlockWatch, instrumentIntervalCallbacks } from './perf';
 import { registerImageProtocol, registerImageSchemePrivileges } from './imageProtocol';
 import { registerArchiveProtocol, registerArchiveSchemePrivileges } from './archiveProtocol';
 import { registerLibraryProtocol, registerLibrarySchemePrivileges } from './libraryProtocol';
@@ -1008,6 +1009,11 @@ app.on('second-instance', (_event, argv) => {
 app.whenReady().then(async () => {
   // Losing the lock queues a quit; do not open the database or a window.
   if (!hasSingleInstanceLock) return;
+  // NODUS_PERF_JSONL turns this on: any synchronous stretch that holds the main
+  // loop for >50 ms lands in the same local JSONL as the pipeline timings.
+  startEventLoopBlockWatch();
+  // NODUS_PERF_TRACE_TIMERS=1 adds the slow recurring callbacks and where they were registered.
+  instrumentIntervalCallbacks();
   // Which capabilities exist has to be settled before the skill library is read: a skill
   // that depends on one cannot be judged available until its provider has registered.
   initializeCapabilityPluginStore();

@@ -89,5 +89,55 @@ export async function measurePerf<T>(
     throw e;
   }
 }
+
+/**
+ * With `NODUS_PERF_JSONL` set, sample the main process loop and log every stretch
+ * that misses its timer by more than `thresholdMs`. A late timer means synchronous
+ * work held the loop; the acceptance run for narration requires no block over
+ * 50 ms, because that is what the user sees as a frozen window or a beachball.
+ */
+export function startEventLoopBlockWatch(thresholdMs = 50, intervalMs = 100): () => void {
+  const target = process.env.NODUS_PERF_JSONL?.trim();
+  if (!target || thresholdMs <= 0 || intervalMs <= 0) return () => {};
+  let last = performance.now();
+  let lastCpu = process.cpuUsage();
+  const timer = setInterval(() => {
+    const now = performance.now();
+    const cpu = process.cpuUsage(lastCpu);
+    const lag = now - last - intervalMs;
+    const cpuMs = (cpu.user + cpu.system) / 1_000;
+    // A late timer with almost no CPU is the OS coalescing or napping the process,
+    // not synchronous work holding the loop. Only a busy delay is a real block.
+    if (lag > thresholdMs && cpuMs > thresholdMs / 2) perfLog('event-loop-block', lag, {}, { thresholdMs, intervalMs, cpuMs });
+    last = now;
+    lastCpu = process.cpuUsage();
+  }, intervalMs);
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
+/**
+ * Opt-in companion for a perf run: wraps `setInterval` so a slow timer callback
+ * records its duration, interval and registration site. The block watch says
+ * *that* the loop stalled; this says *which* recurring job did it.
+ */
+export function instrumentIntervalCallbacks(minDurationMs = 8): () => void {
+  if (!process.env.NODUS_PERF_JSONL?.trim() || process.env.NODUS_PERF_TRACE_TIMERS !== '1') return () => {};
+  const original = global.setInterval;
+  global.setInterval = ((callback: (...values: unknown[]) => void, delay?: number, ...args: unknown[]) => {
+    if (typeof callback !== 'function') return original(callback as never, delay, ...args);
+    const origin = (new Error().stack ?? '').split('\n').slice(2, 5).map((line) => line.trim()).join(' | ');
+    const wrapped = (...called: unknown[]) => {
+      const started = performance.now();
+      try { return callback(...called); }
+      finally {
+        const took = performance.now() - started;
+        if (took >= minDurationMs) perfLog('interval-callback', took, {}, { intervalMs: Number(delay) || 0, origin });
+      }
+    };
+    return original(wrapped, delay, ...args);
+  }) as typeof global.setInterval;
+  return () => { global.setInterval = original; };
+}
 import fs from 'node:fs';
 import path from 'node:path';

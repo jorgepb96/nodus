@@ -33,6 +33,8 @@ import { unreadServerInboxGroupCount } from './serverInboxGrouping';
 import { NotificationsPanel, useAnnouncements } from './components/NotificationsPanel';
 import { BrowserMediaPopover, useBrowserMedia } from './components/browser/BrowserMedia';
 import { DriftMiniPlayer } from './components/drift/DriftMiniPlayer';
+import { NarrationMiniPlayer } from './components/narration/NarrationMiniPlayer';
+import { useAudioPlayer } from './components/AudioPlayer';
 import { useDrift } from './components/drift/DriftProvider';
 import { DatabasesSidebarExplore } from './components/DatabasesSidebarExplore';
 import { StudySidebar, type StudyNavigationTarget } from './components/StudySidebar';
@@ -1482,6 +1484,16 @@ export function App() {
     return () => window.removeEventListener('nodus:interface-tab', open);
   }, []);
   useEffect(() => {
+    // The listen balloon's voice links open Settings on the narration voice library.
+    const open = () => {
+      localStorage.setItem('nodus.settingsTarget', 'narration');
+      setView('settings');
+      window.dispatchEvent(new Event('nodus:settings-target'));
+    };
+    window.addEventListener('nodus:open-narration-settings', open);
+    return () => window.removeEventListener('nodus:open-narration-settings', open);
+  }, []);
+  useEffect(() => {
     if (!isAcademic || !settings?.academicLearningProgress?.invitationsEligible) return;
     setWhatsNewSettled(true);
   }, [isAcademic, settings?.academicLearningProgress?.invitationsEligible]);
@@ -2512,18 +2524,23 @@ export function App() {
 function BrowserMediaHeaderAction({ onOpenTab, onOpenDrift, focusKeep = true }: { onOpenTab: (tabId: string) => void; onOpenDrift: () => void; focusKeep?: boolean }) {
   const states = useBrowserMedia();
   const drift = useDrift();
+  const narration = useAudioPlayer();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const hasBrowser = states.length > 0;
   const hasDrift = drift.selection.length > 0;
-  if (!hasBrowser && !hasDrift) return null;
+  const narrationGenerating = narration.generation != null && ['queued', 'loading', 'generating'].includes(narration.generation.state);
+  const hasNarration = narration.visible || narrationGenerating;
+  if (!hasBrowser && !hasDrift && !hasNarration) return null;
   const browserPlaying = states.some((state) => state.playing);
-  const title = browserPlaying && drift.playing ? t('Reproduciéndose en Nodus Browser y Nodus Drift')
+  const title = narration.isPlaying ? t('Narración en curso')
+    : narrationGenerating ? t('Generando la narración')
+    : browserPlaying && drift.playing ? t('Reproduciéndose en Nodus Browser y Nodus Drift')
     : browserPlaying ? t('Reproduciéndose en Nodus Browser')
       : drift.playing ? t('Reproduciéndose en Nodus Drift')
         : hasBrowser && hasDrift ? t('Medios en pausa en Nodus Browser y Nodus Drift')
           : hasBrowser ? t('Medios en pausa en Nodus Browser')
-            : t('Nodus Drift en pausa');
-  const sources = states.length + (hasDrift ? 1 : 0);
+            : hasDrift ? t('Nodus Drift en pausa') : t('Narración en pausa');
+  const sources = states.length + (hasDrift ? 1 : 0) + (hasNarration ? 1 : 0);
   return (
     <span data-testid="browser-media-header-action" className="relative inline-flex">
       <HeaderAction
@@ -2547,6 +2564,7 @@ function BrowserMediaHeaderAction({ onOpenTab, onOpenDrift, focusKeep = true }: 
           onTab: drift.setMediaTab,
           panel: <DriftMiniPlayer onOpenDrift={() => { setAnchor(null); onOpenDrift(); }} />,
         }}
+        narration={{ active: hasNarration, panel: <NarrationMiniPlayer /> }}
       />
     </span>
   );

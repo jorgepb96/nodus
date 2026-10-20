@@ -29,6 +29,7 @@ import {
   deleteAudioClipRow,
   deleteAudioClipsForEntity,
   insertAudioClip,
+  listAudioClipEntityIds,
   listAudioClips,
 } from '../db/audioClipsRepo';
 
@@ -40,6 +41,12 @@ export function getEntitySegments(kind: AudioEntityKind, id: string, request: Au
   if (isStudyAudioKind(kind)) {
     const source = request.markdown != null ? { title: request.title ?? '', markdown: request.markdown } : studyAudioSource(kind, id);
     return studyNarrationSegments(source.markdown, { ...request, title: request.title || source.title });
+  }
+  if (kind === 'chat_message' || kind === 'dictionary_entry') {
+    // A chat answer or a dictionary entry is narrated from the text the reader is looking at,
+    // which the renderer sends (a chat message may not be persisted yet while it streams).
+    if (request.markdown == null || !request.markdown.trim()) throw new Error('No hay texto que narrar.');
+    return deepResearchSegments({ title: request.title ?? '', draftMarkdown: relabelCitations(request.markdown) });
   }
   if (kind === 'deep_research') {
     const row = getDb().prepare('SELECT title, draft_json FROM writing_saved_drafts WHERE id = ?').get(id) as
@@ -240,6 +247,18 @@ export function deleteClip(id: string): void {
 
 export function deleteEntityClips(kind: AudioEntityKind, id: string): void {
   clearEntityClips(kind, id);
+}
+
+/** Chat narration is keyed `<conversationId>:<messageId>`: drop the clips of messages that are gone
+ *  (a regenerated answer gets a new id) or of the whole conversation when `keep` is empty. */
+export function reconcileChatNarration(conversationId: string, keepMessageIds: readonly string[] = []): void {
+  const prefix = `${conversationId}:`;
+  const keep = new Set(keepMessageIds.map((messageId) => `${prefix}${messageId}`));
+  try {
+    for (const entityId of listAudioClipEntityIds('chat_message', prefix)) {
+      if (!keep.has(entityId)) clearEntityClips('chat_message', entityId);
+    }
+  } catch { /* narration cleanup never fails a chat save */ }
 }
 
 /** Raw bytes for playback in the renderer (served as a data URL). */

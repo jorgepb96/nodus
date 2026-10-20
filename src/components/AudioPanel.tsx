@@ -2,20 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AudioClip,
   AudioEntityKind,
-  AudioProvider,
   AudioSegment,
   AudioSegmentRequest,
   StudyAudioBookmark,
   StudyAudioPlaylistItem,
   StudyPronunciationEntry,
 } from '@shared/types';
-import { findVoice, getEngine } from '../lib/audio';
-import { synthesizeSegment } from '../lib/audio/synth';
+import { refreshTtsStatus, ttsReady } from '../lib/narration/ttsClient';
+import { startNarration } from '../lib/narration/narrate';
 import {
   audioGenerationJobKey,
   cancelAudioGeneration,
   clearBackgroundJob,
-  startAudioGeneration,
   subscribeBackgroundJob,
   type AudioGenerationProgress,
   type AudioGenerationRequest,
@@ -27,11 +25,10 @@ import { localizeRuntimeError } from '@shared/uiLanguage';
 import { getActiveLang, t, tx } from '../i18n';
 
 /**
- * Reusable narration panel for a Deep Research report or an immersion. It asks
- * the main process for the speakable segments (sections / stages), synthesises
- * each one with the active voice provider, and hands the WAV bytes back to be
- * persisted. Playback is delegated to the app-wide player (the bottom strip), so
- * there is a single audio stream across the whole app.
+ * Narration panel for Study documents and transcripts. It asks the main process for the
+ * speakable segments, narrates each with Ming (fragments play as they are generated) and
+ * the main process saves every segment as a clip. Playback goes through the app-wide
+ * player, controlled from the header's sound button.
  */
 interface RunProgress {
   done: number;
@@ -50,7 +47,6 @@ export function AudioPanel({
   cursorOffset,
   title,
   subjectId,
-  localOnly = false,
 }: {
   entityKind: AudioEntityKind;
   entityId: string;
@@ -62,6 +58,7 @@ export function AudioPanel({
   cursorOffset?: number;
   title?: string;
   subjectId?: string | null;
+  /** Kept for callers from before Ming: every narration is local now. */
   localOnly?: boolean;
 }) {
   const player = useAudioPlayer();
@@ -106,21 +103,11 @@ export function AudioPanel({
     if (mounted.current) { setBookmarks(nextBookmarks); setPronunciations(nextPronunciations); setPlaylist(nextPlaylist); }
   };
 
-  const checkVoice = async (): Promise<{ provider: AudioProvider; voiceId: string } | null> => {
-    const settings = await window.nodus.getSettings();
-    const provider = settings.audioProvider ?? 'piper';
-    if (localOnly && provider === 'hume') {
-      if (mounted.current) setVoiceReady(false);
-      return null;
-    }
-    const chosen = settings.audioVoice;
-    if (!chosen) {
-      if (mounted.current) setVoiceReady(false);
-      return null;
-    }
-    const ready = (await getEngine(provider).ready()).has(chosen);
+  const checkVoice = async (): Promise<boolean> => {
+    const status = await refreshTtsStatus().catch(() => null);
+    const ready = ttsReady(status);
     if (mounted.current) setVoiceReady(ready);
-    return ready ? { provider, voiceId: chosen } : null;
+    return ready;
   };
 
   useEffect(() => {
@@ -172,27 +159,19 @@ export function AudioPanel({
 
   const generate = async () => {
     setError(null);
-    const chosen = await checkVoice();
-    if (!chosen) {
-      setError(localOnly ? t('La lectura de estudio requiere una voz local de Piper o Kokoro.') : t('Elige y prepara una voz en Ajustes → IA → Audio y voz.'));
+    if (!(await checkVoice())) {
+      setError(t('Descarga el motor de voz y un modelo en Ajustes → Modelos → Voz y narración.'));
       return;
     }
-    // Local voices carry static metadata; cloud (Hume) voices are dynamic, so the
-    // language is best-effort and defaults to empty.
-    const language = findVoice(chosen.provider, chosen.voiceId)?.language ?? '';
-    player.stop();
-    // Hand the loop to the module-scope job store; the subscription above drives
-    // the progress bar and clip list. Segment fetching, clip clearing and errors
-    // (including "no narratable text") are reported through the job.
-    startAudioGeneration({
-      entityKind,
-      entityId,
-      provider: chosen.provider,
-      voiceId: chosen.voiceId,
-      language,
+    // Hand the loop to the module-scope job store; the subscription above drives the
+    // progress bar and clip list, and the player starts as soon as fragments arrive.
+    startNarration(player, {
+      kind: entityKind,
+      id: entityId,
+      title: title ?? '',
       segmentRequest,
       labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
-    }, synthesizeSegment);
+    }, { key: `${entityKind}:${entityId}`, title: title || t('Narración') });
   };
 
   const cancel = () => {
@@ -269,7 +248,7 @@ export function AudioPanel({
 
       {voiceReady === false && !generating && (
         <div className="mt-2 text-xs text-amber-400/90">
-          {localOnly ? t('Elige una voz local de Piper o Kokoro en Ajustes → IA → Audio y voz.') : t('Elige y prepara una voz en Ajustes → IA → Audio y voz para poder narrar.')}
+          {t('Descarga el motor de voz y un modelo en Ajustes → Modelos → Voz y narración para poder narrar.')}
         </div>
       )}
 

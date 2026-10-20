@@ -86,8 +86,6 @@ test('the renderer-only packages are left out of the app', () => {
     'node_modules/@mathjax/mathjax-newcm-font',
     'node_modules/@blocknote/react',
     'node_modules/@emoji-mart/data',
-    'node_modules/kokoro-js',
-    'node_modules/@diffusionstudio/piper-wasm',
     'node_modules/three',
     'node_modules/react-dom',
   ]) {

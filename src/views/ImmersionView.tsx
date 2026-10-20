@@ -74,7 +74,7 @@ import {
 } from '../backgroundJobs';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
-import { AudioPanel } from '../components/AudioPanel';
+import { ListenButton } from '../components/narration/Listen';
 import { FindInPage } from '../components/FindInPage';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import {
@@ -1660,8 +1660,9 @@ function ImmersionPlayer({
                 onChange={(image) => onSession({ ...session, image })}
               />
             </div>
-            <div className="mt-5">
-              <AudioPanel entityKind="immersion" entityId={session.id} />
+            <div className="mt-5 flex items-center justify-center gap-2 text-xs text-neutral-500">
+              <span className="rounded-lg border border-neutral-700 p-1"><ListenButton testId="immersion-listen-cover" size={15} target={{ kind: 'immersion', id: session.id, title: session.plan.title }} /></span>
+              {t('Escuchar la inmersión')}
             </div>
             <div className="mt-7 flex flex-col items-center">
               <button
@@ -1703,6 +1704,9 @@ function ImmersionPlayer({
           </div>
         </div>
         <div className="flex-1" />
+        <span className="flex h-9 items-center rounded-lg border border-neutral-700 px-1">
+          <ListenButton testId="immersion-listen" size={15} target={{ kind: 'immersion', id: session.id, title: appliedTranslation?.title ?? session.plan.title }} />
+        </span>
         <DocumentVisualActions />
         <button className="btn btn-ghost gap-1.5 border border-neutral-700 text-xs" disabled={exportingPdf} onClick={() => void exportPdf()}>
           <Icon name={exportingPdf ? 'sync' : 'download'} size={13} className={exportingPdf ? 'animate-spin' : ''} />

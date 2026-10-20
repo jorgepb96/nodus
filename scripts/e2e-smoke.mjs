@@ -2670,7 +2670,7 @@ try {
     return subjectId ? (await window.nodus.getStudyPronunciations(subjectId)).some((entry) => entry.written === 'TCC' && entry.spoken === 'te ce ce') : false;
   }));
   await page.getByRole('button', { name: 'Generar audio', exact: true }).click();
-  await page.getByText('La lectura de estudio requiere una voz local de Piper o Kokoro.', { exact: true }).waitFor({ timeout: 30_000 });
+  await page.getByText('Descarga el motor de voz y un modelo en Ajustes → Modelos → Voz y narración.', { exact: true }).waitFor({ timeout: 30_000 });
   console.log('[e2e] local study narration modes + formula speech + pronunciation dictionary ok');
 
   // These flows remain ready for reactivation, but the corresponding renderer

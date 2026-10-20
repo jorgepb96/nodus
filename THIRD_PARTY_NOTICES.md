@@ -307,14 +307,11 @@ its bundled ggml component are MIT licensed; license texts are included in the
 downloaded archive and the corresponding source is:
 https://github.com/leejet/stable-diffusion.cpp/tree/b290693
 
-Piper speech downloads `@diffusionstudio/piper-wasm` 1.0.0 from jsDelivr when
-the user first invokes it. That runtime incorporates eSpeak NG, licensed under
-GPL-3.0-or-later. Nodus is AGPL/GPL-compatible free software and imposes no
-additional restriction on that component. The GPL text is included in
-`legal/generated/GPL-3.0.txt`; source and build information are available at:
-
-- https://github.com/diffusion-studio/piper-wasm/tree/69522c832bd52d7c16389e9a8aee568065027689
-- https://github.com/espeak-ng/espeak-ng
+Narration installs a private Python environment the first time the user enables it.
+pip downloads hash-pinned wheels from PyPI (and, outside Apple Silicon, PyTorch from
+download.pytorch.org); the exact versions are listed in `runtime/ming-tts/*.lock`.
+They include mlx and mlx-audio (MIT, Apple Silicon), PyTorch (BSD-3-Clause),
+transformers, diffusers and accelerate (Apache-2.0), and onnxruntime (MIT).
 
 ## Downloadable models and voices
 
@@ -334,9 +331,20 @@ Nodus. Sources:
 - https://huggingface.co/unsloth/Qwen3-4B-GGUF
 - https://huggingface.co/Qwen/Qwen3-4B
 
-Nodus is free and open-source software. Some optional Piper
-voice datasets, including HFC Female and Ryan, are marked CC BY-NC-SA 4.0 and
-must not be reused for commercial purposes. LFM2.5 is governed by the LFM Open
+Narration downloads Ming-3.0-tts 0.5B by inclusionAI (MIT), either the official
+PyTorch checkpoint or the MLX conversion by mlx-community (MIT). The checkpoint
+bundles a CAM++ speaker encoder (`campplus`). Sources:
+
+- https://github.com/inclusionAI/Ming-3.0-tts
+- https://huggingface.co/inclusionAI/Ming-3.0-tts-0.5B
+- https://huggingface.co/mlx-community/Ming-3.0-tts-0.5B-8bit
+
+The bundled Castilian reference voice `electron/assets/tts/voices/es-dave.wav` is
+a clip of the `es_ES/dave` dataset from https://github.com/OHF-Voice/voice-datasets,
+dedicated to the public domain under CC0 1.0. Nodus leaves out Ming's built-in
+voices that imitate characters from films, series and cartoons.
+
+Nodus is free and open-source software. LFM2.5 is governed by the LFM Open
 License v1.0, which contains a separate condition for legal entities with at
 least USD 10 million in annual revenue. Users remain responsible for uses
 outside the license terms of those optional datasets.

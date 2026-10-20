@@ -33,7 +33,7 @@ import type { PrimarySourcePolicySettings } from '@shared/primarySourcesTypes';
 import { NODUS_SOCIAL_LINKS } from '@shared/socialLinks';
 import { recoveryHealthAdvice, recoveryHealthAge, recoveryHealthHeadline } from '../recoveryHealth';
 import { ImageGenerationSettings, ProvidersSettings } from './ProvidersSettings';
-import { AudioGenerationSettings } from './AudioGenerationSettings';
+import { NarrationSettings } from './NarrationSettings';
 import { ConnectedVaultsPanel } from '../components/ConnectedVaultsPanel';
 import { LocalServerPanel } from '../components/LocalServerPanel';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -277,7 +277,7 @@ export function Settings({
   useEffect(() => {
     const applyTarget = () => {
       const target = localStorage.getItem('nodus.settingsTarget');
-      if (target !== 'nodi' && target !== 'models' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
+      if (target !== 'nodi' && target !== 'models' && target !== 'narration' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
       localStorage.removeItem('nodus.settingsTarget');
       if (target === 'sidebar' || target === 'appearance' || target === 'nodi') {
         setSettingsTab('interface');
@@ -285,9 +285,11 @@ export function Settings({
         setInterfaceFocusRequest({ id: target === 'sidebar' ? 'settings-sidebar-editor' : target === 'appearance' ? 'settings-appearance-section' : 'settings-nodi-section' });
       } else if (target === 'help' || target === 'tutorials') {
         setSettingsTab('system'); setSettingsQuery(t('Ayuda'));
-      } else if (target === 'models') {
+      } else if (target === 'models' || target === 'narration') {
         setSettingsTab('models');
         setSettingsQuery('');
+        // Narration links (the listen balloon's «Grabar o subir voz…») land on the voice library.
+        if (target === 'narration') window.setTimeout(() => document.getElementById('narration-voices')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
       }
     };
     applyTarget();
@@ -1009,7 +1011,7 @@ export function Settings({
     visibleSettingsSection('integrations', 'Nodus para Zotero', 'zotero plugin sidebar chat servidor puerto token pagina citas conexiones'),
     visibleSettingsSection('integrations', 'Nodus Research Connector', 'chrome navegador browser extension conector captura metadatos colecciones etiquetas pdf doi isbn'),
     visibleSettingsSection('data', 'Backup / copia de seguridad', 'datos demo exportar importar copia backup cifrada contraseña'),
-    visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz imagen quimica chemistry stock mcule proveedores comprar'),
+    visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz narracion audio ming clonar grabar imagen quimica chemistry stock mcule proveedores comprar'),
     visibleSettingsSection('extraction', 'Extracción de texto PDFs grandes', 'pdf texto zotero ocr tesseract paginas idiomas esquemas figuras'),
     activeVault?.type === 'academic' && visibleSettingsSection('data', 'Salud del grafo', GRAPH_HEALTH_KEYWORDS),
     visibleSettingsSection('data', 'Zona de peligro', 'reinicializar grafo borrar ideas temas conexiones autores huecos'),
@@ -3236,7 +3238,7 @@ export function Settings({
           </Section>
       )}
 
-      {visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz imagen quimica chemistry stock mcule proveedores comprar') && (<>
+      {visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz narracion audio ming clonar grabar imagen quimica chemistry stock mcule proveedores comprar') && (<>
           <Section title={t('Selección de modelos')}>
             <p className="mb-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400">
               {t('Solo puede haber un modo de configuración activo. Cambiar de modo modifica qué selección de modelos utiliza Nodus, no solo la vista de este formulario.')}
@@ -3454,7 +3456,7 @@ export function Settings({
           <SttSettings settings={settings} patch={patch} />
           <LocalImageModelSettings settings={settings} patch={patch} />
           <ImageGenerationSettings settings={settings} onChange={onChange} />
-          <AudioGenerationSettings settings={settings} onChange={onChange} />
+          <NarrationSettings settings={settings} patch={patch} />
           <Section title={t('Química (Chemistry Studio)')}>
             <Row
               label={t('Usar listas de stock comerciales')}

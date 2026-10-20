@@ -33,6 +33,7 @@ import { getDb } from './database';
 import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { getScopedLegacyPassageDetail } from '../citations/scopedLegacyCitations';
 import { getWebPassageDetail } from './researchWebRepo';
+import { deleteEntityClips } from '../audio/audioService';
 
 type EntryRow = {
   id: string; name: string; normalized_name: string; aliases_json: string; focus_prompt: string;
@@ -335,6 +336,7 @@ export function updateDictionaryEntry(id: string, patch: DictionaryEntryPatch, e
 export function deleteDictionaryEntries(ids: string[]): number {
   const clean = [...new Set(ids.filter(Boolean))]; if (!clean.length) return 0;
   const db = getDb(); const placeholders = clean.map(() => '?').join(',');
+  for (const entryId of clean) deleteEntityClips('dictionary_entry', entryId);
   return db.transaction(() => {
     for (const entryId of clean) deleteResearchRuns({ entryId });
     db.prepare(`DELETE FROM dictionary_relations WHERE from_entry_id IN (${placeholders}) OR to_entry_id IN (${placeholders})`).run(...clean, ...clean);

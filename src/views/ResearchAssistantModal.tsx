@@ -58,6 +58,7 @@ import type {
   ResearchWebSearchMode,
 } from '@shared/types';
 import { Icon, sortModelRefs } from '../components/ui';
+import { ListenButton } from '../components/narration/Listen';
 import type { MarkdownCitation } from '../components/Markdown';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ChatTypingIndicator } from '../components/ChatTypingIndicator';
@@ -1366,7 +1367,7 @@ export function ResearchAssistantModal({
                     className={`msg-in flex rounded-lg transition-shadow duration-500 ${highlightedMessageId === message.id ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-neutral-950' : ''} ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? 'pr-24' : 'pr-16'} ${
+                      className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? (adapter ? 'pr-24' : 'pr-32') : 'pr-16'} ${
                         message.role === 'user'
                           ? 'research-accent-solid text-white whitespace-pre-wrap'
                           : message.error
@@ -1414,6 +1415,19 @@ export function ResearchAssistantModal({
                           >
                             <Icon name="notebook" size={13} />
                           </button>
+                        )}
+                        {!adapter && message.role === 'assistant' && !message.error && message.content.trim() && message.id !== streamingId && activeId && (
+                          <ListenButton
+                            testId="research-chat-listen"
+                            className="research-accent-hover"
+                            target={{
+                              kind: 'chat_message',
+                              // Keyed by conversation so deleting a chat removes its audio too.
+                              id: `${activeId}:${message.id}`,
+                              title: deriveNoteTitle(message.content, conversations.find((conversation) => conversation.id === activeId)?.title || t('Research chat')),
+                              markdown: () => researchChatPresentation(message).content,
+                            }}
+                          />
                         )}
                         <button
                           className={`rounded p-1 opacity-70 transition hover:opacity-100 ${

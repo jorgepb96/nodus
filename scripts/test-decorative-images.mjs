@@ -63,7 +63,7 @@ try {
     Promise.resolve(readSource('src/App.tsx')),
     Promise.resolve(readSource('src/views/ProvidersSettings.tsx')),
     Promise.resolve(readSource('src/components/SettingsModelList.tsx')),
-    Promise.resolve(readSource('src/views/AudioGenerationSettings.tsx')),
+    Promise.resolve(readSource('src/views/NarrationSettings.tsx')),
   ]);
 
   // Disabled means a DB-only not-requested state: no text/image provider path.
@@ -101,7 +101,7 @@ try {
   assert.ok(imageModels.includes('imagePriceUsd: cheapest?.value ?? null'), 'unpublished image prices remain unavailable');
   assert.ok(providersUi.includes('image-generation-model-list'), 'image models use the shared settings list pattern');
   assert.ok(providersUi.includes('provider-model-list-'), 'provider model catalogs use the shared settings list pattern');
-  assert.ok(audioSettingsUi.includes('audio-engine-model-list') && audioSettingsUi.includes('audio-voice-list-'), 'audio models and voices use the shared settings list pattern');
+  assert.ok(audioSettingsUi.includes('data-testid="narration-models"') && audioSettingsUi.includes('SettingsModelList') && audioSettingsUi.includes('settingsModelRowClass'), 'narration models and voices use the shared settings list pattern');
   assert.ok(modelListUi.includes('dark:bg-neutral-950/20') && modelListUi.includes('bg-indigo-50'), 'the shared list defines explicit light and dark surfaces');
 
   // Persistence includes every requested audit field plus an independent thumbnail.

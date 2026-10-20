@@ -74,7 +74,7 @@ import { ResearchMarkdown as Markdown } from '../components/ResearchSourceNotice
 import { DraftActionBar, DraftResultMain, SupportMatrix } from './writingShared';
 import { DeepResearchQueueStrip, type QueueStripItem } from '../components/DeepResearchQueueStrip';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
-import { AudioPanel } from '../components/AudioPanel';
+import { ListenButton } from '../components/narration/Listen';
 import { FindInPage } from '../components/FindInPage';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import {
@@ -2353,7 +2353,9 @@ function ReaderView({
             className="btn-ghost h-9 min-h-9 border border-neutral-700"
           />
         )}
-        <AudioPanel entityKind="deep_research" entityId={saved.id} toolbar />
+        <span className="flex h-9 min-h-9 items-center rounded-lg border border-neutral-700 px-1">
+          <ListenButton testId="deep-research-audio-toggle" size={15} target={{ kind: 'deep_research', id: saved.id, title: saved.title }} />
+        </span>
         <DocumentVisualActions />
         <ReaderFontControls targetRef={documentRef} scrollerRef={mainRef} initialSize={initialReaderFontSize} />
         <ReaderHighlighterControl value={highlighterColor} onChange={setHighlighterColor} />

@@ -29,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -125,6 +126,7 @@ export const ZH_TW: Record<string, string> = {
   ...RESEARCH_REASONING_TRANSLATIONS["zh-TW"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["zh-TW"],
   ...CHAT_SKILLS_TRANSLATIONS['zh-TW'],
+  ...NARRATION_TRANSLATIONS['zh-TW'],
   ...CAPABILITIES_TRANSLATIONS['zh-TW'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['zh-TW'],
   ...STELLAR_GRAPH_TRANSLATIONS["zh-TW"],

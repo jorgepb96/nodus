@@ -1817,16 +1817,6 @@ export type AudioProvider = 'ming' | 'piper' | 'kokoro' | 'hume';
  * regenerable local audio catalogue rather than in sync/backups. */
 export type AudioEntityKind = 'deep_research' | 'immersion' | 'chat_message' | 'dictionary_entry' | 'study_document' | 'study_transcript' | 'study_assistant' | 'study_subject' | 'study_question';
 
-/** One Hume voice as returned by the voice-list endpoint. `humeProvider` says which
- *  Hume library it belongs to (needed to synthesize with it). */
-export interface HumeVoiceInfo {
-  id: string;
-  name: string;
-  humeProvider: 'HUME_AI' | 'CUSTOM_VOICE';
-  /** Octave model versions the voice supports (e.g. ["octave-2"]). */
-  models: string[];
-}
-
 /** One generated audio file for a segment (stage/section) of a report or immersion. */
 export interface AudioClip {
   id: string;
@@ -2117,9 +2107,9 @@ export interface AppSettings {
   /** Resolution preset for the native FLUX.2 pipeline; remote providers keep their own fixed settings. */
   imageQuality: NodusImageQuality;
   imageStyle: DecorativeImageStyle;
-  /** Audio narration backend: 'piper' / 'kokoro' (local WASM) or 'hume' (cloud, BYO key). */
+  /** Legacy: the narration engine before Ming. Kept so old settings and server profiles still parse. */
   audioProvider: AudioProvider;
-  /** Selected Piper voice id (e.g. "es_ES-sharvard-medium"). Empty until chosen. */
+  /** Legacy: the voice of the engine before Ming (`ttsVoiceId` replaces it). */
   audioVoice: string;
   /** Playback/synthesis speed multiplier (1.0 = natural). Clamped 0.7–1.3. */
   audioSpeed: number;

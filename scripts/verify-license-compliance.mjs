@@ -44,7 +44,6 @@ for (const requiredPackage of [
   '@blocknote/core@0.55.0',
   '@blocknote/react@0.55.0',
   '@blocknote/ariakit@0.55.0',
-  '@diffusionstudio/vits-web@1.0.3',
   '@github/copilot-sdk@1.0.7',
   '@openai/codex@0.144.6',
   'foundry-local-sdk@1.2.3',

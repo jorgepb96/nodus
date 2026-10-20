@@ -150,7 +150,7 @@ function modelRef(value) {
 // Desktop host. They are retained as pending assignments so a later Desktop
 // sync can resolve them, but Server must never turn them into a paid fallback.
 const LOCAL_MODEL_PROVIDERS = new Set(['nodus', 'ollama', 'lmstudio']);
-const LOCAL_STT_PROVIDERS = new Set(['transformers', 'whisper_cpp', 'whisper-cpp', 'piper', 'kokoro']);
+const LOCAL_STT_PROVIDERS = new Set(['transformers', 'whisper_cpp', 'whisper-cpp', 'ming', 'piper', 'kokoro']);
 export function isLocalServerModel(provider, model = '') {
   const normalizedProvider = String(provider).toLowerCase().replace(/-/g, '_');
   const normalizedModel = String(model).toLowerCase();

@@ -94,15 +94,15 @@ export const MODEL_DOC_TOPICS: readonly NodusDocTopic[] = [
     id: 'models-optional-engines',
     area: 'models',
     title: { es: 'Transcripción, imagen local y voz', en: 'Transcription, local image and voice' },
-    keywords: ['transcripcion', 'stt', 'whisper', 'transformers.js', 'onnx', 'diarizacion', 'imagen local', 'stable-diffusion', 'flux', 'voz', 'piper', 'kokoro', 'hume', 'audio'],
+    keywords: ['transcripcion', 'stt', 'whisper', 'transformers.js', 'onnx', 'diarizacion', 'imagen local', 'stable-diffusion', 'flux', 'voz', 'narracion', 'ming', 'clonar voz', 'audio'],
     body: {
       es: `- Transcripción de audio (Ajustes > Modelos IA): motor local Transformers.js + ONNX (por defecto, con modelos descargables), whisper.cpp o la API de OpenAI. Con la API de OpenAI hay que tener en cuenta que no ofrece diarización.
 - Generación de imágenes local: motor stable-diffusion.cpp con FLUX.2 Klein 4B Q4 y tres calidades (Borrador 640×384, Equilibrada 896×512 y Alta 1152×640). El panel avisa de la licencia y de la memoria necesaria.
-- Audio y voz: motores locales Piper y Kokoro y Hume en la nube con clave propia; velocidad ajustable de 0.7 a 1.3 y descarga de voces con filtros por idioma.
+- Voz y narración: Ming 3.0 en local (MLX en Mac con Apple Silicon; PyTorch con GPU NVIDIA o procesador en Windows, Linux y Mac Intel). Clona una voz a partir de 6–15 s de grabación propia o subida, incluye voces integradas y una voz castellana de dominio público, habla siete idiomas, se carga solo mientras se usa y borra los audios antiguos según la retención configurada.
 - Estas funciones requieren descargar sus modelos o instalar su motor, y consumen CPU, GPU y memoria del equipo mientras trabajan.`,
       en: `- Audio transcription (Settings > AI models): local Transformers.js + ONNX engine (default, with downloadable models), whisper.cpp or the OpenAI API. Note that the OpenAI API does not offer diarisation.
 - Local image generation: stable-diffusion.cpp engine with FLUX.2 Klein 4B Q4 and three qualities (Draft 640×384, Balanced 896×512 and High 1152×640). The panel warns about the licence and the memory required.
-- Audio and voice: local Piper and Kokoro engines and cloud Hume with your own key; speed adjustable from 0.7 to 1.3 and voice downloads filtered by language.
+- Voice and narration: Ming 3.0 runs locally (MLX on Apple Silicon Macs; PyTorch with an NVIDIA GPU or the CPU on Windows, Linux and Intel Macs). It clones a voice from a 6–15 s recording or upload, includes built-in voices and a public-domain Castilian voice, speaks seven languages, loads only while in use and deletes old audio according to the retention settings.
 - These features require downloading their models or installing their engine, and they use the machine's CPU, GPU and memory while running.`,
     },
     related: ['settings-models-advanced', 'sections-study-materials-recordings'],

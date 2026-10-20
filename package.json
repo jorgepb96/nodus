@@ -417,6 +417,7 @@
           "*.lock",
           "LICENSE*",
           "ming_official/**/*",
+          "mlx_ming3/**/*",
           "!**/__pycache__/**"
         ]
       }

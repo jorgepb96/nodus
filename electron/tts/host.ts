@@ -237,7 +237,8 @@ export class TtsEngineHost {
       this.setState('loading');
       const id = randomUUID();
       const loaded = this.expect(running, id, 'warm', this.options.loadTimeoutMs ?? 300_000);
-      this.send({ type: 'load', id, model_path: this.options.modelPath(modelId), model_id: modelId });
+      const modelPath = this.options.modelPath(modelId);
+      this.send({ type: 'load', id, model_path: modelPath, model_id: modelId, campplus_path: path.join(modelPath, 'campplus.onnx') });
       await loaded;
       running.modelId = modelId;
       this.setState('ready');

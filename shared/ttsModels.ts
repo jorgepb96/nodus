@@ -71,7 +71,11 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
       ['model.safetensors', 1573366591, 'e88a4b53cb5b705703e961389f3d7f0e8b72c240b4dad796bf9961cc018971fc'],
       ['model.safetensors.index.json', 201850, 'f59991abebed1a4f798a9488568af496d925e6eea507450aa8051a06f475a2ce'],
       ...TOKENIZER,
-    ]),
+    ]).concat(
+      // The speaker encoder for voice cloning runs on onnxruntime; the MLX repo only ships
+      // its weights as safetensors, so the ONNX file comes from the official checkpoint.
+      assets('inclusionAI/Ming-3.0-tts-0.5B', [['campplus.onnx', 28303423, 'a6ac6a63997761ae2997373e2ee1c47040854b4b759ea41ec48e4e42df0f4d73']]),
+    ),
   },
   {
     id: 'ming3-0.5b-mlx-4bit',

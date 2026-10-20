@@ -357,6 +357,18 @@ weights are downloaded only when the user asks, never bundled:
 - Voice catalogue (`gradium/phonon-voices`): Apache-2.0. Each voice embedding is downloaded on
   first use.
 
+Narration can also use Kokoro-82M by hexgrad. The checkpoint and its voice styles are
+Apache-2.0; the 31 English and Spanish voices are shipped in `voices-v1.0.bin` and are not
+separate downloads. Nodus downloads the model from the pinned
+`thewh1teagle/kokoro-onnx` v1.0 release only when the user asks. The private runtime is
+built from `runtime/ming-tts/requirements-kokoro.lock`: `kokoro-onnx` (MIT), ONNX Runtime
+(MIT), `phonemizer` (GPL-3.0) and `espeakng-loader`/eSpeak NG (GPL-3.0), installed into a
+separate Python environment on the user's machine. Sources:
+
+- https://huggingface.co/hexgrad/Kokoro-82M
+- https://github.com/thewh1teagle/kokoro-onnx
+- https://github.com/espeak-ng/espeak-ng
+
 Nodus is free and open-source software. LFM2.5 is governed by the LFM Open
 License v1.0, which contains a separate condition for legal entities with at
 least USD 10 million in annual revenue. Users remain responsible for uses

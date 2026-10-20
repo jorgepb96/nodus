@@ -7,8 +7,8 @@
  * (CUDA when an NVIDIA GPU answers, CPU otherwise).
  */
 
-export type TtsBackend = 'mlx' | 'torch' | 'phonon';
-export type TtsEngine = 'ming' | 'phonon';
+export type TtsBackend = 'mlx' | 'torch' | 'phonon' | 'kokoro';
+export type TtsEngine = 'ming' | 'phonon' | 'kokoro';
 export type TtsDevice = 'metal' | 'cuda' | 'cpu';
 
 export interface TtsModelAsset {
@@ -24,7 +24,7 @@ export interface TtsModelDefinition {
   label: string;
   engine: TtsEngine;
   backend: TtsBackend;
-  quantization: '8bit' | '4bit' | 'bf16' | 'q8';
+  quantization: '8bit' | '4bit' | 'bf16' | 'q8' | 'int8';
   /** Languages the checkpoint speaks. */
   languages: readonly TtsLanguage[];
   /** Gated on Hugging Face: the user accepts the terms there and gives Nodus a token. */
@@ -199,6 +199,33 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
       PHONON_DEFAULT_VOICE,
     ]),
   },
+  {
+    id: 'kokoro-82m-int8',
+    label: 'Kokoro 82M · int8',
+    engine: 'kokoro',
+    backend: 'kokoro',
+    quantization: 'int8',
+    languages: ['es', 'en'],
+    cloning: false,
+    description: 'Un solo modelo de 82M con 31 voces inglesas y españolas. ONNX Runtime en el procesador, varias veces más rápido que el tiempo real.',
+    sourceUrl: 'https://huggingface.co/hexgrad/Kokoro-82M',
+    licenseLabel: 'Apache-2.0',
+    licenseUrl: 'https://huggingface.co/hexgrad/Kokoro-82M',
+    assets: [
+      {
+        file: 'kokoro-v1.0.int8.onnx',
+        url: 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx',
+        bytes: 92361271,
+        sha256: '6e742170d309016e5891a994e1ce1559c702a2ccd0075e67ef7157974f6406cb',
+      },
+      {
+        file: 'voices-v1.0.bin',
+        url: 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin',
+        bytes: 28214398,
+        sha256: 'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d',
+      },
+    ],
+  },
 ];
 
 export function ttsModelBytes(model: TtsModelDefinition): number {
@@ -213,7 +240,9 @@ export function ttsModelsForPlatform(platform: string, arch: string): TtsModelDe
 
 /** The sidecar backend a checkpoint needs: Phonon has its own; Ming's depends on the machine. */
 export function ttsBackendForModel(model: TtsModelDefinition | undefined, platform: string, arch: string): TtsBackend {
-  return model?.engine === 'phonon' ? 'phonon' : ttsBackendForPlatform(platform, arch);
+  if (model?.engine === 'phonon') return 'phonon';
+  if (model?.engine === 'kokoro') return 'kokoro';
+  return ttsBackendForPlatform(platform, arch);
 }
 
 export function defaultTtsModelId(platform: string, arch: string): string {
@@ -338,6 +367,8 @@ export interface TtsStatus {
   runtime: TtsRuntimeStatus;
   /** Phonon's environment (the small `ptts` runtime). */
   phononRuntime: TtsRuntimeStatus;
+  /** Kokoro-82M's environment (`kokoro-onnx` + espeak-ng, no PyTorch). */
+  kokoroRuntime: TtsRuntimeStatus;
   models: TtsModelStatus[];
   engine: { state: TtsEngineState; modelId: string | null; idleUnloadAt: number | null; error?: string };
 }

@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { isTtsLanguage, type TtsLanguage } from '@shared/ttsModels';
 import { MING_BUILTIN_VOICES, mingBuiltinInvocation } from '@shared/mingBuiltinVoices';
 import { PHONON_VOICES } from '@shared/phononVoices';
+import { KOKORO_VOICES, isKokoroVoiceId, kokoroVoiceId } from '@shared/kokoroVoices';
 import {
   TTS_VOICE_MAX_BYTES, TTS_VOICE_MAX_S, TTS_VOICE_MIN_S, builtinVoiceId, isBuiltinVoiceId, isUserVoiceId, minimumVoiceTranscriptChars, readWavInfo,
   type TtsVoice, type TtsVoiceSaveInput,
@@ -62,6 +63,9 @@ export class TtsVoiceLibrary {
     }
     for (const voice of PHONON_VOICES) {
       voices.push({ id: `phonon:${voice.id}`, name: voice.name, origin: 'phonon', language: voice.language, locale: voice.locale, gender: voice.gender, description: voice.description, attribution: 'Gradium · Apache-2.0', readOnly: true });
+    }
+    for (const voice of KOKORO_VOICES) {
+      voices.push({ id: kokoroVoiceId(voice.id), name: voice.name, origin: 'kokoro', language: voice.language, locale: voice.locale, gender: voice.gender, description: `Kokoro v1.0 · ${voice.quality}`, attribution: 'hexgrad · Apache-2.0', readOnly: true });
     }
     return voices;
   }
@@ -126,6 +130,11 @@ export class TtsVoiceLibrary {
 
   /** What the sidecar needs to speak with a voice. Bundled voices are materialized on demand. */
   async resolve(id: string): Promise<{ ref: TtsVoiceRef; language: TtsLanguage }> {
+    if (isKokoroVoiceId(id)) {
+      const voice = KOKORO_VOICES.find((entry) => kokoroVoiceId(entry.id) === id);
+      if (!voice) throw new Error('TTS_VOICE_NOT_FOUND');
+      return { ref: { kind: 'kokoro', name: voice.id }, language: voice.language };
+    }
     if (isBuiltinVoiceId(id)) {
       const voice = MING_BUILTIN_VOICES.find((entry) => builtinVoiceId(entry.id) === id);
       if (!voice) throw new Error('TTS_VOICE_NOT_FOUND');

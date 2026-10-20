@@ -7,8 +7,9 @@ import type { TtsLanguage } from './ttsModels';
  *   `cc0:<name>`    reference recordings that ship with Nodus (clone, read-only)
  *   `ming:<name>`   Ming's built-in voices (no reference audio)
  *   `phonon:<id>`   Phonon's catalogue voices (speaker embeddings)
+ *   `kokoro:<id>`   Kokoro's bundled voice embeddings
  */
-export type TtsVoiceOrigin = 'recorded' | 'uploaded' | 'bundled' | 'builtin' | 'phonon';
+export type TtsVoiceOrigin = 'recorded' | 'uploaded' | 'bundled' | 'builtin' | 'phonon' | 'kokoro';
 
 export interface TtsVoice {
   id: string;

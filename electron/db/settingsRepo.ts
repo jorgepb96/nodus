@@ -162,6 +162,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   ttsModelId: '',
   ttsVoiceId: 'cc0:es-dave',
   ttsPhononVoiceId: 'phonon:b6FvJAiokjdqIti4',
+  ttsKokoroVoiceId: 'kokoro:ef_dora',
   ttsAcceptedLicenses: [],
   ttsLanguage: 'auto',
   ttsStreaming: true,
@@ -418,6 +419,7 @@ export function getSettings(): AppSettings {
   merged.ttsLanguage = merged.ttsLanguage === 'auto' || isTtsLanguage(merged.ttsLanguage) ? merged.ttsLanguage : 'auto';
   merged.ttsStreaming = merged.ttsStreaming !== false;
   merged.ttsPhononVoiceId = typeof merged.ttsPhononVoiceId === 'string' && merged.ttsPhononVoiceId.startsWith('phonon:') ? merged.ttsPhononVoiceId : DEFAULTS.ttsPhononVoiceId;
+  merged.ttsKokoroVoiceId = typeof merged.ttsKokoroVoiceId === 'string' && /^kokoro:[a-z0-9_]+$/.test(merged.ttsKokoroVoiceId) ? merged.ttsKokoroVoiceId : DEFAULTS.ttsKokoroVoiceId;
   merged.ttsAcceptedLicenses = Array.isArray(merged.ttsAcceptedLicenses) ? merged.ttsAcceptedLicenses.filter((id): id is string => TTS_MODELS.some((model) => model.id === id && model.nonCommercial)) : [];
   merged.ttsIdleUnloadMin = Math.max(1, Math.min(120, Math.round(Number(merged.ttsIdleUnloadMin) || 5)));
   merged.ttsRetention = sanitizeTtsRetention(merged.ttsRetention);

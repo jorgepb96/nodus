@@ -210,7 +210,7 @@ class Server:
         model_id = _require(msg, "model_id")
         if not _MODEL_ID_RE.match(model_id):
             raise RequestError("'model_id' may only contain letters, digits, '.', '_' and '-'")
-        if not (model_path / "config.json").is_file():
+        if self.backend.name != "kokoro" and not (model_path / "config.json").is_file():
             raise RequestError(f"no model at {model_path}")
         if self.model_path == model_path.resolve() and self.backend.loaded:
             self.model_id = model_id
@@ -375,7 +375,8 @@ class Server:
         out_dir = pathlib.Path(_require(msg, "out_dir"))
         lang = str(msg.get("lang") or "en").strip().lower()
         phonon = self.backend.name == "phonon"
-        languages = PHONON_LANGUAGES if phonon else ming_text.LANGUAGES
+        kokoro = self.backend.name == "kokoro"
+        languages = PHONON_LANGUAGES if phonon else KOKORO_LANGUAGES if kokoro else ming_text.LANGUAGES
         if lang not in languages:
             raise RequestError(f"unsupported lang {lang!r}; expected one of {', '.join(languages)}")
         voice = msg.get("voice")
@@ -385,6 +386,13 @@ class Server:
         conditioning = {}
         if phonon:
             conditioning = {"lang": lang, "voice": self.phonon_voice(voice)}
+        elif kokoro:
+            if kind != "kokoro":
+                raise RequestError("Kokoro voice.kind must be 'kokoro'")
+            name = voice.get("name")
+            if not isinstance(name, str) or not name:
+                raise RequestError("'voice.name' is required for Kokoro")
+            conditioning = {"lang": lang, "voice": name}
         elif kind == "clone":
             use_spk_emb = bool(msg.get("use_spk_emb", False))
             cached = self.voice_prompt(voice, use_spk_emb)
@@ -437,10 +445,12 @@ _PACKAGES = {
     "torch": ("torch", "torchaudio", "transformers", "tokenizers", "x-transformers", "diffusers",
               "accelerate", "onnxruntime", "soundfile", "numpy"),
     "phonon": ("ptts", "numpy"),
+    "kokoro": ("kokoro-onnx", "onnxruntime", "phonemizer", "espeakng-loader"),
     "fake": (),
 }
 
 PHONON_LANGUAGES = ("en", "fr", "de", "es", "pt")
+KOKORO_LANGUAGES = ("es", "en")
 
 
 def self_check(backend: str, device: str) -> int:
@@ -487,6 +497,21 @@ def self_check(backend: str, device: str) -> int:
 
             ptts.build_info()
             kind = "cpu"
+        elif backend == "kokoro":
+            import kokoro_onnx  # noqa: F401
+            import onnxruntime  # noqa: F401
+            import phonemizer
+
+            from backend_kokoro import espeak_data_path
+
+            # Short data path for the bundled espeak dylib, then a real phonemization:
+            # an import-only check would pass while the first sentence still failed.
+            data_path = espeak_data_path()
+            if not data_path:
+                raise RuntimeError("espeak-ng data is not available")
+            os.environ["ESPEAK_DATA_PATH"] = data_path
+            phonemizer.phonemize("Hola.", "es", preserve_punctuation=True, with_stress=True)
+            kind = "cpu"
         else:
             kind = "cpu"
         versions = {"python": platform.python_version()}
@@ -505,7 +530,7 @@ def self_check(backend: str, device: str) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Nodus Ming-3.0 TTS sidecar")
-    parser.add_argument("--backend", choices=("mlx", "torch", "phonon", "fake"), required=True)
+    parser.add_argument("--backend", choices=("mlx", "torch", "phonon", "kokoro", "fake"), required=True)
     parser.add_argument("--models-dir")
     parser.add_argument("--device", choices=("auto", "cuda", "cpu"), default="auto", help="torch only")
     # fp32 by default: on the one CPU measured (Apple M2, qnnpack) int8 was no
@@ -549,6 +574,9 @@ def main() -> None:
         elif args.backend == "phonon":
             from backend_phonon import PhononBackend
             server.backend = PhononBackend()
+        elif args.backend == "kokoro":
+            from backend_kokoro import KokoroBackend
+            server.backend = KokoroBackend()
         elif args.backend == "torch":
             from backend_torch import TorchBackend
             server.backend = TorchBackend(args.device, args.cpu_quant)

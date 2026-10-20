@@ -21,7 +21,8 @@ import type { TtsBackend, TtsDevice, TtsEngineState, TtsLanguage } from '@shared
 export type TtsVoiceRef =
   | { kind: 'clone'; voiceId: string; wavPath: string; text: string; cacheDir: string }
   | { kind: 'builtin'; name: string }
-  | { kind: 'embedding'; name: string; path: string };
+  | { kind: 'embedding'; name: string; path: string }
+  | { kind: 'kokoro'; name: string };
 
 export interface TtsSynthRequest {
   text: string;
@@ -198,7 +199,8 @@ export class TtsEngineHost {
     const ref = job.request.voice;
     const voice = ref.kind === 'clone'
       ? { kind: 'clone', voice_id: ref.voiceId, wav_path: ref.wavPath, text: ref.text, cache_dir: ref.cacheDir }
-      : ref.kind === 'embedding' ? { kind: 'embedding', name: ref.name, path: ref.path } : { kind: 'builtin', name: ref.name };
+      : ref.kind === 'embedding' ? { kind: 'embedding', name: ref.name, path: ref.path }
+      : ref.kind === 'kokoro' ? { kind: 'kokoro', name: ref.name } : { kind: 'builtin', name: ref.name };
     return new Promise<TtsJobResult>((resolve, reject) => {
       const onMessage = (message: Message) => {
         if (message.job_id !== job.jobId) return false;

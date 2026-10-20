@@ -63,7 +63,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const platformModels = useMemo(() => {
     const backend = status?.runtime.backend;
     // Phonon runs on every platform; Ming's checkpoints follow this machine's backend.
-    return TTS_MODELS.filter((model) => model.engine === 'phonon' || !backend || model.backend === backend);
+    return TTS_MODELS.filter((model) => model.engine !== 'ming' || !backend || model.backend === backend);
   }, [status?.runtime.backend]);
   const modelStatus = useMemo(() => new Map(status?.models.map((model) => [model.id, model]) ?? []), [status]);
   const selectedModelId = settings.ttsModelId || platformModels.find((model) => !model.unpublished)?.id || '';
@@ -90,10 +90,13 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const runtime = status?.runtime;
   const mingInstalling = install?.engine === 'ming' || Boolean(runtime?.installing);
   const phononInstalling = install?.engine === 'phonon' || Boolean(status?.phononRuntime.installing);
+  const kokoroInstalling = install?.engine === 'kokoro' || Boolean(status?.kokoroRuntime?.installing);
   const mingPhase = install?.engine === 'ming' ? install.phase : runtime?.phase;
   const phononPhase = install?.engine === 'phonon' ? install.phase : undefined;
+  const kokoroPhase = install?.engine === 'kokoro' ? install.phase : undefined;
   const mingFraction = install?.engine === 'ming' ? install.fraction : runtime?.progress ?? 0;
   const phononFraction = install?.engine === 'phonon' ? install.fraction : 0;
+  const kokoroFraction = install?.engine === 'kokoro' ? install.fraction : 0;
   const deviceLabel = runtime?.device === 'metal' ? t('GPU de Apple (MLX)') : runtime?.device === 'cuda' ? t('GPU NVIDIA (CUDA)') : runtime?.device === 'cpu' ? t('Procesador (CPU)') : '';
 
   return <div className="mt-5 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950/35" data-testid="narration-settings">
@@ -156,6 +159,26 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
           <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={!hfToken.trim()} onClick={() => void run(async () => { setHasHfToken(await window.nodus.ttsSetHuggingFaceToken(hfToken)); setHfToken(''); })}>{t('Guardar token')}</button>
           {hasHfToken && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(async () => setHasHfToken(await window.nodus.ttsSetHuggingFaceToken('')))}>{t('Eliminar token')}</button>}
         </div>
+      </div>
+    </div>
+
+    {/* 1c · Kokoro engine: ONNX Runtime on the CPU, no PyTorch */}
+    <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 text-xs dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="narration-runtime-kokoro">
+      <div className="flex flex-wrap items-center gap-2">
+        <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Motor Kokoro')}</h5>
+        {status?.kokoroRuntime?.installed && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('Instalado')} · {t('Procesador (CPU)')}</span>}
+      </div>
+      <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Un solo modelo de 82M con 31 voces inglesas y españolas. ONNX Runtime en el procesador, varias veces más rápido que el tiempo real.')}</p>
+      {kokoroInstalling && <div className="mt-2">
+        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[kokoroPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(kokoroFraction * 100)}>
+          <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, kokoroFraction * 100)}%` }} />
+        </div>
+      </div>}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {!status?.kokoroRuntime?.installed && !kokoroInstalling && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime('kokoro'))}><Icon name="download" size={11} />{t('Instalar motor de voz')}</button>}
+        {kokoroInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelInstall()}>{t('Cancelar')}</button>}
+        {status?.kokoroRuntime?.installed && !kokoroInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('kokoro'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>}
       </div>
     </div>
 
@@ -236,7 +259,8 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       voices={voices}
       selectedVoiceId={settings.ttsVoiceId}
       phononVoiceId={settings.ttsPhononVoiceId}
-      onSelect={(voiceId) => void patch(voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : { ttsVoiceId: voiceId })}
+      kokoroVoiceId={settings.ttsKokoroVoiceId}
+      onSelect={(voiceId) => void patch(voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : voiceId.startsWith('kokoro:') ? { ttsKokoroVoiceId: voiceId } : { ttsVoiceId: voiceId })}
       onChanged={() => void refreshVoices()}
       onDelete={(voice) => setConfirm({ kind: 'voice', voice })}
       onError={(message) => setError(message)}
@@ -287,10 +311,11 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   </div>;
 }
 
-function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChanged, onDelete, onError, sttModel }: {
+function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, onSelect, onChanged, onDelete, onError, sttModel }: {
   voices: TtsVoice[];
   selectedVoiceId: string;
   phononVoiceId: string;
+  kokoroVoiceId: string;
   onSelect: (voiceId: string) => void;
   onChanged: () => void;
   onDelete: (voice: TtsVoice) => void;
@@ -375,6 +400,12 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChan
   const builtin = voices.filter((voice) => voice.origin === 'builtin' && (!builtinFilter || String(voice.name ?? '').toLowerCase().includes(builtinFilter.toLowerCase())));
   const [phononLanguage, setPhononLanguage] = useState<string>('es');
   const phonon = voices.filter((voice) => voice.origin === 'phonon' && (voice.language === phononLanguage));
+  const [kokoroLanguage, setKokoroLanguage] = useState<string>('es');
+  const kokoro = voices.filter((voice) => voice.origin === 'kokoro' && (voice.language === kokoroLanguage));
+  useEffect(() => {
+    const selected = voices.find((voice) => voice.id === kokoroVoiceId);
+    if (selected?.language) setKokoroLanguage(selected.language);
+  }, [kokoroVoiceId, voices]);
 
   const row = (voice: TtsVoice) => {
     const selected = voice.id === (voice.origin === 'phonon' ? phononVoiceId : selectedVoiceId);
@@ -479,6 +510,15 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChan
     </div>
     <p className="mt-1 text-[10px] text-neutral-500">{t('Se usan con los modelos Phonon; tus voces grabadas funcionan con Ming. Cada voz se descarga la primera vez que la usas.')}</p>
     <SettingsModelList className="mt-1 max-h-72 overflow-y-auto">{phonon.map(row)}</SettingsModelList>
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      <h6 className="text-[11px] font-medium text-neutral-500">{t('Voces de Kokoro')}</h6>
+      <select className="input h-7 min-w-0 py-0 text-[11px]" value={kokoroLanguage} onChange={(event) => setKokoroLanguage(event.target.value)} aria-label={t('Idioma')}>
+        {TTS_LANGUAGES.filter((entry) => entry.code === 'es' || entry.code === 'en').map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+      </select>
+      <select className="input h-7 min-w-0 py-0 text-[11px]" value={kokoroVoiceId} onChange={(event) => onSelect(event.target.value)} aria-label={t('Voz')} data-testid="narration-kokoro-voice">
+        {kokoro.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}{voice.locale ? ` · ${voice.locale}` : ''}</option>)}
+      </select>
+    </div>
     <h6 className="mt-4 text-[11px] font-medium text-neutral-500">{t('Voces de ejemplo (dominio público)')}</h6>
     <SettingsModelList className="mt-1">{bundled.map(row)}</SettingsModelList>
     <div className="mt-4 flex items-center gap-2">

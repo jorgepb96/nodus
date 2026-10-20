@@ -22,10 +22,10 @@ generated.
 | `ming_text.py` | Fragment splitting (a verbatim copy of mlx-audio's `_split_fragments`, checked by the protocol test), the prompt and its `Target language:` line, built-in voice captions. Standard library only. |
 | `speaker.py` | CAM++ speaker embedding: Kaldi fbank in NumPy plus `campplus.onnx` on onnxruntime. |
 | `prompt_audio.py` | Trims the reference clip's leading and trailing silence before it is encoded (why: below). |
-| `backend_mlx.py`, `backend_torch.py`, `backend_fake.py` | One class each with the same small interface (`load`, `encode_prompt`, `synth_fragment`, ...). |
+| `backend_mlx.py`, `backend_torch.py`, `backend_phonon.py`, `backend_kokoro.py`, `backend_fake.py` | One class each with the same small interface (`load`, `encode_prompt`, `synth_fragment`, ...). |
 | `mlx_ming3/` | Vendored mlx-audio module; see its `NODUS_VENDOR.md` for the commit and why. |
 | `ming_official/` | Vendored official inference code; see its `NODUS_VENDOR.md`. |
-| `requirements-*.in` / `requirements-*.lock` | Inputs and hash-pinned locks (below). |
+| `requirements-*.in` / `requirements-*.lock` | Kokoro has its own small ONNX/espeak lock. | Inputs and hash-pinned locks (below). |
 | `lock.sh`, `verify_locks.py` | Regenerate the locks; check every lock against every platform it serves. |
 
 ## Starting it

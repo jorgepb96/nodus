@@ -27,7 +27,7 @@ function toClip(row: AudioClipRow): AudioClip {
     entityId: row.entity_id,
     segmentIndex: row.segment_index,
     segmentLabel: row.segment_label,
-    provider: (['ming', 'kokoro', 'hume', 'piper'] as const).find((provider) => provider === row.provider) ?? 'piper',
+    provider: (['ming', 'phonon', 'kokoro', 'hume', 'piper'] as const).find((provider) => provider === row.provider) ?? 'piper',
     voice: row.voice,
     language: row.language,
     fileName: row.file_name,

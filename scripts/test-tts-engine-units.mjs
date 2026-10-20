@@ -60,6 +60,7 @@ try {
     platformSupported: true,
     runtime: { engine: 'ming', backend: 'mlx', installed: true, installing: false },
     phononRuntime: { engine: 'phonon', backend: 'phonon', installed: false, installing: false },
+    kokoroRuntime: { engine: 'kokoro', backend: 'kokoro', installed: false, installing: false },
     engine: { state: 'unloaded', modelId: null, idleUnloadAt: null },
     models: [
       { id: 'ming3-0.5b-mlx-8bit', downloaded: false, downloading: false, downloadedBytes: 0, totalBytes: 100, progress: 0 },

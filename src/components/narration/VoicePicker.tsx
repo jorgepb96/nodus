@@ -8,7 +8,7 @@ import './voicePicker.css';
 /** A voice with the downloaded checkpoint that can actually speak its language. */
 export interface VoicePickerOption {
   voice: TtsVoice;
-  engine: 'ming' | 'phonon';
+  engine: 'ming' | 'phonon' | 'kokoro';
   modelId: string;
   modelLabel: string;
 }
@@ -29,7 +29,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [engine, setEngine] = useState<'all' | 'ming' | 'phonon'>('all');
+  const [engine, setEngine] = useState<'all' | 'ming' | 'phonon' | 'kokoro'>('all');
   const [language, setLanguage] = useState<'all' | TtsLanguage>('all');
   const trigger = useRef<HTMLButtonElement>(null);
   const popup = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
   }, [options]);
   const engines = useMemo(() => {
     const present = new Set(options.map((option) => option.engine));
-    return ([['ming', 'Ming'], ['phonon', 'Phonon']] as const).filter(([id]) => present.has(id));
+    return ([['ming', 'Ming'], ['phonon', 'Phonon'], ['kokoro', 'Kokoro']] as const).filter(([id]) => present.has(id));
   }, [options]);
 
   const filtered = useMemo(() => {
@@ -59,7 +59,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
   }, [options, engine, language, query]);
 
   const groups = useMemo(() => {
-    const byEngine = new Map<'ming' | 'phonon', VoicePickerOption[]>();
+    const byEngine = new Map<'ming' | 'phonon' | 'kokoro', VoicePickerOption[]>();
     for (const option of filtered) byEngine.set(option.engine, [...(byEngine.get(option.engine) ?? []), option]);
     return [...byEngine.entries()];
   }, [filtered]);
@@ -193,7 +193,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
       </div>
       <div className="voice-picker-list" id={listId} role="listbox" aria-label={t('Todas las voces')}>
         {groups.map(([group, entries]) => <div key={group} className="voice-picker-group">
-          <div className="voice-picker-group-label">{group === 'ming' ? 'Ming' : 'Phonon'}</div>
+          <div className="voice-picker-group-label">{group === 'ming' ? 'Ming' : group === 'phonon' ? 'Phonon' : 'Kokoro'}</div>
           {entries.map((option) => {
             const languageLabel = TTS_LANGUAGES.find((entry) => entry.code === option.voice.language)?.label ?? option.voice.language;
             const active = option.voice.id === value;

@@ -1,9 +1,20 @@
 # Narration with Ming 3.0 TTS
 
 Nodus narrates research-chat answers, Deep Research reports, immersions, dictionary entries
-and Study material with **Ming-3.0-tts 0.5B** (inclusionAI, MIT), running locally. It
-replaces the Piper, Kokoro and Hume engines; their old clips stay playable (they are WAV
-files) and are labelled with their original provider.
+and Study material locally with **Ming-3.0-tts 0.5B** (inclusionAI, MIT), **Phonon**
+(Gradium) and **Kokoro-82M** (hexgrad, Apache-2.0). The older Piper, Kokoro and Hume
+clips stay playable (they are WAV files) and are labelled with their original provider.
+
+## Kokoro-82M
+
+Kokoro is the third local engine: a single 82M ONNX graph (`kokoro-v1.0.int8.onnx`) plus
+`voices-v1.0.bin` with 31 English and Spanish voices. It runs in its own Python environment
+(`runtime/ming-tts/requirements-kokoro.lock`: `kokoro-onnx`, ONNX Runtime, espeak-ng, no
+PyTorch) on the CPU, writes 24 kHz WAV fragments like Phonon and is measured at roughly
+0.12–0.24 RTF on the Apple M2 (about 4–8× real time, depending on the voice and whether the
+first phonemizer call is included). The model and voice pack are pinned to the
+`thewh1teagle/kokoro-onnx` v1.0 release with exact sizes and SHA-256 and are deleted and
+re-downloaded like any other checkpoint.
 
 The Research chat header carries an **Escuchar** action for the latest finished answer. It
 opens the same Listen balloon and starts the saved clip or generation on the first click;
@@ -12,7 +23,8 @@ the per-answer icon still opens the balloon without starting.
 The balloon's voice selector is a styled list, not a native select: it has a search box and
 model/language filters. It lists the voices of every platform-supported checkpoint and
 selecting one carries the checkpoint that speaks its language (Phonon's per-language model
-first, otherwise its multilingual one), so choosing a Phonon voice can switch the model.
+first, otherwise its multilingual one; Kokoro has one checkpoint for both languages), so
+choosing a voice can switch the model.
 
 ## Architecture
 

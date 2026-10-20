@@ -18,6 +18,7 @@ try {
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/ttsLanguage.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/mingBuiltinVoices.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/phononVoices.ts'))};`,
+    `export * from ${JSON.stringify(path.join(repoRoot, 'shared/kokoroVoices.ts'))};`,
   ].join('\n'));
   const outfile = path.join(tmp, 'tts.mjs');
   await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
@@ -27,9 +28,11 @@ try {
   for (const model of tts.TTS_MODELS) {
     assert.ok(model.licenseLabel && model.licenseUrl, `${model.id} shows its license before download`);
     if (model.unpublished) { assert.equal(model.assets.length, 0); continue; }
-    assert.ok(model.assets.some((a) => a.file === 'model.safetensors' || a.file === 'model.q8.gguf'), `${model.id} has weights`);
+    assert.ok(model.assets.some((a) => a.file === 'model.safetensors' || a.file === 'model.q8.gguf' || a.file.endsWith('.onnx')), `${model.id} has weights`);
     for (const asset of model.assets) {
-      assert.match(asset.url, /^https:\/\/huggingface\.co\/[^/]+\/[^/]+\/resolve\/[0-9a-f]{40}\//, `${asset.file} pins a revision`);
+      assert.match(asset.url, model.engine === 'kokoro'
+        ? /^https:\/\/github\.com\/thewh1teagle\/kokoro-onnx\/releases\/download\/model-files-v1\.0\//
+        : /^https:\/\/huggingface\.co\/[^/]+\/[^/]+\/resolve\/[0-9a-f]{40}\//, `${asset.file} pins a revision`);
       if (model.gated && asset.bytes < 1_000_000 && !asset.sha256) continue; // gated small text files: size only
       assert.match(asset.sha256, /^[0-9a-f]{64}$/, `${asset.file} has a SHA-256`);
       assert.ok(Number.isInteger(asset.bytes) && asset.bytes > 0, `${asset.file} has an exact size`);
@@ -41,7 +44,7 @@ try {
   assert.ok(mac.includes('ming3-0.5b-mlx-8bit'));
   assert.ok(mac.includes('ming3-0.5b-mlx-4bit'), 'the published 4-bit MLX checkpoint is offered');
   for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'x64']]) {
-    assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], ['torch', 'phonon']);
+    assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], ['torch', 'phonon', 'kokoro']);
     assert.equal(tts.ttsBackendForPlatform(platform, arch), 'torch');
   }
   assert.equal(tts.defaultTtsModelId('darwin', 'arm64'), 'ming3-0.5b-mlx-8bit');
@@ -57,6 +60,22 @@ try {
   assert.ok(tts.TTS_MODELS.find((m) => m.id === 'phonon-40m-es').languages.includes('es'));
   assert.deepEqual([...tts.PHONON_LANGUAGES], ['es', 'en', 'fr', 'de', 'pt'], 'Phonon can carry an es-ES catalogue voice');
   assert.ok(!tts.PHONON_LANGUAGES.includes('zh'), 'Phonon does not accept Ming-only languages');
+
+  // ── Kokoro: one ONNX checkpoint, bundled voices, no cloning ─────────────────
+  const kokoro = tts.TTS_MODELS.find((m) => m.id === 'kokoro-82m-int8');
+  assert.equal(tts.ttsBackendForModel(kokoro, 'darwin', 'arm64'), 'kokoro');
+  assert.equal(tts.ttsBackendForModel(kokoro, 'win32', 'x64'), 'kokoro');
+  assert.equal(kokoro.engine, 'kokoro');
+  assert.equal(kokoro.cloning, false);
+  assert.deepEqual([...kokoro.languages], ['es', 'en']);
+  assert.ok(kokoro.assets.some((asset) => asset.file.endsWith('.onnx')));
+  assert.ok(kokoro.assets.some((asset) => asset.file === 'voices-v1.0.bin'));
+  assert.equal(tts.KOKORO_VOICES.length, 31, 'the catalogue carries 31 English and Spanish voices');
+  assert.ok(tts.KOKORO_VOICES.some((voice) => voice.id === 'ef_dora' && voice.language === 'es'));
+  assert.ok(tts.KOKORO_VOICES.some((voice) => voice.id === 'af_heart' && voice.language === 'en'));
+  assert.equal(tts.kokoroVoiceId('ef_dora'), 'kokoro:ef_dora');
+  assert.ok(tts.isKokoroVoiceId('kokoro:ef_dora'));
+  assert.equal(tts.isKokoroVoiceId('ef_dora'), false);
 
   // ── Language detection and resolution ───────────────────────────────────────
   assert.equal(tts.detectTtsLanguage('Los resultados sugieren que la concentración de zinc influye en la eficacia del proceso.'), 'es');

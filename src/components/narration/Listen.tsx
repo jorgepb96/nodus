@@ -142,11 +142,12 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   const modelId = settings?.ttsModelId || status?.models.find((model) => model.downloaded)?.id || status?.models[0]?.id || '';
   const model = TTS_MODELS.find((entry) => entry.id === modelId);
   const phononModel = model?.engine === 'phonon';
+  const kokoroModel = model?.engine === 'kokoro';
   const downloadedModels = TTS_MODELS.filter((entry) => status?.models.some((m) => m.id === entry.id && m.downloaded));
   const platformModels = TTS_MODELS.filter((entry) => !status || status.models.some((m) => m.id === entry.id));
   const modelStatus = status?.models.find((entry) => entry.id === modelId);
   const ready = ttsReady(status, modelId);
-  const runtimeInstalled = phononModel ? status?.phononRuntime.installed : status?.runtime.installed;
+  const runtimeInstalled = phononModel ? status?.phononRuntime.installed : kokoroModel ? status?.kokoroRuntime?.installed : status?.runtime.installed;
   const engine = status?.engine;
   const engineActive = engine?.state === 'ready' || engine?.state === 'busy';
   const unloadTime = engine?.idleUnloadAt ? new Date(engine.idleUnloadAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -166,7 +167,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
     setError('');
     const segmentRequest: AudioSegmentRequest = { ...(target.segmentRequest ?? {}), ...(target.markdown ? { markdown: target.markdown(), title: '' } : {}) };
     const input = {
-      kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId: phononModel ? settings.ttsPhononVoiceId : settings.ttsVoiceId, language,
+      kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId: phononModel ? settings.ttsPhononVoiceId : kokoroModel ? settings.ttsKokoroVoiceId : settings.ttsVoiceId, language,
       labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
     };
     if (settings.ttsStreaming) { startNarration(player, input, source); return; }
@@ -215,24 +216,26 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   // One picker for every installed engine. Each voice carries the downloaded checkpoint
   // that can speak its language, so choosing a Phonon voice can switch the model too.
   const voiceOptions = voices.flatMap((voice): VoicePickerOption[] => {
-    const voiceEngine = voice.origin === 'phonon' ? 'phonon' : 'ming';
+    const voiceEngine = voice.origin === 'phonon' ? 'phonon' : voice.origin === 'kokoro' ? 'kokoro' : 'ming';
     const candidates = platformModels.filter((entry) => entry.engine === voiceEngine && entry.languages.includes(voice.language));
     if (!candidates.length) return [];
     // Phonon has a checkpoint per language where one exists; otherwise its multilingual
     // checkpoint. The model may still need downloading: choosing the voice keeps that
     // visible in the engine card instead of hiding voices whose model is not local yet.
-    const model = voiceEngine === 'phonon'
+    const model = voiceEngine === 'phonon' || voiceEngine === 'kokoro'
       ? candidates.find((entry) => entry.languages.length === 1) ?? candidates.find((entry) => entry.id === modelId) ?? candidates[0]
       : candidates.find((entry) => entry.id === modelId) ?? candidates.find((entry) => downloadedModels.some((downloaded) => downloaded.id === entry.id)) ?? candidates[0];
     return [{ voice, engine: voiceEngine, modelId: model.id, modelLabel: model.label }];
   });
-  const selectedVoiceId = phononModel ? settings?.ttsPhononVoiceId ?? '' : settings?.ttsVoiceId ?? '';
+  const selectedVoiceId = phononModel ? settings?.ttsPhononVoiceId ?? '' : kokoroModel ? settings?.ttsKokoroVoiceId ?? '' : settings?.ttsVoiceId ?? '';
   const selectedVoiceName = voices.find((voice) => voice.id === selectedVoiceId)?.name;
   const chooseVoice = (option: VoicePickerOption) => {
     if (!settings) return;
     const patch = option.engine === 'phonon'
       ? { ttsPhononVoiceId: option.voice.id, ttsModelId: option.modelId }
-      : { ttsVoiceId: option.voice.id, ttsModelId: option.modelId };
+      : option.engine === 'kokoro'
+        ? { ttsKokoroVoiceId: option.voice.id, ttsModelId: option.modelId }
+        : { ttsVoiceId: option.voice.id, ttsModelId: option.modelId };
     setSettings({ ...settings, ...patch });
     void window.nodus.updateSettings(patch);
   };
@@ -247,8 +250,8 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="listen-engine">
           {!status && <span className="text-neutral-500">{t('Comprobando el motor de voz…')}</span>}
           {status && !runtimeInstalled && <div className="flex items-center justify-between gap-2">
-            <span className="text-neutral-600 dark:text-neutral-400">{(phononModel ? status.phononRuntime : status.runtime).installing ? t('Instalando el motor de voz…') : t('El motor de voz no está instalado.')}</span>
-            {!(phononModel ? status.phononRuntime : status.runtime).installing && <button className="btn btn-primary h-7 px-2 text-[11px]" disabled={!!busy} onClick={() => void act('install', () => window.nodus.ttsInstallRuntime(phononModel ? 'phonon' : 'ming'))}><Icon name="download" size={11} />{t('Instalar')}</button>}
+            <span className="text-neutral-600 dark:text-neutral-400">{((phononModel ? status.phononRuntime : kokoroModel ? status.kokoroRuntime : status.runtime)?.installing) ? t('Instalando el motor de voz…') : t('El motor de voz no está instalado.')}</span>
+            {!((phononModel ? status.phononRuntime : kokoroModel ? status.kokoroRuntime : status.runtime)?.installing) && <button className="btn btn-primary h-7 px-2 text-[11px]" disabled={!!busy} onClick={() => void act('install', () => window.nodus.ttsInstallRuntime(phononModel ? 'phonon' : kokoroModel ? 'kokoro' : 'ming'))}><Icon name="download" size={11} />{t('Instalar')}</button>}
           </div>}
           {runtimeInstalled && modelStatus && !modelStatus.downloaded && <div className="grid gap-1.5">
             <div className="flex items-center justify-between gap-2">

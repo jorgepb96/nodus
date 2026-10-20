@@ -144,6 +144,7 @@ export const SHARED_MODEL_KEYS = [
   'ttsModelId',
   'ttsVoiceId',
   'ttsPhononVoiceId',
+  'ttsKokoroVoiceId',
   'ttsAcceptedLicenses',
   'ttsLanguage',
   'ttsStreaming',

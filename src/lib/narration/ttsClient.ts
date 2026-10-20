@@ -136,7 +136,12 @@ export function subscribeTtsEvents(listener: EventListener): () => void {
 export function ttsReady(status: TtsStatus | null, modelId?: string | null): boolean {
   if (!status) return false;
   // Each engine has its own environment: Phonon checkpoints need Phonon's, Ming's need Ming's.
-  const runtimeFor = (id: string) => (TTS_MODELS.find((model) => model.id === id)?.engine === 'phonon' ? status.phononRuntime : status.runtime).installed;
+  const runtimeFor = (id: string) => {
+    const engine = TTS_MODELS.find((model) => model.id === id)?.engine;
+    if (engine === 'phonon') return status.phononRuntime.installed;
+    if (engine === 'kokoro') return Boolean(status.kokoroRuntime?.installed);
+    return status.runtime.installed;
+  };
   const models = status.models.filter((model) => model.downloaded && runtimeFor(model.id));
   return modelId ? models.some((model) => model.id === modelId) : models.length > 0;
 }

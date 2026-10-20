@@ -59,7 +59,7 @@ import type {
   ResearchWebSearchMode,
 } from '@shared/types';
 import { Icon, sortModelRefs } from '../components/ui';
-import { ListenButton } from '../components/narration/Listen';
+import { ListenButton, type ListenTarget } from '../components/narration/Listen';
 import type { MarkdownCitation } from '../components/Markdown';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ChatTypingIndicator } from '../components/ChatTypingIndicator';
@@ -1173,6 +1173,17 @@ export function ResearchAssistantModal({
   const visibleConversations = conversations.filter((c) => showArchived || !c.archived);
   const archivedCount = conversations.filter((c) => c.archived).length;
   const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
+  // The header action narrates the latest finished answer without scrolling back to it.
+  // It opens the same Listen balloon and starts the saved clip or generation on the first click.
+  const latestListenMessage = !adapter && activeId
+    ? [...messages].reverse().find((message) => message.role === 'assistant' && !message.error && message.content.trim() && message.id !== streamingId) ?? null
+    : null;
+  const latestListenTarget: ListenTarget | null = latestListenMessage && activeId ? {
+    kind: 'chat_message',
+    id: `${activeId}:${latestListenMessage.id}`,
+    title: deriveNoteTitle(latestListenMessage.content, conversations.find((conversation) => conversation.id === activeId)?.title || t('Research chat')),
+    markdown: () => researchChatPresentation(latestListenMessage).content,
+  } : null;
   // Citations open their evidence workspace without replacing the conversation.
   const handleCitation = useCallback((c: MarkdownCitation, origin?: {conversationId?:string;messageId?:string}) => {
     setCitationOrigin(origin ?? {});
@@ -1245,6 +1256,14 @@ export function ResearchAssistantModal({
               <span className="chat-skills-count">{selectedCount}</span>
             </button>
           )}
+          {latestListenTarget && <ListenButton
+            testId="research-chat-header-listen"
+            toolbar
+            autoStart
+            size={15}
+            label={t('Escuchar')}
+            target={latestListenTarget}
+          />}
           <AcademicSecondary compact={simpleInterface} label="Opciones">
             {simpleInterface && chatModelControl}
           <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={(sending && !!adapter) || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />

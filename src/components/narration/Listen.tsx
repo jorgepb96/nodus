@@ -36,12 +36,16 @@ export interface ListenTarget {
 
 type Confirm = null | { kind: 'clip'; clip: AudioClip } | { kind: 'all' };
 
-export function ListenButton({ target, size = 13, className = '', testId, label }: {
+export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, autoStart = false }: {
   target: ListenTarget;
   size?: number;
   className?: string;
   testId?: string;
   label?: string;
+  /** The header action uses the chat's button shape and shows its label. */
+  toolbar?: boolean;
+  /** Opening from the header action starts the saved clip or generation immediately. */
+  autoStart?: boolean;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -57,16 +61,19 @@ export function ListenButton({ target, size = 13, className = '', testId, label 
         ref={anchor}
         type="button"
         data-testid={testId ?? 'listen-button'}
-        className={`relative rounded p-1 transition ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : 'text-neutral-500 opacity-70 hover:opacity-100'} hover:bg-neutral-200/60 dark:hover:bg-neutral-800 ${className}`}
+        className={toolbar
+          ? `btn btn-ghost relative gap-1.5 border border-neutral-700 text-xs py-1 ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : ''} ${className}`
+          : `relative rounded p-1 transition ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : 'text-neutral-500 opacity-70 hover:opacity-100'} hover:bg-neutral-200/60 dark:hover:bg-neutral-800 ${className}`}
         title={generating ? tx('Generando audio · {pct}%', { pct: Math.round(fraction * 100) }) : playingHere ? t('Reproduciendo') : t('Escuchar')}
         aria-label={label ?? t('Escuchar')}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
         <Icon name={playingHere ? 'waveform' : 'volume'} size={size} />
+        {toolbar && <span className="hidden sm:inline">{label ?? t('Escuchar')}</span>}
         {generating && <ProgressRing fraction={fraction} />}
       </button>
-      {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} />}
+      {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} autoStart={autoStart} />}
     </>
   );
 }
@@ -96,13 +103,15 @@ function useTtsStatus(): TtsStatus | null {
   return status;
 }
 
-export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarget; anchor: React.RefObject<HTMLElement>; onClose: () => void }) {
+export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { target: ListenTarget; anchor: React.RefObject<HTMLElement>; onClose: () => void; autoStart?: boolean }) {
   const player = useAudioPlayer();
   const status = useTtsStatus();
   const progress = useGeneration(target.kind, target.id);
+  const autoStarted = useRef(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [voices, setVoices] = useState<TtsVoice[]>([]);
   const [clips, setClips] = useState<AudioClip[]>([]);
+  const [clipsLoaded, setClipsLoaded] = useState(false);
   const [language, setLanguage] = useState<TtsLanguageSetting>('auto');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -110,8 +119,13 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
   const key = `${target.kind}:${target.id}`;
   const isChat = target.kind === 'chat_message';
 
-  const refreshClips = async () => setClips(await window.nodus.listAudioClips(target.kind, target.id).catch(() => []));
+  const refreshClips = async () => {
+    const next = await window.nodus.listAudioClips(target.kind, target.id).catch(() => []);
+    setClips(next);
+    setClipsLoaded(true);
+  };
   useEffect(() => {
+    setClipsLoaded(false);
     void window.nodus.getSettings().then((next) => { setSettings(next); setLanguage(next.ttsLanguage); });
     void window.nodus.ttsVoices().then(setVoices).catch(() => {});
     void refreshClips();
@@ -168,6 +182,18 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
       }
     });
   };
+
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) return;
+    // Wait for the persisted clips before deciding whether to replay or generate, and for
+    // the engine status before deciding whether generation is possible at all.
+    if (!clipsLoaded || !settings || !status) return;
+    if (progress || player.source?.key === key) { autoStarted.current = true; return; }
+    if (!ready) { autoStarted.current = true; return; }
+    autoStarted.current = true;
+    if (playable.length) { player.play(playable, 0, source); return; }
+    narrate();
+  }, [autoStart, clipsLoaded, settings, status, progress, player.source?.key, ready, playable, source, player, narrate]);
 
   const setVoice = (voiceId: string) => {
     if (!settings) return;

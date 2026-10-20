@@ -5,6 +5,10 @@ and Study material with **Ming-3.0-tts 0.5B** (inclusionAI, MIT), running locall
 replaces the Piper, Kokoro and Hume engines; their old clips stay playable (they are WAV
 files) and are labelled with their original provider.
 
+The Research chat header carries an **Escuchar** action for the latest finished answer. It
+opens the same Listen balloon and starts the saved clip or generation on the first click;
+the per-answer icon still opens the balloon without starting.
+
 ## Architecture
 
 ```

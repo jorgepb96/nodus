@@ -57,3 +57,18 @@ test('input profiles detect supported recipes, validate overrides and preserve p
   assert.equal(profiles.embeddingInputText('a'.repeat(9000), 'document', e5).length, 8000);
   assert.throws(() => profiles.validateEmbeddingInputProfile({ ...e5, queryPrefix: 'bad' }, 'ollama', 'e5'), /prefijos/);
 });
+test('Harrier instructs queries only, wherever the same weights are served', () => {
+  const instruction = 'Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: ';
+  for (const [provider, model] of [['nodus', 'harrier-oss-v1-0.6b-q8_0'], ['ollama', 'hf.co/mradermacher/harrier-oss-v1-0.6b-GGUF:Q8_0'], ['lmstudio', 'microsoft/harrier-oss-v1-270m']]) {
+    const harrier = profiles.defaultEmbeddingInputProfile(provider, model);
+    assert.equal(harrier.kind, 'harrier', model);
+    assert.equal(profiles.embeddingInputText('ley educativa', 'query', harrier), `${instruction}ley educativa`);
+    assert.equal(profiles.embeddingInputText('ley educativa', 'document', harrier), 'ley educativa', 'documents carry no instruction');
+    assert.deepEqual(profiles.validateEmbeddingInputProfile(harrier, provider, model), harrier);
+  }
+  const harrier = profiles.defaultEmbeddingInputProfile('nodus', 'harrier-oss-v1-0.6b-q8_0');
+  assert.equal(profiles.embeddingInputText('a'.repeat(9000), 'query', harrier).length, 8000, 'the instruction counts against the input cap');
+  assert.throws(() => profiles.validateEmbeddingInputProfile({ ...harrier, documentPrefix: 'passage: ' }, 'nodus', 'harrier-oss-v1-0.6b-q8_0'), /prefijos/);
+  assert.equal(profiles.defaultEmbeddingInputProfile('nodus', 'bge-m3-q8_0').kind, 'plain', 'other built-in models keep their recipe');
+  assert.equal(profiles.defaultEmbeddingInputProfile('openrouter', 'acme/harriers-embed').kind, 'plain', 'only the Harrier family is matched');
+});

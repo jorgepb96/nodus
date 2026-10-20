@@ -1,0 +1,14 @@
+# Shared by both torch locks: the official Ming-3.0-tts 0.5B runtime
+# (ming_official/requirements.txt at the vendored commit), minus pynini and
+# flash-attn, plus psutil for the physical core count.
+transformers==4.46.3
+accelerate==1.3.0
+x-transformers==2.9.2
+diffusers==0.33.0
+soundfile==0.12.1
+onnxruntime==1.23.2
+loguru
+tqdm
+einops
+packaging
+psutil

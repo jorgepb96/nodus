@@ -99,10 +99,12 @@ export function contractForProfile(profile: EmbeddingIndexProfile, dim: number):
     if (contract.dim !== dim) throw new Error('embedding_contract_dimension_mismatch');
     return contract;
   }
+  // Only models that declare their pooling carry it, so historical fingerprints are unchanged.
+  const pooling = profile.provider === 'nodus' ? getNodusLocalModel(profile.model)?.pooling : undefined;
   return createEmbeddingContract({ provider: profile.provider, model: profile.model, dim,
     protocol: 'nodus.embedding.local.v1', task: 'retrieval',
     preprocessing: { input: 'utf16-8000', endpoint: profile.endpoint, modelRevision: profile.modelRevision,
-      ...(profile.input ? { inputProfile: profile.input } : {}) },
+      ...(profile.input ? { inputProfile: profile.input } : {}), ...(pooling ? { pooling } : {}) },
     normalization: profile.provider === 'nodus' ? 'l2' : 'provider-output',
     quantization: profile.provider === 'nodus' ? { weights: getNodusLocalModel(profile.model)?.quantization ?? 'unknown', output: 'float32' } : 'provider-output/float32', configVersion: 1 });
 }

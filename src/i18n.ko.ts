@@ -5378,6 +5378,7 @@ export const KO: Record<string, string> = {
   "Cambiar modelo": "모델 변경",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "임베딩 모델을 변경하면 기존 벡터가 새 모델에서 작동하지 않으므로 다시 색인을 생성해야 합니다.",
   "Embeddings multilingües de alta calidad para corpus amplios.": "대규모 말뭉치를 위한 고품질 다국어 임베딩입니다.",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "검색 지시문을 사용하는 Microsoft의 다국어 임베딩입니다. 로컬 모델 중 다국어 MTEB 점수가 가장 높으며 약 6.5GB의 GPU 메모리를 예약하므로 16GB 이상의 메모리를 갖춘 컴퓨터를 권장합니다.",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "정확성과 메모리 사용의 균형이 잘 잡힌 긴 상황의 다국어 임베딩입니다.",
   "Opción ligera y rápida para equipos con menos memoria.": "메모리가 적은 컴퓨터를 위한 가볍고 빠른 옵션입니다.",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "대화, 요약 및 아이디어를 위한 매우 가벼운 비전 모델입니다.",

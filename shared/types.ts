@@ -1998,6 +1998,8 @@ export interface AppSettings {
   embeddingModel: string;
   /** Query-time preference; never changes stored embeddings. */
   researchReranking?: 'off' | 'local';
+  /** Local reranker used when `researchReranking` is 'local' (see shared/localRerankers.ts). */
+  researchRerankerModel?: string;
   // Per-provider key presence (the keys themselves never cross IPC).
   providerKeys: Record<AiProvider, boolean>;
   /** Encrypted key files exist but the current OS secure-storage identity cannot

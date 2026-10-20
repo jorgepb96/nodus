@@ -54,4 +54,6 @@ export interface EmbeddingComparisonReport {
     }>;
   }>;
 }
-export interface LocalRerankerStatus { available: boolean; downloading: boolean; progress: number; bytes: number }
+export interface LocalRerankerModelStatus { id: string; available: boolean; downloading: boolean; progress: number; bytes: number }
+/** `available`/`downloading`/`progress`/`bytes` describe the selected model; `models` lists every option. */
+export interface LocalRerankerStatus { selected: string; available: boolean; downloading: boolean; progress: number; bytes: number; models: LocalRerankerModelStatus[] }

@@ -62,6 +62,40 @@ test('contracts reject dimension changes and invalid vectors without partial wri
   assert.equal(indexes.normalizeEmbeddingEndpoint('https://user:secret@example.org/v1/?token=secret#private'), 'https://example.org/v1');
 });
 
+test('a built-in Harrier index records its query instruction and last-token pooling', () => {
+  const harrier = indexes.embeddingProfile(settings.getSettings(), { provider: 'nodus', model: 'harrier-oss-v1-0.6b-q8_0' });
+  assert.equal(harrier.endpoint, 'nodus-local-runtime');
+  assert.match(harrier.modelRevision, /^[a-f0-9]{64}$/, 'the pinned GGUF digest identifies the weights');
+  assert.equal(harrier.input.kind, 'harrier');
+  assert.equal(harrier.input.documentPrefix, '');
+  const contract = indexes.contractForProfile(harrier, 1024);
+  assert.equal(contract.preprocessing.pooling, 'last');
+  assert.match(contract.preprocessing.inputProfile.queryPrefix, /^Instruct: .+\nQuery: $/);
+  const bge = indexes.contractForProfile(indexes.embeddingProfile(settings.getSettings(), { provider: 'nodus', model: 'bge-m3-q8_0' }), 1024);
+  assert.equal('pooling' in bge.preprocessing, false, 'models without a declared pooling keep their historical contract');
+  assert.notEqual(indexes.profileFingerprint(harrier), indexes.profileFingerprint({ ...harrier, input: { version: 1, kind: 'plain', queryPrefix: '', documentPrefix: '' } }),
+    'an index prepared without the instruction is a different vector space');
+});
+
+test('CLS profiles are new vector spaces and leave mean-pooled BGE-M3 and GTE indexes valid', () => {
+  // Fingerprints of indexes prepared before the CLS profiles existed. A change here would force
+  // every user with a local BGE-M3 or GTE index to rebuild it.
+  const historical = {
+    'bge-m3-q8_0': '36b4af3e7154f280cf435db32b95c50528009a67a385f04320b8ab43a895521f',
+    'gte-multilingual-base-int8': '161b043abb4ac246ac29bdeee73a38d443944550de2178adf585a803ded60e19',
+  };
+  for (const [legacyId, fingerprint] of Object.entries(historical)) {
+    const legacy = indexes.embeddingProfile(settings.getSettings(), { provider: 'nodus', model: legacyId });
+    assert.equal(indexes.profileFingerprint(legacy), fingerprint, `${legacyId} keeps its historical fingerprint`);
+    assert.equal('pooling' in indexes.contractForProfile(legacy, 1).preprocessing, false);
+    const cls = indexes.embeddingProfile(settings.getSettings(), { provider: 'nodus', model: `${legacyId}-cls` });
+    assert.equal(cls.modelRevision, legacy.modelRevision, 'both profiles name the same verified weights');
+    assert.deepEqual(cls.input, legacy.input, 'only the pooling differs');
+    assert.equal(indexes.contractForProfile(cls, 1).preprocessing.pooling, 'cls');
+    assert.notEqual(indexes.profileFingerprint(cls), fingerprint, 'a CLS vector never lands in a mean-pooled index');
+  }
+});
+
 test('model revisions are scoped to their normalized endpoint', () => {
   const revisions = require('../electron/ai/embeddingModelRevisions.ts');
   const config = { ...settings.getSettings(), localProviders: { ollama: { baseUrl: 'http://127.0.0.1:11434' } } };

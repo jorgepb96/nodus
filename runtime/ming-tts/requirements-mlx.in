@@ -1,0 +1,5 @@
+# Ming-3.0 TTS sidecar, MLX backend: macOS on Apple Silicon, CPython 3.12.
+# mlx-audio's own bailingmm module is replaced by the vendored mlx_ming3/.
+mlx-audio==0.6.0
+# CAM++ speaker embedding (campplus.onnx).
+onnxruntime==1.23.2

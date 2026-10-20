@@ -5736,6 +5736,7 @@ export const TR: Record<string, string> = {
   "Cambiar modelo": "Modeli değiştir",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "Gömme modelini değiştirirseniz önceki vektörler yeni modelde çalışmaz ve yeniden indekslemeniz gerekir.",
   "Embeddings multilingües de alta calidad para corpus amplios.": "Büyük derlemler için yüksek kaliteli çok dilli yerleştirmeler.",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "Microsoft’un arama talimatı kullanan çok dilli yerleştirmeleri. Yerel modeller arasında en yüksek çok dilli MTEB puanına sahiptir. Yaklaşık 6,5 GB GPU belleği ayırdığı için 16 GB veya daha fazla belleğe sahip bir bilgisayar önerilir.",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "Uzun bağlamlı ve hassasiyet ile hafıza arasında iyi bir denge sağlayan çok dilli yerleştirmeler.",
   "Opción ligera y rápida para equipos con menos memoria.": "Daha az belleğe sahip bilgisayarlar için hafif ve hızlı seçenek.",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "Konuşma, özetler ve fikirler için çok hafif görsel model.",

@@ -5914,6 +5914,7 @@ export const DE: Record<string, string> = {
   'Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.':
     'Wenn Sie das Embeddings-Modell wechseln, sind die bisherigen Vektoren mit dem neuen Modell nicht nutzbar und Sie müssen neu indexieren.',
   'Embeddings multilingües de alta calidad para corpus amplios.': 'Hochwertige mehrsprachige Embeddings für große Korpora.',
+  'Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.': 'Mehrsprachige Embeddings von Microsoft mit Suchanweisung. Der höchste mehrsprachige MTEB-Wert unter den lokalen Modellen; reserviert etwa 6,5 GB GPU-Speicher, daher wird ein Rechner mit 16 GB oder mehr empfohlen.',
   'Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.':
     'Mehrsprachige Embeddings mit langem Kontext und gutem Gleichgewicht zwischen Genauigkeit und Speicherbedarf.',
   'Opción ligera y rápida para equipos con menos memoria.': 'Eine leichte und schnelle Option für Computer mit weniger Speicher.',

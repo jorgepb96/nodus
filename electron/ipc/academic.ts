@@ -2123,7 +2123,8 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('embeddingIndexes:cancelComparison', async (event, id: string) => { embeddingComparisons.get(`${event.sender.id}:${id}`)?.abort(); });
   h('embeddingIndexes:runs', async (_e, id?: string, vaultId?: string) => embeddingIndexes.listEmbeddingIndexRuns(id, vaultId));
   h('embeddingIndexes:rerankerStatus', async () => (await import('../ai/localReranker')).localRerankerStatus());
-  h('embeddingIndexes:rerankerPrepare', async (_e, action: 'download' | 'cancel') => (await import('../ai/localReranker')).prepareLocalReranker(action));
+  h('embeddingIndexes:rerankerPrepare', async (_e, action: 'download' | 'cancel', modelId?: string) => (await import('../ai/localReranker')).prepareLocalReranker(action, modelId));
+  h('embeddingIndexes:rerankerDelete', async (_e, modelId: string) => (await import('../ai/localReranker')).deleteLocalReranker(modelId));
   // embedding pipeline
   h('embeddings:start', async (_e, nodusIds?: string[]) => startEmbedding(nodusIds));
   h('embeddingIndexes:list', async (_e, vaultId?: string) => embeddingIndexes.listEmbeddingIndexes(vaultId));

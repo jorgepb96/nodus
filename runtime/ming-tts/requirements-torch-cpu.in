@@ -1,0 +1,9 @@
+# Ming-3.0 TTS sidecar, torch backend on the CPU, CPython 3.12:
+# Windows x64, Linux x64 (CPU-only wheels) and Intel macOS.
+-r requirements-torch-common.in
+torch==2.6.0+cpu ; sys_platform == 'win32' or sys_platform == 'linux'
+torchaudio==2.6.0+cpu ; sys_platform == 'win32' or sys_platform == 'linux'
+# PyTorch stopped publishing Intel macOS wheels after 2.2.2, which needs NumPy 1.
+torch==2.2.2 ; sys_platform == 'darwin'
+torchaudio==2.2.2 ; sys_platform == 'darwin'
+numpy<2 ; sys_platform == 'darwin'

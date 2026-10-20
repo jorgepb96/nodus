@@ -6,6 +6,7 @@ import {
   type NodusLocalAiStatus,
   type NodusLocalModelDefinition,
 } from '@shared/localAiModels';
+import { EMBEDDING_GEMMA2_FAMILY } from '@shared/embeddingGemma2';
 import { t, tx } from '../i18n';
 import { ConfirmModal } from './ConfirmModal';
 import { SettingsModelList, settingsModelRowClass } from './SettingsModelList';
@@ -125,16 +126,18 @@ export function LocalAiModelsSettings({
         return <article key={model.id} data-testid={`local-model-${model.id}`} className={settingsModelRowClass(false, false, 'sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4')}>
           <div className="min-w-0">
               <div className="flex items-start gap-2">
-                <h5 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{model.assetFamily ? 'EmbeddingGemma 2 Q8 · 256 / 512' : model.label}</h5>
+                <h5 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{model.assetFamilyLabel ?? model.label}</h5>
                 {model.validation === 'experimental' && <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700 dark:bg-amber-950/35 dark:text-amber-400">{t('Experimental')}</span>}
                 <button className="mt-0.5 text-neutral-400 hover:text-indigo-600 dark:text-neutral-600 dark:hover:text-indigo-300" title={t('Abrir fuente del modelo')} onClick={() => void window.nodus.openExternal(model.sourceUrl)}><Icon name="external" size={12} /></button>
               </div>
               <p className="mt-0.5 text-[10px] text-neutral-500 dark:text-neutral-600">
-                {model.quantization} · {formatBytes(nodusLocalModelBytes(model))}{model.assetFamily ? ' · 256 / 512d' : model.dimensions ? ` · ${model.dimensions}d` : ''}{model.vision ? ` · ${t('entrada de imagen')}` : ''}{' · '}
+                {model.quantization} · {formatBytes(nodusLocalModelBytes(model))}{model.assetFamily === EMBEDDING_GEMMA2_FAMILY ? ' · 256 / 512d' : model.dimensions ? ` · ${model.dimensions}d` : ''}{model.vision ? ` · ${t('entrada de imagen')}` : ''}{' · '}
                 <button className="underline decoration-dotted underline-offset-2 hover:text-indigo-600 dark:hover:text-indigo-300" title={t('Abrir licencia del modelo')} onClick={() => void window.nodus.openExternal(model.licenseUrl)}>{t(model.licenseLabel)}</button>
               </p>
               <p className="mt-1.5 max-w-3xl text-xs leading-5 text-neutral-600 dark:text-neutral-500">{t(model.description)}</p>
-              {model.assetFamily && <p className="mt-1 text-xs text-neutral-500">{t('Los perfiles de 256 y 512 dimensiones comparten una única descarga. Eliminarla afecta a ambos.')}</p>}
+              {model.assetFamily && <p className="mt-1 text-xs text-neutral-500">{model.assetFamily === EMBEDDING_GEMMA2_FAMILY
+                ? t('Los perfiles de 256 y 512 dimensiones comparten una única descarga. Eliminarla afecta a ambos.')
+                : t('Los perfiles CLS y mean comparten una única descarga. Eliminarla afecta a ambos.')}</p>}
               {unavailableReason && <p role="status" data-testid="local-model-unavailable" className="mt-1 text-xs text-amber-700 dark:text-amber-400">{t(unavailableReason)}</p>}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:max-w-[25rem] sm:justify-end">
@@ -214,7 +217,7 @@ export function LocalAiModelsSettings({
     {error && <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">{error}</p>}
     {deleting && <ConfirmModal
       title={t('Eliminar modelo local')}
-      message={(deleting.assetFamily ? t('Se eliminarán los pesos compartidos de los perfiles de 256 y 512 dimensiones.') + ' ' : '') + t('Se eliminará «{model}» del almacenamiento de Nodus. Si está seleccionado, las funciones que lo usan dejarán de funcionar hasta que elijas otro modelo o vuelvas a descargarlo.').replace('{model}', deleting.label)}
+      message={(deleting.assetFamily ? t(deleting.assetFamily === EMBEDDING_GEMMA2_FAMILY ? 'Se eliminarán los pesos compartidos de los perfiles de 256 y 512 dimensiones.' : 'Se eliminarán los pesos compartidos de los perfiles CLS y mean.') + ' ' : '') + t('Se eliminará «{model}» del almacenamiento de Nodus. Si está seleccionado, las funciones que lo usan dejarán de funcionar hasta que elijas otro modelo o vuelvas a descargarlo.').replace('{model}', deleting.assetFamilyLabel ?? deleting.label)}
       confirmLabel={t('Eliminar modelo')}
       danger
       onConfirm={() => void remove()}

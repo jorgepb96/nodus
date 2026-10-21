@@ -45,7 +45,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
   className?: string;
   testId?: string;
   label?: string;
-  /** The header action uses the chat's button shape and shows its label. */
+  /** The header action uses the chat's button shape, shows its label and no progress ring. */
   toolbar?: boolean;
   /** Opening from the header action starts the saved clip or generation immediately. */
   autoStart?: boolean;
@@ -144,7 +144,8 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
       >
         <Icon name={playingHere ? 'waveform' : 'volume'} size={size} />
         {toolbar && <span className="hidden sm:inline">{label ?? t('Escuchar')}</span>}
-        {starting ? <LoadingRing /> : generating ? <ProgressRing fraction={fraction} /> : direct && player?.source?.key === key ? <ProgressRing fraction={playbackFraction} /> : null}
+        {/* The labelled toolbar action only opens the balloon: its progress lives there, not on the button. */}
+        {toolbar ? null : starting ? <LoadingRing /> : generating ? <ProgressRing fraction={fraction} /> : direct && player?.source?.key === key ? <ProgressRing fraction={playbackFraction} /> : null}
       </button>
       {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} autoStart={autoStart} />}
     </>

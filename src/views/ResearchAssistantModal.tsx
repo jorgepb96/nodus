@@ -1271,7 +1271,6 @@ export function ResearchAssistantModal({
           {latestListenTarget && <ListenButton
             testId="research-chat-header-listen"
             toolbar
-            autoStart
             size={15}
             label={t('Escuchar')}
             target={latestListenTarget}

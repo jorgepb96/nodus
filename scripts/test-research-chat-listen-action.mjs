@@ -1,6 +1,6 @@
-// The Research chat header has a one-click listen action for the latest finished answer:
-// it opens the same Listen balloon, starts a saved clip when there is one, and otherwise
-// starts generation. The per-message icon keeps opening the balloon without auto-starting.
+// The Research chat header has a listen action for the latest finished answer: it only opens
+// the Listen balloon (no auto-start, no progress ring on the button). The per-message icon
+// plays directly. Scriptor's header icon still opens its balloon with autoStart.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -14,7 +14,9 @@ const listen = read('src/components/narration/Listen.tsx');
 
 test('the Research chat header narrates the latest finished answer', () => {
   assert.match(modal, /testId="research-chat-header-listen"/);
-  assert.match(modal, /<ListenButton[\s\S]{0,120}toolbar[\s\S]{0,120}autoStart/);
+  assert.match(modal, /<ListenButton[\s\S]{0,120}toolbar/);
+  const header = modal.slice(modal.indexOf('latestListenTarget && <ListenButton'), modal.indexOf('target={latestListenTarget}'));
+  assert.doesNotMatch(header, /autoStart|\bdirect\b/, 'the header action only opens the balloon');
   assert.match(modal, /message\.role === 'assistant' && !message\.error && message\.content\.trim\(\) && message\.id !== streamingId/,
     'only a completed, non-empty assistant answer is offered');
   assert.match(modal, /markdown: \(\) => researchChatPresentation\(latestListenMessage\)\.content/,
@@ -28,7 +30,7 @@ test('the Research chat header narrates the latest finished answer', () => {
   assert.match(headerCss, /\.research-assistant-actions \.concilium-control \{ flex: 0 0 auto; \}/, 'Concilium keeps its full width beside the rightmost listen action');
 });
 
-test('the header action opens the balloon and starts playback or generation once', () => {
+test('autoStart (Scriptor header) opens the balloon and starts playback or generation once', () => {
   assert.match(listen, /autoStart\?: boolean/);
   assert.match(listen, /if \(!clipsLoaded \|\| !settings \|\| !status\) return;/,
     'it waits for clips and engine status before choosing');
@@ -53,8 +55,8 @@ test('the per-answer listen action plays directly while the header keeps the con
   assert.match(listen, /LoadingRing/);
   assert.match(listen, /playbackFraction/, 'the playing ring follows playback progress');
   assert.match(listen, /inline-grid h-6 w-6 place-items-center/, 'the icon is centred in a square ring');
-  assert.match(modal, /testId="research-chat-header-listen"[\s\S]{0,120}autoStart/,
-    'the header action still opens the balloon and starts');
+  assert.match(listen, /\{toolbar \? null : starting \? <LoadingRing \/>/,
+    'the labelled header action never shows a progress ring');
 });
 
 

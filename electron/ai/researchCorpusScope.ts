@@ -13,6 +13,33 @@ export function sourceReferenceKey(reference: ResearchSourceReference): string {
   return JSON.stringify([reference.kind, reference.libraryType ?? null, reference.libraryId ?? null, reference.id]);
 }
 
+/**
+ * What a resolved scope AUTHORIZES: the vault, the notebook revision it was pinned at, the
+ * documents admitted together with their permission state, and the conversation attachments
+ * the turn was given. This is what a mid-run check must compare.
+ *
+ * Deliberately not the scope `id`. That also folds in each document's content `revision` and
+ * its pinned `indexedSource`, and a document's revision is a fingerprint over its extracted
+ * text (see researchCorpusInventory). Library preparation rewrites those as it indexes, so
+ * re-resolving a scope during a turn yielded a different id and the next stage check failed
+ * the whole turn with `research_scope_changed` — while exactly the same documents were
+ * admitted under exactly the same permissions. Any academic turn overlapping indexing died
+ * that way, and a turn is far longer than the gap between two preparation writes.
+ *
+ * `permissionRevision` is built from identity and permission state only — vault, work id,
+ * Zotero key, archived, source state — so this fingerprint moves when a document joins or
+ * leaves the scope, or its permissions change, and not when its text is re-read.
+ */
+export function researchScopeAuthorization(scope: ResolvedResearchScope): string {
+  return researchFingerprint([
+    scope.vaultId,
+    scope.notebookId,
+    scope.notebookRevision,
+    scope.permissionFingerprint,
+    (scope.conversationAttachments ?? []).map(attachment => [attachment.conversationId, attachment.attachmentId]),
+  ]);
+}
+
 /** Union of direct works and explicitly selected collection members, minus exclusions.
  * The inventory is supplied by the backend after permission checks, never by a model. */
 export function selectResearchDocuments(sources: ResearchSourceReference[], exclusions: string[], documents: ResearchCorpusDocument[], collections: ResearchCorpusCollection[]): string[] {

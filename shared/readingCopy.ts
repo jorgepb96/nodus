@@ -1,5 +1,5 @@
 /**
- * The *listening* copy of a Deep Research report.
+ * The *listening* copy of a Deep Research report or Research Chat answer.
  *
  * On screen a report is full of things that only make sense while you can see
  * them: `nodus://` citation buttons, the author-year parentheses around them, a
@@ -39,7 +39,7 @@ const BARE_NODUS_URL = /nodus:\/\/[^\s)\]]+/g;
  * and what tells them apart is whether the sentence keeps going on the same line: those
  * labels are unwrapped to plain text, the appended ones go like any other citation.
  */
-const REFERENCE_LABEL = /\(\s*(?:\d{4}[a-z]?|s\.\s*f\.|n\.\s*d\.)\s*\)|,\s*\p{Lu}\./u;
+const REFERENCE_LABEL = /\(\s*(?:\d{4}[a-z]?|s\.\s*f\.|n\.\s*d\.)\s*\)|,\s*(?:\p{Lu}\.|\d{4}[a-z]?|s\.\s*f\.|n\.\s*d\.)/u;
 const ANONYMOUS_LABEL = /^\s*(?:Autor(?:es)?|Author|Auteur|Autore|Autor desconhecido|Unknown)?\s*$/u;
 const MARKDOWN_LINK = /\[([^\]\n]*)\]\([^)\s]*(?:\s+"[^"]*")?\)/g;
 const MARKDOWN_IMAGE = /!\[[^\]\n]*\]\([^)]*\)/g;
@@ -69,7 +69,7 @@ const BARE_CITATION_LABEL =
  * under `i` the `\p{Lu}` class would also match lowercase words and swallow prose.
  */
 const CITATION_TOKEN =
-  /(?:et\s+al\.?|[Cc]fr?\.?|[Vv]id\.?|[Ii]bid\.?|[Oo]p\.\s*cit\.?|[Vv][ée]ase|[Vv]er|[Ss]ee|[Ss]iehe|[Ss]egún|and|und|y|e|&|s\.\s*f\.|n\.\s*d\.|\d{4}[a-z]?|pp?\.|p[áa]gs?\.|ss\.|\d+(?:\s*[–—-]\s*\d+)?|\p{Lu}[\p{L}’'-]*\.?|[,;:.\s])/gu;
+  /(?:et\s+al\.?|[Cc]fr?\.?|[Vv]id\.?|[Ii]bid\.?|[Oo]p\.\s*cit\.?|[Vv][ée]ase|[Vv]er|[Ss]ee|[Ss]iehe|[Ss]egún|and|und|y|e|&|\b(?:de|del|la|las|los|van|von|di|da|das|dos|do|du|le|ten|ter|bin|ibn)\b|s\.\s*f\.|n\.\s*d\.|\d{4}[a-z]?|pp?\.|p[áa]gs?\.|ss\.|\d+(?:\s*[–—-]\s*\d+)?|\p{Lu}[\p{L}’'-]*\.?|[,;:.\s])/gu;
 
 /** Something datelike must be present, or `(Madrid)` would count as a citation. */
 const CITATION_ANCHOR = /\d{4}|s\.\s*f\.|n\.\s*d\./u;

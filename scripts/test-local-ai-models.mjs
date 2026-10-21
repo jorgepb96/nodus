@@ -24,8 +24,31 @@ try {
   const chat = catalog.NODUS_LOCAL_MODELS.filter((model) => model.kind === 'chat');
   assert.deepEqual(embeddings.map((model) => model.label), [
     'EmbeddingGemma 2 Q8 · 512', 'EmbeddingGemma 2 Q8 · 256',
-    'BGE-M3 Q8_0', 'GTE Multilingual Base INT8', 'Multilingual E5 Small INT8',
+    'BGE-M3 Q8_0 · CLS', 'BGE-M3 Q8_0 · mean', 'Harrier OSS v1 0.6B Q8_0',
+    'GTE Multilingual Base INT8 · CLS', 'GTE Multilingual Base INT8 · mean', 'Multilingual E5 Small INT8',
   ]);
+  const harrier = embeddings.find((model) => model.id === 'harrier-oss-v1-0.6b-q8_0');
+  assert.equal(harrier.runtime, 'llama_cpp', 'Harrier runs in the managed llama.cpp server, like BGE-M3');
+  assert.equal(harrier.pooling, 'last', 'Harrier is a decoder embedder: last-token pooling, never mean');
+  assert.equal(harrier.dimensions, 1024);
+  assert.equal(harrier.contextLength, 8192, 'the causal KV cache is sized to the 8,000-character input cap, not 32k');
+  assert.match(harrier.assets[0].url, /\/resolve\/d79decec1ab9442e969e79804515b9c31683d30e\//, 'the GGUF download is pinned to a revision');
+  // BGE-M3 and GTE are trained for [CLS] pooling. The first profiles pooled the mean; their ids
+  // stay undeclared (implicit mean) so the contracts of prepared indexes never change.
+  for (const [legacyId, clsId] of [['bge-m3-q8_0', 'bge-m3-q8_0-cls'], ['gte-multilingual-base-int8', 'gte-multilingual-base-int8-cls']]) {
+    const legacy = embeddings.find((model) => model.id === legacyId);
+    const cls = embeddings.find((model) => model.id === clsId);
+    assert.equal(legacy.pooling, undefined, `${legacyId} keeps its historical implicit mean pooling`);
+    assert.equal(legacy.supersededBy, clsId, `${legacyId} points new indexes to its CLS profile`);
+    assert.equal(cls.pooling, 'cls', `${clsId} pools the token the model was trained on`);
+    assert.equal(cls.supersededBy, undefined);
+    assert.equal(cls.assetFamily, legacyId, 'the shared download keeps the historical folder, so installed weights are reused');
+    assert.equal(legacy.assetFamily, legacyId);
+    assert.deepEqual(cls.assets, legacy.assets, 'both profiles load the same verified files');
+    assert.deepEqual([cls.runtime, cls.modelFile, cls.dimensions, cls.contextLength], [legacy.runtime, legacy.modelFile, legacy.dimensions, legacy.contextLength]);
+    assert.ok(embeddings.indexOf(cls) < embeddings.indexOf(legacy), 'the recommended profile heads its family in Settings');
+  }
+  assert.equal(embeddings.find((model) => model.id === 'multilingual-e5-small-int8').pooling, undefined, 'E5 is trained for mean pooling');
   assert.deepEqual(chat.map((model) => model.label), [
     'Qwen3.5-0.8B Q4', 'Gemma 4 E2B Q4', 'Granite 4.0 Micro Q4', 'LFM2.5-VL-1.6B Q4',
   ]);
@@ -61,7 +84,13 @@ try {
   assert.match(manager, /fsp\.stat\(`\$\{path\.join\(directory, asset\.file\)\}\.download`\)/, 'status includes bytes from an in-progress partial asset');
   assert.match(manager, /createHash\('sha256'\)/, 'downloads verify SHA-256');
   assert.match(manager, /'--mmproj'/, 'llama-server receives the multimodal projector');
-  assert.match(manager, /'--embedding', '--pooling', 'mean'/, 'BGE runs through llama.cpp embedding mode');
+  assert.match(manager, /'--embedding', '--pooling', model\.pooling \?\? 'mean'/,
+    'llama.cpp embedding mode uses each model\'s pooling, mean by default (legacy BGE-M3)');
+  assert.match(manager, /const pooling = model\.pooling \?\? 'mean';[\s\S]*?extractor\(texts\.slice\(offset, end\), \{ pooling, normalize: true \}\)/,
+    'Transformers.js embeddings use each model\'s pooling, mean by default (legacy GTE)');
+  assert.match(manager, /embeddingPipelines\.get\(downloadKey\(model\.id\)\)/, 'profiles of one download share the loaded pipeline');
+  assert.match(manager, /downloadKey\(activeServer\.modelId\) === downloadKey\(modelId\)/,
+    'deleting shared weights stops a server started by any profile of the family');
   const embeddingArgs = manager.match(/if \(mode === 'embedding'\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
   assert.match(embeddingArgs, /'--batch-size', String\(contextPerSlot\)/,
     'the logical embedding batch accepts one complete model-context input');

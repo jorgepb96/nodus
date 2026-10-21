@@ -8,7 +8,7 @@ parentPort.on('message', async request => {
       return pipeline('feature-extraction', workerData.directory, { dtype: 'int8', device: 'cpu', local_files_only: true, session_options: { intraOpNumThreads: workerData.threads, interOpNumThreads: 1 } });
     })();
     const extractor = await ready;
-    const output = await extractor(request.texts, { pooling: 'mean', normalize: true });
+    const output = await extractor(request.texts, { pooling: workerData.pooling ?? 'mean', normalize: true });
     parentPort.postMessage({ id: request.id, ok: true, result: output.tolist() });
   } catch (error) { parentPort.postMessage({ id: request.id, ok: false, error: error.message }); }
 });

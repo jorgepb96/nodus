@@ -190,8 +190,8 @@ function NodusSiteHeader({ page }: { page: 'atlas' | 'bookmarks' }) {
       <SiteLink className="nodus-site-link" label="Blog" url={`${NODUS_SITE}blog/`} onOpen={close} />
       <SiteLink className="nodus-site-link" label="Atlas" url={NODUS_RESEARCH_ATLAS_URL} current={page === 'atlas'} onOpen={close} />
       <SiteLink className="nodus-site-link" label="FAQ" url={`${NODUS_SITE}faq/`} onOpen={close} />
-      <SiteLink className="nodus-site-link" label="About" url={`${NODUS_SITE}about/`} onOpen={close} />
-      <SiteLink className="nodus-site-link" label="Support Nodus" url={`${NODUS_SITE}contribute/`} onOpen={close} />
+      <SiteLink className="nodus-site-link" label="Models" url={`${NODUS_SITE}models/`} onOpen={close} />
+      <SiteLink className="nodus-site-link" label="Support" url={`${NODUS_SITE}contribute/`} onOpen={close} />
       <span className="nodus-site-nav-sep" aria-hidden="true" />
       <SiteLink className="nodus-site-badge" label={<><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>Star</span><span className="nodus-site-stars"><Icon name="star" size={12} />{stars}</span></>} url={NODUS_REPOSITORY} onOpen={close} />
       <SiteLink className="nodus-site-badge nodus-site-downloads" label={<><Icon name="download" size={14} /><span>{downloads}</span><span>downloads</span></>} url={`${NODUS_REPOSITORY}/releases`} onOpen={close} />
@@ -204,7 +204,7 @@ const FOOTER_GROUPS = [
   { title: 'Investigación', links: [['Research Atlas', NODUS_RESEARCH_ATLAS_URL], ['Nodus Bookmarks', NODUS_BOOKMARKS_URL], ['La aplicación Nodus', `${NODUS_SITE}app/`], ['Investigación académica', `${NODUS_SITE}research/`], ['Nodus y Zotero', `${NODUS_SITE}zotero/`]] },
   { title: 'Producto', links: [['Las cuatro bóvedas', `${NODUS_SITE}#vaults`], ['Otras bóvedas', `${NODUS_SITE}#more-vaults`], ['Nodus Toolkit', `${NODUS_SITE}#tools`], ['Demos en vivo', `${NODUS_SITE}demo/`]] },
   { title: 'Aprender', links: [['Wiki', `${NODUS_SITE}wiki/`], ['Blog', `${NODUS_SITE}blog/`], ['FAQ', `${NODUS_SITE}faq/`], ['Tutoriales en vídeo', `${NODUS_SITE}wiki/#videos`]] },
-  { title: 'Proyecto', links: [['Colaborar', `${NODUS_SITE}contribute/`], ['GitHub', NODUS_REPOSITORY], ['Versiones', `${NODUS_REPOSITORY}/releases`], ['AGPL-3.0-only', `${NODUS_REPOSITORY}/blob/main/LICENSE`]] },
+  { title: 'Proyecto', links: [['Acerca de', `${NODUS_SITE}about/`], ['Colaborar', `${NODUS_SITE}contribute/`], ['GitHub', NODUS_REPOSITORY], ['Versiones', `${NODUS_REPOSITORY}/releases`], ['AGPL-3.0-only', `${NODUS_REPOSITORY}/blob/main/LICENSE`]] },
 ] as const;
 
 function NodusSiteFooter() {

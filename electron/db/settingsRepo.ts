@@ -18,6 +18,7 @@ import { NODI_DEFAULT_SCALE, normalizeNodiScale } from '@shared/nodiSize';
 import { lockedApiKeyProviders, providerKeyMap } from '../secrets/secretStore';
 import { GRANULAR_MODEL_KEYS, migrateModelSettings } from '@shared/modelSettings';
 import { DEFAULT_NODUS_IMAGE_QUALITY, isNodusImageQuality } from '@shared/localImageModels';
+import { DEFAULT_LOCAL_RERANKER_ID, normalizeLocalRerankerId } from '@shared/localRerankers';
 import { EMPTY_CUSTOM_EVENT_TYPES, sanitizeCustomEventTypes } from '@shared/eventTypes';
 import { sanitizeCustomThemes } from '@shared/appThemes';
 import { isPipelineLogMaxEntries, isPipelineLogRetention } from '@shared/pipelineLogs';
@@ -94,6 +95,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   embeddingProvider: 'openai',
   embeddingModel: DEFAULT_EMBEDDING_MODELS.openai,
   researchReranking: 'off',
+  researchRerankerModel: DEFAULT_LOCAL_RERANKER_ID,
   localProviders: DEFAULT_LOCAL_PROVIDERS,
   customProvider: DEFAULT_CUSTOM_PROVIDER,
   favorites: [],
@@ -456,6 +458,7 @@ export function getSettings(): AppSettings {
   }
   merged.embeddingProvider = normalizeEmbeddingProvider((parsed as Partial<AppSettings>).embeddingProvider);
   merged.researchReranking = merged.researchReranking === 'local' ? 'local' : 'off';
+  merged.researchRerankerModel = normalizeLocalRerankerId(merged.researchRerankerModel);
   if (!merged.embeddingModel?.trim()) merged.embeddingModel = DEFAULT_EMBEDDING_MODELS[merged.embeddingProvider];
   Object.assign(merged, recoverV23VaultEmbeddingSelection(merged as AppSettings));
   // v1.4.0 and older exposed one global header selector. Preserve that user's

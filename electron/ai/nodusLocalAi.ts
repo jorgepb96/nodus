@@ -935,11 +935,13 @@ export async function deleteNodusLocalModel(modelId: string): Promise<NodusLocal
     if (embeddingGemma2Busy()) throw new Error('EmbeddingGemma tiene solicitudes en curso.');
     closeEmbeddingGemma2Worker();
   }
-  if (activeServer?.modelId === modelId && activeServer.leases > 0) {
+  // Every profile of the family loads these files: a sibling profile may be the one running.
+  const serving = activeServer && downloadKey(activeServer.modelId) === downloadKey(modelId) ? activeServer : null;
+  if (serving && serving.leases > 0) {
     throw new Error('El modelo tiene solicitudes en curso. Espera a que terminen antes de eliminarlo.');
   }
-  if (activeServer?.modelId === modelId) stopNodusLocalServer();
-  embeddingPipelines.delete(modelId);
+  if (serving) stopNodusLocalServer();
+  embeddingPipelines.delete(downloadKey(modelId));
   for (const asset of model.assets) verifiedAssetCache.delete(path.join(modelDirectory(modelId), asset.file));
   await fsp.rm(modelDirectory(modelId), { recursive: true, force: true });
   return getNodusLocalAiStatus();
@@ -1436,7 +1438,7 @@ async function ensureNodusLocalServerUnlocked(
     args.push(
       '--batch-size', String(contextPerSlot),
       '--ubatch-size', String(contextPerSlot),
-      '--embedding', '--pooling', 'mean',
+      '--embedding', '--pooling', model.pooling ?? 'mean',
     );
   }
   const installed = await installedRuntimeBackend();
@@ -1547,6 +1549,11 @@ export async function withNodusLocalServerLease<T>(
         });
         acquired.server.stopWhenIdle = true;
       }
+      // llama.cpp answers «Compute error.» once a backend graph has failed, for example a
+      // Metal command buffer refused under GPU memory pressure. That process keeps failing
+      // every later request, however small, while a fresh one recovers: retire it once its
+      // in-flight requests finish so the next attempt (batch bisection retries) starts clean.
+      if (/Compute error/i.test(error instanceof Error ? error.message : String(error))) acquired.server.stopWhenIdle = true;
       throw error;
     } finally {
       await serializeLifecycle(async () => {
@@ -1562,7 +1569,8 @@ export async function withNodusLocalServerLease<T>(
 }
 
 async function transformersPipeline(model: NodusLocalModelDefinition): Promise<any> {
-  let pending = embeddingPipelines.get(model.id);
+  // Pooling is applied per call, so the profiles of one download share the loaded weights.
+  let pending = embeddingPipelines.get(downloadKey(model.id));
   if (!pending) {
     pending = (async () => {
       const status = await modelStatus(model);
@@ -1577,7 +1585,7 @@ async function transformersPipeline(model: NodusLocalModelDefinition): Promise<a
         local_files_only: true,
       } as any);
     })();
-    embeddingPipelines.set(model.id, pending);
+    embeddingPipelines.set(downloadKey(model.id), pending);
   }
   return pending;
 }
@@ -1611,6 +1619,7 @@ export async function embedWithNodusLocal(modelId: string, input: string | strin
   // A large padded CPU batch can exceed Electron's native allocator limit and
   // terminate the application before JavaScript can report the failure. Bound
   // dispatch without changing historical text, pooling or normalization.
+  const pooling = model.pooling ?? 'mean';
   const values: number[][] = [];
   const tokenLengths = texts.map(text => extractor.tokenizer(text, { truncation: true, return_tensor: false }).input_ids.length as number);
   for (let offset = 0; offset < texts.length;) {
@@ -1621,7 +1630,7 @@ export async function embedWithNodusLocal(modelId: string, input: string | strin
       if (nextMaximum * (end - offset + 1) > 2048) break;
       maximum = nextMaximum; end++;
     }
-    const output = await extractor(texts.slice(offset, end), { pooling: 'mean', normalize: true });
+    const output = await extractor(texts.slice(offset, end), { pooling, normalize: true });
     values.push(...output.tolist() as number[][]);
     offset = end;
   }

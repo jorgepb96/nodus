@@ -29,6 +29,7 @@ export const STATIC_PAGES = [
   { file: 'blog/index.html', url: '/blog/', sources: ['site/blog/index.html', 'site/blog/posts.json'] },
   { file: 'wiki/index.html', url: '/wiki/', sources: ['site/wiki/index.html', 'site/wiki/content.json', 'site/wiki/wiki.js'] },
   { file: 'faq/index.html', url: '/faq/', sources: ['site/faq/index.html', 'site/faq/faq-data.js', 'site/faq/faq.js'] },
+  { file: 'models/index.html', url: '/models/', sources: ['site/models/index.html', 'site/models/models-data.js', 'site/models/models.js'] },
   { file: 'contribute/index.html', url: '/contribute/', sources: ['site/contribute/index.html', 'site/data/contributors.json'] },
 ];
 

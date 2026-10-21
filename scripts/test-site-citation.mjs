@@ -68,6 +68,7 @@ test('the citation page is linked from each standard project footer', () => {
     'ai-research/index.html',
     'contribute/index.html',
     'faq/index.html',
+    'models/index.html',
     'open-source/index.html',
     'research-atlas/index.html',
     'research/index.html',

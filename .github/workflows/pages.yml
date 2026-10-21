@@ -1,8 +1,25 @@
 name: Website
 
-# Automatic validation is selected by CI. Besides manual runs, one daily deploy
-# keeps the release download counters that the README and the site read current.
+# Automatic validation is selected by CI. A merge into main that changes what the
+# site serves (pages, announcements, generated metadata) deploys on its own; one
+# daily deploy keeps the release download counters that the README and the site
+# read current, and manual runs stay available.
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'scripts/build-blog-pages.mjs'
+      - 'scripts/build-blog-feed.mjs'
+      - 'scripts/build-site-metadata.mjs'
+      - 'scripts/build-sitemap.mjs'
+      - 'scripts/build-pages-artifact.mjs'
+      - 'scripts/github-release-downloads.mjs'
+      - 'scripts/lib/site-metadata.mjs'
+      # Site metadata reads the version and the citation from these two.
+      - 'package.json'
+      - 'CITATION.cff'
+      - '.github/workflows/pages.yml'
   schedule:
     # 23:00 UTC is midnight in Spain in winter (01:00 in summer).
     - cron: '0 23 * * *'

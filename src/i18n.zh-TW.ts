@@ -1,3 +1,4 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
 import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
@@ -5058,6 +5059,7 @@ export const ZH_TW: Record<string, string> = {
   "Cambiar modelo": "更改模型",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "如果更換嵌入模型，原有向量將無法與新模型配合使用，你必須重新建立索引。",
   "Embeddings multilingües de alta calidad para corpus amplios.": "面向大型語料庫的高質量多語言嵌入。",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "微軟的多語言嵌入，附帶檢索指令。在本機模型中多語言 MTEB 分數最高；會佔用約 6.5 GB 的 GPU 記憶體，建議使用 16 GB 或以上記憶體的電腦。",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "長上下文多語言嵌入，在精度與記憶體佔用之間取得良好平衡。",
   "Opción ligera y rápida para equipos con menos memoria.": "適合記憶體較少電腦的輕量快速選項。",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "非常輕量的視覺模型，適用於對話、摘要和觀點。",
@@ -7950,3 +7952,5 @@ export const ZH_TW: Record<string, string> = {
 };
 
 Object.assign(ZH_TW, SIGN_TRANSLATIONS['zh-TW']);
+
+Object.assign(ZH_TW, RESEARCH_QUEUE_TRANSLATIONS['zh-TW']);

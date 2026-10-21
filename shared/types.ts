@@ -2004,6 +2004,8 @@ export interface AppSettings {
   embeddingModel: string;
   /** Query-time preference; never changes stored embeddings. */
   researchReranking?: 'off' | 'local';
+  /** Local reranker used when `researchReranking` is 'local' (see shared/localRerankers.ts). */
+  researchRerankerModel?: string;
   // Per-provider key presence (the keys themselves never cross IPC).
   providerKeys: Record<AiProvider, boolean>;
   /** Encrypted key files exist but the current OS secure-storage identity cannot
@@ -5999,6 +6001,8 @@ export interface ResearchContextLayers {
 }
 
 export interface ResearchContextSelection {
+  /** Composer's exact selection before temporarily switching every source off. */
+  contextBeforePause?: Omit<ResearchContextSelection, 'contextBeforePause'>;
   notebookId?: string | null;
   /** The layers chosen in the context balloon. Absent in selections saved before it
    * existed, which keep reading the sections below as they always did. */
@@ -6027,6 +6031,9 @@ export interface ResearchChatMessage {
 }
 
 export interface ResearchChatRequest {
+  /** Queued turns retain their verification and custom prompt preferences. */
+  answerVerification?: 'off' | 'legacy' | 'structured';
+  systemPromptSnapshot?: import('./researchSystemPrompts').ResearchSystemPrompt | null;
   runId?: string;
   harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
   explorationMode?: import('./researchExploration').ResearchExplorationMode;

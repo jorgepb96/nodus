@@ -907,7 +907,13 @@ try {
   await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
   await page.getByTestId('nodus-local-ai-models').waitFor({ timeout: 30_000 });
   const localAiStatus = await page.evaluate(() => window.nodus.getNodusLocalAiStatus());
-  assert.equal(localAiStatus.models.length, 9, 'integrated local AI catalog is available over the real preload bridge');
+  assert.equal(localAiStatus.models.length, 12, 'integrated local AI catalog is available over the real preload bridge');
+  for (const legacyId of ['bge-m3-q8_0', 'gte-multilingual-base-int8']) {
+    const [cls, legacy] = [`${legacyId}-cls`, legacyId].map(id => localAiStatus.models.find(model => model.id === id));
+    assert.ok(cls && legacy, `${legacyId} is offered with its CLS profile`);
+    assert.equal(cls.path, legacy.path, 'the CLS and mean profiles share the historical asset directory');
+  }
+  assert.ok(localAiStatus.models.some(model => model.id === 'harrier-oss-v1-0.6b-q8_0'), 'Harrier is offered as a built-in embedding model');
   const embeddingGemmaProfiles = localAiStatus.models.filter(model => model.id.startsWith('embeddinggemma'));
   assert.deepEqual(embeddingGemmaProfiles.map(model => model.id), ['embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1']);
   assert.equal(embeddingGemmaProfiles[0].path, embeddingGemmaProfiles[1].path, 'both profiles share one asset directory');

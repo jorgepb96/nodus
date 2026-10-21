@@ -1,4 +1,4 @@
-import { composeProjectSystemPrompt } from '@shared/researchSystemPrompts';
+import { composeProjectSystemPrompt, RESEARCH_PROMPT_NAME_LIMIT, RESEARCH_PROMPT_TEXT_LIMIT, type ResearchSystemPrompt } from '@shared/researchSystemPrompts';
 import { resolveResearchSystemPrompt } from '../db/researchSystemPromptsRepo';
 import { createChatOrganizer } from '../db/chatOrganizerRepo';
 import { CHAT_HISTORY_TABLES } from '../db/chatHistoryTables';
@@ -7,7 +7,8 @@ import { readStudyChatStore } from './studyChatHistory';
 type ConversationScope = { surface: 'research' | 'database' | 'world' | 'study'; conversationId?: string | null };
 
 /** Resolve ownership from persisted placement, never from renderer-supplied project text. */
-export function withResearchSystemPrompt(base: string, id?: string | null, scope?: ConversationScope): string {
+export function withResearchSystemPrompt(base: string, id?: string | null, scope?: ConversationScope, snapshot?: ResearchSystemPrompt | null): string {
+  if (snapshot != null && (typeof snapshot.name !== 'string' || snapshot.name.length > RESEARCH_PROMPT_NAME_LIMIT || typeof snapshot.instructions !== 'string' || snapshot.instructions.length > RESEARCH_PROMPT_TEXT_LIMIT)) throw new Error('research_system_prompt_invalid');
   let project = null;
   if (scope?.conversationId) {
     if (scope.surface === 'study') {
@@ -21,5 +22,5 @@ export function withResearchSystemPrompt(base: string, id?: string | null, scope
       project = projectId ? organizer.getChatProject(projectId) : null;
     }
   }
-  return composeProjectSystemPrompt(base, resolveResearchSystemPrompt(id), project);
+  return composeProjectSystemPrompt(base, snapshot === undefined ? resolveResearchSystemPrompt(id) : snapshot, project);
 }

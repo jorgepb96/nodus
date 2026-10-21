@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppSettings, EmbeddingProvider } from '@shared/types';
 import type { EmbeddingIndexPreview, EmbeddingIndexProgress, EmbeddingIndexSummary } from '@shared/embeddingIndexes';
 import { PROVIDER_LABELS } from '@shared/providers';
+import { getNodusLocalModel } from '@shared/localAiModels';
 import { EmbeddingModelControl } from './EmbeddingModelControl';
 import { ConfirmModal } from './ConfirmModal';
 import { t, tx } from '../i18n';
-import { defaultEmbeddingInputProfile, type EmbeddingInputProfile } from '@shared/embeddingInputProfiles';
+import { defaultEmbeddingInputProfile, fixedEmbeddingInputPrefixes, type EmbeddingInputProfile } from '@shared/embeddingInputProfiles';
 import { EmbeddingRunSummary, EmbeddingRunHistory } from './EmbeddingRunSummary';
 import { EmbeddingComparison } from './EmbeddingComparison';
 import { LocalRerankerControl } from './LocalRerankerControl';
@@ -34,13 +35,12 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<EmbeddingIndexProgress | null>(null);
-  const [inputKind, setInputKind] = useState<'auto' | 'plain' | 'e5' | 'nomic' | 'custom'>('auto');
+  const [inputKind, setInputKind] = useState<'auto' | 'plain' | 'e5' | 'nomic' | 'harrier' | 'custom'>('auto');
   const [queryPrefix, setQueryPrefix] = useState(''), [documentPrefix, setDocumentPrefix] = useState('');
   const profileFor = (provider: EmbeddingProvider, model: string): EmbeddingInputProfile => {
     const automatic = defaultEmbeddingInputProfile(provider, model);
     if (inputKind === 'auto' || automatic.kind === 'gemma2') return automatic;
-    return { version: 1, kind: inputKind, queryPrefix: inputKind === 'custom' ? queryPrefix : inputKind === 'e5' ? 'query: ' : inputKind === 'nomic' ? 'search_query: ' : '',
-      documentPrefix: inputKind === 'custom' ? documentPrefix : inputKind === 'e5' ? 'passage: ' : inputKind === 'nomic' ? 'search_document: ' : '' };
+    return { version: 1, kind: inputKind, ...(inputKind === 'custom' ? { queryPrefix, documentPrefix } : fixedEmbeddingInputPrefixes(inputKind)) };
   };
   const request = useRef(0);
   const mounted = useRef(true);
@@ -88,7 +88,7 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
     <details className="rounded-lg border border-neutral-700 p-3 text-sm" data-testid="embedding-input-profile"><summary>{t('Perfil de entrada del modelo')}</summary>
       <p className="my-2 text-xs text-neutral-500">{t('Los prefijos se guardan con el índice. Los índices existentes conservan su receta hasta que prepares otro perfil.')}</p>
       <select className="input" aria-label={t('Perfil de entrada del modelo')} value={inputKind} onChange={event => setInputKind(event.target.value as typeof inputKind)}>
-        <option value="auto">{t('Automático')}</option><option value="plain">{t('Sin prefijos')}</option><option value="e5">E5</option><option value="nomic">Nomic</option><option value="custom">{t('Personalizado')}</option>
+        <option value="auto">{t('Automático')}</option><option value="plain">{t('Sin prefijos')}</option><option value="e5">E5</option><option value="nomic">Nomic</option><option value="harrier">Harrier</option><option value="custom">{t('Personalizado')}</option>
       </select>
       {inputKind === 'custom' && <div className="mt-2 grid gap-2 sm:grid-cols-2"><label>{t('Prefijo de consulta')}<input className="input w-full font-mono" maxLength={512} value={queryPrefix} onChange={event => setQueryPrefix(event.target.value)} /></label>
         <label>{t('Prefijo de documento')}<input className="input w-full font-mono" maxLength={512} value={documentPrefix} onChange={event => setDocumentPrefix(event.target.value)} /></label></div>}
@@ -107,8 +107,17 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
         <p className="mt-1 text-xs text-neutral-400">{index.dimensions ? `${index.dimensions} · ` : ''}{size(index.bytes)} · {new Date(index.updatedAt).toLocaleString()}</p>
         <p className="mt-1 text-xs text-neutral-400">{t('Perfil de entrada del modelo')}: {index.profile.input?.kind === 'custom' ? t('Personalizado')
           : index.profile.input?.kind === 'plain' || (!index.profile.input && defaultEmbeddingInputProfile(index.profile.provider, index.profile.model).kind !== 'gemma2') ? t('Sin prefijos')
-            : index.profile.input?.kind === 'e5' ? 'E5' : index.profile.input?.kind === 'nomic' ? 'Nomic' : index.profile.input?.kind === 'gemini' ? 'Gemini' : 'EmbeddingGemma 2'} · {index.id.slice(0, 8)}</p>
+            : index.profile.input?.kind === 'e5' ? 'E5' : index.profile.input?.kind === 'nomic' ? 'Nomic' : index.profile.input?.kind === 'harrier' ? 'Harrier' : index.profile.input?.kind === 'gemini' ? 'Gemini' : 'EmbeddingGemma 2'} · {index.id.slice(0, 8)}</p>
         <p className="mt-1 text-xs">{index.legacy ? t('Heredado: reconstruye el índice antes de activarlo.') : index.pending ? tx('{n} pendientes', { n: index.pending }) : t('Actualizado')}</p>
+        {!index.legacy && (() => {
+          const current = index.profile.provider === 'nodus' ? getNodusLocalModel(index.profile.model) : undefined;
+          const replacement = current?.supersededBy ? getNodusLocalModel(current.supersededBy) : undefined;
+          // Only the pooling changes, so the new index keeps this index's input recipe.
+          return current && replacement && <div className="mt-2 rounded-md border border-amber-700/50 p-2 text-xs text-amber-200" data-testid="embedding-index-superseded">
+            <p>{tx('{model} usa mean pooling, una receta anterior que recupera peor. Este índice sigue funcionando; prepara uno con {replacement} cuando quieras.', { model: current.label, replacement: replacement.label })}</p>
+            <button className="btn btn-ghost mt-1" disabled={busy} onClick={() => void showPreview({ provider: 'nodus', model: replacement.id, input: index.profile.input ?? defaultEmbeddingInputProfile('nodus', replacement.id) })}>{t('Preparar índice de embeddings')}</button>
+          </div>;
+        })()}
         <details className="mt-2 text-xs text-neutral-400"><summary>{t('Cobertura y almacenamiento')}</summary>
           <ul className="mt-2 space-y-1">{index.coverage.map(family => <li key={family.family}>{t(familyLabels[family.family] ?? family.family)}: {family.indexed}/{family.total - family.excluded}{family.excluded ? ` · ${family.excluded} ${t('excluidos')}` : ''}</li>)}</ul>
           <p className="mt-2">{t('Espacio compartido')}: {size(index.sharedBytes)} · {t('Espacio liberable')}: {size(index.reclaimableBytes)}</p>
@@ -133,7 +142,9 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
       </div>)}
       {indexes.some(index => index.preparation === 'running') && <p className="text-xs text-neutral-400">{t('El índice actual sigue activo mientras se prepara el siguiente. Los avances se conservan si pausas o cierras Nodus.')}</p>}
     </div>
-    <LocalRerankerControl enabled={settings.researchReranking === 'local'} onChange={async enabled => { await window.nodus.updateSettings({ researchReranking: enabled ? 'local' : 'off' }); await onChange(); }} />
+    <LocalRerankerControl enabled={settings.researchReranking === 'local'} selected={settings.researchRerankerModel}
+      onChange={async enabled => { await window.nodus.updateSettings({ researchReranking: enabled ? 'local' : 'off' }); await onChange(); }}
+      onSelect={async modelId => { await window.nodus.updateSettings({ researchRerankerModel: modelId }); await onChange(); }} />
     <EmbeddingComparison indexes={indexes} vaultId={vaultId} />
     {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
     {preview && <ConfirmModal title={t(preview.input.rebuild ? 'Reconstruir índice de embeddings' : 'Preparar índice de embeddings')}

@@ -85,7 +85,8 @@ export interface EmbeddingIndexesApi {
   compareEmbeddingIndexes(input: EmbeddingComparisonRequest): Promise<EmbeddingComparisonReport>;
   cancelEmbeddingComparison(requestId: string): Promise<void>;
   getLocalRerankerStatus(): Promise<LocalRerankerStatus>;
-  prepareLocalReranker(action: 'download' | 'cancel'): Promise<LocalRerankerStatus>;
+  prepareLocalReranker(action: 'download' | 'cancel', modelId?: string): Promise<LocalRerankerStatus>;
+  deleteLocalReranker(modelId: string): Promise<LocalRerankerStatus>;
   listEmbeddingIndexRuns(indexId?: string, vaultId?: string): Promise<EmbeddingIndexRun[]>;
   listEmbeddingIndexes(vaultId?: string): Promise<EmbeddingIndexSummary[]>;
   previewEmbeddingIndex(input: { provider: EmbeddingProvider; model: string; input?: EmbeddingInputProfile; indexId?: string; rebuild?: boolean; vaultId?: string }): Promise<EmbeddingIndexPreview>;

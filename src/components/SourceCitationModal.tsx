@@ -25,6 +25,7 @@ import { buildAuthorIndex, lookupAuthor } from '../authorLinks';
 import { evidenceLocator, openEvidenceAtPage, requestLibraryDocumentOpen } from '../evidenceJump';
 import { parsePageNumber } from '@shared/pageLocation';
 import { t, tx } from '../i18n';
+import { FindInPage } from './FindInPage';
 
 const LearningCitationOrigin = createContext<{conversationId?:string;messageId?:string}|null>(null);
 export type CitationTarget =
@@ -155,6 +156,7 @@ function CitationWorkspace({
   const [activeKey, setActiveKey] = useState(initialKey);
   const [authors, setAuthors] = useState<AuthorSummary[]>([]);
   const tabStripRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -166,7 +168,7 @@ function CitationWorkspace({
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape' && !event.defaultPrevented) onClose();
     };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
@@ -210,7 +212,7 @@ function CitationWorkspace({
         aria-modal="true"
         aria-label={t('Fuentes y contexto')}
         data-testid="source-citation-modal"
-        className="flex h-[min(94vh,1100px)] max-h-[94vh] min-h-0 w-full max-w-[92rem] flex-col overflow-hidden rounded-2xl border border-neutral-700/80 bg-neutral-950 shadow-2xl shadow-black/60"
+        className="relative flex max-h-[86vh] min-h-0 w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-neutral-700/80 bg-neutral-950 shadow-2xl shadow-black/60"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex min-h-14 shrink-0 items-center gap-3 border-b border-neutral-800 bg-neutral-950/95 px-4 sm:px-5">
@@ -256,7 +258,8 @@ function CitationWorkspace({
           </div>
         </div>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-neutral-950/70" data-testid="source-citation-content">
+        <FindInPage targetRef={contentRef} sourceRevision={activeKey} placement="reader" />
+        <main ref={contentRef} className="flex min-h-0 flex-1 flex-col overflow-hidden bg-neutral-950/70" data-testid="source-citation-content">
           {tabs.map((tab) => (
             <CitationTabPane
               key={tab.key}
@@ -291,8 +294,8 @@ function CitationTabPane({
 }) {
   const reportTitle = useCallback((title: string) => onTitle(tab.key, title), [onTitle, tab.key]);
   return (
-    <div className={`${active ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain' : 'hidden'}`} role="tabpanel" data-testid={`source-citation-panel-${tab.key}`}>
-      <div className="mx-auto max-w-6xl p-4 sm:p-6">
+    <div hidden={!active} className={`${active ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain' : 'hidden'}`} role="tabpanel" data-testid={`source-citation-panel-${tab.key}`}>
+      <div className="p-3 sm:p-4">
         <CitationPanel target={tab.target} authors={authors} onOpenTarget={onOpenTarget} onTitle={reportTitle} onOpenLibraryWork={onOpenLibraryWork} />
       </div>
     </div>
@@ -313,19 +316,19 @@ function CitationPanel({ target, ...props }: CitationPanelProps & { target: NonN
 function Section({ icon, title, count, children, testId }: { icon: string; title: string; count?: number; children: React.ReactNode; testId?: string }) {
   return (
     <section className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900/35" data-testid={testId}>
-      <header className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900/55 px-4 py-3">
+      <header className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900/55 px-3 py-2">
         <Icon name={icon} size={14} className="text-indigo-300" />
         <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-300">{title}</h3>
         {typeof count === 'number' && <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] tabular-nums text-neutral-500">{count}</span>}
       </header>
-      <div className="p-3 sm:p-4">{children}</div>
+      <div className="p-3">{children}</div>
     </section>
   );
 }
 
 function LoadingPanel() {
   return (
-    <div className="space-y-5 animate-pulse" data-testid="source-citation-loading">
+    <div className="space-y-3 animate-pulse" data-testid="source-citation-loading">
       <div className="rounded-2xl border border-neutral-800 p-5"><div className="h-3 w-24 rounded bg-neutral-800" /><div className="mt-4 h-6 w-2/3 rounded bg-neutral-800" /><div className="mt-3 h-4 w-full rounded bg-neutral-900" /><div className="mt-2 h-4 w-4/5 rounded bg-neutral-900" /></div>
       <div className="h-40 rounded-xl border border-neutral-800 bg-neutral-900/30" />
     </div>
@@ -362,8 +365,8 @@ function IdeaPanel({ globalId, onOpenTarget, onTitle, authors, onOpenLibraryWork
   if (!detail) return <LoadingPanel />;
 
   return (
-    <div className="space-y-5" data-testid="source-citation-idea">
-      <div className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6">
+    <div className="space-y-3" data-testid="source-citation-idea">
+      <div className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-2"><Badge color="indigo">{t(NODE_LABELS[detail.idea.type as IdeaType]) ?? detail.idea.type}</Badge><span className="text-[10px] uppercase tracking-wider text-neutral-500">{t('Idea citada')}</span></div>
         <h2 className="mt-3 text-xl font-semibold leading-tight text-neutral-100">{detail.idea.label}</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-300">{detail.idea.statement}</p>
@@ -430,8 +433,8 @@ function WorkPanel({ nodusId, onOpenTarget, onTitle, authors, onOpenLibraryWork 
   const metadata = [meta?.container, meta?.publisher, meta?.volume ? `${t('vol.')} ${meta.volume}${meta.issue ? `(${meta.issue})` : ''}` : meta?.issue ? `${t('n.º')} ${meta.issue}` : null, meta?.pages ? `pp. ${meta.pages}` : meta?.numPages ? `${meta.numPages} pp.` : null, meta?.place].filter((value): value is string => Boolean(value));
 
   return (
-    <div className="space-y-5" data-testid="source-citation-work">
-      <div className="rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6">
+    <div className="space-y-3" data-testid="source-citation-work">
+      <div className="rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-2"><Badge color="indigo">{type}</Badge>{year && <Badge>{year}</Badge>}</div>
         <h2 className="mt-3 text-xl font-semibold leading-tight text-neutral-100">{work.title}</h2>
         <div className="mt-2"><AuthorLinks names={resolvedAuthors} authors={authors} onOpenTarget={onOpenTarget} /></div>
@@ -486,8 +489,8 @@ function AuthorPanel({ authorId, onOpenTarget, onTitle, authors, onOpenLibraryWo
   const connections = [...connected.entries()].sort((left, right) => right[1].weight - left[1].weight);
 
   return (
-    <div className="space-y-5" data-testid="source-citation-author">
-      <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6">
+    <div className="space-y-3" data-testid="source-citation-author">
+      <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4">
         <div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-violet-500/15 text-violet-300"><Icon name="user" size={20} /></span><div className="min-w-0"><span className="text-[10px] uppercase tracking-wider text-neutral-500">{t('Ficha de autor')}</span><h2 className="mt-1 text-xl font-semibold text-neutral-100">{dossier.fullName || dossier.author.name}</h2>{dossier.author.affiliation && <p className="mt-1 text-sm text-neutral-500">{dossier.author.affiliation}</p>}</div></div>
         <div className="mt-4 flex flex-wrap gap-2"><Badge>{tx('{n} obras', { n: dossier.works.length })}</Badge><Badge>{tx('{n} ideas', { n: dossier.ideas.length })}</Badge><Badge>{tx('{n} conexiones', { n: connections.length })}</Badge>{dossier.themes.slice(0, 6).map((theme) => <Badge key={theme} color="indigo">{theme}</Badge>)}</div>
       </div>
@@ -515,8 +518,8 @@ function GapPanel({ gapId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: 
   if (missing) return <MissingPanel>{t('No se encontró el hueco citado.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;
   return (
-    <div className="space-y-5" data-testid="source-citation-gap">
-      <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6"><div className="flex flex-wrap gap-2"><Badge color={GAP_COLORS[detail.gap.kind]}>{t(GAP_LABELS[detail.gap.kind])}</Badge><Badge>{t('conf')} {detail.gap.confidence.toFixed(2)}</Badge></div><h2 className="mt-3 text-xl font-semibold text-neutral-100">{t('Hueco de investigación')}</h2><p className="mt-2 text-sm leading-6 text-neutral-300">{detail.gap.statement}</p></div>
+    <div className="space-y-3" data-testid="source-citation-gap">
+      <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4"><div className="flex flex-wrap gap-2"><Badge color={GAP_COLORS[detail.gap.kind]}>{t(GAP_LABELS[detail.gap.kind])}</Badge><Badge>{t('conf')} {detail.gap.confidence.toFixed(2)}</Badge></div><h2 className="mt-3 text-xl font-semibold text-neutral-100">{t('Hueco de investigación')}</h2><p className="mt-2 text-sm leading-6 text-neutral-300">{detail.gap.statement}</p></div>
       <Section icon="book" title={t('Obra enlazada')} count={1}><LinkedWorkCard work={{ id: detail.work.nodus_id, title: detail.work.title, authors: detail.work.authors, year: detail.work.year, zoteroKey: detail.work.zotero_key, itemType: detail.work.item_type }} authorsIndex={authors} onOpenTarget={onOpenTarget} onOpenLibraryWork={onOpenLibraryWork} /></Section>
       {detail.relatedIdea && <Section icon="bulb" title={t('Idea relacionada')} count={1}><button className="group w-full rounded-lg border border-neutral-800 bg-neutral-950/55 p-3 text-left hover:border-indigo-500/50" onClick={() => onOpenTarget({ kind: 'idea', id: detail.relatedIdea!.global_id }, detail.relatedIdea!.label)}><Badge color="indigo">{t(NODE_LABELS[detail.relatedIdea.type as IdeaType]) ?? detail.relatedIdea.type}</Badge><span className="mt-2 block text-sm font-medium text-neutral-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-200">{detail.relatedIdea.label}</span><span className="mt-1 block text-xs leading-5 text-neutral-500">{detail.relatedIdea.statement}</span></button></Section>}
       <EvidenceSection evidence={detail.evidence ? [detail.evidence] : []} />
@@ -537,8 +540,8 @@ function ContradictionPanel({ edgeId, onOpenTarget, onTitle, authors, onOpenLibr
   if (missing) return <MissingPanel>{t('No se encontró la contradicción citada.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;
   return (
-    <div className="space-y-5" data-testid="source-citation-contradiction">
-      <div className="rounded-2xl border border-red-500/25 bg-gradient-to-br from-red-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6"><div className="flex flex-wrap gap-2"><Badge color="red">{t(EDGE_LABELS[detail.edge.type as keyof typeof EDGE_LABELS]) ?? detail.edge.type}</Badge><Badge color={detail.edge.basis === 'explicit' ? 'green' : 'amber'}>{detail.edge.basis}</Badge><Badge>{t('conf')} {detail.edge.confidence.toFixed(2)}</Badge></div><h2 className="mt-3 text-xl font-semibold text-neutral-100">{t('Contradicción citada')}</h2>{detail.explanation && <p className="mt-2 text-sm leading-6 text-neutral-300">{detail.explanation}</p>}</div>
+    <div className="space-y-3" data-testid="source-citation-contradiction">
+      <div className="rounded-2xl border border-red-500/25 bg-gradient-to-br from-red-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4"><div className="flex flex-wrap gap-2"><Badge color="red">{t(EDGE_LABELS[detail.edge.type as keyof typeof EDGE_LABELS]) ?? detail.edge.type}</Badge><Badge color={detail.edge.basis === 'explicit' ? 'green' : 'amber'}>{detail.edge.basis}</Badge><Badge>{t('conf')} {detail.edge.confidence.toFixed(2)}</Badge></div><h2 className="mt-3 text-xl font-semibold text-neutral-100">{t('Contradicción citada')}</h2>{detail.explanation && <p className="mt-2 text-sm leading-6 text-neutral-300">{detail.explanation}</p>}</div>
       <Section icon="swap" title={t('Ideas enfrentadas')} count={2}><div className="grid gap-3 sm:grid-cols-2"><button className="group rounded-xl border border-neutral-800 bg-neutral-950/55 p-4 text-left hover:border-indigo-500/50" onClick={() => onOpenTarget({ kind: 'idea', id: detail.edge.from_id }, detail.fromLabel)}><span className="text-[10px] uppercase tracking-wider text-neutral-600">{t('Posición A')}</span><span className="mt-2 block text-sm font-medium text-neutral-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-200">{detail.fromLabel}</span></button><button className="group rounded-xl border border-neutral-800 bg-neutral-950/55 p-4 text-left hover:border-indigo-500/50" onClick={() => onOpenTarget({ kind: 'idea', id: detail.edge.to_id }, detail.toLabel)}><span className="text-[10px] uppercase tracking-wider text-neutral-600">{t('Posición B')}</span><span className="mt-2 block text-sm font-medium text-neutral-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-200">{detail.toLabel}</span></button></div></Section>
       {sourceWork && <Section icon="book" title={t('Obra enlazada')} count={1}><LinkedWorkCard work={{ id: sourceWork.nodus_id, title: sourceWork.title, authors: sourceWork.authors, year: sourceWork.year, zoteroKey: sourceWork.zotero_key, itemType: sourceWork.item_type }} authorsIndex={authors} onOpenTarget={onOpenTarget} onOpenLibraryWork={onOpenLibraryWork} /></Section>}
       <EvidenceSection evidence={detail.evidence} />
@@ -571,21 +574,52 @@ function PassagePanel({ passageId, onOpenTarget, onTitle, authors, onOpenLibrary
     const web = detail.web;
     const open = () => openWebSource(webPassageLink(web.finalUrl, detail.text, detail.page_number));
     return (
-      <div className="space-y-5" data-testid="source-citation-web-passage">
-        <div className="rounded-2xl border border-sky-500/25 bg-gradient-to-br from-sky-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6"><div className="flex flex-wrap items-center gap-2"><Badge color="cyan">{t('Fuente web')}</Badge>{detail.page_label && <Badge>{detail.page_label}</Badge>}
+      <div className="space-y-3" data-testid="source-citation-web-passage">
+        <div className="rounded-2xl border border-sky-500/25 bg-gradient-to-br from-sky-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4"><div className="flex flex-wrap items-center gap-2"><Badge color="cyan">{t('Fuente web')}</Badge>{detail.page_label && <Badge>{detail.page_label}</Badge>}
           <button type="button" data-testid="source-citation-open-web" className="btn btn-ghost h-7 border border-sky-700/70 px-2 text-[11px] text-sky-300" onClick={open}><Icon name="globe" size={12} /> {t('Abrir en el navegador')}</button></div>
           <h2 className="mt-3 text-xl font-semibold leading-tight text-neutral-100">{detail.work.title}</h2>
           <p className="mt-2 break-all text-xs text-sky-300">{web.url}</p>
           <p className="mt-1 text-[11px] text-neutral-500">{[web.siteName ?? web.domain, web.publishedAt, tx('Consultada el {date}', { date: new Date(web.retrievedAt).toLocaleString() })].filter(Boolean).join(' · ')}</p></div>
-        <Section icon="quote" title={t('Evidencia anclada')} count={1} testId="source-citation-evidence"><blockquote className="rounded-xl border border-sky-900/50 bg-sky-950/10 p-4 text-sm leading-7 text-neutral-200"><Icon name="quote" size={15} className="mb-2 text-sky-400" /><span className="whitespace-pre-wrap">{detail.text}</span></blockquote></Section>
+        <Section icon="quote" title={t('Evidencia anclada')} count={1} testId="source-citation-evidence"><blockquote className="rounded-xl border border-sky-900/50 bg-sky-950/10 p-3 text-sm leading-6 text-neutral-200"><Icon name="quote" size={15} className="mb-2 text-sky-400" /><span className="whitespace-pre-wrap">{detail.text}</span></blockquote></Section>
       </div>
     );
   }
   return (
-    <div className="space-y-5" data-testid="source-citation-passage">
-      <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-neutral-900/60 to-neutral-950 p-5 sm:p-6"><div className="flex flex-wrap items-center gap-2"><Badge color="green">{detail.provenance === 'abstract' ? t('Resumen') : detail.noteId ? t(detail.provenance === 'generated-report' ? 'Informe' : 'Nota') : t('Pasaje de texto completo')}</Badge>{detail.page_label && <Badge>{detail.page_label}</Badge>}{!detail.historical && !detail.conversationAttachment && page !== null && <button type="button" data-testid="source-citation-jump-passage" className="btn btn-ghost h-7 border border-emerald-700/70 px-2 text-[11px] text-emerald-300" title={t('Abrir fuente')} onClick={() => detail.libraryItemId ? requestLibraryDocumentOpen({ itemId: detail.libraryItemId, scope: 'global', page, attachmentId: detail.attachmentId }) : void openEvidenceAtPage(detail.nodus_id, evidenceLocator({ location: detail.page_label, source_ref: detail.source_ref, page_number: detail.page_number }))}><Icon name="external" size={12} /> {tx('Ver página {n}', { n: page })}</button>}</div><h2 className="mt-3 text-xl font-semibold leading-tight text-neutral-100">{detail.work.title}</h2><div className="mt-2"><AuthorLinks names={detail.work.authors} authors={authors} onOpenTarget={onOpenTarget} /></div></div>
-      {detail.historical ? <p role="status" className="text-sm text-amber-400">{t('Esta cita conserva una revisión anterior de la fuente.')}</p> : <Section icon="book" title={t('Obra enlazada')} count={1}>{detail.conversationAttachment ? <span>{detail.work.title}</span> : detail.noteId ? <button type="button" className="btn btn-ghost" onClick={() => window.dispatchEvent(new CustomEvent('nodus:open-research-note', { detail: detail.noteId }))}>{detail.work.title}</button> : detail.libraryItemId ? <button type="button" className="btn btn-ghost" onClick={() => requestLibraryDocumentOpen({ itemId: detail.libraryItemId!, scope: 'global', page, attachmentId: detail.attachmentId })}>{detail.work.title}</button> : <LinkedWorkCard work={{ id: detail.nodus_id, title: detail.work.title, authors: detail.work.authors, year: detail.work.year, zoteroKey: detail.work.zotero_key }} page={page} authorsIndex={authors} onOpenTarget={onOpenTarget} onOpenLibraryWork={onOpenLibraryWork} />}</Section>}
-      <Section icon="quote" title={t('Evidencia anclada')} count={1} testId="source-citation-evidence"><blockquote className="rounded-xl border border-emerald-900/50 bg-emerald-950/10 p-4 text-sm leading-7 text-neutral-200"><Icon name="quote" size={15} className="mb-2 text-emerald-400" /><span className="whitespace-pre-wrap">{detail.text}</span>{detail.page_label && <footer className="mt-3 text-[10px] not-italic text-neutral-500">{detail.page_label}</footer>}</blockquote></Section>
+    <div className="space-y-3" data-testid="source-citation-passage">
+      <div className="rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-neutral-900/60 to-neutral-950 p-3 sm:p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge color="green">{detail.provenance === 'abstract' ? t('Resumen') : detail.noteId ? t(detail.provenance === 'generated-report' ? 'Informe' : 'Nota') : t('Pasaje de texto completo')}</Badge>
+          {detail.page_label && <Badge>{detail.page_label}</Badge>}
+          {!detail.conversationAttachment && page !== null && <button
+            type="button"
+            data-testid="source-citation-jump-passage"
+            className="btn btn-ghost h-7 border border-emerald-700/70 px-2 text-[11px] text-emerald-300"
+            title={t('Abrir fuente')}
+            onClick={() => detail.libraryItemId
+              ? requestLibraryDocumentOpen({ itemId: detail.libraryItemId, scope: 'global', page, attachmentId: detail.attachmentId })
+              : void openEvidenceAtPage(detail.nodus_id, evidenceLocator({ location: detail.page_label, source_ref: detail.source_ref, page_number: detail.page_number }))}
+          ><Icon name="external" size={12} /> {tx('Ver página {n}', { n: page })}</button>}
+        </div>
+        <h2 className="mt-2 text-lg font-semibold leading-tight text-neutral-100">
+          {!detail.conversationAttachment ? <button
+            type="button"
+            data-testid="source-citation-passage-work"
+            className="text-left underline decoration-emerald-500/40 underline-offset-4 hover:text-emerald-300"
+            title={t('Abrir en una pestaña nueva')}
+            onClick={() => {
+              if (detail.noteId) window.dispatchEvent(new CustomEvent('nodus:open-research-note', { detail: detail.noteId }));
+              else if (detail.libraryItemId) requestLibraryDocumentOpen({ itemId: detail.libraryItemId, scope: 'global', page, attachmentId: detail.attachmentId });
+              else onOpenTarget({ kind: 'work', id: detail.nodus_id }, detail.work.title);
+            }}
+          >{detail.work.title}</button> : detail.work.title}
+        </h2>
+        <div className="mt-1"><AuthorLinks names={detail.work.authors} authors={authors} onOpenTarget={onOpenTarget} /></div>
+        {!detail.conversationAttachment && !detail.noteId && <div className="mt-2">
+          <WorkActions workId={detail.nodus_id} zoteroKey={detail.work.zotero_key} page={page} sourceRef={detail.source_ref} pageLabel={detail.page_label} onOpenLibraryWork={onOpenLibraryWork} />
+        </div>}
+      </div>
+      {detail.historical && <p role="status" className="text-xs text-amber-400">{t('Esta cita conserva una revisión anterior de la fuente.')}</p>}
+      <Section icon="quote" title={t('Evidencia anclada')} count={1} testId="source-citation-evidence"><blockquote className="rounded-xl border border-emerald-900/50 bg-emerald-950/10 p-3 text-sm leading-6 text-neutral-200"><Icon name="quote" size={15} className="mb-2 text-emerald-400" /><span className="whitespace-pre-wrap">{detail.text}</span>{detail.page_label && <footer className="mt-3 text-[10px] not-italic text-neutral-500">{detail.page_label}</footer>}</blockquote></Section>
     </div>
   );
 }
@@ -622,11 +656,11 @@ function LinkedWorkCard({ work, page = null, authorsIndex, onOpenTarget, onOpenL
   );
 }
 
-function WorkActions({ workId, zoteroKey, page = null, compact = false, onOpenLibraryWork }: { workId: string; zoteroKey: string | null; page?: number | null; compact?: boolean; onOpenLibraryWork?: OpenCitationLibraryWork }) {
+function WorkActions({ workId, zoteroKey, page = null, sourceRef = null, pageLabel = null, compact = false, onOpenLibraryWork }: { workId: string; zoteroKey: string | null; page?: number | null; sourceRef?: string | null; pageLabel?: string | null; compact?: boolean; onOpenLibraryWork?: OpenCitationLibraryWork }) {
   const local = useLocalWork(workId);
   const buttonClass = compact ? 'btn btn-ghost h-7 px-2 text-[10px]' : 'btn btn-ghost border border-neutral-700 text-xs';
   return <div className="flex shrink-0 flex-wrap gap-1.5" data-testid={`source-citation-work-actions-${workId}`}>
-    {zoteroKey && <button className={buttonClass} title={t('Abrir en Zotero')} onClick={() => void window.nodus.openInZotero(zoteroKey)}><Icon name="external" size={compact ? 11 : 13} /> {!compact && 'Zotero'}</button>}
+    {zoteroKey && <button className={buttonClass} data-testid={`source-citation-open-zotero-${workId}`} title={t('Abrir en Zotero')} onClick={() => page !== null ? void openEvidenceAtPage(workId, { pageNumber: page, sourceRef, location: pageLabel }) : void window.nodus.openInZotero(zoteroKey)}><Icon name="external" size={compact ? 11 : 13} /> {!compact && `Zotero${page !== null ? ` · ${pageLabel || `p. ${page}`}` : ''}`}</button>}
     {local && <button className={`${buttonClass} text-emerald-300`} data-testid={`source-citation-open-local-${workId}`} title={t('Abrir en la biblioteca local')} onClick={() => { if (onOpenLibraryWork) onOpenLibraryWork(local.id, local.scope, page); else requestLibraryDocumentOpen({ itemId: local.id, scope: local.scope, page }); }}><Icon name="library" size={compact ? 11 : 13} /> {!compact && t('Biblioteca local')}</button>}
   </div>;
 }
@@ -652,7 +686,7 @@ function AuthorLinks({ names, authors, onOpenTarget }: { names: string[]; author
   const index = useMemo(() => buildAuthorIndex(authors), [authors]);
   return <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-neutral-400">{names.map((name, indexInList) => {
     const author = lookupAuthor(index, name);
-    return <span key={`${name}:${indexInList}`} className="inline-flex items-center gap-1.5">{indexInList > 0 && <span className="text-neutral-700">·</span>}{author ? <button className="rounded px-1 py-0.5 text-neutral-400 hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-200" title={t('Abrir en una pestaña nueva')} onClick={() => onOpenTarget({ kind: 'author', id: author.author_id }, author.fullName || author.name)}>{name}</button> : <span>{name}</span>}</span>;
+    return <span key={`${name}:${indexInList}`} className="inline-flex items-center gap-1.5">{indexInList > 0 && <span className="text-neutral-700">·</span>}{author ? <button className="rounded py-0.5 text-violet-300 underline decoration-violet-500/40 underline-offset-2 hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-200" title={t('Abrir en una pestaña nueva')} onClick={() => onOpenTarget({ kind: 'author', id: author.author_id }, author.fullName || author.name)}>{name}</button> : <span>{name}</span>}</span>;
   })}</div>;
 }
 

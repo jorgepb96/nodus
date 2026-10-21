@@ -25,11 +25,36 @@ test('saved-index controls preserve the active index and deletion requires every
     const manager = page.getByTestId('embedding-index-manager'); await page.getByTestId('embedding-index-b').waitFor();
     await page.getByTestId('embedding-index-a').getByText('38 reutilizados', { exact: false }).waitFor();
     const local = page.getByTestId('local-reranker-control');
-    assert.equal(await local.getByRole('checkbox').isDisabled(), true);
-    await local.getByRole('button', { name: /Descargar modelo local/ }).click();
+    const rows = local.getByTestId('local-reranker-models').locator('article');
+    assert.equal(await rows.count(), 3, 'three rerankers are offered');
+    const bge = local.getByTestId('local-reranker-bge-reranker-v2-m3-q8_0'), gte = local.getByTestId('local-reranker-bge-reranker-v2-m3-q4_k_m');
+    // An installed model is detected: no download offered, and it is the one in use.
+    await bge.getByText('En uso', { exact: true }).waitFor();
+    assert.equal(await bge.getByRole('button', { name: /Descargar/ }).count(), 0, 'an installed model is never offered for download again');
     await local.getByRole('checkbox').check();
     await page.waitForFunction(() => window.actions.some(action => action[0] === 'settings' && action[1].researchReranking === 'local'));
-    assert.ok((await page.evaluate(() => window.actions)).some(action => action[0] === 'reranker' && action[1] === 'download'));
+    await gte.getByRole('button', { name: 'Descargar (418 MB)', exact: true }).click();
+    await gte.getByRole('button', { name: 'Usar este modelo', exact: true }).waitFor();
+    assert.ok((await page.evaluate(() => window.actions)).some(action => action[0] === 'reranker' && action[1] === 'download' && action[2] === 'bge-reranker-v2-m3-q4_k_m'));
+    assert.equal((await page.evaluate(() => window.actions)).some(action => action[0] === 'settings' && action[1].researchRerankerModel), false, 'a second download does not take over the selection');
+    await gte.getByRole('button', { name: 'Usar este modelo', exact: true }).click();
+    await gte.getByText('En uso', { exact: true }).waitFor();
+    await page.waitForFunction(() => window.actions.some(action => action[0] === 'settings' && action[1].researchRerankerModel === 'bge-reranker-v2-m3-q4_k_m'));
+    // Deletion asks first; cancelling keeps the files.
+    await bge.getByRole('button', { name: 'Eliminar', exact: true }).click();
+    const rerankerDialog = page.getByRole('dialog');
+    await rerankerDialog.getByText(/BGE Reranker v2 M3 Q8_0/).waitFor();
+    await rerankerDialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+    assert.equal((await page.evaluate(() => window.actions)).some(action => action[0] === 'rerankerDelete'), false);
+    await bge.getByRole('button', { name: 'Eliminar', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Eliminar modelo', exact: true }).click();
+    await bge.getByRole('button', { name: 'Descargar (606 MB)', exact: true }).waitFor();
+    assert.ok((await page.evaluate(() => window.actions)).some(action => action[0] === 'rerankerDelete' && action[1] === 'bge-reranker-v2-m3-q8_0'));
+    assert.equal(await local.getByRole('checkbox').isChecked(), true, 'deleting a model that is not in use keeps reranking on');
+    await gte.getByRole('button', { name: 'Eliminar', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Eliminar modelo', exact: true }).click();
+    await page.waitForFunction(() => window.actions.some(action => action[0] === 'settings' && action[1].researchReranking === 'off'));
+    assert.equal(await local.getByRole('checkbox').isDisabled(), true, 'without the model in use, reranking is switched off visibly');
     const profile = page.getByTestId('embedding-input-profile'); await profile.locator('summary').click();
     await profile.getByRole('combobox').selectOption('e5');
     await profile.getByRole('button', { name: 'Preparar con este perfil', exact: true }).click();
@@ -91,6 +116,16 @@ test('saved-index controls preserve the active index and deletion requires every
     await dialog.getByRole('button', { name: 'Eliminar definitivamente', exact: true }).click();
     await manager.getByText(/Sin índice semántico activo/).waitFor();
     assert.ok((await page.evaluate(() => window.actions)).some(action => action[0] === 'delete' && action[1] === 'a'));
+    // An index of a superseded mean-pooled profile keeps working and points to its CLS profile.
+    await page.evaluate(() => window.addLegacyPoolingIndex());
+    const superseded = page.getByTestId('embedding-index-c').getByTestId('embedding-index-superseded');
+    await superseded.getByText(/BGE-M3 Q8_0 · mean usa mean pooling.*BGE-M3 Q8_0 · CLS/).waitFor();
+    await superseded.getByRole('button', { name: 'Preparar índice de embeddings', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Cancelar', exact: true }).click();
+    const upgrade = (await page.evaluate(() => window.actions)).find(action => action[0] === 'preview' && action[1].model === 'bge-m3-q8_0-cls');
+    assert.equal(upgrade?.[1].provider, 'nodus');
+    assert.equal(upgrade?.[1].input.kind, 'plain', 'the CLS index keeps the input recipe of the index it replaces, not the form selection');
+    assert.equal(await page.getByTestId('embedding-index-b').getByTestId('embedding-index-superseded').count(), 0, 'cloud indexes show no pooling hint');
     await page.setViewportSize({ width: 640, height: 900 });
     const box = await manager.boundingBox(); assert.ok(box.x >= 0 && box.x + box.width <= 640);
     const artifacts = process.env.NODUS_EMBEDDING_UI_ARTIFACTS || root;

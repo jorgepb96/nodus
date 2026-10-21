@@ -1,3 +1,4 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
 import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
@@ -5375,6 +5376,7 @@ export const JA: Record<string, string> = {
   "Cambiar modelo": "機種変更",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "埋め込みモデルを変更すると、既存のベクトルは新しいモデルで機能しなくなるため、インデックスを再作成する必要があります。",
   "Embeddings multilingües de alta calidad para corpus amplios.": "大規模なコーパス向けの高品質な多言語埋め込み。",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "Microsoft の多言語埋め込み（検索用の指示付き）。ローカルモデルの中で多言語 MTEB スコアが最も高く、約 6.5 GB の GPU メモリを確保するため、16 GB 以上のメモリを搭載したコンピューターを推奨します。",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "精度とメモリ使用量のバランスが取れたロングコンテキストの多言語埋め込み。",
   "Opción ligera y rápida para equipos con menos memoria.": "メモリの少ないコンピュータ向けの軽量かつ高速なオプションです。",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "会話、要約、アイデアのための非常に軽量なビジョンモデル。",
@@ -8305,3 +8307,5 @@ export const JA: Record<string, string> = {
 };
 
 Object.assign(JA, SIGN_TRANSLATIONS['ja']);
+
+Object.assign(JA, RESEARCH_QUEUE_TRANSLATIONS['ja']);

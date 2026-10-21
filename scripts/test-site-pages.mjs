@@ -10,7 +10,7 @@ const siteRoot = path.join(repoRoot, 'site');
 const read = (relative) => fs.readFileSync(path.join(siteRoot, relative), 'utf8');
 
 test('the site has every destination the navigation promises', () => {
-  for (const entry of ['index.html', 'about/index.html', 'app/index.html', 'apps/index.html', 'research-atlas/index.html', 'zotero-plugin/index.html', 'wiki/index.html', 'blog/index.html', 'cite/index.html', 'legal/index.html', 'contribute/index.html', 'faq/index.html']) {
+  for (const entry of ['index.html', 'about/index.html', 'app/index.html', 'apps/index.html', 'research-atlas/index.html', 'zotero-plugin/index.html', 'wiki/index.html', 'blog/index.html', 'cite/index.html', 'legal/index.html', 'contribute/index.html', 'faq/index.html', 'models/index.html']) {
     assert.ok(fs.existsSync(path.join(siteRoot, entry)), `site/${entry} exists`);
   }
   const home = read('index.html');
@@ -250,7 +250,7 @@ test('the organism degrades for visitors who cannot or do not want to run it', (
   assert.match(site, /matchMedia\('\(prefers-reduced-motion: reduce\)'\)/, 'reveals and the cursor respect reduced motion');
 
   // every page that paints the organism has to provide its canvas
-  for (const page of ['index.html', 'about/index.html', 'app/index.html', 'apps/index.html', 'cite/index.html', 'research-atlas/index.html', 'faq/index.html', 'blog/index.html', 'blog/post.html', 'contribute/index.html', 'wiki/index.html', 'research/index.html', 'zotero/index.html', 'ai-research/index.html', 'open-source/index.html']) {
+  for (const page of ['index.html', 'about/index.html', 'app/index.html', 'apps/index.html', 'cite/index.html', 'research-atlas/index.html', 'faq/index.html', 'models/index.html', 'blog/index.html', 'blog/post.html', 'contribute/index.html', 'wiki/index.html', 'research/index.html', 'zotero/index.html', 'ai-research/index.html', 'open-source/index.html']) {
     assert.ok(read(page).includes('<canvas id="organism" aria-hidden="true"></canvas>'), `${page} carries the organism canvas`);
   }
 
@@ -448,6 +448,7 @@ test('the sitemap lists every static page of the site', () => {
     'https://nodusresearch.com/open-source/',
     'https://nodusresearch.com/wiki/',
     'https://nodusresearch.com/faq/',
+    'https://nodusresearch.com/models/',
     'https://nodusresearch.com/cite/',
     'https://nodusresearch.com/contribute/',
   ]) {
@@ -481,7 +482,7 @@ test('the app page documents the current desktop builds and available vaults', (
 });
 
 test('every page is reachable by keyboard and readable by a screen reader', () => {
-  for (const page of ['index.html', 'about/index.html', 'app/index.html', 'apps/index.html', 'cite/index.html', 'legal/index.html', 'research-atlas/index.html', 'faq/index.html', 'blog/index.html', 'blog/post.html', 'contribute/index.html', 'research/index.html', 'zotero/index.html', 'zotero-plugin/index.html', 'ai-research/index.html', 'open-source/index.html']) {
+  for (const page of ['index.html', 'about/index.html', 'app/index.html', 'apps/index.html', 'cite/index.html', 'legal/index.html', 'research-atlas/index.html', 'faq/index.html', 'models/index.html', 'blog/index.html', 'blog/post.html', 'contribute/index.html', 'research/index.html', 'zotero/index.html', 'zotero-plugin/index.html', 'ai-research/index.html', 'open-source/index.html']) {
     const html = read(page);
     assert.match(html, /class="skip-link" href="#/, `${page} offers a skip link`);
     assert.match(html, /<html lang="en">/, `${page} declares its language`);
@@ -586,7 +587,7 @@ test('every page shows the planet at the Support Nodus size, fixed behind the pa
     'the sections of a planet page ride above the planet');
 
   // Every page that mounts the component loads the stylesheet that places it.
-  for (const page of ['contribute/index.html', 'faq/index.html', 'about/index.html', 'blog/index.html', 'research-atlas/index.html']) {
+  for (const page of ['contribute/index.html', 'faq/index.html', 'models/index.html', 'about/index.html', 'blog/index.html', 'research-atlas/index.html']) {
     assert.match(read(page), /planet\.css\?v=[^"]+/, `${page} loads the planet styles`);
     assert.match(read(page), /planet\.js\?v=[^"]+/, `${page} loads the planet component`);
   }

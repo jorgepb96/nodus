@@ -1,3 +1,4 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
 import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
@@ -5905,6 +5906,7 @@ export const FR: Record<string, string> = {
   'Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.':
     'Si vous changez de modèle d\'embeddings, les vecteurs précédents ne fonctionneront pas avec le nouveau modèle et vous devrez réindexer.',
   'Embeddings multilingües de alta calidad para corpus amplios.': 'Embeddings multilingues de haute qualité pour de grands corpus.',
+  'Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.': 'Embeddings multilingues de Microsoft avec instruction de recherche. Le meilleur score MTEB multilingue des modèles locaux ; il réserve environ 6,5 Go de mémoire GPU, un ordinateur de 16 Go ou plus est donc conseillé.',
   'Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.':
     'Embeddings multilingues à contexte long, avec un bon équilibre entre précision et mémoire.',
   'Opción ligera y rápida para equipos con menos memoria.': 'Option légère et rapide pour les ordinateurs avec moins de mémoire.',
@@ -8934,3 +8936,5 @@ export const FR: Record<string, string> = {
 };
 
 Object.assign(FR, SIGN_TRANSLATIONS['fr']);
+
+Object.assign(FR, RESEARCH_QUEUE_TRANSLATIONS['fr']);

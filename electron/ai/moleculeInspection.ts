@@ -119,32 +119,64 @@ export function moleculeInspectionAvailable(): boolean {
   return inspectProvider() !== null;
 }
 
+/** A dossier is a pure function of its SMILES — `inspect` takes nothing else — so the same string
+ *  always yields the same answer and may be remembered.
+ *
+ *  Worth remembering because the cost is superlinear in size and the structure block is rebuilt on
+ *  EVERY turn from the same route. Measured on the 34-step program route (2026-10-20): 54 unique
+ *  species cost 24.0 s to inspect, the 12 species over 300 characters account for 11.2 s of it
+ *  (mean 934 ms, and 1.7 s each past 400), and two passes over the same set cost the same to within
+ *  3%. Across the six turns of one real run that was 133.9 s of repeated identical work — the
+ *  second largest deterministic cost in the run after the drawings.
+ *
+ *  Only successes are kept: a species that failed to inspect is cheap to retry and caching the
+ *  failure would outlive whatever made it fail. */
+const dossierCache = new Map<string, MoleculeDossier>();
+const DOSSIER_CACHE_MAX = 512;
+
 async function inspectCandidates(candidates: string[], options: InspectOptions): Promise<MoleculeDossier[]> {
   if (!candidates.length) return [];
-  const provider = inspectProvider();
-  if (!provider) return [];
-  const { runner, dispose } = chemistryRunner(options);
-  const dossiers: MoleculeDossier[] = [];
-  try {
-    for (let start = 0; start < candidates.length; start += MAX_BATCH) {
-      options.signal?.throwIfAborted();
-      const batch = candidates.slice(start, start + MAX_BATCH);
-      try {
-        const result = await runner.invoke({ provider, toolId: INSPECT_TOOL, input: { smiles: batch } });
-        for (const artifact of result.artifacts ?? []) {
-          const data = artifact.data as Record<string, unknown> | null;
-          const inputSmiles = data && typeof data.inputSmiles === 'string' ? data.inputSmiles : '';
-          const dossier = normalizeMoleculeDossier(data, inputSmiles);
-          if (dossier) dossiers.push(dossier);
+  // Deduplicated here as well as by the package, so the cache sees each string once and the
+  // returned order follows the caller's list rather than the batching. Trimmed because the package
+  // trims before it answers and echoes the trimmed string back as `inputSmiles`: that string is the
+  // cache key, so an untrimmed candidate would be remembered under a key its own lookup misses.
+  const unique = [...new Set(candidates.map((smiles) => smiles.trim()).filter(Boolean))];
+  if (!unique.length) return [];
+  const missing = unique.filter((smiles) => !dossierCache.has(smiles));
+  // No provider is not a reason to discard what is already known: the structure block can still
+  // be built from the remembered dossiers.
+  const provider = missing.length ? inspectProvider() : null;
+  if (provider) {
+    const { runner, dispose } = chemistryRunner(options);
+    try {
+      for (let start = 0; start < missing.length; start += MAX_BATCH) {
+        options.signal?.throwIfAborted();
+        const batch = missing.slice(start, start + MAX_BATCH);
+        try {
+          const result = await runner.invoke({ provider, toolId: INSPECT_TOOL, input: { smiles: batch } });
+          for (const artifact of result.artifacts ?? []) {
+            const data = artifact.data as Record<string, unknown> | null;
+            const inputSmiles = data && typeof data.inputSmiles === 'string' ? data.inputSmiles : '';
+            const dossier = normalizeMoleculeDossier(data, inputSmiles);
+            // Keyed by the string the package says it answered for, not by position: a batch may
+            // return fewer artifacts than it was given.
+            if (dossier && inputSmiles) {
+              if (dossierCache.size >= DOSSIER_CACHE_MAX) {
+                const oldest = dossierCache.keys().next();
+                if (!oldest.done) dossierCache.delete(oldest.value);
+              }
+              dossierCache.set(inputSmiles, dossier);
+            }
+          }
+        } catch {
+          /* one unparseable batch must not block the answer */
         }
-      } catch {
-        /* one unparseable batch must not block the answer */
       }
+    } finally {
+      await dispose();
     }
-  } finally {
-    await dispose();
   }
-  return dossiers;
+  return unique.map((smiles) => dossierCache.get(smiles)).filter((dossier): dossier is MoleculeDossier => dossier !== undefined);
 }
 
 /** Verifies the SMILES in the user's question before the model answers, so the target

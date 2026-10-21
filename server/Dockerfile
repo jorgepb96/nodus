@@ -16,6 +16,12 @@ RUN node scripts/generate-third-party-licenses.mjs --server-web
 
 FROM node:22-alpine
 
+# Node 22.23.4 fixed a remote-code-execution bug in the Brotli decoder that every
+# fetch() runs on `br` responses (CVE-2026-111497), plus a TLS hostname-check bypass
+# (CVE-2026-106069). The tag floats so rebuilds pick up later fixes, which also means
+# a stale cached base can resolve it to an older Node: refuse to ship one.
+RUN node -e "const v=process.versions.node.split('.').map(Number),m=[22,23,4];if(v[0]<m[0]||(v[0]===m[0]&&(v[1]<m[1]||(v[1]===m[1]&&v[2]<m[2])))){console.error('Node '+process.versions.node+' predates the 22.23.4 security release');process.exit(1)}"
+
 ARG NODUS_VERSION=5.14.1
 ARG NODUS_REVISION=unknown
 LABEL org.opencontainers.image.title="Nodus Server" \

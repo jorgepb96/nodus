@@ -1,5 +1,6 @@
 import { assertNodusLocalModelAvailable, nodusLocalModelUnavailableReason } from '@shared/embeddingGemma2Availability';
 import { app } from 'electron';
+import { fetchModelResource, modelResourceError } from '../network/modelResource';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -561,13 +562,14 @@ async function downloadFile(
   }
   const partial = `${target}.download`;
   let resumedBytes = (await fsp.stat(partial).catch(() => null))?.size ?? 0;
+  if (resumedBytes === 0) await fsp.rm(partial, { force: true });
   if (expectedBytes && resumedBytes > expectedBytes) {
     await fsp.rm(partial, { force: true });
     resumedBytes = 0;
   }
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetchModelResource(url, {
       redirect: 'follow',
       signal,
       headers: resumedBytes > 0 ? { Range: `bytes=${resumedBytes}-` } : undefined,
@@ -585,7 +587,7 @@ async function downloadFile(
     await fsp.rm(partial, { force: true });
     throw new Error('La verificación SHA-256 del archivo reanudado ha fallado.');
   }
-  if (!response.ok || !response.body) throw new Error(`Descarga HTTP ${response.status}: ${url}`);
+  if (!response.ok || !response.body) throw new Error(`Descarga HTTP ${response.status}: ${new URL(url).hostname}`);
   const resumed = resumedBytes > 0 && response.status === 206;
   if (!resumed && resumedBytes > 0) {
     await fsp.rm(partial, { force: true });
@@ -601,7 +603,10 @@ async function downloadFile(
     }
     const reader = response.body.getReader();
     for (;;) {
-      const { done, value } = await reader.read();
+      const { done, value } = await reader.read().catch(cause => {
+        if (signal?.aborted) throw downloadCancelledError();
+        throw modelResourceError(url, cause);
+      });
       if (done) break;
       const chunk = Buffer.from(value);
       received += chunk.length;

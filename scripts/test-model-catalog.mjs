@@ -34,7 +34,7 @@ await build({
       keys: 'export const getApiKey = provider => globalThis.__catalogFixture.keys[provider] ?? null;',
       local: 'export const listNodusLocalChatModels = () => [{id:"local-chat",kind:"llm"}]; export const listNodusLocalEmbeddingModels = () => [{id:"local-embedding",kind:"embeddings"}];',
       copilot: 'export const listGitHubCopilotSubscriptionModels = async () => {if(globalThis.__catalogFixture.copilotError) throw Error("offline"); return [{id:"copilot-model"}];};',
-      electron: `export const app = {getPath: () => ${JSON.stringify(tmp)}, getVersion: () => 'test'};`,
+      electron: `export const app = {getPath: () => ${JSON.stringify(tmp)}, getVersion: () => 'test'}; export const net = {fetch: (...args) => globalThis.fetch(...args)};`,
     }[name] }));
     // Inject the transport without replacing any of the catalogue/auth/filter logic.
     b.onLoad({ filter: /codexSubscription\.ts$/ }, async ({ path: file }) => ({
@@ -73,7 +73,8 @@ function codexRuntime({ connected = true } = {}) {
 }
 
 const uiFile = path.join(tmp, 'ui.cjs');
-await build({ stdin: { contents: `export { FavoriteModelAvailability } from ${JSON.stringify(path.join(repo, 'src/components/FavoriteModelAvailability.tsx'))};
+await build({ stdin: { contents: `export { setActiveLang, t } from ${JSON.stringify(path.join(repo, 'src/i18n.ts'))};
+  export { FavoriteModelAvailability } from ${JSON.stringify(path.join(repo, 'src/components/FavoriteModelAvailability.tsx'))};
   export { ProvidersSettings } from ${JSON.stringify(path.join(repo, 'src/views/ProvidersSettings.tsx'))};`, resolveDir: repo, loader: 'tsx' }, outfile: uiFile,
   bundle: true, format: 'cjs', platform: 'node', jsx: 'automatic', logLevel: 'silent', tsconfig: path.join(repo, 'tsconfig.json'),
   external: ['react', 'react/jsx-runtime'],
@@ -81,6 +82,18 @@ await build({ stdin: { contents: `export { FavoriteModelAvailability } from ${JS
 const { FavoriteModelAvailability, ProvidersSettings } = require(uiFile);
 const React = require('react');
 const act = React.act ?? require('react-dom/test-utils').act;
+
+test('model setup instructions and authentication errors are translated in every interface language', () => {
+  const { setActiveLang, t } = require(uiFile);
+  const messages = ['Introduce una clave de API antes de cargar los modelos.', 'El proveedor rechazó la clave o sus permisos (HTTP {status}).'];
+  try {
+    for (const language of ['en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr', 'zh-CN', 'zh-TW', 'ja', 'ko']) {
+      setActiveLang(language);
+      for (const message of messages) assert.notEqual(t(message), message, `${language}: ${message}`);
+      assert.match(t(messages[1]), /\{status\}/, language);
+    }
+  } finally { setActiveLang('es'); }
+});
 
 test('reasoning catalogues preserve mandatory controls and filter impossible off levels', async () => {
   globalThis.__catalogFixture.settings = { customProvider: { baseUrl: 'https://fixture.invalid/v1', models: [] } };
@@ -327,9 +340,15 @@ async function mount(settings, getModelCatalog = catalog.getModelCatalog, fullPr
   dom.window.nodus = {
     getModelCatalog,
     updateSettings: async patch => { patches.push(patch); current = { ...current, ...patch }; },
-    setApiKey: async (provider, key) => { savedKeys.push({ provider, key }); },
+    setApiKey: async (provider, key) => {
+      savedKeys.push({ provider, key });
+      current = { ...current, providerKeys: { ...current.providerKeys, [provider]: true } };
+    },
+    clearApiKey: async provider => { current = { ...current, providerKeys: { ...current.providerKeys, [provider]: false } }; },
     getChatGptSubscriptionStatus: async () => ({ connected: false, available: true, loginPending: false }),
     getGitHubCopilotSubscriptionStatus: async () => ({ connected: false, available: true, loginPending: false, quota: [] }),
+    getOpenCodeGoUsageStatus: async () => null,
+    onOpenCodeGoUsageStatusChanged: () => () => {},
     onChatGptSubscriptionStatusChanged: listener => { listeners.codex = listener; return () => delete listeners.codex; },
     onGitHubCopilotSubscriptionStatusChanged: listener => { listeners.copilot = listener; return () => delete listeners.copilot; },
   };
@@ -344,6 +363,94 @@ async function mount(settings, getModelCatalog = catalog.getModelCatalog, fullPr
     close: async () => { await act(async () => root.unmount()); dom.window.close(); },
   };
 }
+
+async function providerSetup(provider = 'xiaomi', settings = {}) {
+  const ui = await mount({ favorites: [], ...settings }, undefined, true);
+  const row = ui.dom.window.document.querySelector(`[data-testid="provider-${provider}"]`);
+  await ui.click(row.querySelector('button'));
+  return Object.assign(ui, {
+    row,
+    input: () => row.querySelector('input[type="password"]'),
+    type: async value => act(async () => require('react-dom/test-utils').Simulate.change(row.querySelector('input[type="password"]'), { target: { value } })),
+    button: label => [...row.querySelectorAll('button')].find(button => button.textContent === label),
+    alert: () => row.querySelector('[role="alert"]')?.textContent,
+  });
+}
+
+test('Load models saves the draft first, blocks duplicate clicks and refreshes saved-key status', async () => {
+  const ui = await providerSetup();
+  const calls = [];
+  let finishSave;
+  ui.dom.window.nodus.setApiKey = async (provider, key) => {
+    calls.push(['save', provider, key]);
+    await new Promise(resolve => { finishSave = resolve; });
+  };
+  ui.dom.window.nodus.listModels = async provider => { calls.push(['list', provider]); return [{ id: 'mimo-fixture' }]; };
+  try {
+    await ui.type('  test-only-key  ');
+    const load = ui.button('Cargar modelos');
+    await act(async () => { load.click(); load.click(); });
+    assert.deepEqual(calls, [['save', 'xiaomi', 'test-only-key']]);
+    assert.equal(ui.input().disabled, true);
+    assert.equal(ui.button('Guardar').disabled, true);
+    await act(async () => finishSave());
+    assert.deepEqual(calls, [['save', 'xiaomi', 'test-only-key'], ['list', 'xiaomi']]);
+    assert.equal(ui.input().value, '');
+    assert.match(ui.row.textContent, /clave guardada/);
+    assert.match(ui.row.textContent, /mimo-fixture/);
+    assert.equal(ui.alert(), undefined);
+  } finally { await ui.close(); }
+});
+
+test('failed key persistence keeps the draft and existing saved key, surfaces the cause and makes no request', async () => {
+  for (const hasKey of [false, true]) {
+    const ui = await providerSetup('xiaomi', { providerKeys: { xiaomi: hasKey } });
+    let requests = 0;
+    ui.dom.window.nodus.setApiKey = async () => { throw Error("Error invoking remote method 'settings:setApiKey': Error: encrypted storage unavailable"); };
+    ui.dom.window.nodus.listModels = async () => { requests++; return []; };
+    try {
+      await ui.type('test-only-new-key');
+      await ui.click(ui.button('Cargar modelos'));
+      assert.equal(ui.input().value, 'test-only-new-key');
+      assert.equal(requests, 0);
+      assert.equal(ui.alert(), 'encrypted storage unavailable');
+      assert.match(ui.row.textContent, hasKey ? /clave guardada/ : /sin clave/);
+      assert.equal(ui.button('Guardar').disabled, false);
+      await ui.click(ui.button('Guardar'));
+      assert.equal(ui.alert(), 'encrypted storage unavailable', 'the separate Save action also handles rejection');
+    } finally { await ui.close(); }
+  }
+});
+
+test('model setup requires a private key, reuses saved keys and keeps public catalogues keyless', async () => {
+  for (const [provider, saved, expected] of [['xiaomi', false, 0], ['xiaomi', true, 1], ['openrouter', false, 1], ['opencode-go', false, 1]]) {
+    const ui = await providerSetup(provider, { providerKeys: { [provider]: saved } });
+    let requests = 0;
+    ui.dom.window.nodus.listModels = async () => { requests++; return []; };
+    try {
+      await ui.click(ui.button('Cargar modelos'));
+      assert.equal(requests, expected, provider);
+      assert.equal(ui.savedKeys.length, 0);
+      assert.equal(ui.alert(), expected ? undefined : 'Introduce una clave de API antes de cargar los modelos.');
+    } finally { await ui.close(); }
+  }
+});
+
+test('model setup distinguishes rejected credentials from connection errors and can retry', async () => {
+  const ui = await providerSetup('xiaomi', { providerKeys: { xiaomi: true } });
+  try {
+    ui.dom.window.nodus.listModels = async () => { throw Error("Error invoking remote method 'ai:listModels': Error: /models HTTP 401"); };
+    await ui.click(ui.button('Cargar modelos'));
+    assert.equal(ui.alert(), 'El proveedor rechazó la clave o sus permisos (HTTP 401).');
+    ui.dom.window.nodus.listModels = async () => { throw Error("Error invoking remote method 'ai:listModels': Error: connection unavailable"); };
+    await ui.click(ui.button('Cargar modelos'));
+    assert.equal(ui.alert(), 'connection unavailable');
+    ui.dom.window.nodus.listModels = async () => [{ id: 'after-retry' }];
+    await ui.click(ui.button('Cargar modelos'));
+    assert.equal(ui.alert(), undefined);
+    assert.match(ui.row.textContent, /after-retry/);
+  } finally { await ui.close(); }
+});
 
 test('rendered custom check uses the real service: offline manual models remain unconfirmed', async () => {
   const settings = { favorites: [favorite('custom', 'manual-alias')], customProvider: { baseUrl: 'http://127.0.0.1:1/v1', models: ['manual-alias'] } };

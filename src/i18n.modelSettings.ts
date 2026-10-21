@@ -1,6 +1,8 @@
 // Model-settings descriptions and the model-required notice. Spanish source
 // strings are the translation keys used by the renderer.
 const KEYS = [
+  "Introduce una clave de API antes de cargar los modelos.",
+  "El proveedor rechazó la clave o sus permisos (HTTP {status}).",
   'Configura un modelo en Ajustes → Modelos IA antes de volver a intentarlo. Puedes usar la configuración básica o la avanzada.',
   'Ir a Ajustes y Modelos',
   'Representa el significado del texto para la búsqueda semántica y la recuperación por similitud.',
@@ -52,6 +54,8 @@ function table(values: readonly string[]): Record<string, string> {
 }
 
 const en = table([
+  "Enter an API key before loading models.",
+  "The provider rejected the key or its permissions (HTTP {status}).",
   'Configure a model in Settings → AI Models before trying again. You can use either basic or advanced configuration.',
   'Go to Settings and Models',
   'Represents the meaning of text for semantic search and similarity-based retrieval.',
@@ -95,6 +99,8 @@ const en = table([
 ]);
 
 const fr = table([
+  "Saisissez une clé API avant de charger les modèles.",
+  "Le fournisseur a refusé la clé ou ses autorisations (HTTP {status}).",
   'Configurez un modèle dans Réglages → Modèles d’IA avant de réessayer. Vous pouvez utiliser la configuration simple ou avancée.',
   'Ouvrir Réglages et Modèles',
   'Représente le sens du texte pour la recherche sémantique et la récupération par similarité.',
@@ -138,6 +144,8 @@ const fr = table([
 ]);
 
 const de = table([
+  "Gib einen API-Schlüssel ein, bevor du die Modelle lädst.",
+  "Der Anbieter hat den Schlüssel oder seine Berechtigungen abgelehnt (HTTP {status}).",
   'Konfigurieren Sie unter Einstellungen → KI-Modelle ein Modell, bevor Sie es erneut versuchen. Sie können die einfache oder die erweiterte Konfiguration verwenden.',
   'Zu Einstellungen und Modellen',
   'Bildet die Bedeutung von Text für semantische Suche und ähnlichkeitsbasierte Abfragen ab.',
@@ -181,6 +189,8 @@ const de = table([
 ]);
 
 const pt = table([
+  "Introduz uma chave de API antes de carregar os modelos.",
+  "O fornecedor rejeitou a chave ou as suas permissões (HTTP {status}).",
   'Configure um modelo em Ajustes → Modelos de IA antes de tentar novamente. Pode usar a configuração básica ou avançada.',
   'Ir para Ajustes e Modelos',
   'Representa o significado do texto para a pesquisa semântica e a recuperação por semelhança.',
@@ -224,6 +234,8 @@ const pt = table([
 ]);
 
 const ptBR = table([
+  "Insira uma chave de API antes de carregar os modelos.",
+  "O provedor rejeitou a chave ou suas permissões (HTTP {status}).",
   'Configure um modelo em Configurações → Modelos de IA antes de tentar novamente. Você pode usar a configuração básica ou avançada.',
   'Ir para Configurações e Modelos',
   'Representa o significado do texto para busca semântica e recuperação por semelhança.',
@@ -267,6 +279,8 @@ const ptBR = table([
 ]);
 
 const it = table([
+  "Inserisci una chiave API prima di caricare i modelli.",
+  "Il fornitore ha rifiutato la chiave o le relative autorizzazioni (HTTP {status}).",
   'Configura un modello in Impostazioni → Modelli IA prima di riprovare. Puoi usare la configurazione di base o avanzata.',
   'Vai a Impostazioni e Modelli',
   'Rappresenta il significato del testo per la ricerca semantica e il recupero per similarità.',
@@ -310,6 +324,8 @@ const it = table([
 ]);
 
 const tr = table([
+  "Modelleri yüklemeden önce bir API anahtarı girin.",
+  "Sağlayıcı anahtarı veya izinlerini reddetti (HTTP {status}).",
   'Yeniden denemeden önce Ayarlar → Yapay Zekâ Modelleri bölümünde bir model yapılandırın. Temel veya gelişmiş yapılandırmayı kullanabilirsiniz.',
   'Ayarlar ve Modellere git',
   'Anlamsal arama ve benzerliğe dayalı erişim için metnin anlamını temsil eder.',
@@ -353,6 +369,8 @@ const tr = table([
 ]);
 
 const zhCN = table([
+  "加载模型前，请先输入 API 密钥。",
+  "提供商拒绝了该密钥或其权限（HTTP {status}）。",
   '请先在设置 → AI 模型中配置模型，然后再试。你可以使用基础配置或高级配置。',
   '前往设置和模型',
   '为语义搜索和基于相似度的检索表示文本含义。',
@@ -396,6 +414,8 @@ const zhCN = table([
 ]);
 
 const zhTW = table([
+  "載入模型前，請先輸入 API 金鑰。",
+  "供應商拒絕了該金鑰或其權限（HTTP {status}）。",
   '請先在設定 → AI 模型中配置模型，然後再試。你可以使用基礎配置或高階配置。',
   '前往設定和模型',
   '為語義搜尋和基於相似度的檢索表示文本含義。',
@@ -441,6 +461,8 @@ const zhTW = table([
 export const MODEL_SETTINGS_TRANSLATIONS = { en, fr, de, pt, 'pt-BR': ptBR, it, tr, 'zh-CN': zhCN ,
   'zh-TW': zhTW,
   ko: table([
+  "모델을 불러오기 전에 API 키를 입력하세요.",
+  "공급자가 키 또는 해당 권한을 거부했습니다 (HTTP {status}).",
     "다시 시도하기 전에 설정 → AI 모델에서 모델을 구성하세요. 기본 또는 고급 구성을 사용할 수 있습니다.",
     "설정 및 모델로 이동",
     "의미 검색 및 유사성 기반 검색을 위해 텍스트의 의미를 나타냅니다.",
@@ -483,6 +505,8 @@ export const MODEL_SETTINGS_TRANSLATIONS = { en, fr, de, pt, 'pt-BR': ptBR, it, 
     "문제가 발생하면 알려 주세요. 로컬 모델 지원을 개선하는 데 도움이 되는 피드백과 기여는 언제나 환영합니다.",
   ]),
   ja: table([
+  "モデルを読み込む前に API キーを入力してください。",
+  "プロバイダーがキーまたはその権限を拒否しました（HTTP {status}）。",
     "再試行する前に、[設定] → [AI モデル] でモデルを構成してください。基本構成または詳細構成を使用できます。",
     "設定とモデルに移動します",
     "セマンティック検索および類似性に基づく検索のためのテキストの意味を表します。",

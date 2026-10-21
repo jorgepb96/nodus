@@ -1,3 +1,4 @@
+import { fetchModelResource, modelResourceError } from '../network/modelResource';
 import type { ChatImageAspectRatio } from '@shared/chatSkills';
 import { app } from 'electron';
 import { spawn } from 'node:child_process';
@@ -152,15 +153,15 @@ async function downloadFile(
   await fsp.mkdir(path.dirname(target), { recursive: true });
   const partial = `${target}.download`;
   await fsp.rm(partial, { force: true });
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok || !response.body) throw new Error(`Descarga HTTP ${response.status}: ${url}`);
+  const response = await fetchModelResource(url, { redirect: 'follow' });
+  if (!response.ok || !response.body) throw new Error(`Descarga HTTP ${response.status}: ${new URL(url).hostname}`);
   const file = fs.createWriteStream(partial, { flags: 'wx' });
   const hash = createHash('sha256');
   let received = 0;
   try {
     const reader = response.body.getReader();
     for (;;) {
-      const { done, value } = await reader.read();
+      const { done, value } = await reader.read().catch(cause => { throw modelResourceError(url, cause); });
       if (done) break;
       const chunk = Buffer.from(value);
       received += chunk.length;

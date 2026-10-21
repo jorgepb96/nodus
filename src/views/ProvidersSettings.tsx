@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AgentRuntimeStatus,
   AiProvider,
@@ -29,6 +29,7 @@ import { codexReasoningLabel } from '../components/ModelPicker';
 import { withCodexReasoning } from '@shared/codexReasoning';
 import { t, tx } from '../i18n';
 import { FavoriteModelAvailability } from '../components/FavoriteModelAvailability';
+import { ipcErrorText } from '../lib/ipcErrorText';
 
 export function ProvidersSettings({
   settings,
@@ -358,9 +359,6 @@ function ChatGptSubscriptionRow({
     </div>
   );
 }
-
-const ipcErrorText = (cause: unknown) =>
-  (cause instanceof Error ? cause.message : String(cause)).replace(/^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/, '');
 
 /** Download progress of a vendor CLI, as a percentage once its size is known. */
 function runtimePercent(runtime: AgentRuntimeStatus): number | null {
@@ -759,27 +757,49 @@ function ProviderRow({
 }) {
   const [keyInput, setKeyInput] = useState('');
   const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<'save' | 'load' | 'delete' | null>(null);
+  const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasKey = settings.providerKeys?.[provider];
+  const [hasKey, setHasKey] = useState(Boolean(settings.providerKeys?.[provider]));
+  useEffect(() => setHasKey(Boolean(settings.providerKeys?.[provider])), [settings.providerKeys?.[provider]]);
+  const publicCatalog = provider === 'openrouter' || provider === 'opencode-go';
 
-  const saveKey = async () => {
-    if (!keyInput.trim()) return;
-    await window.nodus.setApiKey(provider, keyInput.trim());
-    setKeyInput('');
-    await onChange();
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
+  const run = async (action: 'save' | 'load' | 'delete') => {
+    // React state alone does not stop two clicks delivered before the next render.
+    if (inFlight.current || (action === 'save' && !keyInput.trim())) return;
+    inFlight.current = true;
+    setBusy(action);
     setError(null);
     try {
-      setModels(await window.nodus.listModels(provider));
-    } catch (e) {
-      setError((e as Error).message);
+      if (action === 'delete') {
+        await window.nodus.clearApiKey(provider);
+        setHasKey(false);
+        setModels(null);
+        await onChange();
+        return;
+      }
+      const draft = keyInput.trim();
+      if (draft) {
+        await window.nodus.setApiKey(provider, draft);
+        setHasKey(true);
+        setKeyInput('');
+        setModels(null);
+        await onChange();
+      } else if (action === 'load' && !hasKey && !publicCatalog) {
+        setError(t('Introduce una clave de API antes de cargar los modelos.'));
+        return;
+      }
+      if (action === 'load') setModels(await window.nodus.listModels(provider));
+    } catch (cause) {
+      const message = ipcErrorText(cause);
+      const status = /\bHTTP (401|403)\b/.exec(message)?.[1];
+      setError(status
+        ? tx('El proveedor rechazó la clave o sus permisos (HTTP {status}).', { status })
+        : message);
     } finally {
-      setLoading(false);
+      inFlight.current = false;
+      setBusy(null);
     }
   };
 
@@ -808,13 +828,15 @@ function ProviderRow({
               className="input flex-1"
               placeholder={hasKey ? t('•••••••• (guardada)') : t('clave del proveedor')}
               value={keyInput}
+              disabled={Boolean(busy)}
               onChange={(e) => setKeyInput(e.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') void run('save'); }}
             />
-            <button className="btn btn-primary" onClick={saveKey}>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !keyInput.trim()} onClick={() => void run('save')}>
               {t('Guardar')}
             </button>
             {hasKey && (
-              <button className="btn btn-ghost text-red-600 dark:text-red-400" onClick={() => window.nodus.clearApiKey(provider).then(onChange)}>
+              <button className="btn btn-ghost text-red-600 dark:text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
@@ -851,8 +873,8 @@ function ProviderRow({
           )}
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={loadModels} disabled={loading}>
-              {loading ? t('Cargando…') : t('Cargar modelos')}
+            <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
+              {busy === 'load' ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
               <input className="input flex-1" placeholder={t('Buscar modelo…')} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -860,7 +882,7 @@ function ProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-600 dark:text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid={`provider-model-list-${provider}`}>

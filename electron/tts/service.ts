@@ -157,8 +157,13 @@ export class TtsService {
     return this.status();
   }
 
+  /** A checkpoint this machine can run; anything else is refused before downloading or loading it. */
+  private platformModel(modelId: string) {
+    return ttsModelsForPlatform(process.platform, process.arch).find((entry) => entry.id === modelId);
+  }
+
   async downloadModel(modelId: string): Promise<TtsStatus> {
-    const model = TTS_MODELS.find((entry) => entry.id === modelId);
+    const model = this.platformModel(modelId);
     if (!model) throw new Error('TTS_MODEL_UNAVAILABLE');
     // CC BY-NC weights are never fetched until the user accepted their terms in Nodus.
     if (model.nonCommercial && !getSettings().ttsAcceptedLicenses.includes(model.id)) throw new Error('TTS_LICENSE_NOT_ACCEPTED');
@@ -190,8 +195,9 @@ export class TtsService {
   }
 
   private async assertModelReady(modelId: string): Promise<void> {
-    const model = TTS_MODELS.find((entry) => entry.id === modelId);
-    if (!model || !(await this.models.isReady(model))) throw new Error('TTS_MODEL_NOT_DOWNLOADED');
+    const model = this.platformModel(modelId);
+    if (!model) throw new Error('TTS_MODEL_UNAVAILABLE');
+    if (!(await this.models.isReady(model))) throw new Error('TTS_MODEL_NOT_DOWNLOADED');
     if (model.engine === 'phonon') {
       this.phononRuntime ??= await this.phononInstaller.installed();
       if (!this.phononRuntime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');

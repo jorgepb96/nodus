@@ -39,10 +39,12 @@ try {
     }
   }
 
-  // ── Platform filtering: MLX only on Apple Silicon ───────────────────────────
+  // ── Platform filtering: MLX only on Apple Silicon, PyTorch everywhere else ──
   const mac = tts.ttsModelsForPlatform('darwin', 'arm64').map((m) => m.id);
   assert.ok(mac.includes('ming3-0.5b-mlx-8bit'));
   assert.ok(mac.includes('ming3-0.5b-mlx-4bit'), 'the published 4-bit MLX checkpoint is offered');
+  assert.ok(!mac.includes('ming3-0.5b-torch'), 'the MLX sidecar cannot load the PyTorch checkpoint, so Apple Silicon never offers it');
+  assert.deepEqual([...new Set(tts.ttsModelsForPlatform('darwin', 'arm64').map((m) => m.backend))], ['mlx', 'phonon', 'kokoro']);
   for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'x64']]) {
     assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], ['torch', 'phonon', 'kokoro']);
     assert.equal(tts.ttsBackendForPlatform(platform, arch), 'torch');

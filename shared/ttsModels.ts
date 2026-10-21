@@ -234,8 +234,11 @@ export function ttsModelBytes(model: TtsModelDefinition): number {
 
 /** The checkpoints that can run on this platform, published ones only. Phonon runs everywhere. */
 export function ttsModelsForPlatform(platform: string, arch: string): TtsModelDefinition[] {
-  const appleSilicon = platform === 'darwin' && arch === 'arm64';
-  return TTS_MODELS.filter((model) => !model.unpublished && (model.backend !== 'mlx' || appleSilicon));
+  // Each Ming checkpoint runs on one backend, and this machine has one: MLX on Apple Silicon,
+  // PyTorch elsewhere. The PyTorch checkpoint on an Apple Silicon Mac would download 3 GB and
+  // then fail to load in the MLX sidecar.
+  const backend = ttsBackendForPlatform(platform, arch);
+  return TTS_MODELS.filter((model) => !model.unpublished && (model.engine !== 'ming' || model.backend === backend));
 }
 
 /** The sidecar backend a checkpoint needs: Phonon has its own; Ming's depends on the machine. */

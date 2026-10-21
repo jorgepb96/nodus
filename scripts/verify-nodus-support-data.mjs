@@ -15,13 +15,13 @@ import { runProbe } from '../apps/nodus-support/core/probe.mjs';
 import { supportSourceDigest } from './lib/supportEvidence.mjs';
 
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),require=createRequire(import.meta.url),electron=require('electron');
-const sourceSha256=supportSourceDigest(repo);
+const sourceSha256=supportSourceDigest(repo),version=JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version;
 const diagnostic=value=>console.error('Synthetic probe bootstrap diagnostic:',JSON.stringify(value));
 const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'nodus-support-data-'))),profile=path.join(root,'original');
 execFileSync(electron,[path.join(repo,'scripts/support-native-fixture.mjs'),root],{env:{...process.env,ELECTRON_RUN_AS_NODE:'1'},stdio:'inherit'});
 const sources=detectSources(profile).roots,before=await Promise.all(sources.map(source=>inventory(source)));
 const service=new SupportService({profile,storage:path.join(root,'support'),executable:electron,isRunning:async()=>false,probe:input=>runProbe({...input,args:[repo],diagnostic})});
-service.installation=async()=>({protocol:1,version:'5.13.0',platform:process.platform,arch:process.arch});
+service.installation=async()=>({protocol:1,version,platform:process.platform,arch:process.arch});
 const checked=[];let roundtripArchive;
 for(const action of ['configuration-check','database-check','model-check','repair-local-endpoints','pause-sync','disable-plugins','rebuild-library','recover-database','archive-roundtrip']) {
   let session=await service.create({symptom:'other',mode:'guided'});session=await service.protect(session.id);assert.equal(session.status,'protected');

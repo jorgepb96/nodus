@@ -23,7 +23,7 @@ async function worker(folder,kind,point) {
   await writeNew(path.join(folder,'baseline.json'),await inventory(profile));
   const pause=async phase=>{
     if(phase!==point)return;
-    await writeNew(path.join(folder,'reached.json'),{phase,pid:process.pid});
+    await writeRecord(path.join(folder,'reached.json'),{phase,pid:process.pid});
     await new Promise(()=>{setInterval(()=>{},1000);});
   };
   if(kind==='installation') {

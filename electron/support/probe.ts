@@ -7,6 +7,7 @@ import { assertIsolatedProductionSeparation, isolatedPath, validateIsolatedRoot 
 import { SUPPORT_ACTIONS, DIAGNOSTIC_ACTIONS } from '../../shared/support/catalog.mjs';
 import { isolateSupportApplication } from './isolation';
 import { writeProbeResult } from './probeResult';
+import {readProbePassword} from '../../shared/support/probe-input.mjs';
 import { configurationFindings, openSupportDatabase, pauseCopiedSync, rebuildCopiedLibrary, recoverReadableTables, repairLocalEndpoints, supportDatabaseFiles } from './diagnostics';
 
 export async function runSupportProbe():Promise<void> {
@@ -19,18 +20,25 @@ export async function runSupportProbe():Promise<void> {
   process.env.NODUS_QA_ROOT=root;process.env.NODUS_QA_DATABASE_AUDIT_LOG=path.join(profile,'database-access.jsonl');process.env.NODUS_USERDATA=profile;
   process.env.TMPDIR=app.getPath('temp');process.env.TMP=app.getPath('temp');process.env.TEMP=app.getPath('temp');app.setPath('appData',isolatedPath(root,'app-data'));
   process.env.NODUS_HARNESS_KEYS_FILE=path.join(root,'no-provider-keys.json');process.env.NODUS_QA_DEFER_CREDENTIAL_STATUS='1';process.env.NODUS_BACKUP_UTILITY_INLINE='1';
+  // Connect to the single validated local input pipe before network isolation.
+  // No application code or provider is loaded while waiting for the password.
+  let suppliedPassword:string|undefined;
+  if(action==='restore-archive') {
+    try{suppliedPassword=await readProbePassword();}
+    catch{writeProbeResult(root,{appVersion:app.getVersion(),ok:false,code:'PROBE_INPUT_UNAVAILABLE'});app.exit(1);return;}
+  }
   isolateSupportApplication(root);
   if(action==='software-graphics')app.disableHardwareAcceleration();
   const result=(ok:boolean,code:string,extra:Record<string,unknown>={})=>writeProbeResult(root,{appVersion:app.getVersion(),ok,code,diagnostic:DIAGNOSTIC_ACTIONS.includes(action),...extra});
   await app.whenReady();
+  let phase='initializing';
   try {
     if(action==='restore-archive'||action==='archive-roundtrip') {
       let password:string=randomUUID();
       if(action==='restore-archive') {
-        let input='';for await(const chunk of process.stdin){input+=chunk.toString();if(input.length>8192)throw new Error('Input too large');}
-        password=JSON.parse(input).password;input='';if(typeof password!=='string'||!password)throw new Error('A password is required');
+        password=suppliedPassword!;suppliedPassword=undefined;
       }
-      const prefsFile=path.join(profile,'app-prefs.json');
+      phase='archive-preferences';const prefsFile=path.join(profile,'app-prefs.json');
       if(fs.existsSync(prefsFile))fs.renameSync(prefsFile,`${prefsFile}.support-before-${randomUUID()}`);
       fs.writeFileSync(prefsFile,JSON.stringify({autoBackupFolder:path.join(profile,'recovered-library'),recoverySetupVersion:1,autoBackupEnabled:false,backupCleanupEnabled:false}),{flag:'wx',mode:0o600});
       const {restoreBackupArchiveFile,createBackupArchiveFile}=await import('../export/exportImport');
@@ -44,12 +52,12 @@ export async function runSupportProbe():Promise<void> {
         fs.mkdirSync(profile,{mode:0o700});
         fs.writeFileSync(prefsFile,JSON.stringify({autoBackupFolder:path.join(profile,'recovered-library'),recoverySetupVersion:1,autoBackupEnabled:false,backupCleanupEnabled:false}),{flag:'wx',mode:0o600});
       }
-      const restored=await restoreBackupArchiveFile(archive,password,value=>process.stdout.write(`\n@@NODUS_SUPPORT_PROGRESS@@${JSON.stringify({protocol:1,root,phase:value.phase,completed:value.completedBytes,total:value.totalBytes})}\n`));password='';
+      phase='archive-restoring';const restored=await restoreBackupArchiveFile(archive,password,value=>process.stdout.write(`\n@@NODUS_SUPPORT_PROGRESS@@${JSON.stringify({protocol:1,root,phase:value.phase,completed:value.completedBytes,total:value.totalBytes})}\n`));password='';
       let verified=restored.ok;
       if(verified&&action==='archive-roundtrip') {
         const {getDb,closeDb}=await import('../db/database');verified=Boolean(getDb().prepare("SELECT 1 FROM support_roundtrip WHERE value='synthetic recovery check'").get());closeDb();
       }
-      let backupDate:string|undefined;
+      phase='archive-metadata';let backupDate:string|undefined;
       if(verified) {
         const {ZipFileReader}=await import('../export/zipFile');const reader=await ZipFileReader.open(archive),entry=reader.entry('manifest.json');
         if(entry){const metadata=JSON.parse((await reader.read(entry,1024*1024)).toString('utf8'));if(typeof metadata.date==='string'&&Number.isFinite(Date.parse(metadata.date)))backupDate=new Date(metadata.date).toISOString();}
@@ -86,6 +94,6 @@ export async function runSupportProbe():Promise<void> {
     await window.webContents.executeJavaScript('document.querySelector("canvas").getContext("2d").fillRect(0,0,10,10); true');
     result(true,'RUNTIME_CHECKED',{scope:'runtime-and-storage',softwareGraphics:action==='software-graphics'});window.destroy();app.quit();
   } catch(error) {
-    const code=typeof(error as {code?:unknown}).code==='string'?(error as {code:string}).code:'TEST_FAILED';result(false,code);app.quit();
+    const code=typeof(error as {code?:unknown}).code==='string'?(error as {code:string}).code:'TEST_FAILED';result(false,code,{phase});app.quit();
   }
 }

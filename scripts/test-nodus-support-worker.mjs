@@ -3,7 +3,19 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import {pathToFileURL} from 'node:url';
 import {runProbe} from '../apps/nodus-support/core/probe.mjs';
+
+test('a worker receives a private Unicode password and reports success without console output',async()=>{
+  const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'support-input-worker-'))),password='Synthetic 密碼 🔑 contraseña';
+  try {
+    const reader=pathToFileURL(path.resolve(import.meta.dirname,'../shared/support/probe-input.mjs')).href;
+    const script=`import fs from 'node:fs';import path from 'node:path';import {readProbePassword} from ${JSON.stringify(reader)};const password=await readProbePassword();if(password!==${JSON.stringify(password)})process.exit(8);const root=process.env.NODUS_ISOLATED_ROOT,requestId=process.env.NODUS_SUPPORT_REQUEST_ID;fs.writeFileSync(path.join(root,'probe-result-'+requestId+'.json'),JSON.stringify({requestId,root,protocol:1,ok:true,code:'ARCHIVE_RECOVERED'}),{flag:'wx'});`;
+    const result=await runProbe({executable:process.execPath,args:['--input-type=module','-e',script],root,action:'restore-archive',password});
+    assert.equal(result.ok,true);assert.ok(!JSON.stringify(result).includes(password));
+    assert.equal(fs.readdirSync(root).length,1,'No password file was written');
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
 
 test('worker progress is bounded, validated and survives oversized private console output',async()=>{
   const root='/synthetic-copy',events=[];

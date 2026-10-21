@@ -3,19 +3,23 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { SupportError,noLinks } from './files.mjs';
+import {createProbeInput} from '../../../shared/support/probe-input.mjs';
 
-export function runProbe({ executable, args = [], root, action, signal, password, progress=()=>{}, diagnostic=()=>{} }) {
+export async function runProbe({ executable, args = [], root, action, signal, password, progress=()=>{}, diagnostic=()=>{} }) {
+  const requestId=randomUUID();
+  const input=process.platform==='win32'&&password!==undefined?await createProbeInput(password,requestId):null;
   return new Promise((resolve, reject) => {
     // A narrow bootstrap protocol validates and selects the copy before any normal imports.
-    const requestId=randomUUID();
     const env={ ...process.env, NODUS_SUPPORT_REQUEST_ID:requestId, NODUS_SUPPORT_PROBE: '1', NODUS_SUPPORT_ACTION: action, NODUS_ISOLATED_ROOT: root, NODUS_DISABLE_AUTO_UPDATE: '1' };
     delete env.ELECTRON_RUN_AS_NODE;delete env.NODUS_USERDATA;delete env.NODUS_SUPPORT_INTERACTIVE;
+    delete env.NODUS_SUPPORT_INPUT_PIPE;delete env.NODUS_SUPPORT_INPUT_TOKEN;
+    Object.assign(env,input?.env);
     const child = spawn(executable, args, {
       env,
       stdio: ['pipe','pipe','pipe'], windowsHide: true,
     });
     child.stdin.on('error', () => {});
-    child.stdin.end(password === undefined ? '' : JSON.stringify({ password }));
+    child.stdin.end(password === undefined || input ? '' : JSON.stringify({ password }));
     let pending='',stderr='',result;let settled = false;
     const finish = (error, result) => { if (settled) return; settled = true; clearTimeout(timer); signal?.removeEventListener('abort', cancel); if (error) reject(error); else resolve(result); };
     const cancel = () => { child.kill('SIGTERM'); finish(new SupportError('TEST_CANCELLED')); };
@@ -56,5 +60,5 @@ export function runProbe({ executable, args = [], root, action, signal, password
       finish(null,result);
     });
     signal?.addEventListener('abort', cancel, { once: true }); if (signal?.aborted) cancel();
-  });
+  }).finally(()=>input?.close());
 }

@@ -65,6 +65,7 @@ const TEXT: Record<AppLanguage, readonly [string, string, string]> = {
 };
 
 const connection = /No se pudo conectar con ([^\s]+)\. Comprueba la conexión y el proxy del sistema\. \(([A-Z0-9_]+)\)/g;
+const downloadHttp = /Descarga HTTP (\d+): ([^\s|]+)/g;
 const interpolate = (template: string, values: Record<string, string>) => template.replace(/\{(\w+)\}/g, (match, name: string) => values[name] ?? match);
 const translations = (index: 0 | 1 | 2, values: Record<string, string>) => Object.fromEntries(
   Object.entries(TEXT).map(([language, templates]) => [language, interpolate(templates[index], values)]),
@@ -74,6 +75,8 @@ export const MODEL_NETWORK_ERROR_PATTERNS = [
   { pattern: /^No se pudo conectar con ([^\s]+)\. Comprueba la conexión y el proxy del sistema\. \(([A-Z0-9_]+)\)$/, translate: (host: string, code: string) => translations(0, { host, code }) },
   { pattern: /^Descarga HTTP (\d+): ([^\s]+)$/, translate: (status: string, host: string) => translations(2, { host, status }) },
   { pattern: /^No se pudo instalar un runtime de llama\.cpp utilizable\. (.+)$/, translate: (details: string) => Object.fromEntries(
-    Object.entries(TEXT).map(([language, templates]) => [language, interpolate(templates[1], { details: details.replace(connection, (_match, host: string, code: string) => interpolate(templates[0], { host, code })) })]),
+    Object.entries(TEXT).map(([language, templates]) => [language, interpolate(templates[1], { details: details
+      .replace(connection, (_match, host: string, code: string) => interpolate(templates[0], { host, code }))
+      .replace(downloadHttp, (_match, status: string, host: string) => interpolate(templates[2], { status, host })) })]),
   ) as Record<AppLanguage, string> },
 ];

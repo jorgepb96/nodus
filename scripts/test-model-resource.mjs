@@ -94,6 +94,12 @@ test('connection diagnostics retain only the host and safe cause code, and remai
         assert.match(localized, /ENOTFOUND/);
         const nested = setup.localizeRuntimeError(`No se pudo instalar un runtime de llama.cpp utilizable. archive.zip: ${error.message}`, lang);
         assert.doesNotMatch(nested, /No se pudo conectar/, lang);
+        const http = setup.localizeRuntimeError('Descarga HTTP 403: models.invalid', lang);
+        assert.match(http, /models\.invalid/);
+        assert.match(http, /403/);
+        assert.doesNotMatch(http, /Descarga HTTP/);
+        const nestedHttp = setup.localizeRuntimeError('No se pudo instalar un runtime de llama.cpp utilizable. archive.zip: Descarga HTTP 403: models.invalid', lang);
+        assert.doesNotMatch(nestedHttp, /Descarga HTTP/, lang);
       }
       return true;
     });

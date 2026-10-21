@@ -5620,6 +5620,10 @@ html.theme-active .whats-new-scope-tooltip { border-color: var(--wn-border); col
 .light.testimonios .border-indigo-800\/40,
 .light.testimonios .border-indigo-800\/60 { border-color: rgba(8, 145, 178, 0.3); }
 
+/* The header sound balloon floats over whatever view is open (chat bubbles, reader text):
+   the generic 96% light surface let it show through, so it gets an opaque one. */
+.light [data-testid="browser-media-popover"] { background-color: #ffffff; }
+
 /* ── Source citation modal — light theme ───────────────────────────────── */
 /* Dark-by-design sheet; light gets an opaque white surface so it never inherits charcoal. */
 .light [data-testid="source-citation-modal"] {

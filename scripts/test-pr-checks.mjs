@@ -69,6 +69,13 @@ function harness(options = {}) {
           return response({ permission: options.permission ?? 'write' });
         },
         createCommitStatus: async args => {
+          if (options.statusLimit?.includes(args.sha)) {
+            throw Object.assign(new Error('Validation Failed'), { status: 422, response: { data: {
+              message: 'Validation Failed',
+              errors: 'Validation failed: This SHA and context has reached the maximum number of statuses.',
+            } } });
+          }
+          if (options.statusError) throw Object.assign(new Error('Server Error'), { status: 500 });
           writes.push({ type: 'status', ...args });
           statuses.unshift({ id: nextId++, context: args.context, state: args.state,
             target_url: args.target_url, description: args.description });
@@ -330,6 +337,20 @@ test('API errors invalidate previous green issue statuses and report an operatio
   await h.verify();
   assert.deepEqual(h.writes.map(write => write.state), ['pending', 'error']);
   assert.equal(h.errors.length, 1);
+});
+
+test('a commit at the status limit keeps its status without aborting other PRs; other errors still fail', async () => {
+  const full = { ...fixture(43), head: { ...fixture().head, sha: 'd'.repeat(40) } };
+  const h = harness({ prs: [fixture(), full], statusLimit: ['d'.repeat(40)] });
+  const result = await h.verify();
+  assert.equal(result.get(42).linked, true);
+  assert.equal(result.get(43).linked, true);
+  assert.deepEqual(h.writes.map(write => [write.sha, write.state]),
+    [['a'.repeat(40), 'pending'], ['a'.repeat(40), 'success']]);
+  assert.equal(h.warnings.length, 1);
+  assert.match(h.warnings[0], /dddddd.*#43.*status limit/);
+  assert.deepEqual(h.errors, []);
+  await assert.rejects(harness({ statusError: true }).verify(), /Server Error/);
 });
 
 test('a PR waits for CI to appear and for queued or running workflows', async () => {

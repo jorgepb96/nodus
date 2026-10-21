@@ -35,6 +35,8 @@ const latestBy = (items, key) => {
   }
   return [...result.values()];
 };
+const statusLimitReached = error => error?.status === 422
+  && /maximum number of statuses/i.test(`${error.message} ${JSON.stringify(error.response?.data ?? '')}`);
 
 export async function issueLink(github, repo, pr) {
   const data = await github.graphql(`query($owner: String!, $repo: String!, $number: Int!) {
@@ -60,9 +62,23 @@ export async function verifyIssues({ github, repo, prs, runUrl, core }) {
     groups.get(pr.head.sha).push(pr);
   }
   for (const [sha, group] of groups) {
-    const setStatus = (state, description) => github.rest.repos.createCommitStatus({
-      ...repo, sha, context: ISSUE_CONTEXT, state, description, target_url: runUrl,
-    });
+    // GitHub accepts at most 1000 statuses per commit and context. A long-lived
+    // head can exhaust them; that commit keeps its last status until a new push,
+    // and it must not abort reconciliation for every other open PR.
+    let writable = true;
+    const setStatus = async (state, description) => {
+      if (!writable) return;
+      try {
+        await github.rest.repos.createCommitStatus({
+          ...repo, sha, context: ISSUE_CONTEXT, state, description, target_url: runUrl,
+        });
+      } catch (error) {
+        if (!statusLimitReached(error)) throw error;
+        writable = false;
+        core.warning(`Commit ${sha.slice(0, 7)} (PR ${group.map(pr => `#${pr.number}`).join(', ')}) has reached `
+          + `GitHub's status limit for "${ISSUE_CONTEXT}". Its status stays as it is until a new commit is pushed.`);
+      }
+    };
     // Invalidate old green results before calling a fallible API. Statuses are
     // commit-scoped, so all open PRs sharing a SHA must satisfy the requirement.
     await setStatus('pending', 'Checking linked issues for every open PR with this commit.');

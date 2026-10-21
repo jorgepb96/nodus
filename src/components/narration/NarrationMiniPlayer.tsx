@@ -39,8 +39,10 @@ export function NarrationMiniPlayer() {
     }
   };
 
+  // One minmax(0,1fr) column: an implicit auto column grows to a truncated title's full
+  // width (a long chat question) and pushes the close button and controls out of the balloon.
   return (
-    <div data-testid="narration-mini-player" className="grid min-w-0 gap-2 p-1 text-xs text-neutral-200">
+    <div data-testid="narration-mini-player" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 p-1 text-xs text-neutral-200">
       <div className="flex items-start gap-2">
         <Icon name="volume" size={14} className="mt-0.5 shrink-0 text-indigo-300" />
         <div className="min-w-0 flex-1">

@@ -59,6 +59,9 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
   const generating = progress != null;
   const playingHere = player?.source?.key === key && player.isPlaying;
   const fraction = progress && progress.total ? (progress.done + (progress.fragmentsTotal ? (progress.fragmentsDone ?? 0) / progress.fragmentsTotal : 0)) / progress.total : 0;
+  const playbackFraction = player?.source?.key === key && player.timeline.totalS > 0
+    ? Math.max(0, Math.min(1, player.timeline.playedS / player.timeline.totalS))
+    : 0;
 
   const directStart = async () => {
     if (!player || starting || generating) return;
@@ -110,7 +113,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         data-testid={testId ?? 'listen-button'}
         className={toolbar
           ? `btn btn-ghost relative gap-1.5 border border-neutral-700 text-xs py-1 ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : ''} ${className}`
-          : `relative rounded p-1 transition ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : 'text-neutral-500 opacity-70 hover:opacity-100'} hover:bg-neutral-200/60 dark:hover:bg-neutral-800 ${className}`}
+          : `relative inline-grid h-6 w-6 place-items-center rounded p-0 transition ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : 'text-neutral-500 opacity-70 hover:opacity-100'} hover:bg-neutral-200/60 dark:hover:bg-neutral-800 ${className}`}
         title={starting ? t('Preparando…') : generating ? tx('Generando audio · {pct}%', { pct: Math.round(fraction * 100) }) : playingHere ? t('Reproduciendo') : t('Escuchar')}
         aria-label={label ?? t('Escuchar')}
         aria-expanded={direct ? undefined : open}
@@ -119,7 +122,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
       >
         <Icon name={playingHere ? 'waveform' : 'volume'} size={size} />
         {toolbar && <span className="hidden sm:inline">{label ?? t('Escuchar')}</span>}
-        {starting ? <LoadingRing /> : generating ? <ProgressRing fraction={fraction} /> : direct && playingHere ? <ProgressRing fraction={1} /> : null}
+        {starting ? <LoadingRing /> : generating ? <ProgressRing fraction={fraction} /> : direct && player?.source?.key === key ? <ProgressRing fraction={playbackFraction} /> : null}
       </button>
       {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} autoStart={autoStart} />}
     </>
@@ -129,8 +132,8 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
 function LoadingRing() {
   return (
     <svg className="pointer-events-none absolute inset-0 h-full w-full animate-spin" viewBox="0 0 22 22" aria-hidden>
-      <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="1.6" />
-      <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeDasharray="14 43" strokeLinecap="round" />
+      <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2.2" />
+      <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeWidth="2.6" strokeDasharray="14 43" strokeLinecap="round" />
     </svg>
   );
 }
@@ -140,8 +143,8 @@ function ProgressRing({ fraction }: { fraction: number }) {
   const c = 2 * Math.PI * r;
   return (
     <svg className="pointer-events-none absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 22 22" aria-hidden>
-      <circle cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1.6" />
-      <circle cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeWidth="1.6" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0.03, fraction))} strokeLinecap="round" />
+      <circle cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeOpacity="0.16" strokeWidth="2.4" />
+      <circle className="listen-progress-ring" cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeWidth="3.1" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0.02, fraction))} strokeLinecap="round" />
     </svg>
   );
 }
@@ -217,6 +220,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   const playable = useMemo<PlayerTrack[]>(() => clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec })), [clips, target.title]);
   const source = { key, title: target.title, open: target.open };
   const listening = player.source?.key === key;
+  const playing = listening && player.isPlaying;
 
   const narrate = () => {
     if (!settings) return;
@@ -241,6 +245,17 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
       }
     });
   };
+
+  const transportPlay = () => {
+    if (!playable.length) return;
+    if (listening && !playing && player.currentTime > 0 && player.currentTime < totalDuration - 0.05) {
+      player.toggle();
+      return;
+    }
+    player.play(playable, 0, source);
+  };
+  const transportPause = () => { if (playing) player.toggle(); };
+  const transportRestart = () => { if (playable.length) player.play(playable, 0, source); };
 
   useEffect(() => {
     if (!autoStart || autoStarted.current) return;
@@ -363,8 +378,12 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
               : <ProgressTrack playedS={0} generatedS={progress.done} totalS={Math.max(progress.total, 1)} />}
             {progress.rtf != null && progress.rtf > 1.5 && <p className="text-[10px] text-amber-700 dark:text-amber-400">{t('Este equipo genera más despacio de lo que se escucha: la reproducción puede hacer pausas.')}</p>}
           </div>
-          : <div className="flex flex-wrap gap-2">
-            {playable.length > 0 && <button className="btn btn-primary h-8 px-3 text-xs" data-testid="listen-play" onClick={() => player.play(playable, 0, source)}><Icon name="play" size={12} />{tx('Escuchar · {duration}', { duration: formatClock(totalDuration) })}</button>}
+          : <div className="flex flex-wrap items-center gap-2">
+            <div className="listen-transport" role="group" aria-label={t('Reproducir')}>
+              <button type="button" data-primary="true" data-testid="listen-play" disabled={!playable.length || playing} title={`${t('Reproducir')}${totalDuration ? ` · ${formatClock(totalDuration)}` : ''}`} aria-label={t('Reproducir')} onClick={transportPlay}><Icon name="play" size={13} /></button>
+              <button type="button" data-testid="listen-pause" disabled={!playing} title={t('Pausar')} aria-label={t('Pausar')} onClick={transportPause}><Icon name="pause" size={13} /></button>
+              <button type="button" data-testid="listen-restart" disabled={!playable.length} title={t('Reiniciar')} aria-label={t('Reiniciar')} onClick={transportRestart}><Icon name="rotateCcw" size={13} /></button>
+            </div>
             <button className={`btn ${playable.length ? 'btn-ghost' : 'btn-primary'} h-8 px-3 text-xs`} data-testid="listen-generate" disabled={!ready || !settings} onClick={narrate}>
               <Icon name={playable.length ? 'refresh' : 'volume'} size={12} />{playable.length ? t('Regenerar') : settings?.ttsStreaming ? t('Escuchar') : t('Generar audio')}
             </button>

@@ -51,8 +51,20 @@ test('the per-answer listen action plays directly while the header keeps the con
   assert.match(listen, /if \(playable\.length\) \{ player\.play\(playable, 0, source\); return; \}/,
     'a saved clip plays immediately');
   assert.match(listen, /LoadingRing/);
-  assert.match(listen, /direct && playingHere \? <ProgressRing fraction=\{1\} \/>/,
-    'the ring stays around the icon while playing');
+  assert.match(listen, /playbackFraction/, 'the playing ring follows playback progress');
+  assert.match(listen, /inline-grid h-6 w-6 place-items-center/, 'the icon is centred in a square ring');
   assert.match(modal, /testId="research-chat-header-listen"[\s\S]{0,120}autoStart/,
     'the header action still opens the balloon and starts');
+});
+
+
+test('the balloon exposes translated play, pause and restart icon buttons', () => {
+  assert.match(listen, /data-testid="listen-play"/);
+  assert.match(listen, /data-testid="listen-pause"/);
+  assert.match(listen, /data-testid="listen-restart"/);
+  assert.match(listen, /title=\{t\('Pausar'\)\}/);
+  assert.match(listen, /title=\{t\('Reiniciar'\)\}/);
+  assert.match(listen, /const transportPlay = \(\) =>/);
+  assert.match(listen, /const transportPause = \(\) =>/);
+  assert.match(listen, /const transportRestart = \(\) =>/);
 });

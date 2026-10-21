@@ -81,3 +81,19 @@
 .header-balloon-body.context-balloon-body { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 .context-tab-panel { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .context-tab-scroll { min-height: 0; flex: 1; overflow-y: auto; padding: 14px 16px; }
+
+/* Three compact transport controls in the listen balloon. The group takes the width of
+   the old single Listen button so the Regenerar button keeps its place. */
+.listen-transport { display: inline-flex; align-items: center; width: 9.5rem; height: 32px; overflow: hidden; border: 1px solid #3f3f46; border-radius: 8px; background: #111217; }
+.listen-transport > button { display: grid; place-items: center; flex: 1 1 0; min-width: 0; height: 100%; color: #a1a1aa; transition: background .15s ease, color .15s ease; }
+.listen-transport > button + button { border-left: 1px solid #3f3f46; }
+.listen-transport > button:hover:not(:disabled) { background: #27272a; color: #f4f4f5; }
+.listen-transport > button[data-primary="true"] { background: var(--vault-accent); color: #fff; }
+.listen-transport > button[data-primary="true"]:hover:not(:disabled) { background: color-mix(in srgb, var(--vault-accent) 82%, white); color: #fff; }
+.listen-transport > button:disabled { opacity: .38; cursor: default; }
+.light .listen-transport { background: #fff; border-color: #d4d4d8; }
+.light .listen-transport > button { color: #52525b; }
+.light .listen-transport > button + button { border-left-color: #e4e4e7; }
+.light .listen-transport > button:hover:not(:disabled) { background: #f4f4f5; color: #18181b; }
+.light .listen-transport > button[data-primary="true"] { color: #fff; }
+.listen-progress-ring { filter: drop-shadow(0 0 2px currentColor); }

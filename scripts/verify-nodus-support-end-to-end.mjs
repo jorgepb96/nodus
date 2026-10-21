@@ -29,6 +29,7 @@ const entry=path.join(root,'fixture-app');fs.mkdirSync(entry);
 fs.writeFileSync(path.join(entry,'package.json'),JSON.stringify({name:'nodus',version,main:'entry.mjs',type:'module'}));
 fs.writeFileSync(path.join(entry,'entry.mjs'),`
  import {app} from 'electron';import fs from 'node:fs';import path from 'node:path';
+ const publishJSON=(file,value)=>{const pending=file+'.pending';fs.writeFileSync(pending,JSON.stringify(value),{flag:'wx',mode:0o600});fs.renameSync(pending,file);};
  const root=process.env.NODUS_ISOLATED_ROOT,fixture=${JSON.stringify(root)};
  if(!root||!path.resolve(root).startsWith(fixture+path.sep)||!(process.env.NODUS_SUPPORT_PROBE==='1'||process.env.NODUS_SUPPORT_INTERACTIVE==='1'))app.exit(1);
  else {
@@ -43,10 +44,10 @@ fs.writeFileSync(path.join(entry,'entry.mjs'),`
          if(fs.existsSync(saved)){
            const id=JSON.parse(fs.readFileSync(saved,'utf8')).id;
            const previous=await window.webContents.executeJavaScript('window.nodus?.getNote('+JSON.stringify(id)+')');
-           if(previous?.id===id){fs.writeFileSync(path.join(root,'qualification-note-reopened.json'),JSON.stringify(previous));return;}
+           if(previous?.id===id){publishJSON(path.join(root,'qualification-note-reopened.json'),previous);return;}
          }
          const note=await window.webContents.executeJavaScript('window.nodus?.createNote({title:"Support qualification",content:"New work saved through the real renderer and IPC"})');
-         if(note?.id){fs.writeFileSync(path.join(root,'qualification-note.json'),JSON.stringify(note),{flag:'wx'});return;}
+         if(note?.id){publishJSON(path.join(root,'qualification-note.json'),note);return;}
        }catch(error){fs.writeFileSync(path.join(root,'qualification-note-error.txt'),String(error));}
        setTimeout(()=>void edit(),250).unref();
      };void edit();
@@ -114,7 +115,9 @@ async function closeTrial(value,crash=false){
  const note=JSON.parse(fs.readFileSync(path.join(trial,'qualification-note.json'),'utf8'));assert.ok(note.id);assert.match(note.content,/New work saved/);
  if(crash){assert.equal(value.trialReady.root,trial);assert.ok(trial.startsWith(root+path.sep));process.kill(value.trialReady.pid,'SIGKILL');await wait(()=>{try{process.kill(value.trialReady.pid,0);return false;}catch(error){if(error.code==='ESRCH')return true;throw error;}},'Crashed fixture did not exit');}
  else{fs.writeFileSync(path.join(trial,'qualification-quit'),'user closed test');await wait(()=>fs.existsSync(path.join(trial,'qualification-closed')),'Nodus did not quit cooperatively');}
- await new Promise(resolve=>setTimeout(resolve,2000));return trial;
+ // will-quit precedes process exit, particularly on Windows. Do not start a
+ // restore while production's process check still correctly sees the fixture.
+ await wait(async()=>!(await api('inspect')).inspection.findings.some(finding=>['CLOSE_NODUS_FIRST','PROCESS_CHECK_UNAVAILABLE'].includes(finding.code)),'The disposable Nodus processes did not finish shutting down');return trial;
 }
 try {
  await open();await button('Check my installation').click();await button('Create verified copy').click();await page.locator('.test-list .test-row').first().waitFor();

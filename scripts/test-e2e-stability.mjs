@@ -59,7 +59,7 @@ test('CI avoids duplicate branch checks, supersedes stale runs, and bounds the E
   assert.match(workflow, /\n\s+workflow_call:/);
   assert.doesNotMatch(workflow, /\n\s+push:/);
   assert.doesNotMatch(workflow, /branches: \[['"]\*\*['"]\]/);
-  assert.match(workflow, /group: ci-\$\{\{ github\.workflow \}\}-\$\{\{ github\.head_ref \|\| github\.ref_name \}\}/);
+  assert.match(workflow, /group: ci-\$\{\{ github\.workflow \}\}-\$\{\{ inputs\.support_signing_qualification && 'signed-support-' \|\| '' \}\}\$\{\{ github\.head_ref \|\| github\.ref_name \}\}/);
   assert.match(workflow, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group' \}\}/);
   assert.match(workflow, /- name: E2E smoke \(real app boot\)\n\s+timeout-minutes: 10/);
 });

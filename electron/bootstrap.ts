@@ -8,7 +8,7 @@ import { resolvePolicy } from '../apps/nodus-support/core/policies.mjs';
 import { isolateSupportApplication } from './support/isolation';
 import { supportText, SUPPORT_LANGUAGES } from '../shared/support/messages';
 import type { AppLanguage } from '../shared/types';
-import { trialReceiptPath } from '../apps/nodus-support/core/trial-ready.mjs';
+import { trialReceiptPath, publishTrialReceipt } from '../apps/nodus-support/core/trial-ready.mjs';
 import { prepareSupportLauncher } from './supportLauncher';
 
 prepareSupportLauncher();
@@ -126,7 +126,7 @@ if (requestedRoot) {
         if(window.isDestroyed()||Date.now()>until||fs.existsSync(file))return;
         try {
           const loaded=await window.webContents.executeJavaScript('Boolean(window.nodus && document.getElementById("root")?.children.length)');
-          if(loaded){const fd=fs.openSync(file,'wx',0o600);try{fs.writeFileSync(fd,JSON.stringify({protocol:1,root,token,version:app.getVersion(),pid:process.pid}));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}return;}
+          if(loaded){await publishTrialReceipt({root,token,version:app.getVersion(),pid:process.pid});return;}
         }catch{/* Loading/closing windows must never produce a false readiness receipt. */}
         setTimeout(()=>void ready(),200).unref();
       };

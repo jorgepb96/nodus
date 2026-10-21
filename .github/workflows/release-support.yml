@@ -168,7 +168,7 @@ jobs:
         id: recovery
         shell: bash
         run: |
-          node --input-type=module -e 'import fs from "node:fs";import {requireQualified} from "./apps/nodus-support/core/qualification.mjs";const catalog=JSON.parse(fs.readFileSync("apps/nodus-support/qualified-repairs.json","utf8"));let qualified=true;try{for(const action of ["interactive-copy","apply-solution","restore-copy","reinstall"])requireQualified(catalog,process.platform,process.arch,action);}catch{qualified=false;}fs.appendFileSync(process.env.GITHUB_OUTPUT,`qualified=${qualified}\n`);'
+          node --input-type=module -e 'import fs from "node:fs";import {requireQualified} from "./apps/nodus-support/core/qualification.mjs";import {supportSourceDigest} from "./scripts/lib/supportEvidence.mjs";const source=supportSourceDigest(process.cwd());const catalog=JSON.parse(fs.readFileSync("apps/nodus-support/qualified-repairs.json","utf8"));let qualified=true;try{for(const action of ["interactive-copy","apply-solution","restore-copy","reinstall"])requireQualified(catalog,process.platform,process.arch,action,source);}catch{qualified=false;}fs.appendFileSync(process.env.GITHUB_OUTPUT,`qualified=${qualified}\n`);'
       - name: Prepare recovery from the published Nodus installers
         if: steps.recovery.outputs.qualified == 'true'
         run: node scripts/prepare-support-recovery.mjs

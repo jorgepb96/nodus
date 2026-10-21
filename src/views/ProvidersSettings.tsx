@@ -10,7 +10,6 @@ import type {
   GitHubCopilotSubscriptionStatus,
   ImageModelInfo,
   LocalProvider,
-  LocalProviderTestResult,
   ModelInfo,
   ModelRef,
   OpenCodeGoUsageStatus,
@@ -29,6 +28,8 @@ import { codexReasoningLabel } from '../components/ModelPicker';
 import { withCodexReasoning } from '@shared/codexReasoning';
 import { t, tx } from '../i18n';
 import { FavoriteModelAvailability } from '../components/FavoriteModelAvailability';
+import { ipcErrorText } from '../lib/ipcErrorText';
+import { useProviderSetup } from '../hooks/useProviderSetup';
 
 export function ProvidersSettings({
   settings,
@@ -358,9 +359,6 @@ function ChatGptSubscriptionRow({
     </div>
   );
 }
-
-const ipcErrorText = (cause: unknown) =>
-  (cause instanceof Error ? cause.message : String(cause)).replace(/^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/, '');
 
 /** Download progress of a vendor CLI, as a percentage once its size is known. */
 function runtimePercent(runtime: AgentRuntimeStatus): number | null {
@@ -757,31 +755,11 @@ function ProviderRow({
   isFav: (m: ModelRef) => boolean;
   toggleFav: (m: ModelRef) => Promise<void>;
 }) {
-  const [keyInput, setKeyInput] = useState('');
-  const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasKey = settings.providerKeys?.[provider];
-
-  const saveKey = async () => {
-    if (!keyInput.trim()) return;
-    await window.nodus.setApiKey(provider, keyInput.trim());
-    setKeyInput('');
-    await onChange();
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setModels(await window.nodus.listModels(provider));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { keyInput, setKeyInput, hasKey, models, error, busy, run } = useProviderSetup({
+    provider, savedKey: settings.providerKeys?.[provider],
+    keyRequired: provider !== 'openrouter' && provider !== 'opencode-go', onChange,
+  });
 
   const filtered = (models ?? []).filter((m) => {
     const q = search.toLowerCase();
@@ -808,13 +786,15 @@ function ProviderRow({
               className="input flex-1"
               placeholder={hasKey ? t('•••••••• (guardada)') : t('clave del proveedor')}
               value={keyInput}
+              disabled={Boolean(busy)}
               onChange={(e) => setKeyInput(e.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') void run('save'); }}
             />
-            <button className="btn btn-primary" onClick={saveKey}>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !keyInput.trim()} onClick={() => void run('save')}>
               {t('Guardar')}
             </button>
             {hasKey && (
-              <button className="btn btn-ghost text-red-600 dark:text-red-400" onClick={() => window.nodus.clearApiKey(provider).then(onChange)}>
+              <button className="btn btn-ghost text-red-600 dark:text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
@@ -851,8 +831,8 @@ function ProviderRow({
           )}
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={loadModels} disabled={loading}>
-              {loading ? t('Cargando…') : t('Cargar modelos')}
+            <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
+              {busy === 'load' ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
               <input className="input flex-1" placeholder={t('Buscar modelo…')} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -860,7 +840,7 @@ function ProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-600 dark:text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid={`provider-model-list-${provider}`}>
@@ -960,14 +940,7 @@ function CustomProviderRow({
   const manualModels = config.models ?? [];
   const [urlInput, setUrlInput] = useState(savedUrl);
   const [modelInput, setModelInput] = useState('');
-  const [keyInput, setKeyInput] = useState('');
-  const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [test, setTest] = useState<LocalProviderTestResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasKey = settings.providerKeys?.custom;
 
   // Keep the field in sync when the saved value changes elsewhere (vault switch).
   useEffect(() => setUrlInput(savedUrl), [savedUrl]);
@@ -999,39 +972,10 @@ function CustomProviderRow({
     await persist({ models: manualModels.filter((model) => model !== id) });
   };
 
-  const saveKey = async () => {
-    if (!keyInput.trim()) return;
-    await window.nodus.setApiKey('custom', keyInput.trim());
-    setKeyInput('');
-    await onChange();
-  };
-
-  const runTest = async () => {
-    setTesting(true);
-    setTest(null);
-    setError(null);
-    try {
-      await persistUrl();
-      setTest(await window.nodus.testCustomProvider());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await persistUrl();
-      setModels(await window.nodus.listModels('custom'));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { keyInput, setKeyInput, hasKey, models, test, error, busy, loading, testing, run } = useProviderSetup({
+    provider: 'custom', savedKey: settings.providerKeys?.custom,
+    keyRequired: false, onChange, beforeRequest: persistUrl, testConnection: () => window.nodus.testCustomProvider(),
+  });
 
   const filtered = (models ?? []).filter((m) => {
     const q = search.toLowerCase();
@@ -1061,12 +1005,13 @@ function CustomProviderRow({
                 className="input flex-1 font-mono"
                 data-testid="custom-provider-url"
                 value={urlInput}
+                disabled={Boolean(busy)}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onBlur={() => void persistUrl()}
                 placeholder="http://localhost:8317/v1"
                 spellCheck={false}
               />
-              <button className="btn btn-ghost border border-neutral-700" onClick={() => void runTest()} disabled={testing}>
+              <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('test')} disabled={Boolean(busy)}>
                 {testing ? t('Probando…') : t('Probar conexión')}
               </button>
             </div>
@@ -1089,11 +1034,13 @@ function CustomProviderRow({
               className="input flex-1"
               placeholder={hasKey ? t('•••••••• clave guardada (opcional)') : t('clave de API (opcional)')}
               value={keyInput}
+              disabled={Boolean(busy)}
+              onKeyDown={event => { if (event.key === 'Enter') void run('save'); }}
               onChange={(e) => setKeyInput(e.target.value)}
             />
-            <button className="btn btn-primary" onClick={saveKey}>{t('Guardar')}</button>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !keyInput.trim()} onClick={() => void run('save')}>{t('Guardar')}</button>
             {hasKey && (
-              <button className="btn btn-ghost text-red-400" onClick={() => window.nodus.clearApiKey('custom').then(onChange)}>
+              <button className="btn btn-ghost text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
@@ -1136,7 +1083,7 @@ function CustomProviderRow({
           </div>
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-700" onClick={loadModels} disabled={loading}>
+            <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
               {loading ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
@@ -1145,7 +1092,7 @@ function CustomProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid="provider-model-list-custom">
@@ -1187,14 +1134,7 @@ function LocalProviderRow({
 }) {
   const savedUrl = settings.localProviders?.[provider]?.baseUrl ?? '';
   const [urlInput, setUrlInput] = useState(savedUrl);
-  const [tokenInput, setTokenInput] = useState('');
-  const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [test, setTest] = useState<LocalProviderTestResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasToken = settings.providerKeys?.[provider];
   const [diagnostics, setDiagnostics] = useState<Awaited<ReturnType<typeof window.nodus.getLocalAiDiagnostics>>>([]);
   const localConfig = settings.localProviders?.[provider] ?? { baseUrl: savedUrl, contextMode: 'auto' as const };
 
@@ -1218,39 +1158,10 @@ function LocalProviderRow({
     }
   };
 
-  const saveToken = async () => {
-    if (!tokenInput.trim()) return;
-    await window.nodus.setApiKey(provider, tokenInput.trim());
-    setTokenInput('');
-    await onChange();
-  };
-
-  const runTest = async () => {
-    setTesting(true);
-    setTest(null);
-    setError(null);
-    try {
-      await persistUrl();
-      setTest(await window.nodus.testLocalProvider(provider));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await persistUrl();
-      setModels(await window.nodus.listModels(provider));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { keyInput: tokenInput, setKeyInput: setTokenInput, hasKey: hasToken, models, test, error, busy, loading, testing, run } = useProviderSetup({
+    provider: provider, savedKey: settings.providerKeys?.[provider],
+    keyRequired: false, onChange, beforeRequest: persistUrl, testConnection: () => window.nodus.testLocalProvider(provider),
+  });
 
   const filtered = (models ?? []).filter((m) => {
     const q = search.toLowerCase();
@@ -1259,7 +1170,7 @@ function LocalProviderRow({
   const shown = filtered.slice(0, 300);
 
   return (
-    <div className="border border-neutral-800 rounded-lg">
+    <div className="border border-neutral-800 rounded-lg" data-testid={`provider-${provider}`}>
       <button className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm" onClick={onToggle}>
         <span className="text-neutral-500">{expanded ? '▾' : '▸'}</span>
         <span className="font-medium">{PROVIDER_LABELS[provider]}</span>
@@ -1281,12 +1192,13 @@ function LocalProviderRow({
               <input
                 className="input flex-1 font-mono"
                 value={urlInput}
+                disabled={Boolean(busy)}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onBlur={() => void persistUrl()}
                 placeholder={DEFAULT_LOCAL_BASE_URLS[provider]}
                 spellCheck={false}
               />
-              <button className="btn btn-ghost border border-neutral-700" onClick={() => void runTest()} disabled={testing}>
+              <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('test')} disabled={Boolean(busy)}>
                 {testing ? t('Probando…') : t('Probar conexión')}
               </button>
             </div>
@@ -1354,18 +1266,20 @@ function LocalProviderRow({
               className="input flex-1"
               placeholder={hasToken ? t('•••••••• token guardado (opcional)') : t('token de acceso (opcional)')}
               value={tokenInput}
+              disabled={Boolean(busy)}
+              onKeyDown={event => { if (event.key === 'Enter') void run('save'); }}
               onChange={(e) => setTokenInput(e.target.value)}
             />
-            <button className="btn btn-primary" onClick={saveToken}>{t('Guardar')}</button>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !tokenInput.trim()} onClick={() => void run('save')}>{t('Guardar')}</button>
             {hasToken && (
-              <button className="btn btn-ghost text-red-400" onClick={() => window.nodus.clearApiKey(provider).then(onChange)}>
+              <button className="btn btn-ghost text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
           </div>
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-700" onClick={loadModels} disabled={loading}>
+            <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
               {loading ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
@@ -1374,7 +1288,7 @@ function LocalProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid={`provider-model-list-${provider}`}>

@@ -27,6 +27,7 @@ export function installRuntimeHooks(userDataPath, overrides = {}) {
   const originalResolveFilename = Module._resolveFilename;
   const originalLoad = Module._load;
   const electronStub = {
+    net: { fetch: (...args) => globalThis.fetch(...args) },
     app: {
       getPath(name) {
         if (name === 'userData' || name === 'temp' || name === 'documents') return userDataPath;

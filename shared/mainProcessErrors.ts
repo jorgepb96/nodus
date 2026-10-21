@@ -1,3 +1,4 @@
+import { MODEL_NETWORK_ERROR_PATTERNS } from './modelNetworkErrors';
 import { BACKUPS_RUNTIME_ERRORS, BACKUPS_RUNTIME_ERROR_PATTERNS } from './backupsErrors';
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
@@ -4808,6 +4809,7 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
 /** Messages that carry runtime values, matched by shape. Order matters: the more
  *  specific pattern of a family must come first. */
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
+  ...MODEL_NETWORK_ERROR_PATTERNS,
   ...EMBEDDING_GEMMA2_ERROR_PATTERNS,
   ...STT_RUNTIME_ERROR_PATTERNS,
   ...BACKUPS_RUNTIME_ERROR_PATTERNS,
@@ -5273,8 +5275,6 @@ export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...grou
   // names, child-process output) and travels verbatim, like transport output elsewhere.
   { pattern: /^(.+) agotó el tiempo de espera\.$/, translate: (command) => ({ en: `${command} timed out.`, fr: `Délai dépassé pour ${command}.`, de: `${command} hat das Zeitlimit überschritten.`, pt: `${command} excedeu o tempo de espera.`, 'pt-BR': `${command} excedeu o tempo limite.`, it: `Tempo scaduto per ${command}.`, tr: `${command} zaman aşımına uğradı.` , 'zh-CN': `${command} 超时。` ,
   'zh-TW': `${command} 超時。`,}) },
-  { pattern: /^No se pudo instalar un runtime de llama\.cpp utilizable\. (.+)$/, translate: (details) => ({ en: `No usable llama.cpp runtime could be installed. ${details}`, fr: `Aucun moteur llama.cpp utilisable n’a pu être installé. ${details}`, de: `Es konnte keine nutzbare llama.cpp-Laufzeit installiert werden. ${details}`, pt: `Não foi possível instalar um motor llama.cpp utilizável. ${details}`, 'pt-BR': `Não foi possível instalar um runtime llama.cpp utilizável. ${details}`, it: `Non è stato possibile installare un runtime llama.cpp utilizzabile. ${details}`, tr: `Kullanılabilir bir llama.cpp çalışma zamanı kurulamadı. ${details}` , 'zh-CN': `无法安装可用的 llama.cpp 运行时。${details}` ,
-  'zh-TW': `無法安裝可用的 llama.cpp 執行時。${details}`,}) },
 
   // The complete study guide fails a job whose extraction could not read more than a tenth
   // of the source windows, and says how many. The counts are the whole point of the

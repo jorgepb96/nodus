@@ -1,3 +1,4 @@
+import { ipcErrorText } from '../lib/ipcErrorText';
 import { useEffect, useState } from 'react';
 import type { AppSettings } from '@shared/types';
 import {
@@ -36,13 +37,13 @@ export function LocalImageModelSettings({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const refresh = async () => setStatus(await window.nodus.getNodusLocalImageStatus());
-  useEffect(() => { void refresh().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause))); }, []);
+  useEffect(() => { void refresh().catch((cause) => setError(ipcErrorText(cause))); }, []);
 
   const activeTransfer = Boolean(status?.runtime.downloading || status?.model.downloading);
   useEffect(() => {
     if (!activeTransfer) return;
     const timer = window.setInterval(() => {
-      void refresh().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+      void refresh().catch((cause) => setError(ipcErrorText(cause)));
     }, 500);
     return () => window.clearInterval(timer);
   }, [activeTransfer]);
@@ -50,21 +51,21 @@ export function LocalImageModelSettings({
   const installRuntime = async () => {
     setBusy('runtime'); setProgress(0); setError('');
     try { setStatus(await window.nodus.installNodusLocalImageRuntime(setProgress)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 
   const download = async () => {
     setBusy('model'); setProgress(0); setError('');
     try { setStatus(await window.nodus.downloadNodusLocalImageModel(NODUS_LOCAL_IMAGE_MODEL.id, setProgress)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 
   const remove = async () => {
     setConfirmDelete(false); setBusy('delete'); setError('');
     try { setStatus(await window.nodus.deleteNodusLocalImageModel(NODUS_LOCAL_IMAGE_MODEL.id)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 

@@ -142,7 +142,7 @@ try {
   for (const stream of [false, true]) assert.equal(await send(opus, 250_000, stream), 'Answer');
   assert.equal(catalogueReads, reads, 'budget checks do not discover models or refresh catalogues');
   anthropicCatalogueFails = true;
-  await assert.rejects(() => providers.listModels('anthropic', 'fixture-key'), /Catalogue unavailable/);
+  await assert.rejects(() => providers.listModels('anthropic', 'fixture-key'), /api\.anthropic\.com.*NETWORK_ERROR/);
   assert.equal((await ai.researchModelContextWindow(opus)).tokens, 600_000, 'a failed refresh retains the last successful catalogue');
   anthropicCatalogueFails = false;
   anthropicLimit = 65_536;

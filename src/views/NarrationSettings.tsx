@@ -31,6 +31,8 @@ function formatBytes(bytes: number): string {
   return `${Math.max(0, Math.round(bytes / 1024)).toLocaleString()} KB`;
 }
 
+const HF_TOKENS_URL = 'https://huggingface.co/settings/tokens';
+
 const SURFACE_LABELS: Record<TtsSurface, string> = {
   research_chat: 'Research chat',
   dictionary: 'Diccionario',
@@ -155,6 +157,10 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       </div>
       <div className="mt-3 border-t border-neutral-200 pt-2 dark:border-neutral-800" data-testid="narration-hf-token">
         <p className="text-neutral-600 dark:text-neutral-400">{t('Los modelos Phonon de 40M están restringidos: acepta sus términos en su página de Hugging Face y pega aquí un token de lectura de tu cuenta. Se guarda cifrado en este equipo y solo se envía a Hugging Face al descargar.')}</p>
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+          <button className="text-indigo-600 hover:underline dark:text-indigo-300" data-testid="narration-hf-token-link" onClick={() => void window.nodus.openExternal(HF_TOKENS_URL)}><Icon name="external" size={10} /> {t('Crear un token de lectura')}</button>
+          {TTS_MODELS.filter((model) => model.gated && platformModels.includes(model)).map((model) => <button key={model.id} className="text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => void window.nodus.openExternal(model.sourceUrl)}><Icon name="external" size={10} /> {tx('Aceptar los términos de {model}', { model: model.label })}</button>)}
+        </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <input type="password" className="input h-7 w-64 text-xs" placeholder={hasHfToken ? t('Token guardado; escribe para sustituirlo') : 'hf_…'} value={hfToken} onChange={(event) => setHfToken(event.target.value)} />
           <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={!hfToken.trim()} onClick={() => void run(async () => { setHasHfToken(await window.nodus.ttsSetHuggingFaceToken(hfToken)); setHfToken(''); })}>{t('Guardar token')}</button>
@@ -218,6 +224,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
                 : local?.downloading
                   ? <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelModelDownload(model.id)}>{t('Cancelar')}</button>
                   : <>
+                    {model.gated && <button className="text-[10px] text-indigo-600 hover:underline dark:text-indigo-300" data-testid={`narration-model-terms-${model.id}`} title={t('Hugging Face solo deja descargarlo a las cuentas que han aceptado sus términos.')} onClick={() => void window.nodus.openExternal(model.sourceUrl)}><Icon name="external" size={10} /> {t('Aceptar los términos en Hugging Face')}</button>}
                     {model.nonCommercial && <label className="flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400" title={t('La licencia CC BY-NC 4.0 no permite el uso comercial de estos pesos ni del audio que generan.')}>
                       <input type="checkbox" checked={settings.ttsAcceptedLicenses.includes(model.id)} onChange={(event) => void patch({ ttsAcceptedLicenses: event.target.checked ? [...settings.ttsAcceptedLicenses, model.id] : settings.ttsAcceptedLicenses.filter((id) => id !== model.id) })} />
                       {t('Acepto la licencia (uso no comercial)')}

@@ -70,7 +70,13 @@ export class TtsModelStore {
           const now = Date.now();
           // ~4 events a second is plenty for a progress bar and keeps IPC traffic negligible.
           if (now - lastEmit > 250) { lastEmit = now; emit(); }
-        }, controller.signal, token ? { Authorization: `Bearer ${token}` } : undefined);
+        }, controller.signal, token ? { Authorization: `Bearer ${token}` } : undefined).catch((error: unknown) => {
+          // Hugging Face answers 401 to a token it rejects and 403 to an account that has not
+          // been granted the gated repository (its terms not accepted yet).
+          const status = /HTTP (401|403)\b/.exec(error instanceof Error ? error.message : '')?.[1];
+          if (model.gated && status) throw new Error(status === '401' ? 'TTS_HF_TOKEN_INVALID' : 'TTS_HF_ACCESS_DENIED');
+          throw error;
+        });
       }
       const marker = path.join(dir, 'ready.json');
       await fs.writeFile(`${marker}.tmp`, JSON.stringify({ files: model.assets.map((asset) => `${asset.file}:${asset.sha256 ?? asset.bytes}`) }));

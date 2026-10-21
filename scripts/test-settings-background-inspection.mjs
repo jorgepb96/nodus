@@ -31,7 +31,7 @@ test('migration snapshot validation runs in a disposable utility process', () =>
   assert.match(worker, /snapshots: listMigrationRecoverySnapshots\(request\.databasePath\)/);
   assert.match(worker, /pruneMigrationRecoverySnapshots\(databasePath\)/);
   assert.match(main, /scheduleMigrationRecoveryRetention\(listVaults\(\)\.map\(\(vault\) => vault\.path\)\)/);
-  assert.match(database, /if \(migrationPending\) scheduleMigrationRecoveryRetention\(file\)/);
+  assert.match(database, /if \(migrationPending && process\.env\.NODUS_SUPPORT_INTERACTIVE !== '1'\) scheduleMigrationRecoveryRetention\(file\)/);
   assert.match(vite, /utilityBuild\('migrationRecoveryUtilityWorker'/);
 });
 

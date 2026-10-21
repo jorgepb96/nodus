@@ -246,7 +246,9 @@ page is still a complete, readable document.
         .then((release) => {
           if (version) version.textContent = `Latest release · ${release.tag_name} · ${new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
           const assets = release.assets || [];
-          const find = (suffix) => assets.find((asset) => asset.name.endsWith(suffix));
+          // Support and recovery archives share extensions/architecture suffixes.
+          // Main-app download buttons must select the canonical filename.
+          const find = (suffix) => assets.find((asset) => asset.name === `Nodus${suffix}`);
           const mb = (asset) => `${(asset.size / 1048576).toFixed(0)} MB`;
           const wire = (id, asset, fallbackLabel) => {
             const anchor = document.getElementById(id);

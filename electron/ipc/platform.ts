@@ -52,6 +52,8 @@ import * as zotero from '../zotero/zoteroClient';
 import { getSyncLog } from '../db/syncRepo';
 import { scanQueue } from '../pipeline/scanQueue';
 import { getCorpusHealth } from '../db/corpusHealthRepo';
+import { installedSupportSelection,supportDistributionState,checkSupportDownload,installSupportDownload,saveSupportInstaller,cancelSupportDownload,revealSupportInstallation } from '../supportDistribution';
+import { openNodusSupport,registerSupportSelection } from '../supportLauncher';
 import * as translationsRepo from '../db/translationsRepo';
 import { completeCloudflareDirectDeployment, getCloudflareDeployState, prepareCloudflareDirectDeployment, previewCloudflareDeployment } from '../cloudflare/deployment';
 import { createDesktopBridgeOffer, desktopBridgeStatus, revokeDesktopBridgePairing } from '../desktopBridge/server';
@@ -81,6 +83,14 @@ function originalImageFileName(label: string | null | undefined, mime: string): 
 }
 
 export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
+  registerSupportSelection(installedSupportSelection);
+  h('support:open', () => openNodusSupport(getSettings().uiLanguage));
+  h('support:distributionState',()=>supportDistributionState());
+  h('support:checkDownload',()=>checkSupportDownload());
+  h('support:installDownload',()=>installSupportDownload(getSettings().uiLanguage));
+  h('support:saveInstaller',()=>saveSupportInstaller(getSettings().uiLanguage));
+  h('support:cancelDownload',()=>cancelSupportDownload());
+  h('support:revealInstallation',()=>revealSupportInstallation());
   const editorImages = new Map<string, AbortController>();
   h('ai:editorImage:generate', async (event, request: EditorImageRequest) => {
     const key = `${event.sender.id}:${request?.requestId}`;

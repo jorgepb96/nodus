@@ -68,6 +68,8 @@ exports.default = async function afterPack(context) {
   // Prove that nothing it loads went missing: every package must be packed, and must load
   // in the executable just packed, run as Node the same way the server check above runs it.
   const layout = packedLayout(context.appOutDir, context.electronPlatformName, appName, context.packager.executableName);
+  // Only the protocol metadata is bundled. Support has a separate, on-demand runtime.
+  await require('./supportRuntime.cjs').stageSupportRuntime(context, resourcesPath);
   verifyPackagedNodeModules(layout);
   // Codex and Copilot are downloaded at first use, from the tarballs this manifest pins.
   stageAndVerifyOnDemandRuntimes(layout, context.electronPlatformName, Arch[context.arch]);

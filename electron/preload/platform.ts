@@ -5,6 +5,13 @@ import { ipcRenderer } from 'electron';
 import type { PlatformApi } from '@shared/api/platform';
 
 export const platformApi: PlatformApi = {
+  openNodusSupport: () => ipcRenderer.invoke('support:open'),
+  supportDistributionState:()=>ipcRenderer.invoke('support:distributionState'),
+  checkSupportDownload:()=>ipcRenderer.invoke('support:checkDownload'),
+  installSupportDownload:()=>ipcRenderer.invoke('support:installDownload'),
+  saveSupportInstaller:()=>ipcRenderer.invoke('support:saveInstaller'),
+  cancelSupportDownload:()=>ipcRenderer.invoke('support:cancelDownload'),
+  revealSupportInstallation:()=>ipcRenderer.invoke('support:revealInstallation'),
   getMcpStatus: () => ipcRenderer.invoke('mcp:status'),
   regenerateMcpToken: () => ipcRenderer.invoke('mcp:regenerateToken'),
   getMcpTunnelStatus: () => ipcRenderer.invoke('mcp:tunnel:status'),

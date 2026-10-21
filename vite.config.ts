@@ -242,6 +242,7 @@ export default defineConfig({
         // worker entries that share most of their Library dependency graph.
         entry: {
           main: 'electron/bootstrap.ts',
+          supportProbe: 'electron/support/probe.ts',
           application: 'electron/main.ts',
           documentaryChunkWorker: 'electron/workers/documentaryChunkWorker.ts',
           backgroundUtility: 'electron/workers/backgroundUtility.ts',

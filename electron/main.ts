@@ -1,6 +1,7 @@
 import { initializeChatSkillDefaults } from './chatSkills';
 import {initializeLearningWorkspace,isLearningWorkspace,closeLearningWorkspace} from './learning/learningWorkspace';
 import { flushWindowEditors, installEditorCloseGuard } from './editorFlush';
+import { claimSupportProfile } from './support/instanceLock';
 import { claimIsolatedProfile } from './qa/isolatedProfile';
 import { initializePluginStore } from './skillPlugins';
 import { initializeCapabilityPluginStore } from './capabilities/pluginStoreV2';
@@ -160,7 +161,7 @@ if (process.env.NODUS_USERDATA) {
  * process to exit (`while kill -0 "$PID"`) before it replaces the bundle and
  * runs `open -n`, so the lock is already released by then.
  */
-const isolatedUnlock = process.env.NODUS_ISOLATED_ROOT ? claimIsolatedProfile(process.env.NODUS_ISOLATED_ROOT) : null;
+const isolatedUnlock = process.env.NODUS_ISOLATED_ROOT ? (process.env.NODUS_SUPPORT_INTERACTIVE==='1'?claimSupportProfile(process.env.NODUS_ISOLATED_ROOT):claimIsolatedProfile(process.env.NODUS_ISOLATED_ROOT)) : null;
 const hasSingleInstanceLock = process.env.NODUS_ISOLATED_ROOT ? Boolean(isolatedUnlock) : app.requestSingleInstanceLock();
 if (isolatedUnlock) app.on('will-quit', isolatedUnlock);
 if (!hasSingleInstanceLock) {
@@ -1009,6 +1010,7 @@ app.on('second-instance', (_event, argv) => {
 app.whenReady().then(async () => {
   // Losing the lock queues a quit; do not open the database or a window.
   if (!hasSingleInstanceLock) return;
+  const supportInteractive = process.env.NODUS_SUPPORT_INTERACTIVE === '1' && Boolean(process.env.NODUS_ISOLATED_ROOT);
   // NODUS_PERF_JSONL turns this on: any synchronous stretch that holds the main
   // loop for >50 ms lands in the same local JSONL as the pipeline timings.
   startEventLoopBlockWatch();
@@ -1016,10 +1018,12 @@ app.whenReady().then(async () => {
   instrumentIntervalCallbacks();
   // Which capabilities exist has to be settled before the skill library is read: a skill
   // that depends on one cannot be judged available until its provider has registered.
-  initializeCapabilityPluginStore();
-  rebuildCapabilityRegistry();
-  initializeChatSkillDefaults();
-  initializePluginStore();
+  if (!supportInteractive) {
+    initializeCapabilityPluginStore();
+    rebuildCapabilityRegistry();
+    initializeChatSkillDefaults();
+    initializePluginStore();
+  }
   // The three disciplines that became packages are adopted in the background. A profile
   // that needs one keeps the skill it already had until the package is in place, and a
   // migration that cannot finish must never hold up the window or turn a skill off: it
@@ -1034,7 +1038,7 @@ app.whenReady().then(async () => {
   // loop. Nothing here is urgent, and 5.4.0 shipped this in the contended window.
   // A profile that already used Codex or Copilot gets its CLI back in the background
   // after updating to an installer that no longer carries it (./ai/agentRuntime).
-  void afterFirstPaint(() => prefetchAgentRuntimesInUse(getSettings()));
+  if (!supportInteractive) void afterFirstPaint(() => prefetchAgentRuntimesInUse(getSettings()));
   if (!process.env.NODUS_ISOLATED_ROOT) void afterFirstPaint(() => {
     void settleInstalledPluginMigrations()
       .then(settled => { if (settled.length) rebuildCapabilityRegistry(); })
@@ -1070,7 +1074,7 @@ app.whenReady().then(async () => {
   // This must be the final operation before opening SQLite. Nodus 4 can rewrite
   // schemas and Library manifests that a 3.x binary does not understand, so the first
   // v4 launch takes and verifies one immutable copy while every database is closed.
-  const preV4 = await ensurePreV4Recovery({
+  const preV4 = supportInteractive ? { snapshotPath: null } : await ensurePreV4Recovery({
     userDataDirectory: app.getPath('userData'),
     targetVersion: app.getVersion(),
   });
@@ -1086,18 +1090,11 @@ app.whenReady().then(async () => {
   // sits before the window exists, and a rejection here quit the app with a startup error.
   if (!process.env.NODUS_ISOLATED_ROOT && process.env.NODUS_STELLAR_PREVIEW !== '1') await startDatabaseFormServer(Number.parseInt(process.env.NODUS_DATABASE_FORM_PORT ?? '0', 10) || 0)
     .catch((error) => console.error(`[database-forms] server did not start: ${error instanceof Error ? error.message : String(error)}`));
+  if (!supportInteractive) {
   upgradeWorldbuildingDemoDynasties();
   upgradeWorldbuildingDemoImageQuality();
   upgradeWorldbuildingDemoNarrativeDepth();
   relocalizeWorldbuildingDemoData();
-  registerImageProtocol();
-  registerArchiveProtocol();
-  registerLibraryProtocol();
-  registerAudioProtocol({
-    liveDir: ttsLiveDir,
-    clipPath: (clipId) => audioClipPath(clipId),
-    voicePath: (voiceId) => ttsService().voices.referencePath(voiceId),
-  });
   // Narration retention: unpinned clips older than each surface's rule go, in small batches.
   scheduleNarrationRetention(() => ttsService().sweepNow());
   reconcileAuthorLayerOnce(); // one-time: collapse duplicate author nodes onto Zotero identity
@@ -1114,6 +1111,15 @@ app.whenReady().then(async () => {
     // Maintenance must never keep the app from opening.
     console.error(`[maintenance] dormant-idea prune failed: ${error instanceof Error ? error.message : String(error)}`);
   }
+  }
+  registerImageProtocol();
+  registerArchiveProtocol();
+  registerLibraryProtocol();
+  registerAudioProtocol({
+    liveDir: ttsLiveDir,
+    clipPath: (clipId) => audioClipPath(clipId),
+    voicePath: (voiceId) => ttsService().voices.referencePath(voiceId),
+  });
   setCopilotWindowProvider(() => mainWindow);
   setZoteroPluginWindowProvider(() => mainWindow);
   registerIpc(
@@ -1124,6 +1130,7 @@ app.whenReady().then(async () => {
     () => lastUpdateEvent,
   );
   createWindow();
+  if (supportInteractive) return;
   // The isolated graph review copy never resumes background jobs or connects integrations.
   const { initializeDocumentaryPreparation, closeDocumentaryPreparation } = await import('./ai/documentaryPreparation');
   stopDocumentaryPreparation = closeDocumentaryPreparation;

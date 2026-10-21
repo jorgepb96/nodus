@@ -85,6 +85,12 @@ If the CUDA build installs but sees no device, the CPU build replaces it.
 Checkpoints download through `downloadVerifiedNodusAsset` (Range resume, exact size,
 SHA-256) into `userData/local-tts/models/<id>/`; `ready.json` marks a verified download.
 
+Each Ming checkpoint is offered only where its backend runs (`ttsModelsForPlatform`), and the
+service refuses to download or load any other (`TTS_MODEL_UNAVAILABLE`): the MLX sidecar
+cannot load the PyTorch checkpoint. A checkpoint of another platform that is already on disk
+(complete or partial) is reported apart as `unsupportedModels`, which Settings lists with
+only a Delete action; `scripts/test-tts-unsupported-models.mjs` drives the real service.
+
 ## Model parameters (from the upstream docs)
 
 - `cfg 2.0`, `flow_steps 10`, `sigma 0.25`, `temperature 0`. Fewer flow steps were tried and

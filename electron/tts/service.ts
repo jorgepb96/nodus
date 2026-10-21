@@ -123,6 +123,7 @@ export class TtsService {
       phononRuntime: this.runtimeStatus('phonon'),
       kokoroRuntime: this.runtimeStatus('kokoro'),
       models: (await this.models.statuses()).filter((model) => ttsModelsForPlatform(process.platform, process.arch).some((entry) => entry.id === model.id)),
+      unsupportedModels: await this.unsupportedModels(),
       engine: { state: engine.state, modelId: engine.modelId, idleUnloadAt: engine.idleUnloadAt, ...(engine.error ? { error: engine.error } : {}) },
     };
   }
@@ -155,6 +156,16 @@ export class TtsService {
     else { await this.installer.remove(); this.runtime = null; }
     void this.emitStatus();
     return this.status();
+  }
+
+  /** Off-platform checkpoints with files on disk (complete or partial), so they can be deleted. */
+  private async unsupportedModels() {
+    const offered = ttsModelsForPlatform(process.platform, process.arch);
+    const found = await Promise.all(TTS_MODELS.filter((model) => !model.unpublished && !offered.some((entry) => entry.id === model.id)).map(async (model) => {
+      const bytes = await directoryBytes(this.models.dir(model.id));
+      return bytes > 0 ? { ...(await this.models.status(model)), downloadedBytes: bytes } : null;
+    }));
+    return found.filter((model) => model !== null);
   }
 
   /** A checkpoint this machine can run; anything else is refused before downloading or loading it. */

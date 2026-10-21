@@ -377,6 +377,9 @@ export interface TtsStatus {
   /** Kokoro-82M's environment (`kokoro-onnx` + espeak-ng, no PyTorch). */
   kokoroRuntime: TtsRuntimeStatus;
   models: TtsModelStatus[];
+  /** Checkpoints on disk that this machine cannot run (the PyTorch Ming checkpoint on an Apple
+   *  Silicon Mac): listed only so Settings can delete them. `downloadedBytes` is what they use. */
+  unsupportedModels?: TtsModelStatus[];
   engine: { state: TtsEngineState; modelId: string | null; idleUnloadAt: number | null; error?: string };
 }
 

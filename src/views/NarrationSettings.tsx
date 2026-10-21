@@ -54,7 +54,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const [install, setInstall] = useState<{ engine: TtsEngine; phase: string; fraction: number } | null>(null);
   const [voices, setVoices] = useState<TtsVoice[]>([]);
   const [error, setError] = useState('');
-  const [confirm, setConfirm] = useState<null | { kind: 'model'; model: TtsModelDefinition } | { kind: 'runtime' } | { kind: 'voice'; voice: TtsVoice } | { kind: 'sweep' }>(null);
+  const [confirm, setConfirm] = useState<null | { kind: 'model'; model: TtsModelDefinition; unsupported?: boolean } | { kind: 'runtime' } | { kind: 'voice'; voice: TtsVoice } | { kind: 'sweep' }>(null);
   const [usage, setUsage] = useState<{ clips: Record<string, number>; voices: number; runtime: number; models: number } | null>(null);
   const [notice, setNotice] = useState('');
   const [hfToken, setHfToken] = useState('');
@@ -227,6 +227,23 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
             </div>
           </article>;
         })}
+        {/* A checkpoint this machine cannot run (downloaded elsewhere or before it was hidden): only deletion. */}
+        {status?.unsupportedModels?.map((local) => {
+          const model = TTS_MODELS.find((entry) => entry.id === local.id);
+          if (!model) return null;
+          return <article key={model.id} data-testid={`narration-model-unsupported-${model.id}`} className={settingsModelRowClass(false, false, 'sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4')}>
+            <div className="flex min-w-0 items-start gap-2">
+              <Icon name="alert" size={14} className="mt-0.5 shrink-0 text-amber-500" />
+              <div className="min-w-0">
+                <h6 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{model.label}</h6>
+                <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">{tx('No funciona en este equipo · {size} en disco', { size: formatBytes(local.downloadedBytes) })}</p>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-2 sm:mt-0 sm:justify-end">
+              <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => setConfirm({ kind: 'model', model, unsupported: true })}><Icon name="trash" size={10} />{t('Eliminar')}</button>
+            </div>
+          </article>;
+        })}
       </SettingsModelList>
     </div>
 
@@ -301,7 +318,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
 
     {error && <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300" role="alert">{error}</p>}
 
-    {confirm?.kind === 'model' && <ConfirmModal title={t('Eliminar modelo de voz')} message={tx('Se eliminará «{model}» de tu equipo. Podrás volver a descargarlo cuando quieras.', { model: confirm.model.label })} confirmLabel={t('Eliminar modelo')} danger
+    {confirm?.kind === 'model' && <ConfirmModal title={t('Eliminar modelo de voz')} message={tx(confirm.unsupported ? 'Se eliminará «{model}» de tu equipo. Este equipo no puede usar este modelo.' : 'Se eliminará «{model}» de tu equipo. Podrás volver a descargarlo cuando quieras.', { model: confirm.model.label })} confirmLabel={t('Eliminar modelo')} danger
       onConfirm={() => { const model = confirm.model; setConfirm(null); void run(() => window.nodus.ttsDeleteModel(model.id)); }} onCancel={() => setConfirm(null)} />}
     {confirm?.kind === 'runtime' && <ConfirmModal title={t('Eliminar motor de voz')} message={t('Se eliminará el entorno de Python de la narración. Los modelos y tus voces se conservan.')} confirmLabel={t('Eliminar motor')} danger
       onConfirm={() => { setConfirm(null); void run(() => window.nodus.ttsRemoveRuntime()); }} onCancel={() => setConfirm(null)} />}

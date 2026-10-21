@@ -889,7 +889,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     // Empty when no list could be read, and the mode then has nothing valid to offer.
     routeContractTurn(routeRequest, programCorrection) && routeProgramMode() ? routeProgramTransformsBlock() : '',
     routeEvidence ? SYNTHESIS_EVIDENCE_SYSTEM_RULE : '',
-    !directTurn && !genealogy && hasResearchSourceRestriction(request)
+    !directTurn && !genealogy && (turnLayers.ideas || turnLayers.indexed) && hasResearchSourceRestriction(request)
       ? 'Source restriction: use only the supplied context from the selected works. Do not supplement it with other corpus sources or general knowledge. If the selected sources are insufficient, state that explicitly. Continue answering in the configured language.' : '',
     !directTurn && indexedOnly ? INDEXED_TEXTS_SYSTEM_RULE : '',
     directTurn ? DIRECT_ANSWER_INSTRUCTION : '',
@@ -1416,7 +1416,7 @@ export async function buildResearchContext(
   let truncated = false;
 
   const scope = await buildRelevanceScope(selection, route?.retrievalQuery || question);
-  if (scope.sourceScope) context.source_filter = { active: true, matched_works: scope.sourceScope.workIds.size, instruction: "Use only evidence from these works. If it is insufficient, say so; do not fill gaps from other sources or prior conversations." };
+  if (scope.sourceScope && (researchContextLayers(selection).ideas || researchContextLayers(selection).indexed)) context.source_filter = { active: true, matched_works: scope.sourceScope.workIds.size, instruction: "Use only evidence from these works. If it is insufficient, say so; do not fill gaps from other sources or prior conversations." };
 
   if (selection.ideas) {
     context.ideas_generadas = listIdeas(linkedWorkIds, scope);

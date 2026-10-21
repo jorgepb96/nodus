@@ -6014,6 +6014,8 @@ export interface ResearchContextLayers {
 }
 
 export interface ResearchContextSelection {
+  /** Composer's exact selection before temporarily switching every source off. */
+  contextBeforePause?: Omit<ResearchContextSelection, 'contextBeforePause'>;
   notebookId?: string | null;
   /** The layers chosen in the context balloon. Absent in selections saved before it
    * existed, which keep reading the sections below as they always did. */

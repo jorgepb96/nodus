@@ -13,6 +13,7 @@ import { useResearchHarnessOptions } from '../components/ResearchHarnessControl'
 import { ResearchExplorationControl } from '../components/ResearchExplorationControl';
 import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { ResearchWebSearchControl } from '../components/ResearchWebSearchControl';
+import { ResearchContextToggle } from '../components/ResearchContextToggle';
 import { ResearchVerificationControl } from '../components/ResearchVerificationControl';
 import { ResearchWebSources } from '../components/ResearchWebSources';
 import { openWebSource } from '../researchWebSources';
@@ -35,7 +36,7 @@ import { InvokedSkillPills, SkillMentionMenu, findSkillMention, rankSkillMention
 import { useSkillLibrary } from '../components/skillLibrary';
 import type { ResearchNotebook, ResearchNotebookPreparation } from '@shared/researchCorpus';
 import { matchingResearchWorkIds, normalizeResearchSourceFilter, type ResearchContextSources } from '@shared/researchContextFilters';
-import { researchContextIsEmpty, researchContextLayers, researchContextWeb, toggleResearchContextLayer, withResearchContextLayers } from '@shared/researchContextLayers';
+import { researchContextIsEmpty, researchContextLayers, researchContextWeb, toggleResearchContext, toggleResearchContextLayer, withResearchContextLayers } from '@shared/researchContextLayers';
 import { ResearchCoverage } from '../components/ResearchCoverage';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ModelPicker } from '../components/ModelPicker';
@@ -480,7 +481,7 @@ export function ResearchAssistantModal({
     loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
-    setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return newChatFrom(rest); });
+    setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current.contextBeforePause ?? current; return newChatFrom(rest); });
     setActiveNotebookId(null);
     adapter?.reset?.();
     if (!activeId) void systemPrompts.select(null);
@@ -541,7 +542,7 @@ export function ResearchAssistantModal({
     const council = loadedMessages.filter(message => message.role === 'assistant').at(-1)?.concilium;
     setConcilium(council ? { chairman: council.chairman, models: council.members.map(member => member.model) } : null);
     setStoppedMessageId(null);
-    setSelection(cloneSelection(conversation.selection ?? newChatSelection));
+    setSelection(cloneSelection(composerDraftStore(draftScope).drafts[id]?.selection ?? conversation.selection ?? newChatSelection));
     setActiveNotebookId(conversation.selection?.notebookId ?? conversation.notebookId ?? null);
     if (conversation.model && !restoringDraft) setSelectedModel(conversation.model);
     setContextTitle(conversation.title || null);
@@ -1595,6 +1596,8 @@ export function ResearchAssistantModal({
                     }
                   }}
                 />
+                {!adapter && !isGenealogy && <ResearchContextToggle active={selectedCount > 0} canRestore={!!selection.contextBeforePause}
+                  onToggle={() => setSelection(current => toggleResearchContext(current, webSearch !== 'off', isAcademic))} />}
                 {!adapter && !isGenealogy && <ResearchWebSearchControl value={turnWebSearch} onChange={setWebSearch} disabled={sending && !!adapter} />}
                 {!adapter && !isGenealogy && <ResearchVerificationControl value={answerVerification} onChange={setAnswerVerification} disabled={sending && !!adapter} />}
                 {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending && !!adapter} />}
@@ -1815,7 +1818,7 @@ function formatChars(chars: number): string {
 }
 
 function serializeSelection(selection: ResearchContextSelection): string {
-  const { sourceFilter, ...sections } = selection;
+  const { sourceFilter, contextBeforePause: _contextBeforePause, ...sections } = selection;
   const filter = normalizeResearchSourceFilter(sourceFilter);
   return JSON.stringify(filter.enabled ? { ...sections, sourceFilter: filter } : sections);
 }

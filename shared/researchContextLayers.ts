@@ -37,15 +37,28 @@ export function researchContextWeb(selection: ResearchContextSelection, savedSet
  * are the passages, full documents the document section. The chat's web choice is kept, or set
  * when `web` is given. */
 export function withResearchContextLayers(selection: ResearchContextSelection, layers: ResearchContextLayers): ResearchContextSelection {
+  // Choosing a layer manually leaves the temporary pause and uses that new choice.
+  const { contextBeforePause: _contextBeforePause, ...current } = selection;
   const { ideas, documents, indexed } = researchContextLayers({ ...selection, layers });
   const web = layers.web ?? selection.layers?.web ?? (layers.indexedOnly || selection.layers?.indexedOnly ? false : undefined);
   return {
-    ...selection,
+    ...current,
     layers: { ideas, documents, indexed, ...(web === undefined ? {} : { web }) },
     ideas, themes: ideas, contradictions: ideas, gaps: ideas, readingPath: ideas, authors: ideas, graph: ideas,
     graphParts: { ideaNodes: ideas, themeNodes: ideas, ideaEdges: ideas, authorGraph: ideas },
     documents, passages: indexed,
   };
+}
+
+/** Pause every source without changing the saved web preference or losing individual sections,
+ * source filters and notebook scope. The snapshot travels with drafts, queued turns and chats. */
+export function toggleResearchContext(selection: ResearchContextSelection, webEnabled: boolean, academic = false): ResearchContextSelection {
+  if (selection.contextBeforePause) return { ...structuredClone(selection.contextBeforePause), sourceFilter: selection.sourceFilter, notebookId: selection.notebookId };
+  if (researchContextIsEmpty(researchContextLayers(selection, academic), researchContextWeb(selection, webEnabled))) return selection;
+  const contextBeforePause = structuredClone(selection);
+  // Pin legacy selections' inherited web choice, so later preference changes cannot alter it.
+  contextBeforePause.layers = { ...researchContextLayers(selection, academic), ...selection.layers, web: researchContextWeb(selection, webEnabled) };
+  return { ...withResearchContextLayers(selection, { ideas: false, documents: false, indexed: false, web: false }), contextBeforePause };
 }
 
 /** The layers after one switch of the balloon: full documents switched on bring the indexed

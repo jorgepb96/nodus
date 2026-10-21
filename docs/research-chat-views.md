@@ -22,6 +22,22 @@ authors and works, and light/dark layouts using synthetic harness data.
 ![Select-all context switch in the light theme](screenshots/research-context/select-all-light.png)
 ![Select-all context switch in the dark theme](screenshots/research-context/select-all-dark.png)
 
+The **Context** layers icon beside the composer's web button temporarily switches
+off indexed texts, ideas, full documents and web search. Click it again to restore
+the previous selection, including its source filters and notebook scope. It does
+not enable previously unselected layers or change the global web preference.
+Purple layers indicate active context; crossed-out amber layers indicate a pause.
+The remembered selection is retained in drafts, queued requests and saved chats.
+Changing an individual layer during a pause starts a new selection.
+
+Validation: `node --test scripts/test-research-context-toggle.mjs` checks exact
+restoration, persistence and legacy selections. With the renderer-only harness
+running, `node scripts/verify-research-context-toggle.mjs` checks keyboard use,
+request payloads, draft reload and restoration in both themes using synthetic data.
+
+![Context enabled in the composer](screenshots/research-context/context-toggle-active-dark.png)
+![Context paused in the composer](screenshots/research-context/context-toggle-paused-dark.png)
+
 ## Pending requests in Research Chat
 
 In the native Research Chat, **Cmd+Enter** on macOS or **Ctrl+Enter** adds the

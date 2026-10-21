@@ -630,6 +630,8 @@ p.research-notebook-banner { flex-direction: row; align-items: center; }
 .research-web-toggle:hover:not(:disabled) { background: #88888812; }
 .research-web-toggle.is-on { color: var(--vault-accent); background: color-mix(in srgb, var(--vault-accent) 12%, transparent); }
 .research-web-toggle:disabled { opacity: .5; cursor: default; }
+.research-context-toggle.is-paused:not(:disabled) { color: #f0b86e; background: #f0b86e18; }
+.light .research-context-toggle.is-paused:not(:disabled) { color: #95631e; background: #95631e12; }
 .research-web-sources { margin: 8px 0; padding: 10px 12px; border: 1px solid #d4d4d8; border-radius: 6px; font-size: 13px; }
 .dark .research-web-sources { border-color: #3f3f46; }
 .research-web-sources header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }

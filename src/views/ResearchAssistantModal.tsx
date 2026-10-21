@@ -1447,6 +1447,7 @@ export function ResearchAssistantModal({
                         {!adapter && message.role === 'assistant' && !message.error && message.content.trim() && message.id !== streamingId && activeId && (
                           <ListenButton
                             testId="research-chat-listen"
+                            direct
                             className="research-accent-hover"
                             target={{
                               kind: 'chat_message',

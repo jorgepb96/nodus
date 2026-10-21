@@ -41,3 +41,18 @@ test('the header action opens the balloon and starts playback or generation once
   assert.match(listen, /autoStarted\.current = true;/,
     'the effect is one-shot');
 });
+
+test('the per-answer listen action plays directly while the header keeps the config balloon', () => {
+  assert.match(modal, /testId="research-chat-listen"[\s\S]{0,80}\bdirect\b/,
+    'the message action opts into direct playback');
+  assert.match(listen, /if \(direct\) void directStart\(\); else setOpen/,
+    'it does not open the balloon');
+  assert.match(listen, /const directStart = async \(\) =>/);
+  assert.match(listen, /if \(playable\.length\) \{ player\.play\(playable, 0, source\); return; \}/,
+    'a saved clip plays immediately');
+  assert.match(listen, /LoadingRing/);
+  assert.match(listen, /direct && playingHere \? <ProgressRing fraction=\{1\} \/>/,
+    'the ring stays around the icon while playing');
+  assert.match(modal, /testId="research-chat-header-listen"[\s\S]{0,120}autoStart/,
+    'the header action still opens the balloon and starts');
+});

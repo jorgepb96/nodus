@@ -37,7 +37,7 @@ export interface ListenTarget {
 
 type Confirm = null | { kind: 'clip'; clip: AudioClip } | { kind: 'all' };
 
-export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, autoStart = false }: {
+export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, autoStart = false, direct = false }: {
   target: ListenTarget;
   size?: number;
   className?: string;
@@ -47,15 +47,61 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
   toolbar?: boolean;
   /** Opening from the header action starts the saved clip or generation immediately. */
   autoStart?: boolean;
+  /** The per-answer chat action plays immediately instead of opening the balloon. */
+  direct?: boolean;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
   const player = useOptionalAudioPlayer();
   const key = `${target.kind}:${target.id}`;
   const progress = useGeneration(target.kind, target.id);
   const generating = progress != null;
   const playingHere = player?.source?.key === key && player.isPlaying;
   const fraction = progress && progress.total ? (progress.done + (progress.fragmentsTotal ? (progress.fragmentsDone ?? 0) / progress.fragmentsTotal : 0)) / progress.total : 0;
+
+  const directStart = async () => {
+    if (!player || starting || generating) return;
+    setStarting(true);
+    try {
+      const [settings, status, clips] = await Promise.all([
+        window.nodus.getSettings(),
+        window.nodus.ttsStatus(),
+        window.nodus.listAudioClips(target.kind, target.id).catch(() => []),
+      ]);
+      if (!settings || !status) return;
+      const modelId = settings.ttsModelId || status.models.find((model) => model.downloaded)?.id || status.models[0]?.id || '';
+      const model = TTS_MODELS.find((entry) => entry.id === modelId);
+      const playable = clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+      const source = { key, title: target.title, open: target.open };
+      if (playable.length) { player.play(playable, 0, source); return; }
+      if (!ttsReady(status, modelId)) return;
+      const segmentRequest: AudioSegmentRequest = { ...(target.segmentRequest ?? {}), ...(target.markdown ? { markdown: target.markdown(), title: '' } : {}) };
+      const voiceId = model?.engine === 'phonon' ? settings.ttsPhononVoiceId
+        : model?.engine === 'kokoro' ? settings.ttsKokoroVoiceId
+          : settings.ttsVoiceId;
+      const input = {
+        kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId, language: settings.ttsLanguage,
+        labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
+      };
+      if (settings.ttsStreaming) { startNarration(player, input, source); return; }
+      player.stop();
+      const job = startAudioGeneration({ entityKind: target.kind, entityId: target.id, voiceId, segmentRequest, labels: input.labels }, segmentNarrator(input, null));
+      const unsubscribe = subscribeBackgroundJob<AudioGenerationRequest, AudioGenerationProgress, AudioGenerationResult>(audioGenerationJobKey(target.kind, target.id), (next) => {
+        if (!next || next.id !== job.id || next.status === 'running') return;
+        queueMicrotask(unsubscribe);
+        if (next.status === 'completed' && next.result && !next.result.cancelled) {
+          void window.nodus.listAudioClips(target.kind, target.id).then((saved) => {
+            const tracks = saved.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+            if (tracks.length) player.play(tracks, 0, source);
+          });
+        }
+      });
+    } finally {
+      setStarting(false);
+    }
+  };
+
   return (
     <>
       <button
@@ -65,17 +111,27 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         className={toolbar
           ? `btn btn-ghost relative gap-1.5 border border-neutral-700 text-xs py-1 ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : ''} ${className}`
           : `relative rounded p-1 transition ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : 'text-neutral-500 opacity-70 hover:opacity-100'} hover:bg-neutral-200/60 dark:hover:bg-neutral-800 ${className}`}
-        title={generating ? tx('Generando audio · {pct}%', { pct: Math.round(fraction * 100) }) : playingHere ? t('Reproduciendo') : t('Escuchar')}
+        title={starting ? t('Preparando…') : generating ? tx('Generando audio · {pct}%', { pct: Math.round(fraction * 100) }) : playingHere ? t('Reproduciendo') : t('Escuchar')}
         aria-label={label ?? t('Escuchar')}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        aria-expanded={direct ? undefined : open}
+        aria-pressed={direct ? playingHere : undefined}
+        onClick={() => { if (direct) void directStart(); else setOpen((value) => !value); }}
       >
         <Icon name={playingHere ? 'waveform' : 'volume'} size={size} />
         {toolbar && <span className="hidden sm:inline">{label ?? t('Escuchar')}</span>}
-        {generating && <ProgressRing fraction={fraction} />}
+        {starting ? <LoadingRing /> : generating ? <ProgressRing fraction={fraction} /> : direct && playingHere ? <ProgressRing fraction={1} /> : null}
       </button>
       {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} autoStart={autoStart} />}
     </>
+  );
+}
+
+function LoadingRing() {
+  return (
+    <svg className="pointer-events-none absolute inset-0 h-full w-full animate-spin" viewBox="0 0 22 22" aria-hidden>
+      <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="1.6" />
+      <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeDasharray="14 43" strokeLinecap="round" />
+    </svg>
   );
 }
 

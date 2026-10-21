@@ -21,12 +21,15 @@ export interface NarrationInput {
   voiceId?: string;
   language?: TtsLanguageSetting;
   labels: { preparing: string; noText: string };
+  /** Play without saving: no clip, no database row. The fragments stay in the engine's live
+   *  folder, which removes them shortly after the job ends (Scriptor's read-the-selection). */
+  ephemeral?: boolean;
 }
 
 /** Live playback outranks generation nobody is listening to yet. */
 const LISTENING_PRIORITY = 10;
 
-export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'language'>, live: LiveNarration | null): SegmentNarrator {
+export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'language' | 'ephemeral'>, live: LiveNarration | null): SegmentNarrator {
   // Estimated length of the whole narration, refined as fragments arrive: audio per character
   // generated so far × characters in all segments.
   let charsDone = 0;
@@ -40,7 +43,7 @@ export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'languag
       voiceId: input.voiceId || undefined,
       language: input.language,
       priority: live ? LISTENING_PRIORITY : 0,
-      save: { kind: context.request.entityKind, id: context.request.entityId, segmentIndex: segment.index, segmentLabel: segment.label },
+      ...(input.ephemeral ? {} : { save: { kind: context.request.entityKind, id: context.request.entityId, segmentIndex: segment.index, segmentLabel: segment.label } }),
     }, {
       onFragment: (fragment) => {
         segmentAudio += fragment.durationS;
@@ -62,7 +65,7 @@ export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'languag
     const result = await handle.done;
     charsDone += segment.text.length;
     audioDone += segmentAudio;
-    return !!result.clip && !result.cancelled;
+    return !result.cancelled && (input.ephemeral || !!result.clip);
   };
 }
 

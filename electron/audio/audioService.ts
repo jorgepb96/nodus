@@ -42,9 +42,10 @@ export function getEntitySegments(kind: AudioEntityKind, id: string, request: Au
     const source = request.markdown != null ? { title: request.title ?? '', markdown: request.markdown } : studyAudioSource(kind, id);
     return studyNarrationSegments(source.markdown, { ...request, title: request.title || source.title });
   }
-  if (kind === 'chat_message' || kind === 'dictionary_entry') {
-    // A chat answer or a dictionary entry is narrated from the text the reader is looking at,
-    // which the renderer sends (a chat message may not be persisted yet while it streams).
+  if (kind === 'chat_message' || kind === 'dictionary_entry' || kind === 'scriptor_document' || kind === 'scriptor_selection') {
+    // A chat answer, a dictionary entry or a Scriptor document (or selection) is narrated from
+    // the text the reader is looking at, which the renderer sends: a chat message may not be
+    // persisted yet while it streams, and a Scriptor draft may not be saved yet.
     if (request.markdown == null || !request.markdown.trim()) throw new Error('TTS_EMPTY_TEXT');
     return deepResearchSegments({ title: request.title ?? '', draftMarkdown: relabelCitations(request.markdown) });
   }
@@ -262,6 +263,33 @@ export function reconcileChatNarration(conversationId: string, keepMessageIds: r
       if (!keep.has(entityId)) clearEntityClips('chat_message', entityId);
     }
   } catch { /* narration cleanup never fails a chat save */ }
+}
+
+/** Scriptor narration is keyed `<documentId>:<textHash>`, one entity per version of the text:
+ *  drop every version of a document that is gone. */
+export function deleteScriptorNarration(documentId: string): number {
+  let removed = 0;
+  try {
+    for (const entityId of listAudioClipEntityIds('scriptor_document', `${documentId}:`)) {
+      for (const fileName of deleteAudioClipsForEntity('scriptor_document', entityId)) { removeFile(fileName); removed += 1; }
+    }
+  } catch { /* narration cleanup never fails a delete */ }
+  return removed;
+}
+
+/** Clips of Scriptor documents that no longer exist: notes removed with their collection, or
+ *  study documents in the trash (those are never deleted for good). Kept clips go too. */
+export function pruneOrphanScriptorNarration(): number {
+  const db = getDb();
+  const documentIds = new Set(listAudioClipEntityIds('scriptor_document', '').map((entityId) => entityId.slice(0, entityId.lastIndexOf(':'))));
+  const note = db.prepare('SELECT 1 FROM notes WHERE id = ?');
+  const study = db.prepare('SELECT 1 FROM study_docs WHERE id = ? AND deleted_at IS NULL');
+  let removed = 0;
+  for (const documentId of documentIds) {
+    if (!documentId || note.get(documentId) || study.get(documentId)) continue;
+    removed += deleteScriptorNarration(documentId);
+  }
+  return removed;
 }
 
 /** Raw bytes for playback in the renderer (served as a data URL). */

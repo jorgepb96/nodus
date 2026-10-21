@@ -1816,7 +1816,7 @@ export type AudioProvider = 'ming' | 'phonon' | 'kokoro' | 'piper' | 'hume';
 
 /** Content kinds that can be narrated. Study kinds are stored in the vault's
  * regenerable local audio catalogue rather than in sync/backups. */
-export type AudioEntityKind = 'deep_research' | 'immersion' | 'chat_message' | 'dictionary_entry' | 'study_document' | 'study_transcript' | 'study_assistant' | 'study_subject' | 'study_question';
+export type AudioEntityKind = 'deep_research' | 'immersion' | 'chat_message' | 'dictionary_entry' | 'scriptor_document' | 'scriptor_selection' | 'study_document' | 'study_transcript' | 'study_assistant' | 'study_subject' | 'study_question';
 
 /** One generated audio file for a segment (stage/section) of a report or immersion. */
 export interface AudioClip {

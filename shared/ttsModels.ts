@@ -284,8 +284,8 @@ export function isTtsLanguage(value: unknown): value is TtsLanguage {
 }
 
 /** Where narration can be generated; each surface has its own retention override. */
-export type TtsSurface = 'research_chat' | 'dictionary' | 'deep_research' | 'immersion';
-export const TTS_SURFACES: readonly TtsSurface[] = ['research_chat', 'dictionary', 'deep_research', 'immersion'];
+export type TtsSurface = 'research_chat' | 'dictionary' | 'deep_research' | 'immersion' | 'scriptor';
+export const TTS_SURFACES: readonly TtsSurface[] = ['research_chat', 'dictionary', 'deep_research', 'immersion', 'scriptor'];
 
 export interface TtsRetentionRule {
   /** `inherit` follows the global rule. */
@@ -307,6 +307,8 @@ export const DEFAULT_TTS_RETENTION: TtsRetentionSettings = {
     dictionary: { mode: 'inherit', days: 7 },
     deep_research: { mode: 'inherit', days: 7 },
     immersion: { mode: 'inherit', days: 7 },
+    // A Scriptor document keeps changing, so reading it aloud is a quick check, not an archive.
+    scriptor: { mode: 'days', days: 1 },
   },
 };
 
@@ -322,7 +324,9 @@ export function sanitizeTtsRetention(value: unknown): TtsRetentionSettings {
   const days = clampDays(raw.days, DEFAULT_TTS_RETENTION.days);
   const perSurface = {} as Record<TtsSurface, TtsRetentionRule>;
   for (const surface of TTS_SURFACES) {
-    const rule = (raw.perSurface?.[surface] ?? {}) as Partial<TtsRetentionRule>;
+    // A surface added after the settings were saved starts from its own default rule.
+    const fallback = DEFAULT_TTS_RETENTION.perSurface[surface];
+    const rule = (raw.perSurface?.[surface] ?? (fallback.mode === 'inherit' ? {} : fallback)) as Partial<TtsRetentionRule>;
     const mode = rule.mode === 'off' || rule.mode === 'days' ? rule.mode : 'inherit';
     perSurface[surface] = { mode, days: clampDays(rule.days, days) };
   }

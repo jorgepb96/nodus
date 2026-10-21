@@ -36,8 +36,9 @@ const SURFACE_LABELS: Record<TtsSurface, string> = {
   dictionary: 'Diccionario',
   deep_research: 'Deep Research',
   immersion: 'Inmersión',
+  scriptor: 'Nodus Scriptor',
 };
-const SURFACE_KINDS: Record<TtsSurface, string> = { research_chat: 'chat_message', dictionary: 'dictionary_entry', deep_research: 'deep_research', immersion: 'immersion' };
+const SURFACE_KINDS: Record<TtsSurface, string> = { research_chat: 'chat_message', dictionary: 'dictionary_entry', deep_research: 'deep_research', immersion: 'immersion', scriptor: 'scriptor_document' };
 
 const INSTALL_PHASES: Record<string, string> = {
   checking: 'Comprobando…',

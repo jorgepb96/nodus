@@ -1,7 +1,8 @@
 // Narrated content must not outlive the item it belongs to. Saved clips are a WAV file
-// plus a row in audio_clips; deleting a conversation, a saved report, an immersion or a
-// dictionary entry has to remove both. This drives the real repositories and audio service
-// against a migrated vault, so a future delete that forgets the cleanup fails here.
+// plus a row in audio_clips; deleting a conversation, a saved report, an immersion, a
+// dictionary entry or a Scriptor document has to remove both. This drives the real
+// repositories and audio service against a migrated vault, so a future delete that forgets
+// the cleanup fails here.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -40,6 +41,8 @@ try {
   const reports = load('electron/db/writingDraftsRepo.ts');
   const immersion = load('electron/db/immersionRepo.ts');
   const dictionary = load('electron/db/dictionaryRepo.ts');
+  const notes = load('electron/db/notesRepo.ts');
+  const { setAudioClipPinned } = load('electron/db/audioClipsRepo.ts');
 
   const save = (kind, id) => audio.saveClip(kind, id, {
     segmentIndex: 0,
@@ -106,6 +109,30 @@ try {
   assert.equal(fs.existsSync(audioFilePath(dictionaryClip.fileName)), true);
   assert.equal(dictionary.deleteDictionaryEntries([entry.id]), 1);
   assertClipsGone('dictionary entry', 'dictionary_entry', entry.id, dictionaryClip);
+
+  // ── Scriptor document ────────────────────────────────────────────────────────
+  // Keyed `<documentId>:<textHash>`: every version of the text has its own clips, and
+  // deleting the note removes all of them, the kept ones too.
+  const note = notes.createNote({ title: 'Borrador leído en voz alta', content: 'Primera versión.' });
+  const firstVersion = save('scriptor_document', `${note.id}:aaaa`);
+  const secondVersion = save('scriptor_document', `${note.id}:bbbb`);
+  setAudioClipPinned(secondVersion.id, true);
+  assert.equal(rows('scriptor_document', `${note.id}:aaaa`) + rows('scriptor_document', `${note.id}:bbbb`), 2);
+  assert.equal(notes.deleteNote(note.id), true);
+  assertClipsGone('scriptor version 1', 'scriptor_document', `${note.id}:aaaa`, firstVersion);
+  assertClipsGone('scriptor version 2 (kept)', 'scriptor_document', `${note.id}:bbbb`, secondVersion);
+
+  // Notes removed with their collection cascade in SQLite; the narration sweep catches them.
+  const folder = notes.createNoteFolder({ name: 'Colección' });
+  const inFolder = notes.createNote({ title: 'Dentro de la colección', content: 'Texto.', folderId: folder.id });
+  const survivor = notes.createNote({ title: 'Fuera de la colección', content: 'Texto.' });
+  const orphanClip = save('scriptor_document', `${inFolder.id}:cccc`);
+  const survivorClip = save('scriptor_document', `${survivor.id}:dddd`);
+  notes.deleteNoteFolder(folder.id);
+  assert.equal(audio.pruneOrphanScriptorNarration(), 1, 'one orphaned clip removed');
+  assertClipsGone('scriptor note in a deleted collection', 'scriptor_document', `${inFolder.id}:cccc`, orphanClip);
+  assert.equal(rows('scriptor_document', `${survivor.id}:dddd`), 1, 'a live note keeps its narration');
+  assert.equal(fs.existsSync(audioFilePath(survivorClip.fileName)), true);
 
   console.log('narration clip cleanup tests passed');
 } finally {

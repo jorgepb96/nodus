@@ -34,6 +34,7 @@ try {
     `export { sanitizeTtsRetention } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsModels.ts'))};`,
     `export { liveStartThreshold } from ${JSON.stringify(path.join(repoRoot, 'src/components/AudioPlayer.tsx'))};`,
     `export { mergeTtsModelStatus } from ${JSON.stringify(path.join(repoRoot, 'src/lib/narration/ttsClient.ts'))};`,
+    `export { segmentNarrator } from ${JSON.stringify(path.join(repoRoot, 'src/lib/narration/narrate.ts'))};`,
   ].join('\n'));
   const outfile = path.join(tmp, 'units.mjs');
   await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent', jsx: 'automatic', alias: { '@shared': path.join(repoRoot, 'shared') } });
@@ -137,6 +138,9 @@ try {
     { id: 'dr-old-kept', kind: 'deep_research', created: now - 30 * day, pinned: true },
     { id: 'dict-old', kind: 'dictionary_entry', created: now - 100 * day, pinned: false },
     { id: 'study-old', kind: 'study_document', created: now - 400 * day, pinned: false },
+    { id: 'scriptor-old', kind: 'scriptor_document', created: now - 1.5 * day, pinned: false },
+    { id: 'scriptor-new', kind: 'scriptor_document', created: now - 0.5 * day, pinned: false },
+    { id: 'scriptor-kept', kind: 'scriptor_document', created: now - 5 * day, pinned: true },
     ...Array.from({ length: 250 }, (_, i) => ({ id: `imm-${i}`, kind: 'immersion', created: now - 8 * day - i, pinned: false })),
   ];
   const store = {
@@ -146,9 +150,27 @@ try {
   const settings = u.sanitizeTtsRetention({ enabled: true, days: 7, perSurface: { research_chat: { mode: 'days', days: 1 }, dictionary: { mode: 'off' } } });
   const removed = await u.sweepNarrationClips(settings, store, now, 100);
   const left = new Set(clips.map((c) => c.id));
-  assert.equal(removed, 252, 'chat-old, dr-old and all 250 immersion clips (in batches)');
-  for (const kept of ['chat-new', 'dr-old-kept', 'dict-old', 'study-old']) assert.ok(left.has(kept), `${kept} survives`);
+  assert.equal(removed, 253, 'chat-old, dr-old, scriptor-old (one day by default) and all 250 immersion clips (in batches)');
+  for (const kept of ['chat-new', 'dr-old-kept', 'dict-old', 'study-old', 'scriptor-new', 'scriptor-kept']) assert.ok(left.has(kept), `${kept} survives`);
   assert.ok(!Object.values(u.SURFACE_KINDS).includes('study_document'), 'study clips are never swept');
+  // ── Ephemeral narration (Scriptor's selection) ─────────────────────────────
+  // Reading a selection aloud never saves a clip: the request carries no `save`, and a
+  // segment that finished without a clip still counts as narrated.
+  const requests = [];
+  let emit = null;
+  globalThis.window = { nodus: {
+    onTtsEvent: (listener) => { emit = listener; return () => {}; },
+    ttsSpeak: async (request) => { requests.push(request); const jobId = `job-${requests.length}`; queueMicrotask(() => emit({ kind: 'job', progress: { jobId, done: 1, total: 1, audioS: 1, genS: 0.2, rtf: 0.2, etaS: 0, state: 'done' } })); return { jobId, language: 'es', voiceId: 'kokoro:ef_dora' }; },
+    ttsCancel: async () => {},
+  } };
+  const segment = { index: 0, label: 'Selección', text: 'Una frase seleccionada.' };
+  const context = { request: { entityKind: 'scriptor_selection', entityId: 'note:hash' }, index: 0, total: 1, signal: new AbortController().signal, report: () => {} };
+  assert.equal(await u.segmentNarrator({ ephemeral: true }, null)(segment, context), true, 'an ephemeral segment counts as narrated');
+  assert.equal('save' in requests[0], false, 'nothing is saved');
+  assert.equal(await u.segmentNarrator({}, null)(segment, { ...context, request: { entityKind: 'scriptor_document', entityId: 'note:hash' } }), false, 'a saved narration needs its clip');
+  assert.deepEqual(requests[1].save, { kind: 'scriptor_document', id: 'note:hash', segmentIndex: 0, segmentLabel: 'Selección' });
+  delete globalThis.window;
+
   console.log('tts engine unit tests passed');
 } finally {
   await rm(tmp, { recursive: true, force: true });

@@ -20,6 +20,18 @@ The Research chat header carries an **Escuchar** action for the latest finished 
 opens the same Listen balloon and starts the saved clip or generation on the first click;
 the per-answer icon still opens the balloon without starting.
 
+Nodus Scriptor has the same **Escuchar** button in its editor header, next to Context and
+Focus. It narrates the document as it is when the balloon opens: the clips are keyed
+`scriptor_document` / `<documentId>:<textHash>`, so an edited document is narrated again
+instead of replaying stale audio. In notes, the «Lectura por voz» action opens this balloon;
+study documents keep their study narration panel (modes, pronunciations, bookmarks). The
+selection toolbar (and the floating «Pulir» bubble in raw Markdown) has a speaker icon that
+reads the selected text at once. That narration is **ephemeral**: the speak request carries
+no `save`, so no clip or row is written; the fragments live in the engine's live folder,
+which is removed ten minutes after each job ends and on every start. A second click pauses
+or resumes it, a new selection cancels the previous one, and without an engine the icon
+opens the header balloon to install it.
+
 The balloon's voice selector is a styled list, not a native select: it has a search box and
 model/language filters that accept one or several choices (Ming, Phonon, Kokoro; any
 combination of languages). The narration language select uses the same styled surface. The
@@ -108,10 +120,14 @@ SHA-256) into `userData/local-tts/models/<id>/`; `ready.json` marks a verified d
 
 `electron/tts/retention.ts` deletes unpinned clips older than each surface's rule, at start-up
 (after a minute) and every six hours, in batches of 100 with an event-loop yield between
-them. Defaults: on, 7 days, every surface inheriting the global rule; each of Research chat,
-Dictionary, Deep Research and Immersion can inherit, use its own days or never delete. Study
-narration is never swept. «Conservar» pins a clip (`audio_clips.pinned`). Deleting a chat (or a
-message), a report, an immersion or a dictionary entry deletes its clips.
+them. Defaults: on, 7 days, every surface inheriting the global rule except Nodus Scriptor,
+which keeps its clips for one day (a draft keeps changing, so its narration is a quick check,
+not an archive); each of Research chat, Dictionary, Deep Research, Immersion and Nodus
+Scriptor can inherit, use its own days or never delete. Settings saved before a surface
+existed get that surface's default. Study narration is never swept. «Conservar» pins a clip
+(`audio_clips.pinned`). Deleting a chat (or a message), a report, an immersion, a dictionary
+entry or a note deletes its clips; the sweep also removes the clips of Scriptor documents
+that no longer exist (notes removed with their collection, study documents in the trash).
 
 ## Data model
 
@@ -119,8 +135,15 @@ Migration **205** rebuilds `audio_clips` to accept `chat_message` and `dictionar
 and adds `model_id` and `pinned`; `SYNC_SCHEMA_VERSION` moved to 205 with it. Chat clips use
 `<conversationId>:<messageId>` as entity id so a conversation's clips can be found by prefix.
 
+Migration **206** rebuilds `audio_clips` again to accept `scriptor_document`, copying every
+column. The columns do not change and 205 and 206 ship in the same release, so
+`SYNC_SCHEMA_VERSION` stays at 205. Scriptor clips use `<documentId>:<textHash>`.
+
 ## Tests
 
 `scripts/test-tts-catalogue.mjs`, `test-tts-engine-units.mjs` and
 `test-tts-host-lifecycle.mjs` (a fake sidecar drives the real host: priority queue, cancel,
 kill on an ignored cancel, idle unload, quit kill).
+`test-narration-clip-cleanup.mjs` deletes real items (Scriptor notes included) and checks
+that their clips go; `test-scriptor-listen.mjs` guards the Scriptor header button, the
+selection icon and its ephemeral narration.

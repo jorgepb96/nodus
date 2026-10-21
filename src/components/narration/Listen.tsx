@@ -33,11 +33,13 @@ export interface ListenTarget {
   segmentRequest?: AudioSegmentRequest;
   /** Reopens the item from the header player. */
   open?: () => void;
+  /** Play without saving any clip (Scriptor's selection): see `NarrationInput.ephemeral`. */
+  ephemeral?: boolean;
 }
 
 type Confirm = null | { kind: 'clip'; clip: AudioClip } | { kind: 'all' };
 
-export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, autoStart = false, direct = false }: {
+export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, autoStart = false, direct = false, bare = false, onUnavailable, open: openProp, onOpenChange }: {
   target: ListenTarget;
   size?: number;
   className?: string;
@@ -49,9 +51,18 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
   autoStart?: boolean;
   /** The per-answer chat action plays immediately instead of opening the balloon. */
   direct?: boolean;
+  /** Only `className` styles the button, so it can sit in another toolbar (Scriptor). */
+  bare?: boolean;
+  /** A direct action whose engine is not ready calls this instead of doing nothing. */
+  onUnavailable?: () => void;
+  /** Controls the balloon from outside, e.g. a menu action that opens it. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const anchor = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => { if (onOpenChange) onOpenChange(next); else setOpenState(next); };
   const [starting, setStarting] = useState(false);
   const player = useOptionalAudioPlayer();
   const key = `${target.kind}:${target.id}`;
@@ -65,12 +76,14 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
 
   const directStart = async () => {
     if (!player || starting || generating) return;
+    // An ephemeral narration has no saved clips to replay: a second click pauses or resumes it.
+    if (target.ephemeral && player.source?.key === key && player.tracks.length) { player.toggle(); return; }
     setStarting(true);
     try {
       const [settings, status, clips] = await Promise.all([
         window.nodus.getSettings(),
         window.nodus.ttsStatus(),
-        window.nodus.listAudioClips(target.kind, target.id).catch(() => []),
+        target.ephemeral ? Promise.resolve([] as AudioClip[]) : window.nodus.listAudioClips(target.kind, target.id).catch(() => []),
       ]);
       if (!settings || !status) return;
       const modelId = settings.ttsModelId || status.models.find((model) => model.downloaded)?.id || status.models[0]?.id || '';
@@ -78,7 +91,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
       const playable = clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
       const source = { key, title: target.title, open: target.open };
       if (playable.length) { player.play(playable, 0, source); return; }
-      if (!ttsReady(status, modelId)) return;
+      if (!ttsReady(status, modelId)) { onUnavailable?.(); return; }
       const segmentRequest: AudioSegmentRequest = { ...(target.segmentRequest ?? {}), ...(target.markdown ? { markdown: target.markdown(), title: '' } : {}) };
       const voiceId = model?.engine === 'phonon' ? settings.ttsPhononVoiceId
         : model?.engine === 'kokoro' ? settings.ttsKokoroVoiceId
@@ -86,7 +99,11 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
       const input = {
         kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId, language: settings.ttsLanguage,
         labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
+        ephemeral: target.ephemeral,
       };
+      // Nothing is saved without a clip, so an ephemeral narration always plays as it generates,
+      // and the one it replaces stops generating: nobody can listen to it any more.
+      if (target.ephemeral) { player.cancelGeneration(); startNarration(player, input, source); return; }
       if (settings.ttsStreaming) { startNarration(player, input, source); return; }
       player.stop();
       const job = startAudioGeneration({ entityKind: target.kind, entityId: target.id, voiceId, segmentRequest, labels: input.labels }, segmentNarrator(input, null));
@@ -111,14 +128,19 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         ref={anchor}
         type="button"
         data-testid={testId ?? 'listen-button'}
-        className={toolbar
+        className={bare
+          ? `relative ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : ''} ${className}`
+          : toolbar
           ? `btn btn-ghost relative gap-1.5 border border-neutral-700 text-xs py-1 ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : ''} ${className}`
           : `relative inline-grid h-6 w-6 place-items-center rounded p-0 transition ${playingHere || generating ? 'text-indigo-500 dark:text-indigo-300' : 'text-neutral-500 opacity-70 hover:opacity-100'} hover:bg-neutral-200/60 dark:hover:bg-neutral-800 ${className}`}
-        title={starting ? t('Preparando…') : generating ? tx('Generando audio · {pct}%', { pct: Math.round(fraction * 100) }) : playingHere ? t('Reproduciendo') : t('Escuchar')}
+        title={starting ? t('Preparando…') : generating ? tx('Generando audio · {pct}%', { pct: Math.round(fraction * 100) }) : playingHere ? t('Reproduciendo') : label ?? t('Escuchar')}
         aria-label={label ?? t('Escuchar')}
         aria-expanded={direct ? undefined : open}
         aria-pressed={direct ? playingHere : undefined}
-        onClick={() => { if (direct) void directStart(); else setOpen((value) => !value); }}
+        // In the editor's toolbars the click must not take the focus (or the selection) away.
+        onPointerDown={bare ? (event) => { if (event.button === 0) event.preventDefault(); } : undefined}
+        onMouseDown={bare ? (event) => event.preventDefault() : undefined}
+        onClick={() => { if (direct) void directStart(); else setOpen(!open); }}
       >
         <Icon name={playingHere ? 'waveform' : 'volume'} size={size} />
         {toolbar && <span className="hidden sm:inline">{label ?? t('Escuchar')}</span>}
@@ -131,7 +153,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
 
 function LoadingRing() {
   return (
-    <svg className="pointer-events-none absolute inset-0 h-full w-full animate-spin" viewBox="0 0 22 22" aria-hidden>
+    <svg className="listen-ring pointer-events-none absolute inset-0 h-full w-full animate-spin" viewBox="0 0 22 22" aria-hidden>
       <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2.2" />
       <circle cx="11" cy="11" r="9" fill="none" stroke="currentColor" strokeWidth="2.6" strokeDasharray="14 43" strokeLinecap="round" />
     </svg>
@@ -142,7 +164,7 @@ function ProgressRing({ fraction }: { fraction: number }) {
   const r = 9;
   const c = 2 * Math.PI * r;
   return (
-    <svg className="pointer-events-none absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 22 22" aria-hidden>
+    <svg className="listen-ring pointer-events-none absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 22 22" aria-hidden>
       <circle cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeOpacity="0.16" strokeWidth="2.4" />
       <circle className="listen-progress-ring" cx="11" cy="11" r={r} fill="none" stroke="currentColor" strokeWidth="3.1" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0.02, fraction))} strokeLinecap="round" />
     </svg>
@@ -406,7 +428,9 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
           </div>
           {retentionDays != null && <p className="text-[10px] text-neutral-500">{isChat
             ? tx('Los audios del chat se borran solos a los {days} días salvo que los conserves.', { days: retentionDays })
-            : tx('Se borran solos a los {days} días salvo los conservados.', { days: retentionDays })}</p>}
+            : retentionDays === 1
+              ? t('Se borran solos al cabo de un día salvo los conservados.')
+              : tx('Se borran solos a los {days} días salvo los conservados.', { days: retentionDays })}</p>}
         </div>}
 
         {error && <p className="rounded border border-red-300 bg-red-50 px-2 py-1.5 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300" role="alert">{error}</p>}
@@ -426,7 +450,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
 }
 
 function retentionFor(settings: AppSettings, kind: AudioEntityKind): number | null {
-  const surface = kind === 'chat_message' ? 'research_chat' : kind === 'dictionary_entry' ? 'dictionary' : kind === 'deep_research' ? 'deep_research' : kind === 'immersion' ? 'immersion' : null;
+  const surface = kind === 'chat_message' ? 'research_chat' : kind === 'dictionary_entry' ? 'dictionary' : kind === 'deep_research' ? 'deep_research' : kind === 'immersion' ? 'immersion' : kind === 'scriptor_document' ? 'scriptor' : null;
   return surface ? ttsRetentionDays(sanitizeTtsRetention(settings.ttsRetention), surface) : null;
 }
 

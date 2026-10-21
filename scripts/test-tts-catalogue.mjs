@@ -96,7 +96,11 @@ try {
   const defaults = tts.sanitizeTtsRetention(undefined);
   assert.equal(defaults.enabled, true);
   assert.equal(defaults.days, 7);
-  for (const surface of tts.TTS_SURFACES) assert.equal(tts.ttsRetentionDays(defaults, surface), 7);
+  for (const surface of tts.TTS_SURFACES) assert.equal(tts.ttsRetentionDays(defaults, surface), surface === 'scriptor' ? 1 : 7);
+  // Settings saved before Scriptor existed get its one-day default, not the global rule.
+  const older = tts.sanitizeTtsRetention({ enabled: false, days: 30, perSurface: { research_chat: { mode: 'inherit', days: 30 } } });
+  assert.deepEqual(older.perSurface.scriptor, { mode: 'days', days: 1 });
+  assert.deepEqual(older.perSurface.immersion, { mode: 'inherit', days: 30 }, 'older surfaces keep inheriting');
   const custom = tts.sanitizeTtsRetention({
     enabled: false, days: 30,
     perSurface: { research_chat: { mode: 'days', days: 1 }, dictionary: { mode: 'off', days: 9 }, deep_research: { mode: 'bogus' } },

@@ -163,7 +163,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 205;
+export const SCHEMA_VERSION = 206;
 
 // What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
 // (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
@@ -9666,6 +9666,35 @@ export const migrations: Migration[] = [
       SELECT id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at FROM audio_clips;
     DROP TABLE audio_clips;
     ALTER TABLE audio_clips_v205 RENAME TO audio_clips;
+    CREATE INDEX idx_audio_clips_entity ON audio_clips(entity_kind, entity_id, segment_index);
+    CREATE INDEX idx_audio_clips_retention ON audio_clips(entity_kind, pinned, created_at);
+  ` },
+  { version: 206, up: /* sql */ `
+    -- Nodus Scriptor narrates its documents too ('scriptor_document'). Same rebuild as v205,
+    -- copying every column so a re-run keeps model and pinned state. Columns are unchanged,
+    -- and v205 and v206 ship in the same release, so SYNC_SCHEMA_VERSION stays at 205.
+    DROP TABLE IF EXISTS audio_clips_v206;
+    CREATE TABLE audio_clips_v206 (
+      id            TEXT PRIMARY KEY,
+      entity_kind   TEXT NOT NULL CHECK (entity_kind IN ('immersion', 'deep_research', 'chat_message', 'dictionary_entry', 'scriptor_document')),
+      entity_id     TEXT NOT NULL,
+      segment_index INTEGER NOT NULL,
+      segment_label TEXT NOT NULL DEFAULT '',
+      provider      TEXT NOT NULL DEFAULT 'ming',
+      voice         TEXT NOT NULL DEFAULT '',
+      language      TEXT NOT NULL DEFAULT '',
+      file_name     TEXT NOT NULL,
+      bytes         INTEGER NOT NULL DEFAULT 0,
+      duration_sec  REAL NOT NULL DEFAULT 0,
+      sample_rate   INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT NOT NULL,
+      model_id      TEXT NOT NULL DEFAULT '',
+      pinned        INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO audio_clips_v206 (id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at, model_id, pinned)
+      SELECT id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at, model_id, pinned FROM audio_clips;
+    DROP TABLE audio_clips;
+    ALTER TABLE audio_clips_v206 RENAME TO audio_clips;
     CREATE INDEX idx_audio_clips_entity ON audio_clips(entity_kind, entity_id, segment_index);
     CREATE INDEX idx_audio_clips_retention ON audio_clips(entity_kind, pinned, created_at);
   ` },

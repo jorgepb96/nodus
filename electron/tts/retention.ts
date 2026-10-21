@@ -14,6 +14,7 @@ export const SURFACE_KINDS: Readonly<Record<TtsSurface, AudioEntityKind>> = {
   dictionary: 'dictionary_entry',
   deep_research: 'deep_research',
   immersion: 'immersion',
+  scriptor: 'scriptor_document',
 };
 
 export interface RetentionStore {

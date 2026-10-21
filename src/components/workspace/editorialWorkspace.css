@@ -58,7 +58,7 @@ html.theme-active:is(.light,.dark) .editorial-editor.editorial-editor { backgrou
 .editorial-save-status.dirty { color: #a57b3e; }
 .editorial-header-action { display: flex; gap: 6px; align-items: center; font-size: 11px; padding: 6px 9px; border-radius: 6px; white-space: nowrap; }
 .editorial-editor-header .editorial-header-icon { width: 32px; height: 32px; flex-shrink: 0; justify-content: center; padding: 0; }
-.editorial-header-action:hover, .editorial-header-action[aria-pressed="true"] { background: var(--ew-tint); color: var(--ew-accent); }
+.editorial-header-action:hover, .editorial-header-action[aria-pressed="true"], .editorial-header-action[aria-expanded="true"] { background: var(--ew-tint); color: var(--ew-accent); }
 .editorial-options { position: relative; }
 .editorial-options summary { list-style: none; border: 1px solid var(--ew-line); border-radius: 6px; font-size: 18px; padding: 0 9px 5px; line-height: 20px; cursor: pointer; }
 .editorial-options summary::-webkit-details-marker { display: none; }
@@ -143,6 +143,8 @@ html.theme-active:is(.light,.dark) .editorial-editor.editorial-editor { backgrou
    Only controls with a label or a dropdown arrow need a rectangular footprint. */
 .bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) { --scriptor-control-size: 36px; font: 13px system-ui,sans-serif; }
 .bn-formatting-toolbar .study-selection-tools-host { display: contents; }
+/* The read-aloud progress ring spans the whole button, unlike the 18px icons beside it. */
+.bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) .study-selection-tool > svg.listen-ring { width: 100%; height: 100%; }
 .bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) :is(.bn-ak-button,.bn-button,.study-selection-tool,.study-selection-color,.study-selection-heading) {
   box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
   width: var(--scriptor-control-size); min-width: var(--scriptor-control-size); height: var(--scriptor-control-size); min-height: var(--scriptor-control-size);

@@ -14,7 +14,7 @@ import type { TtsEvent, TtsSpeakRequest, TtsSpeakStarted } from '@shared/api/tts
 import type { TtsVoiceSaveInput } from '@shared/ttsVoices';
 import { getSettings } from '../db/settingsRepo';
 import { probeNvidia } from '../ai/nodusLocalAi';
-import { saveClipAsync, deleteClip } from '../audio/audioService';
+import { saveClipAsync, deleteClip, pruneOrphanScriptorNarration } from '../audio/audioService';
 import { audioClipBytesByKind, listExpiredAudioClips, setAudioClipPinned } from '../db/audioClipsRepo';
 import { TtsInstaller, type TtsInstalledRuntime } from './install';
 import { TtsModelStore } from './models';
@@ -299,7 +299,8 @@ export class TtsService {
   pinClip(clipId: string, pinned: boolean): void { setAudioClipPinned(clipId, pinned); }
 
   async sweepNow(): Promise<number> {
-    return sweepNarrationClips(getSettings().ttsRetention, {
+    const orphans = pruneOrphanScriptorNarration();
+    return orphans + await sweepNarrationClips(getSettings().ttsRetention, {
       listExpired: (kind, cutoff, limit) => listExpiredAudioClips(kind, cutoff, limit),
       remove: (id) => deleteClip(id),
     });

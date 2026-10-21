@@ -9,6 +9,11 @@ on:
   pull_request:
   merge_group:
   workflow_dispatch:
+    inputs:
+      support_signing_qualification:
+        description: Run signed Support installation qualification without publishing
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       ref:
@@ -25,7 +30,7 @@ env:
   ONNXRUNTIME_NODE_INSTALL_CUDA: skip
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: ci-${{ github.workflow }}-${{ inputs.support_signing_qualification && 'signed-support-' || '' }}${{ github.head_ref || github.ref_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
 
 jobs:
@@ -554,3 +559,10 @@ jobs:
       - name: Every discovered test file passed exactly once on this commit
         if: needs.changes.outputs.full == 'true'
         run: node scripts/ci-test-shards.mjs verify
+
+  support-signed-qualification:
+    if: github.event_name == 'workflow_dispatch' && inputs.support_signing_qualification == true
+    uses: ./.github/workflows/support-signed-qualification.yml
+    with:
+      ref: ${{ github.sha }}
+    secrets: inherit

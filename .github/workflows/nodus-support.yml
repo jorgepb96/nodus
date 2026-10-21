@@ -1,0 +1,107 @@
+name: Nodus Support safety and native UI
+on:
+  pull_request:
+    paths: ['apps/nodus-support/**','shared/**','electron/**','src/theme/**','scripts/*nodus-support*','scripts/support-*','scripts/configure-support-signing.mjs','scripts/lib/support*.mjs','package.json','package-lock.json','vite.config.ts','build/**','.github/workflows/nodus-support.yml','.github/workflows/release-support.yml']
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: nodus-support-safety-${{ inputs.ref || github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, macos-15-intel, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=6144
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node node_modules/electron/install.js
+      - name: Linux GUI dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 rpm clang-15 policykit-1
+      - name: Build the native database and calendar dependencies
+        if: runner.os != 'Linux'
+        run: npx --no-install electron-rebuild -f -w better-sqlite3 && node scripts/build-apple-calendar.cjs
+      - name: Build Linux native dependencies with the release compiler
+        if: runner.os == 'Linux'
+        run: npx --no-install electron-rebuild -f -w better-sqlite3
+        env:
+          CC: clang-15
+          CXX: clang++-15
+      - name: Prepare the Linux sandbox helper used by direct protocol workers
+        if: runner.os == 'Linux'
+        run: sudo chown root:root node_modules/electron/dist/chrome-sandbox && sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+      - run: npm run support:typecheck
+      - run: npm run support:test
+        env:
+          NODUS_SUPPORT_LARGE_FILES: '1'
+      - run: npm run support:build
+      - name: Kill transaction processes and recover their durable journals
+        run: node scripts/verify-nodus-support-crashes.mjs
+      - name: Native full disk, permission and disconnected volume recovery
+        run: node scripts/verify-nodus-support-storage-faults.mjs
+      - name: Build the application bootstrap for the isolated native protocol
+        run: npx vite build
+      - name: Native support application, twelve languages, both themes
+        if: runner.os != 'Linux'
+        run: node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-end-to-end.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-settings.mjs && node scripts/verify-nodus-support-flow.mjs && node scripts/verify-nodus-support-protocol.mjs
+      - name: Native Linux support application
+        if: runner.os == 'Linux'
+        run: xvfb-run -a sh -c 'node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-end-to-end.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-settings.mjs && node scripts/verify-nodus-support-flow.mjs && node scripts/verify-nodus-support-protocol.mjs'
+      - name: Package every native support format
+        run: npm run support:dist
+      - name: Verify native AppImage switch and rollback
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/verify-nodus-support-native-switch.mjs
+      - name: Verify native DEB and RPM installation and retained repair
+        if: runner.os == 'Linux'
+        run: node scripts/verify-nodus-support-linux-packages.mjs
+      - name: Verify native macOS bundle switch and rollback
+        if: runner.os == 'macOS'
+        run: node scripts/verify-nodus-support-native-switch.mjs
+      - name: Verify non-destructive native Windows installer repairs
+        if: runner.os == 'Windows'
+        run: node scripts/verify-nodus-support-nsis.mjs
+      - name: Verify the managed download and real independent startup
+        if: runner.os != 'Linux'
+        run: node scripts/verify-nodus-support-on-demand.mjs
+      - name: Verify Linux managed download and real independent startup
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/verify-nodus-support-on-demand.mjs
+      - name: Verify the independent packaged runtime
+        if: runner.os != 'Linux'
+        run: node scripts/verify-nodus-support-runtime.mjs
+      - name: Verify the independent Linux runtime
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/verify-nodus-support-runtime.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nodus-support-review-packages-${{ matrix.os }}
+          path: release-support/Nodus-Support-*
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: nodus-support-${{ matrix.os }}
+          path: |
+            .ci/support-ui/
+            .ci/support-native/

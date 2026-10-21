@@ -44,6 +44,11 @@ export function auditQaDatabaseOpen(databasePath: string, access: QaDatabaseAcce
   if (!isInside(profile, auditFile)) {
     throw new Error(`QA abortado: el registro de bases no está dentro del perfil aislado (${auditFile}).`);
   }
+  if (process.env.NODUS_SUPPORT_INTERACTIVE === '1' || process.env.NODUS_SUPPORT_PROBE === '1') {
+    for (const file of [databasePath,`${databasePath}-wal`,`${databasePath}-shm`]) {
+      if (fs.existsSync(file) && (fs.lstatSync(file).isSymbolicLink() || fs.statSync(file).nlink > 1)) throw new Error('Support databases must be independent copies');
+    }
+  }
 
   fs.mkdirSync(path.dirname(auditFile), { recursive: true });
   fs.appendFileSync(

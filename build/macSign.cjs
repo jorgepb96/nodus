@@ -126,3 +126,5 @@ module.exports = async function signMacApplication(options) {
 };
 
 module.exports.parseDeveloperIdIdentities = parseDeveloperIdIdentities;
+
+module.exports.resolveDeveloperIdIdentity = resolveDeveloperIdIdentity;

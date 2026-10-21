@@ -192,15 +192,19 @@ test('every microphone access is blocked by the just-in-time recording notice', 
 });
 
 test('file pickers open directly, with no import privacy modal', async () => {
-  // Native pickers stay centralised in a single audited entry point, so future
-  // importers cannot quietly reach dialog.showOpenDialog on their own.
+  // Import pickers stay centralised. Support's separate wrapper confines the
+  // returned paths to the isolated copy; it does not introduce an import gate.
   const electronFiles = await sourceFiles('electron', new Set(['.ts']));
   const rawDialogs = [];
   for (const file of electronFiles) {
     const source = await readFile(file, 'utf8');
     if (source.includes('dialog.showOpenDialog')) rawDialogs.push(path.relative(repoRoot, file));
   }
-  assert.deepEqual(rawDialogs, ['electron/privacy.ts']);
+  assert.deepEqual(rawDialogs.sort(), ['electron/privacy.ts', 'electron/support/isolation.ts']);
+  const isolation = await read('electron/support/isolation.ts');
+  assert.match(isolation, /const open=dialog\.showOpenDialog,openSync=dialog\.showOpenDialogSync/);
+  assert.match(isolation, /Reflect\.apply\(open,dialog,args\)[\s\S]*?boundary\.check\(file\)/);
+  assert.match(isolation, /Reflect\.apply\(openSync,dialog,args\)[\s\S]*?boundary\.check\(file\)/);
 
   // That entry point opens the OS picker directly: file imports are processed
   // locally and no longer interrupt the user with an in-app consent modal.

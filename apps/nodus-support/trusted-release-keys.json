@@ -1,0 +1,9 @@
+{
+  "format": "nodus.support-trusted-keys/1",
+  "keys": [
+    {
+      "keyId": "nodus-support-2026-01",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAjCkS3AZaKHOxj0+Egeb0AB6SBbSHbyIx4YlTZmB/Xqo=\n-----END PUBLIC KEY-----\n"
+    }
+  ]
+}

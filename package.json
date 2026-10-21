@@ -21,6 +21,13 @@
   "main": "dist-electron/main.js",
   "type": "module",
   "scripts": {
+    "support:keygen": "node scripts/support-keygen.mjs",
+    "support:verify-data": "node scripts/verify-nodus-support-data.mjs",
+    "support:build": "node scripts/build-nodus-support.mjs",
+    "support:dev": "npm run support:build && electron build/support-app",
+    "support:dist": "node scripts/build-nodus-support.mjs --artifacts",
+    "support:typecheck": "tsc --noEmit -p apps/nodus-support/tsconfig.json",
+    "support:test": "node --test scripts/test-nodus-support-*.mjs",
     "dev": "vite",
     "build": "npm run build:cloudflare && npm run typecheck && vite build",
     "build:cloudflare": "node scripts/build-cloudflare-worker.mjs",
@@ -510,7 +517,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
     },
     "linux": {
       "target": [

@@ -118,6 +118,7 @@ export function requestAppleCalendarSync(): void {
   wake.unref();
 }
 export function startAppleCalendarSync(): void {
+  if(process.env.NODUS_SUPPORT_INTERACTIVE==='1'||process.env.NODUS_SUPPORT_PROBE==='1')return;
   if (started || process.platform !== 'darwin') return;
   started = true;
   timer = setInterval(() => { void cycle(); }, 5_000);

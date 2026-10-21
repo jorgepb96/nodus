@@ -349,6 +349,7 @@ async function mount(settings, getModelCatalog = catalog.getModelCatalog, fullPr
     getGitHubCopilotSubscriptionStatus: async () => ({ connected: false, available: true, loginPending: false, quota: [] }),
     getOpenCodeGoUsageStatus: async () => null,
     onOpenCodeGoUsageStatusChanged: () => () => {},
+    getLocalAiDiagnostics: async () => [],
     onChatGptSubscriptionStatusChanged: listener => { listeners.codex = listener; return () => delete listeners.codex; },
     onGitHubCopilotSubscriptionStatusChanged: listener => { listeners.copilot = listener; return () => delete listeners.copilot; },
   };
@@ -366,7 +367,7 @@ async function mount(settings, getModelCatalog = catalog.getModelCatalog, fullPr
 
 async function providerSetup(provider = 'xiaomi', settings = {}) {
   const ui = await mount({ favorites: [], ...settings }, undefined, true);
-  const row = ui.dom.window.document.querySelector(`[data-testid="provider-${provider}"]`);
+  const row = ui.dom.window.document.querySelector(`[data-testid="${provider === 'custom' ? 'provider-row-custom' : `provider-${provider}`}"]`);
   await ui.click(row.querySelector('button'));
   return Object.assign(ui, {
     row,
@@ -450,6 +451,54 @@ test('model setup distinguishes rejected credentials from connection errors and 
     assert.equal(ui.alert(), undefined);
     assert.match(ui.row.textContent, /after-retry/);
   } finally { await ui.close(); }
+});
+
+test('custom and local setup save optional credentials before loading or testing, and still work without keys', async () => {
+  for (const provider of ['custom', 'ollama', 'lmstudio']) {
+    for (const action of ['Cargar modelos', 'Probar conexión']) {
+      const ui = await providerSetup(provider);
+      const calls = [];
+      ui.dom.window.nodus.setApiKey = async () => { calls.push('save'); };
+      ui.dom.window.nodus.listModels = async () => { calls.push('load'); return []; };
+      ui.dom.window.nodus.testCustomProvider = ui.dom.window.nodus.testLocalProvider = async () => { calls.push('test'); return {ok:true,modelCount:1}; };
+      try {
+        await ui.type('synthetic-optional-key');
+        await ui.click(ui.button(action));
+        const request = action === 'Cargar modelos' ? 'load' : 'test';
+        assert.deepEqual(calls, ['save',request], `${provider}: ${action}`);
+        assert.equal(ui.input().value, '');
+        assert.equal(ui.alert(), undefined);
+        calls.length = 0;
+        await ui.click(ui.button(action));
+        assert.deepEqual(calls, [request], 'an empty draft never requires another key');
+      } finally { await ui.close(); }
+    }
+    const ui = await providerSetup(provider);
+    let requests = 0;
+    ui.dom.window.nodus.listModels = async () => { requests++; return []; };
+    try {
+      await ui.click(ui.button('Cargar modelos'));
+      assert.equal(requests,1,'optional providers remain keyless');
+    } finally { await ui.close(); }
+  }
+});
+
+test('optional provider storage failures retain the draft and prevent catalogue and connection requests', async () => {
+  for (const provider of ['custom', 'ollama', 'lmstudio']) {
+    const ui = await providerSetup(provider);
+    let requests = 0;
+    ui.dom.window.nodus.setApiKey = async () => { throw Error('encrypted storage unavailable'); };
+    ui.dom.window.nodus.listModels = ui.dom.window.nodus.testCustomProvider = ui.dom.window.nodus.testLocalProvider = async () => { requests++; return []; };
+    try {
+      await ui.type('synthetic-optional-key');
+      for (const action of ['Guardar','Cargar modelos','Probar conexión']) {
+        await ui.click(ui.button(action));
+        assert.equal(ui.alert(),'encrypted storage unavailable');
+        assert.equal(ui.input().value,'synthetic-optional-key');
+      }
+      assert.equal(requests,0);
+    } finally { await ui.close(); }
+  }
 });
 
 test('rendered custom check uses the real service: offline manual models remain unconfirmed', async () => {

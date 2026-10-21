@@ -1,6 +1,6 @@
 # API keys and built-in model downloads
 
-In **Settings → AI Models**, **Load models** first saves any API key entered in the provider's field, then reads its model catalogue. **Save** remains available on its own. The saved-key indicator confirms local encrypted storage; it does not confirm the key's permissions with the provider.
+In **Settings → AI Models**, **Load models** first saves any API key entered in the provider's field, then reads its model catalogue. **Test connection** also saves optional Custom/Ollama/LM Studio credentials before testing. **Save** remains available on its own. The saved-key indicator confirms local encrypted storage; it does not confirm the key's permissions with the provider.
 
 If saving fails, Nodus shows the storage error, retains the typed key for another attempt, and makes no catalogue request. A missing key is explained before requesting a private catalogue. OpenRouter and OpenCode Go retain their public, keyless catalogues. HTTP 401/403 responses are shown as a key or permissions rejection, separately from connection errors.
 

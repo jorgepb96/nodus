@@ -83,6 +83,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
 
   const close = (restoreFocus = true) => {
     setOpen(false);
+    setOpenFilter(null);
     if (restoreFocus) window.setTimeout(() => trigger.current?.focus({ preventScroll: true }));
   };
 
@@ -131,6 +132,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
     const outside = (event: MouseEvent) => {
       if (trigger.current?.contains(event.target as Node) || popup.current?.contains(event.target as Node)) return;
       setOpen(false);
+      setOpenFilter(null);
     };
     document.addEventListener('mousedown', outside);
     return () => document.removeEventListener('mousedown', outside);
@@ -165,6 +167,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
         if (open) close(false);
         else {
           setQuery('');
+          setOpenFilter(null);
           setOpen(true);
         }
       }}

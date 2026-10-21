@@ -21,6 +21,11 @@ test('the Research chat header narrates the latest finished answer', () => {
     'it narrates exactly what is on screen');
   assert.match(modal, /latestListenTarget && <ListenButton/,
     'the action is hidden until there is an answer');
+  assert.ok(modal.indexOf('research-chat-header-listen') > modal.indexOf('<AcademicSecondary compact={simpleInterface}'),
+    'the listen action is the rightmost header control');
+  const headerCss = read('src/views/researchAssistant.css');
+  assert.match(headerCss, /\.research-assistant-actions \.concilium-control > \.concilium-trigger \{ box-sizing: border-box; height: 36px;/, 'Concilium matches the 36px header controls');
+  assert.match(headerCss, /\.research-assistant-actions \.concilium-control \{ flex: 0 0 auto; \}/, 'Concilium keeps its full width beside the rightmost listen action');
 });
 
 test('the header action opens the balloon and starts playback or generation once', () => {

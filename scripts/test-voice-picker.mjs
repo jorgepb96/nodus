@@ -23,6 +23,7 @@ test('the voice picker has a search box and model/language filters', () => {
   assert.match(picker, /aria-multiselectable="true"/);
   assert.match(picker, /type="checkbox"/);
   assert.match(picker, /voice-picker-choice-panel/);
+  assert.match(picker, /setOpenFilter\(null\)/, 'closing the picker clears its filter panel');
   assert.match(picker, /role="option"/);
   assert.match(picker, /aria-selected=\{active\}/);
   assert.match(picker, /showPopover\(\)/, 'the list escapes the balloon scroll container');

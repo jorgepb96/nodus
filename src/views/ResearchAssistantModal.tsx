@@ -1256,14 +1256,6 @@ export function ResearchAssistantModal({
               <span className="chat-skills-count">{selectedCount}</span>
             </button>
           )}
-          {latestListenTarget && <ListenButton
-            testId="research-chat-header-listen"
-            toolbar
-            autoStart
-            size={15}
-            label={t('Escuchar')}
-            target={latestListenTarget}
-          />}
           <AcademicSecondary compact={simpleInterface} label="Opciones">
             {simpleInterface && chatModelControl}
           <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={(sending && !!adapter) || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
@@ -1275,6 +1267,14 @@ export function ResearchAssistantModal({
             {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending && !!adapter} />}
           </AcademicSecondary>
           {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[...CONTEXT_LAYERS.flatMap(layer => contextLayers[layer.id] ? [t(layer.label)] : []), ...(turnWebSearch !== 'off' ? [t('Búsqueda web')] : [])].join(' · ')}</span>}
+          {latestListenTarget && <ListenButton
+            testId="research-chat-header-listen"
+            toolbar
+            autoStart
+            size={15}
+            label={t('Escuchar')}
+            target={latestListenTarget}
+          />}
 
 
           </div>

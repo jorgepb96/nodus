@@ -1,3 +1,4 @@
+import { RELEASE_5_15_0_HIGHLIGHTS } from './releaseNotes5150';
 import { RELEASE_5_14_1_HIGHLIGHTS } from './releaseNotes5141';
 import { RELEASE_5_14_0_HIGHLIGHTS } from './releaseNotes5140';
 import { RELEASE_5_13_0_HIGHLIGHTS } from './releaseNotes5130';
@@ -128,6 +129,7 @@ const RELEASE_5_1_0_TR = [
 ];
 
 export const RELEASE_NOTES_TR: Record<string, string[]> = {
+  "5.15.0": RELEASE_5_15_0_HIGHLIGHTS.map(highlight => highlight['tr']),
   "5.14.1": RELEASE_5_14_1_HIGHLIGHTS.map(highlight => highlight['tr']),
   "5.14.0": RELEASE_5_14_0_HIGHLIGHTS.map(highlight => highlight['tr']),
   "5.13.0": RELEASE_5_13_0_HIGHLIGHTS.map(highlight => highlight['tr']),

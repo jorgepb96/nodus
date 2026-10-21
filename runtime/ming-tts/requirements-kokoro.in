@@ -1,0 +1,5 @@
+# Kokoro-82M TTS sidecar backend: ONNX Runtime on the CPU, no PyTorch.
+# Includes espeak-ng (through espeakng-loader) for English and Spanish phonemes.
+kokoro-onnx==0.6.1
+onnxruntime==1.31.0
+numpy==2.5.4

@@ -32,6 +32,8 @@ test('packaging generates and exposes the legal bundle', () => {
       ['build/zotero-mcp', 'zotero-mcp'],
       // Nodus Sign's optional engine adapter and its hash-pinned lock, outside the asar.
       ['electron/assets/sign', 'sign'],
+      // The Ming narration sidecar and its hash-pinned locks: run by a private Python, so outside the asar.
+      ['runtime/ming-tts', 'ming-tts'],
     ],
   );
   // Whatever else that folder gains, the shipped copy must never carry a live deployment's state:
@@ -84,12 +86,12 @@ test('licenses are visible in About and before local model downloads', () => {
   assert.match(read('src/views/Settings.tsx'), /data-testid="source-code"/);
   assert.match(read('src/legalDocs.ts'), /blob\/main\/THIRD_PARTY_NOTICES\.md/);
   assert.match(read('src/components/LocalAiModelsSettings.tsx'), /model\.licenseLabel/);
-  assert.match(read('src/views/AudioGenerationSettings.tsx'), /v\.licenseLabel/);
+  assert.match(read('src/views/NarrationSettings.tsx'), /model\.licenseLabel/);
   assert.match(read('shared/localAiModels.ts'), /LFM Open License 1\.0/);
-  assert.match(read('src/lib/audio/piper.ts'), /CC BY-NC-SA 4\.0 · no comercial/);
+  assert.match(read('shared/ttsModels.ts'), /licenseLabel: 'MIT'/);
   assert.match(read('src/components/LocalAiModelsSettings.tsx'), /llama\.cpp · MIT/);
   assert.match(read('src/components/LocalImageModelSettings.tsx'), /stable-diffusion\.cpp · MIT/);
   assert.match(read('src/components/LocalImageModelSettings.tsx'), /Apache 2\.0/);
   assert.match(read('THIRD_PARTY_NOTICES.md'), /FLUX\.2 \[klein\] 4B Q4/);
-  assert.match(read('THIRD_PARTY_NOTICES.md'), /eSpeak NG/);
+  assert.match(read('THIRD_PARTY_NOTICES.md'), /Ming-3\.0-tts/);
 });

@@ -41,8 +41,8 @@ await build({
   bundle: true,
   format: 'esm',
   platform: 'node',
+    alias: { electron: path.join(repoRoot, 'scripts/stub-electron.mjs'), '@shared': path.join(repoRoot, 'shared') },
   logLevel: 'silent',
-  alias: { '@shared': path.join(repoRoot, 'shared') },
   plugins: [{
     name: 'stub-deps',
     setup(b) {

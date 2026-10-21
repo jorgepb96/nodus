@@ -1,6 +1,6 @@
 // Encode mono float samples as a 16-bit PCM WAV. HTML5 <audio> in Chromium does
-// not play 32-bit-float WAV (which is what transformers.js RawAudio.toBlob emits),
-// so Kokoro output is re-encoded to 16-bit PCM here before it is persisted.
+// not play 32-bit-float WAV, so dictation clips and narration reference voices are
+// encoded as 16-bit PCM here before they are sent to the main process.
 export function encodeWavPcm16(samples: Float32Array, sampleRate: number): Uint8Array {
   const numFrames = samples.length;
   const bytesPerSample = 2;

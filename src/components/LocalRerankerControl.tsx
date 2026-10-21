@@ -5,6 +5,7 @@ import { t, tx } from '../i18n';
 import { ConfirmModal } from './ConfirmModal';
 import { SettingsModelDot, SettingsModelList, settingsModelRowClass } from './SettingsModelList';
 import { Icon } from './ui';
+import { ipcErrorText } from '../lib/ipcErrorText';
 
 const megabytes = (bytes: number) => `${Math.round(bytes / 1024 ** 2)} MB`;
 
@@ -19,7 +20,7 @@ export function LocalRerankerControl({ enabled, selected, onChange, onSelect }: 
   const cancelled = useRef(false), mounted = useRef(true);
   const selectedId = normalizeLocalRerankerId(selected);
   const refresh = () => window.nodus.getLocalRerankerStatus().then(next => { if (mounted.current) setStatus(next); });
-  useEffect(() => { mounted.current = true; void refresh().catch(cause => { if (mounted.current) setError(String(cause)); }); return () => { mounted.current = false; }; }, [selectedId]);
+  useEffect(() => { mounted.current = true; void refresh().catch(cause => { if (mounted.current) setError(ipcErrorText(cause)); }); return () => { mounted.current = false; }; }, [selectedId]);
   const models = status?.models ?? [];
   const downloading = models.some(model => model.downloading);
   useEffect(() => {
@@ -30,7 +31,7 @@ export function LocalRerankerControl({ enabled, selected, onChange, onSelect }: 
   const run = async (key: string, action: () => Promise<LocalRerankerStatus | unknown>) => {
     setBusy(key); setError(''); cancelled.current = false;
     try { const next = await action(); if (mounted.current && next && typeof next === 'object' && 'models' in next) setStatus(next as LocalRerankerStatus); else await refresh(); }
-    catch (cause) { if (mounted.current && !cancelled.current) setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { if (mounted.current && !cancelled.current) setError(ipcErrorText(cause)); }
     finally { if (mounted.current) setBusy(''); }
   };
   const remove = () => {
@@ -45,7 +46,7 @@ export function LocalRerankerControl({ enabled, selected, onChange, onSelect }: 
   };
   const selectedReady = models.find(model => model.id === selectedId)?.available ?? false;
   return <div className="space-y-2 rounded-lg border border-neutral-700 p-3 text-sm" data-testid="local-reranker-control">
-    <label className="flex gap-2"><input type="checkbox" checked={enabled && selectedReady} disabled={!selectedReady || Boolean(busy)} onChange={event => { void onChange(event.target.checked).catch(cause => setError(String(cause))); }} />{t('Reordenamiento local opcional')}</label>
+    <label className="flex gap-2"><input type="checkbox" checked={enabled && selectedReady} disabled={!selectedReady || Boolean(busy)} onChange={event => { void onChange(event.target.checked).catch(cause => setError(ipcErrorText(cause))); }} />{t('Reordenamiento local opcional')}</label>
     <p className="text-xs text-neutral-500">{t('Ordena los candidatos de la búsqueda documental con un modelo local. No modifica ni regenera embeddings. Si falla, se conserva el orden original.')}</p>
     <SettingsModelList data-testid="local-reranker-models">
       {LOCAL_RERANKER_MODELS.map(model => {
@@ -69,7 +70,7 @@ export function LocalRerankerControl({ enabled, selected, onChange, onSelect }: 
           <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
             {local?.downloading
               ? <><span className="text-[10px] tabular-nums">{Math.round(local.progress * 100)}%</span>
-                <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => { cancelled.current = true; void window.nodus.prepareLocalReranker('cancel', model.id).then(setStatus).catch(cause => setError(String(cause))); }}>{t('Cancelar descarga')}</button></>
+                <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => { cancelled.current = true; void window.nodus.prepareLocalReranker('cancel', model.id).then(setStatus).catch(cause => setError(ipcErrorText(cause))); }}>{t('Cancelar descarga')}</button></>
               : local?.available
                 ? <>
                   {isSelected

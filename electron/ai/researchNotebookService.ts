@@ -6,7 +6,7 @@ import { getDb } from '../db/database';
 import { getActiveVault } from '../vaults/vaultRegistry';
 import * as notebooks from '../db/researchNotebooksRepo';
 import { researchCorpusInventory } from './researchCorpusInventory';
-import { researchFingerprint, resolveNotebookScope, selectResearchDocuments } from './researchCorpusScope';
+import { researchFingerprint, researchScopeAuthorization, resolveNotebookScope, selectResearchDocuments } from './researchCorpusScope';
 import { resolveResearchSourceWorkIds } from './researchSourceScope';
 import { notifyAuthoredResearchSourceChanged } from './researchCorpusEvents';
 import { embeddingConfigurationUsable, getResearchPreparationInventory, pinPublishedResearchDocuments, prepareResearchDocuments } from './documentaryPreparation';
@@ -123,7 +123,7 @@ export function validateNotebookRequest(input: ResearchChatRequest): void {
   if (!scope) return;
   if (getActiveVault().id !== scope.vaultId) throw new Error('research_scope_changed');
   const current = scope.notebookId ? resolveResearchNotebook(scope.notebookId) : resolveAcademicResearchScope(input.selection.sourceFilter, input);
-  if (current.id !== scope.id) throw new Error('research_scope_changed');
+  if (researchScopeAuthorization(current) !== researchScopeAuthorization(scope)) throw new Error('research_scope_changed');
 }
 
 function authorizedNotebookHistory(input: ResearchChatRequest, scope: ResolvedResearchScope): ResearchChatRequest['messages'] {

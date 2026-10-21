@@ -69,7 +69,7 @@ import type { DictionaryProgress } from '@shared/dictionary';
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { currentResearchHarness, researchHarnessEnabled, researchHarnessStage, withResearchHarness } from './researchHarnessRuntime';
 import { dictionaryEditorialContext, dictionaryHarnessContext } from './researchHarnessContext';
-import { researchFingerprint } from './researchCorpusScope';
+import { researchFingerprint, researchScopeAuthorization } from './researchCorpusScope';
 import { planResearchTurn } from './researchTurnPlanner';
 
 export type DictionaryHarnessRequest = DictionaryGenerationRequest & { researchOperation?: 'initial' | 'scan' };
@@ -85,7 +85,7 @@ async function withDictionaryResearchHarness<T extends object>(request: Dictiona
     validate: () => {
       const current = getDictionaryEntry(entry.id);
       if (getActiveVault().id !== scope.vaultId || !current) throw new Error('research_source_not_authorized');
-      if (researchFingerprint(dictionaryEditorialContext(current)) !== editorial || resolve().id !== scope.id) throw new Error('research_run_context_changed');
+      if (researchFingerprint(dictionaryEditorialContext(current)) !== editorial || researchScopeAuthorization(resolve()) !== researchScopeAuthorization(scope)) throw new Error('research_run_context_changed');
     },
     onUpdate: researchRun => report?.({ ...latest, researchRun }),
   }, () => body({ ...request, model: context.model }, progress => { latest = progress; report?.({ ...progress, researchRun: currentResearchHarness()?.summary() }); }));

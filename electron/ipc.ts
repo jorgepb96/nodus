@@ -57,6 +57,7 @@ import { registerReactionIndexIpc } from './ipc/reactionIndex';
 import { registerCompassIpc } from './ipc/compass';
 import { registerLogsIpc } from './ipc/logs';
 import { registerDriftIpc } from './ipc/drift';
+import { registerTtsIpc } from './ipc/tts';
 import { setBrowserTheme } from './browser/tabs';
 import { browserHistoryRepository } from './browser/history';
 import { applyPipelineLogLimits, initPipelineLogs } from './logging/pipelineLogHost';
@@ -269,6 +270,7 @@ export function registerIpc(
   registerTestimoniesIpc(context);
   registerLogsIpc(context);
   registerDriftIpc(context);
+  registerTtsIpc(context);
   // The processing log has to be listening before any pipeline can run: this wires the
   // sink, prunes what the previous session left behind and arms the idle prune timer.
   initPipelineLogs();

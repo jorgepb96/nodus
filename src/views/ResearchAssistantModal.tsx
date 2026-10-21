@@ -60,6 +60,7 @@ import type {
   ResearchWebSearchMode,
 } from '@shared/types';
 import { Icon, sortModelRefs } from '../components/ui';
+import { ListenButton, type ListenTarget } from '../components/narration/Listen';
 import type { MarkdownCitation } from '../components/Markdown';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ChatTypingIndicator } from '../components/ChatTypingIndicator';
@@ -1173,6 +1174,17 @@ export function ResearchAssistantModal({
   const visibleConversations = conversations.filter((c) => showArchived || !c.archived);
   const archivedCount = conversations.filter((c) => c.archived).length;
   const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
+  // The header action narrates the latest finished answer without scrolling back to it.
+  // It opens the same Listen balloon and starts the saved clip or generation on the first click.
+  const latestListenMessage = !adapter && activeId
+    ? [...messages].reverse().find((message) => message.role === 'assistant' && !message.error && message.content.trim() && message.id !== streamingId) ?? null
+    : null;
+  const latestListenTarget: ListenTarget | null = latestListenMessage && activeId ? {
+    kind: 'chat_message',
+    id: `${activeId}:${latestListenMessage.id}`,
+    title: deriveNoteTitle(latestListenMessage.content, conversations.find((conversation) => conversation.id === activeId)?.title || t('Research chat')),
+    markdown: () => researchChatPresentation(latestListenMessage).content,
+  } : null;
   // Citations open their evidence workspace without replacing the conversation.
   const handleCitation = useCallback((c: MarkdownCitation, origin?: {conversationId?:string;messageId?:string}) => {
     setCitationOrigin(origin ?? {});
@@ -1256,6 +1268,14 @@ export function ResearchAssistantModal({
             {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending && !!adapter} />}
           </AcademicSecondary>
           {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[...CONTEXT_LAYERS.flatMap(layer => contextLayers[layer.id] ? [t(layer.label)] : []), ...(turnWebSearch !== 'off' ? [t('Búsqueda web')] : [])].join(' · ')}</span>}
+          {latestListenTarget && <ListenButton
+            testId="research-chat-header-listen"
+            toolbar
+            autoStart
+            size={15}
+            label={t('Escuchar')}
+            target={latestListenTarget}
+          />}
 
 
           </div>
@@ -1376,7 +1396,7 @@ export function ResearchAssistantModal({
                     className={`msg-in flex rounded-lg transition-shadow duration-500 ${highlightedMessageId === message.id ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-neutral-950' : ''} ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? 'pr-28' : 'pr-16'} ${
+                      className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? (adapter ? 'pr-28' : 'pr-32') : 'pr-16'} ${
                         message.role === 'user'
                           ? 'research-accent-solid text-white whitespace-pre-wrap'
                           : message.error
@@ -1424,6 +1444,20 @@ export function ResearchAssistantModal({
                           >
                             <Icon name="notebook" size={13} />
                           </button>
+                        )}
+                        {!adapter && message.role === 'assistant' && !message.error && message.content.trim() && message.id !== streamingId && activeId && (
+                          <ListenButton
+                            testId="research-chat-listen"
+                            direct
+                            className="research-accent-hover"
+                            target={{
+                              kind: 'chat_message',
+                              // Keyed by conversation so deleting a chat removes its audio too.
+                              id: `${activeId}:${message.id}`,
+                              title: deriveNoteTitle(message.content, conversations.find((conversation) => conversation.id === activeId)?.title || t('Research chat')),
+                              markdown: () => researchChatPresentation(message).content,
+                            }}
+                          />
                         )}
                         {message.role === 'assistant' && message.content.trim() && (
                           <button

@@ -81,8 +81,16 @@ try {
   await page.keyboard.press('Escape');
   for(const id of ['read','evidence','formula']){await page.mouse.move(10,100);await bar.locator(`[data-editorial-action="${id}"]`).hover();await page.waitForTimeout(700);assert.equal(await page.locator('[role=tooltip]:visible').count(),1,'single pinned action tooltip');}
   await page.mouse.move(10,100);
-  await select('second');await bar.getByTestId('study-audio-toggle').click();assert.match(await page.getByTestId('study-audio-panel').innerText(),/selección/i);
-  await bar.getByTestId('study-audio-toggle').click();
+  // Reading aloud uses the narration balloon: the pinned action and the header button open the same one.
+  const listenBalloon=page.getByTestId('listen-balloon');
+  await bar.getByTestId('study-audio-toggle').click();await listenBalloon.waitFor();assert.equal(await page.getByTestId('scriptor-header-listen').getAttribute('aria-expanded'),'true');
+  await bar.getByTestId('study-audio-toggle').click();await listenBalloon.waitFor({state:'hidden'});
+  await page.getByTestId('scriptor-header-listen').click();await listenBalloon.waitFor();await page.keyboard.press('Escape');await listenBalloon.waitFor({state:'hidden'});
+  // With no voice engine, reading the selection opens the balloon that installs one.
+  await select('second');const selectionListen=page.locator('.bn-formatting-toolbar').getByTestId('study-selection-listen');await selectionListen.waitFor();
+  assert.equal(await selectionListen.getAttribute('aria-label'),'Leer la selección en voz alta');
+  await selectionListen.click();await listenBalloon.waitFor();await page.getByTestId('listen-engine').waitFor();
+  await page.keyboard.press('Escape');await listenBalloon.waitFor({state:'hidden'});
   // A formatting command from overflow formats only the selected second occurrence.
   await select('second');await options.click();await page.getByTestId('study-inline-code').click();
   assert.equal(await page.locator('[data-id="second"] code').innerText(),'La memoria del paisaje');assert.equal(await page.locator('[data-id="first"] code').count(),0);

@@ -88,10 +88,20 @@ const PASSAGE_IS_CURRENT = `(
   )
 )`;
 
+/**
+ * Read the vectors where they live, through `embedding_read_passages`.
+ *
+ * Passage embeddings moved out of the source row into `embedding_index_values`, and that view
+ * is the compatibility projection presenting them under the old column names (see
+ * embeddingIndexSchema.ts); `worksRepo`'s passages/!passages filters and `passagesRepo`'s
+ * status reads already go through it. Reading the base table instead finds `embedding IS NULL`
+ * on every row of an indexed vault, so PASSAGE_IS_CURRENT was false for every passage: "Listo"
+ * returned nothing at all and "Incompleto" returned the entire analysable corpus.
+ */
 const PASSAGES_COMPLETE = `(
-  EXISTS (SELECT 1 FROM passages p WHERE p.nodus_id = w.nodus_id)
+  EXISTS (SELECT 1 FROM embedding_read_passages p WHERE p.nodus_id = w.nodus_id)
   AND NOT EXISTS (
-    SELECT 1 FROM passages p
+    SELECT 1 FROM embedding_read_passages p
      WHERE p.nodus_id = w.nodus_id
        AND NOT ${PASSAGE_IS_CURRENT}
   )

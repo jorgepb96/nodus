@@ -118,14 +118,17 @@ test('senders stamp the last migration that changed a table, not every migration
     `migration v${expected} is the last that changed a table: set SYNC_SCHEMA_VERSION to ${expected}`);
 });
 
-test('migration 201 publications remain importable by a schema-200 peer', () => {
-  const sender = new Database(path.join(userData, 'sender-201.sqlite'));
-  const receiverFile = path.join(userData, 'receiver-200.sqlite');
+// Migrations after the last shape change (index- or trigger-only ones, like v201) must not
+// raise the wire version: a peer still at that last shape change keeps importing.
+test('publications stay importable by a peer at the last shape change', () => {
+  const { SYNC_SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/syncSchemaVersion.ts'));
+  const sender = new Database(path.join(userData, 'sender-latest.sqlite'));
+  const receiverFile = path.join(userData, `receiver-${SYNC_SCHEMA_VERSION}.sqlite`);
   const receiver = new Database(receiverFile);
   try {
     runMigrations(sender);
-    assert.ok(sender.pragma('user_version', { simple: true }) >= 201);
-    for (const migration of migrations.filter(entry => entry.version <= 200)) {
+    assert.equal(sender.pragma('user_version', { simple: true }), SCHEMA_VERSION);
+    for (const migration of migrations.filter(entry => entry.version <= SYNC_SCHEMA_VERSION)) {
       receiver.transaction(() => {
         receiver.exec(migration.up);
         migration.after?.(receiver);
@@ -133,14 +136,14 @@ test('migration 201 publications remain importable by a schema-200 peer', () => 
       })();
     }
     sender.prepare('INSERT INTO notes (id, folder_id, title, kind, content, source_json, order_idx, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, NULL, 0, ?, ?)')
-      .run('wire-note', 'Compatible', 'markdown', 'from a newer index', '2026-10-01', '2026-10-01');
+      .run('wire-note', 'Compatible', 'markdown', 'from a newer build', '2026-10-01', '2026-10-01');
     const snapshot = buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true, nodusServerIncludePassages: false }, sender);
-    assert.equal(snapshot.schemaVersion, 200);
+    assert.equal(snapshot.schemaVersion, SYNC_SCHEMA_VERSION);
     const file = path.join(userData, 'compatible-snapshot.json');
     fs.writeFileSync(file, snapshot.buffer);
     const { importReplicaSnapshot } = require(path.join(repoRoot, 'electron/serverSync/serverReplicaWorker.ts'));
-    importReplicaSnapshot({ file, database: receiverFile, schemaVersion: 200 });
-    assert.equal(receiver.pragma('user_version', { simple: true }), 200);
-    assert.equal(receiver.prepare('SELECT content FROM notes WHERE id = ?').get('wire-note')?.content, 'from a newer index');
+    importReplicaSnapshot({ file, database: receiverFile, schemaVersion: SYNC_SCHEMA_VERSION });
+    assert.equal(receiver.pragma('user_version', { simple: true }), SYNC_SCHEMA_VERSION);
+    assert.equal(receiver.prepare('SELECT content FROM notes WHERE id = ?').get('wire-note')?.content, 'from a newer build');
   } finally { sender.close(); receiver.close(); }
 });

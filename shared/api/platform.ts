@@ -33,7 +33,6 @@ import type {
   EmbeddingProvider,
   GenerateTranslationRequest,
   GitHubCopilotSubscriptionStatus,
-  HumeVoiceInfo,
   ImageModelInfo,
   LocalProvider,
   LocalAiRequestDiagnostic,
@@ -254,7 +253,6 @@ export interface PlatformApi {
     entityId: string,
     input: { segmentIndex: number; segmentLabel: string; provider: AudioProvider; voice: string; language: string; bytes: Uint8Array }
   ): Promise<AudioClip>;
-  getAudioClipDataUrl(clipId: string): Promise<string | null>;
   deleteAudioClip(clipId: string): Promise<void>;
   deleteEntityAudioClips(entityKind: AudioEntityKind, entityId: string): Promise<void>;
   exportAudioClip(clipId: string): Promise<{ path: string } | null>;
@@ -274,13 +272,6 @@ export interface PlatformApi {
   deleteContentTranslation(id: string): Promise<void>;
   /** Fires for local and server-received translation changes while a reader stays open. */
   onContentTranslationsChanged(cb: (entityKind: TranslationEntityKind | null, entityId: string | null) => void): () => void;
-  // Hume cloud TTS (BYO-key). The key is stored in the main process; the renderer
-  // only learns whether one exists, the voice list, and the audio bytes.
-  humeStatus(): Promise<{ hasKey: boolean }>;
-  humeSetKey(key: string): Promise<{ hasKey: boolean }>;
-  humeClearKey(): Promise<{ hasKey: boolean }>;
-  humeVoices(language?: string): Promise<HumeVoiceInfo[]>;
-  humeSynthesize(voiceId: string, provider: 'HUME_AI' | 'CUSTOM_VOICE', text: string): Promise<Uint8Array>;
 
   // zotero
   zoteroPing(): Promise<ZoteroPingResult>;

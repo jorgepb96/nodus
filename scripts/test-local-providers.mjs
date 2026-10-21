@@ -89,6 +89,7 @@ try {
     bundle: true,
     format: 'esm',
     platform: 'node',
+    alias: { electron: path.join(repoRoot, 'scripts/stub-electron.mjs'), '@shared': path.join(repoRoot, 'shared') },
     logLevel: 'silent',
     plugins: [
       {
@@ -230,6 +231,7 @@ try {
     bundle: true,
     format: 'esm',
     platform: 'node',
+    alias: { electron: path.join(repoRoot, 'scripts/stub-electron.mjs'), '@shared': path.join(repoRoot, 'shared') },
     logLevel: 'silent',
     plugins: [{ name: 'stub', setup(b) {
       b.onResolve({ filter: /db\/settingsRepo$/ }, () => ({ path: deadStub }));

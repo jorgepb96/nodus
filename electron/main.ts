@@ -71,9 +71,15 @@ import { prefetchAgentRuntimesInUse } from './ai/agentRuntime';
 import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscription';
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
 import { killSearxngSync } from './websearch/searxngService';
+import { registerAudioProtocol, registerAudioSchemePrivileges } from './tts/audioProtocol';
+import { killTtsSync, ttsService } from './tts/service';
+import { scheduleNarrationRetention } from './tts/retention';
+import { audioClipPath } from './audio/audioService';
+import { ttsLiveDir } from './tts/paths';
 import { ensureDatabaseDeepResearchLane } from './ai/databaseDeepResearchLane';
 import { installProcessSafetyNet } from './util/processSafety';
 import { restoreAppWindows } from './windowLifecycle';
+import { startEventLoopBlockWatch, instrumentIntervalCallbacks } from './perf';
 import { registerImageProtocol, registerImageSchemePrivileges } from './imageProtocol';
 import { registerArchiveProtocol, registerArchiveSchemePrivileges } from './archiveProtocol';
 import { registerLibraryProtocol, registerLibrarySchemePrivileges } from './libraryProtocol';
@@ -119,6 +125,7 @@ if (!process.env.NODUS_USERDATA && !app.isDefaultProtocolClient('nodus')) {
 registerImageSchemePrivileges();
 registerArchiveSchemePrivileges();
 registerLibrarySchemePrivileges();
+registerAudioSchemePrivileges();
 registerCapabilitySchemePrivileges();
 
 if (process.platform === 'linux') {
@@ -1004,6 +1011,11 @@ app.whenReady().then(async () => {
   // Losing the lock queues a quit; do not open the database or a window.
   if (!hasSingleInstanceLock) return;
   const supportInteractive = process.env.NODUS_SUPPORT_INTERACTIVE === '1' && Boolean(process.env.NODUS_ISOLATED_ROOT);
+  // NODUS_PERF_JSONL turns this on: any synchronous stretch that holds the main
+  // loop for >50 ms lands in the same local JSONL as the pipeline timings.
+  startEventLoopBlockWatch();
+  // NODUS_PERF_TRACE_TIMERS=1 adds the slow recurring callbacks and where they were registered.
+  instrumentIntervalCallbacks();
   // Which capabilities exist has to be settled before the skill library is read: a skill
   // that depends on one cannot be judged available until its provider has registered.
   if (!supportInteractive) {
@@ -1083,6 +1095,8 @@ app.whenReady().then(async () => {
   upgradeWorldbuildingDemoImageQuality();
   upgradeWorldbuildingDemoNarrativeDepth();
   relocalizeWorldbuildingDemoData();
+  // Narration retention: unpinned clips older than each surface's rule go, in small batches.
+  scheduleNarrationRetention(() => ttsService().sweepNow());
   reconcileAuthorLayerOnce(); // one-time: collapse duplicate author nodes onto Zotero identity
   reconcileAuthorRolesOnce(); // one-time: stop crediting volume editors as authors
   repairGraphIntegrityOnce(); // one-time: drop links to deleted themes, put edge-only ideas back to sleep
@@ -1101,6 +1115,11 @@ app.whenReady().then(async () => {
   registerImageProtocol();
   registerArchiveProtocol();
   registerLibraryProtocol();
+  registerAudioProtocol({
+    liveDir: ttsLiveDir,
+    clipPath: (clipId) => audioClipPath(clipId),
+    voicePath: (voiceId) => ttsService().voices.referencePath(voiceId),
+  });
   setCopilotWindowProvider(() => mainWindow);
   setZoteroPluginWindowProvider(() => mainWindow);
   registerIpc(
@@ -1295,6 +1314,8 @@ app.on('window-all-closed', () => {
     killNodusLocalServerSync();
   // Research Chat's search server: stdin closes too, so it would also exit on its own.
   killSearxngSync();
+  // Ming narration sidecar: its stdin closes too; the process group is killed regardless.
+  killTtsSync();
     documentIndexQueue.stop();
     closeDb();
     app.quit();
@@ -1357,6 +1378,8 @@ app.on('before-quit', event => {
   killNodusLocalServerSync();
   // Research Chat's search server: stdin closes too, so it would also exit on its own.
   killSearxngSync();
+  // Ming narration sidecar: its stdin closes too; the process group is killed regardless.
+  killTtsSync();
   destroyBrowserSubsystem();
   closeGlobalLibraryRuntime();
   documentIndexQueue.stop();
@@ -1379,6 +1402,8 @@ updateAwareApp.on('before-quit-for-update', () => {
   killNodusLocalServerSync();
   // Research Chat's search server: stdin closes too, so it would also exit on its own.
   killSearxngSync();
+  // Ming narration sidecar: its stdin closes too; the process group is killed regardless.
+  killTtsSync();
   if (updateCheckTimer) clearInterval(updateCheckTimer);
   if (announcementsFirstTimer) clearTimeout(announcementsFirstTimer);
   if (autoBackupTimer) clearInterval(autoBackupTimer);

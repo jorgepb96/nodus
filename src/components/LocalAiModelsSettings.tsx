@@ -1,3 +1,4 @@
+import { ipcErrorText } from '../lib/ipcErrorText';
 import { useEffect, useMemo, useState } from 'react';
 import type { AppSettings, ModelRef } from '@shared/types';
 import {
@@ -48,13 +49,13 @@ export function LocalAiModelsSettings({
     setStatus(nextStatus);
     await exposeDownloadedChatModels(nextStatus);
   };
-  useEffect(() => { void refresh().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause))); }, []);
+  useEffect(() => { void refresh().catch((cause) => setError(ipcErrorText(cause))); }, []);
 
   const activeTransfer = Boolean(status?.runtime.downloading || status?.models.some((model) => model.downloading));
   useEffect(() => {
     if (!activeTransfer) return;
     const timer = window.setInterval(() => {
-      void refresh().catch((cause) => setError(cause instanceof Error ? cause.message : String(cause)));
+      void refresh().catch((cause) => setError(ipcErrorText(cause)));
     }, 500);
     return () => window.clearInterval(timer);
   }, [activeTransfer]);
@@ -64,21 +65,21 @@ export function LocalAiModelsSettings({
   const installRuntime = async () => {
     setBusy('runtime'); setProgress(0); setError('');
     try { setStatus(await window.nodus.installNodusLocalRuntime(setProgress)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 
   const recheckRuntime = async () => {
     setBusy('runtime'); setProgress(0); setError('');
     try { setStatus(await window.nodus.recheckNodusLocalRuntime()); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 
   const calibrateModel = async (model: NodusLocalModelDefinition) => {
     setBusy(`calibrate:${model.id}`); setError('');
     try { setStatus(await window.nodus.calibrateNodusLocalModel(model.id)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 
@@ -91,7 +92,7 @@ export function LocalAiModelsSettings({
       setStatus(nextStatus);
       await exposeDownloadedChatModels(nextStatus);
     }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 
@@ -104,7 +105,7 @@ export function LocalAiModelsSettings({
       if (model.kind === 'chat') {
         await patch({ favorites: settings.favorites.filter((favorite) => !(favorite.provider === 'nodus' && favorite.model === model.id)) });
       }
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    } catch (cause) { setError(ipcErrorText(cause)); }
     finally { setBusy(''); }
   };
 

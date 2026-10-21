@@ -17,4 +17,4 @@
  * local execution tables do not change the wire shape: tests must establish their
  * exclusion from packages, publication and mutation outboxes before exempting them.
  */
-export const SYNC_SCHEMA_VERSION = 200;
+export const SYNC_SCHEMA_VERSION = 205;

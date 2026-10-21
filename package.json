@@ -238,8 +238,6 @@
     "@blocknote/core": "0.55.0",
     "@blocknote/react": "0.55.0",
     "@citation-js/plugin-csl": "^0.8.2",
-    "@diffusionstudio/piper-wasm": "1.0.0",
-    "@diffusionstudio/vits-web": "^1.0.3",
     "@github/copilot-sdk": "1.0.7",
     "@google/genai": "^2.11.0",
     "@huggingface/transformers": "^3.8.1",
@@ -267,7 +265,6 @@
     "heic-decode": "^2.1.0",
     "jsonrepair": "^3.14.0",
     "katex": "^0.17.0",
-    "kokoro-js": "^1.2.1",
     "leaflet": "^1.9.4",
     "linkedom": "^0.18.13",
     "mammoth": "^1.8.0",
@@ -417,6 +414,18 @@
           "engine.py",
           "requirements.lock",
           "requirements.txt"
+        ]
+      },
+      {
+        "from": "runtime/ming-tts",
+        "to": "ming-tts",
+        "filter": [
+          "*.py",
+          "*.lock",
+          "LICENSE*",
+          "ming_official/**/*",
+          "mlx_ming3/**/*",
+          "!**/__pycache__/**"
         ]
       }
     ],

@@ -26,8 +26,7 @@ import { generateEditorImage } from '../ai/editorImages';
 import type { EditorImageRequest } from '@shared/editorAiReview';
 import { deleteDecorativeImage, queueDecorativeImageGeneration, revertDecorativeImage, saveCustomDecorativeImage, streamDecorativeImageContext } from '../ai/decorativeImages';
 import { getDecorativeImage, getDecorativeImageData } from '../db/decorativeImagesRepo';
-import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, readClipBytes, saveClip, setStudyPronunciations } from '../audio/audioService';
-import { clearHumeKey, humeHasKey, listHumeVoices, setHumeKey, synthesizeHume } from '../audio/hume';
+import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, saveClip, setStudyPronunciations } from '../audio/audioService';
 import { disconnectNodusServerVault, getNodusServerOverview, pairNodusServer, setNodusServerLanguage, syncNodusServerVaultNow } from '../serverSync/serverSyncService';
 import { clearServerInbox, clearServerInboxEntry, listServerInbox, markServerInboxRead } from '../db/serverInboxRepo';
 import { localServerStatusAsync, restartLocalServer, startLocalServer, stopLocalServer } from '../localServer/process';
@@ -367,10 +366,6 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     entityId: string,
     input: { segmentIndex: number; segmentLabel: string; provider: AudioProvider; voice: string; language: string; bytes: Uint8Array }
   ) => saveClip(entityKind, entityId, { ...input, bytes: input.bytes }));
-  h('audio:clipData', async (_e, clipId: string) => {
-    const data = readClipBytes(clipId);
-    return data ? `data:${data.mime};base64,${data.bytes.toString('base64')}` : null;
-  });
   h('audio:deleteClip', async (_e, clipId: string) => {
     deleteAudioClip(clipId);
   });
@@ -389,22 +384,6 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
   h('audio:study:pronunciations:set', async (_e, subjectId: string, entries: StudyPronunciationEntry[]) => setStudyPronunciations(subjectId, entries));
   h('audio:study:playlist', async (_e, subjectId: string) => listStudyAudioPlaylist(subjectId));
 
-  // Hume (cloud TTS): key stays in the main process; the renderer only sees
-  // whether a key exists, the voice list, and the resulting audio bytes.
-  h('audio:humeStatus', async () => ({ hasKey: humeHasKey() }));
-  h('audio:humeSetKey', async (_e, key: string) => {
-    setHumeKey(key);
-    return { hasKey: humeHasKey() };
-  });
-  h('audio:humeClearKey', async () => {
-    clearHumeKey();
-    return { hasKey: humeHasKey() };
-  });
-  h('audio:humeVoices', async (_e, language?: string) => listHumeVoices(language));
-  h('audio:humeSynthesize', async (_e, voiceId: string, provider: 'HUME_AI' | 'CUSTOM_VOICE', text: string) => {
-    const bytes = await synthesizeHume(voiceId, provider, text);
-    return new Uint8Array(bytes);
-  });
 
   // AI translations. The renderer assembles an entity's Markdown and passes it in;
   // the main process translates it (chunked, preserving citations) and stores one

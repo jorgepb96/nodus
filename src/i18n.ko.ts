@@ -29,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -124,6 +125,7 @@ export const KO: Record<string, string> = {
   ...RESEARCH_REASONING_TRANSLATIONS.ko,
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["ko"],
   ...CHAT_SKILLS_TRANSLATIONS.ko,
+  ...NARRATION_TRANSLATIONS['ko'],
   ...CAPABILITIES_TRANSLATIONS.ko,
   ...STELLAR_GRAPH_TRANSLATIONS.ko,
   ...PROTECT_TRANSLATIONS.ko,

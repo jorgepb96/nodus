@@ -16,6 +16,8 @@ interface AudioClipRow {
   duration_sec: number;
   sample_rate: number;
   created_at: string;
+  model_id?: string;
+  pinned?: number;
 }
 
 function toClip(row: AudioClipRow): AudioClip {
@@ -25,7 +27,7 @@ function toClip(row: AudioClipRow): AudioClip {
     entityId: row.entity_id,
     segmentIndex: row.segment_index,
     segmentLabel: row.segment_label,
-    provider: row.provider === 'kokoro' || row.provider === 'hume' ? row.provider : 'piper',
+    provider: (['ming', 'phonon', 'kokoro', 'hume', 'piper'] as const).find((provider) => provider === row.provider) ?? 'piper',
     voice: row.voice,
     language: row.language,
     fileName: row.file_name,
@@ -35,6 +37,8 @@ function toClip(row: AudioClipRow): AudioClip {
     createdAt: row.created_at,
     // A row can outlive its file (restore from backup / sync never carries audio).
     missing: !audioFileExists(row.file_name),
+    pinned: row.pinned === 1,
+    modelId: row.model_id ?? '',
   };
 }
 
@@ -56,8 +60,8 @@ export function insertAudioClip(clip: AudioClip): void {
   getDb()
     .prepare(
       `INSERT INTO audio_clips
-       (id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at)
-       VALUES (@id, @entity_kind, @entity_id, @segment_index, @segment_label, @provider, @voice, @language, @file_name, @bytes, @duration_sec, @sample_rate, @created_at)`
+       (id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at, model_id, pinned)
+       VALUES (@id, @entity_kind, @entity_id, @segment_index, @segment_label, @provider, @voice, @language, @file_name, @bytes, @duration_sec, @sample_rate, @created_at, @model_id, @pinned)`
     )
     .run({
       id: clip.id,
@@ -73,6 +77,8 @@ export function insertAudioClip(clip: AudioClip): void {
       duration_sec: clip.durationSec,
       sample_rate: clip.sampleRate,
       created_at: clip.createdAt,
+      model_id: clip.modelId ?? '',
+      pinned: clip.pinned ? 1 : 0,
     });
 }
 
@@ -93,4 +99,28 @@ export function deleteAudioClipsForEntity(entityKind: AudioEntityKind, entityId:
     .all(entityKind, entityId) as { file_name: string }[];
   getDb().prepare('DELETE FROM audio_clips WHERE entity_kind = ? AND entity_id = ?').run(entityKind, entityId);
   return rows.map((r) => r.file_name);
+}
+
+export function setAudioClipPinned(id: string, pinned: boolean): void {
+  getDb().prepare('UPDATE audio_clips SET pinned = ? WHERE id = ?').run(pinned ? 1 : 0, id);
+}
+
+/** Unpinned clips of a kind created before `cutoffIso`, oldest first, at most `limit`. */
+export function listExpiredAudioClips(entityKind: AudioEntityKind, cutoffIso: string, limit = 200): { id: string; fileName: string }[] {
+  return (getDb()
+    .prepare('SELECT id, file_name FROM audio_clips WHERE entity_kind = ? AND pinned = 0 AND created_at < ? ORDER BY created_at ASC LIMIT ?')
+    .all(entityKind, cutoffIso, limit) as { id: string; file_name: string }[]).map((row) => ({ id: row.id, fileName: row.file_name }));
+}
+
+/** Distinct entity ids of one kind starting with `prefix` (chat clips are keyed `<conversationId>:<messageId>`). */
+export function listAudioClipEntityIds(entityKind: AudioEntityKind, prefix: string): string[] {
+  return (getDb()
+    .prepare("SELECT DISTINCT entity_id FROM audio_clips WHERE entity_kind = ? AND entity_id LIKE ? ESCAPE '\\'")
+    .all(entityKind, `${prefix.replace(/[\\%_]/g, (c) => `\\${c}`)}%`) as { entity_id: string }[]).map((row) => row.entity_id);
+}
+
+/** Bytes used by clips per kind. */
+export function audioClipBytesByKind(): Record<string, number> {
+  const rows = getDb().prepare('SELECT entity_kind, SUM(bytes) AS total FROM audio_clips GROUP BY entity_kind').all() as { entity_kind: string; total: number }[];
+  return Object.fromEntries(rows.map((row) => [row.entity_kind, Number(row.total) || 0]));
 }

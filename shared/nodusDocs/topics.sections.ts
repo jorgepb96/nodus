@@ -165,16 +165,18 @@ export const SECTION_DOC_TOPICS: readonly NodusDocTopic[] = [
     id: 'sections-workspace-notes',
     area: 'sections',
     title: { es: 'Nodus Scriptor', en: 'Nodus Scriptor' },
-    keywords: ['nodus scriptor', 'nodus tools', 'espacio de trabajo', 'workspace', 'notas', 'notes', 'colecciones', 'editor', 'etiquetas', 'papelera', 'duplicar nota', 'enlazar biblioteca', 'nota'],
+    keywords: ['nodus scriptor', 'nodus tools', 'espacio de trabajo', 'workspace', 'notas', 'notes', 'colecciones', 'editor', 'etiquetas', 'papelera', 'duplicar nota', 'enlazar biblioteca', 'nota', 'escuchar', 'leer en voz alta', 'read aloud'],
     body: {
       es: `- Nodus Scriptor organiza colecciones que contienen notas e ideas, con el mismo editor que usan Estudio y Docencia.
 - Acciones: crear nota o idea, buscar, etiquetar y filtrar por etiquetas, mover a colección, duplicar, enviar a la papelera, restaurar, eliminar definitivamente, enlazar con la biblioteca, abrir en pestaña, copiar el título y ver el panel de detalles.
 - Se abre desde Nodus Tools o su acceso fijado en Herramientas, en todos los tipos de bóveda. Puedes ocultar el acceso manualmente; las rutas antiguas siguen funcionando. El lienzo editorial usa un fondo blanco y formato contextual por bloques.
-- En Testimonios, las notas enlazan de vuelta al minuto exacto del fragmento; en Fuentes primarias, al documento y su evidencia.`,
+- En Testimonios, las notas enlazan de vuelta al minuto exacto del fragmento; en Fuentes primarias, al documento y su evidencia.
+- «Escuchar», en la cabecera del editor, narra el documento con la voz local y guarda el audio un día salvo que lo conserves. El icono de altavoz de la barra de selección lee el texto seleccionado al momento y no guarda nada.`,
       en: `- Nodus Scriptor organises collections that hold notes and ideas, with the same editor Study and Teaching use.
 - Actions: create a note or an idea, search, tag and filter by tag, move to a collection, duplicate, send to trash, restore, delete permanently, link to the library, open in a tab, copy the title and open the details panel.
 - Open it from Nodus Tools or its pinned shortcut under Tools, in every vault type. You can hide the shortcut manually; old routes still work. The editorial canvas uses a white background and contextual block formatting.
-- In Testimonies, notes link back to the exact minute of the excerpt; in Primary sources, to the document and its evidence.`,
+- In Testimonies, notes link back to the exact minute of the excerpt; in Primary sources, to the document and its evidence.
+- «Escuchar» (Listen) in the editor header narrates the document with the local voice and keeps the audio for one day unless you keep it. The speaker icon in the selection toolbar reads the selected text at once and saves nothing.`,
     },
     related: ['sections-search'],
   },

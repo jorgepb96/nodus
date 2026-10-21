@@ -55,6 +55,8 @@ import { ScriptorAiPanel, type AiChoice } from './ScriptorAiPanel';
 import { editorReviewDiff, savedEditorImageModels, type EditorImageModel, type EditorImageResult } from '@shared/editorAiReview';
 import type { StudyImproveResult } from '@shared/studyImprove';
 import { AudioPanel } from '../AudioPanel';
+import { ListenButton, type ListenTarget } from '../narration/Listen';
+import { hashString } from '@shared/stats';
 import { ConfirmModal } from '../ConfirmModal';
 import { useFeatureModel } from '../../hooks/useFeatureModel';
 
@@ -272,13 +274,18 @@ export function StudyEditor({
   const [dictationActive, setDictationActive] = useState(false);
   const dictationRef = useRef<StudyDictationHandle>(null);
   useEffect(() => { setShowDictation(false); setDictationActive(false); }, [active?.id]);
+  // Reading aloud: the header balloon narrates the document as it was when the balloon opened.
+  const [listenOpen, setListenOpen] = useState(false);
+  const [listenVersion, setListenVersion] = useState('');
+  // Study documents keep their study narration panel (modes, pronunciations, bookmarks).
   const [showAudio, setShowAudio] = useState(false);
+  const [audioSelection, setAudioSelection] = useState('');
+  const [audioCursor, setAudioCursor] = useState(0);
+  useEffect(() => { setListenOpen(false); }, [active?.id]);
   const [pendingCloseId, setPendingCloseId] = useState<string | null>(null);
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [tableRows, setTableRows] = useState(3);
   const [tableColumns, setTableColumns] = useState(3);
-  const [audioSelection, setAudioSelection] = useState('');
-  const [audioCursor, setAudioCursor] = useState(0);
   const [search, setSearch] = useState('');
   const [replacement, setReplacement] = useState('');
   const [dictionaryWord, setDictionaryWord] = useState('');
@@ -995,6 +1002,15 @@ export function StudyEditor({
   };
 
   const locked = Boolean(improveStreamingStyleId || aiResult);
+  // Each version of the text is its own narration, so an edited document is never read from
+  // stale audio; the version is fixed when the balloon opens, not on every keystroke.
+  const studyNarration = port.referenceKind !== 'note';
+  const setListen = (open: boolean) => { if (open) setListenVersion(hashString(draft)); setListenOpen(open); };
+  const documentTitle = title.trim() || t('Documento');
+  const listenTarget: ListenTarget = { kind: 'scriptor_document', id: `${active.id}:${listenVersion}`, title: documentTitle, markdown: () => draft };
+  // The selection is read once and never saved: see NarrationInput.ephemeral.
+  const selectionListenTarget = (text: string): ListenTarget => ({ kind: 'scriptor_selection', id: `${active.id}:${hashString(text)}`, title: documentTitle, markdown: () => text, ephemeral: true });
+  const selectionListen = (text: string, className: string) => <ListenButton bare direct testId="study-selection-listen" size={16} className={className} label={t('Leer la selección en voz alta')} onUnavailable={() => setListen(true)} target={selectionListenTarget(text)} />;
   const actions: EditorialAction[] = [
     { id: 'undo', label: t('Deshacer'), icon: 'undo', group: t('Edición'), essential: true, testId: 'study-editor-undo', disabled: locked || (!raw && !historyState.canUndo), shortcut: 'Ctrl/⌘+Z', keyShortcuts: 'Control+Z Meta+Z', onSelect: () => runEditorHistory('undo') },
     { id: 'redo', label: t('Rehacer'), icon: 'redo', group: t('Edición'), essential: true, testId: 'study-editor-redo', disabled: locked || (!raw && !historyState.canRedo), shortcut: 'Ctrl+Y / Ctrl/⌘+Shift+Z', keyShortcuts: 'Control+Y Control+Shift+Z Meta+Shift+Z', onSelect: () => runEditorHistory('redo') },
@@ -1012,7 +1028,10 @@ export function StudyEditor({
     { id: 'manuscript', label: t('Manuscrito y citas'), icon: 'settings', group: t('Escritura académica'), onSelect: () => academicTools.current?.open('settings') },
     { id: 'delivery', label: t('Preparar entrega'), icon: 'external', group: t('Escritura académica'), testId: 'academic-delivery', onSelect: () => academicTools.current?.open('delivery') },
     { id: 'dictation', label: t(dictationActive ? 'Detener dictado' : 'Dictado por voz'), icon: 'microphone', group: t('Voz'), essential: true, testId: 'study-dictation-toggle', disabled: locked && !dictationActive, pressed: dictationActive, onSelect: () => { if (dictationActive) void dictationRef.current?.stop(); else if (showDictation) void dictationRef.current?.start(); else setShowDictation(true); } },
-    { id: 'read', label: t('Lectura por voz'), icon: 'play', group: t('Voz'), testId: 'study-audio-toggle', pressed: showAudio, onSelect: () => { const target = resolveImproveSelection(false); setAudioSelection(target?.text ?? ''); setAudioCursor(rawTextareaRef.current?.selectionStart ?? target?.from ?? 0); setShowAudio(value => !value); } },
+    { id: 'read', label: t('Lectura por voz'), icon: 'play', group: t('Voz'), testId: 'study-audio-toggle', pressed: studyNarration ? showAudio : listenOpen, onSelect: () => {
+      if (!studyNarration) { setListen(!listenOpen); return; }
+      const target = resolveImproveSelection(false); setAudioSelection(target?.text ?? ''); setAudioCursor(rawTextareaRef.current?.selectionStart ?? target?.from ?? 0); setShowAudio(value => !value);
+    } },
     { id: 'markdown', label: t('Markdown crudo'), icon: 'code', group: t('Vistas'), pressed: raw, onSelect: () => void (async () => { closeAiPanel(); await dictationRef.current?.stop(); if (raw) setEditorRevision(value => value + 1); setRaw(!raw); })() },
     { id: 'split', label: t('Dividir vista'), icon: 'columns', group: t('Vistas'), pressed: split, onSelect: () => setSplit(!split) },
     { id: 'style', label: t('Apariencia y metadatos'), icon: 'palette', group: t('Vistas'), testId: 'study-doc-style', pressed: showStyle, onSelect: () => { setShowStyle(!showStyle); setContextOpen(true); setContextTab('details'); } },
@@ -1056,7 +1075,7 @@ export function StudyEditor({
           }}
         />
       ) : null}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} onPreserveSelection={preserveSelection} options={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} trailing={<ListenButton bare autoStart testId="scriptor-header-listen" size={14} className="editorial-header-action editorial-header-icon" open={listenOpen} onOpenChange={setListen} target={listenTarget} />} onPreserveSelection={preserveSelection} options={<>
         <EditorialActionMenu actions={actions} pins={pinnedActionIds} onPinsChange={setPinnedActionIds} beforeAction={restoreSelection} />
         <div className="study-insert-toolbar" data-testid="study-insert-toolbar">
           <label htmlFor="study-heading-level">{t('Nivel de título')}</label>
@@ -1151,7 +1170,7 @@ export function StudyEditor({
           if (final) rawDictation.current = null;
         }}
       />}
-      {showAudio && <div className="border-b border-neutral-800 bg-neutral-900/30 p-3" data-testid="study-audio-panel"><AudioPanel
+      {studyNarration && showAudio && <div className="border-b border-neutral-800 bg-neutral-900/30 p-3" data-testid="study-audio-panel"><AudioPanel
         entityKind="study_document"
         entityId={active.id}
         sourceMarkdown={draft}
@@ -1287,9 +1306,9 @@ export function StudyEditor({
             )}
           </EditorialInspector>
         )}
-        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool study-selection-polish" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
+        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool study-selection-polish" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}{selectionListen(selectionImprove.target.text, 'toolbar-item study-selection-tool study-selection-listen')}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
       </div>
-      {raw && selectionImprove && !locked && createPortal(<button type="button" className="scriptor-raw-polish" data-testid="study-selection-improve" onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }} style={{ position:'fixed',left:selectionImprove.x,top:selectionImprove.y,zIndex:40 }}><Icon name="aiPolish" size={15} />{t('Pulir')}</button>, document.body)}
+      {raw && selectionImprove && !locked && createPortal(<div className="scriptor-raw-selection" style={{ position:'fixed',left:selectionImprove.x,top:selectionImprove.y,zIndex:40 }}><button type="button" className="scriptor-raw-polish" data-testid="study-selection-improve" onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={15} />{t('Pulir')}</button>{selectionListen(selectionImprove.target.text, 'scriptor-raw-polish scriptor-raw-listen')}</div>, document.body)}
       {synonymPanel && createPortal(
         <div ref={synonymPanelRef} data-testid="study-synonyms-panel" role="dialog" aria-label={t('Alternativas de sinónimos')} className="study-synonyms-panel" style={{ left: synonymPanel.x, top: synonymPanel.y }}>
           <div className="study-synonyms-header">

@@ -29,6 +29,7 @@ import {
   deleteAudioClipRow,
   deleteAudioClipsForEntity,
   insertAudioClip,
+  listAudioClipEntityIds,
   listAudioClips,
 } from '../db/audioClipsRepo';
 
@@ -40,6 +41,13 @@ export function getEntitySegments(kind: AudioEntityKind, id: string, request: Au
   if (isStudyAudioKind(kind)) {
     const source = request.markdown != null ? { title: request.title ?? '', markdown: request.markdown } : studyAudioSource(kind, id);
     return studyNarrationSegments(source.markdown, { ...request, title: request.title || source.title });
+  }
+  if (kind === 'chat_message' || kind === 'dictionary_entry' || kind === 'scriptor_document' || kind === 'scriptor_selection') {
+    // A chat answer, a dictionary entry or a Scriptor document (or selection) is narrated from
+    // the text the reader is looking at, which the renderer sends: a chat message may not be
+    // persisted yet while it streams, and a Scriptor draft may not be saved yet.
+    if (request.markdown == null || !request.markdown.trim()) throw new Error('TTS_EMPTY_TEXT');
+    return deepResearchSegments({ title: request.title ?? '', draftMarkdown: relabelCitations(request.markdown) });
   }
   if (kind === 'deep_research') {
     const row = getDb().prepare('SELECT title, draft_json FROM writing_saved_drafts WHERE id = ?').get(id) as
@@ -138,16 +146,34 @@ export interface SaveClipInput {
   provider: AudioProvider;
   voice: string;
   language: string;
+  /** Checkpoint that produced this clip, e.g. `ming3-0.5b-mlx-8bit`; empty for legacy clips. */
+  modelId?: string;
   /** WAV bytes produced by the renderer. */
   bytes: Uint8Array;
 }
 
 /** Persist one generated segment as a WAV file plus a metadata row, returning the clip. */
 export function saveClip(kind: AudioEntityKind, id: string, input: SaveClipInput): AudioClip {
-  const dir = audioDir();
-  const fileName = `${kind}_${id}_${String(input.segmentIndex).padStart(3, '0')}_${randomUUID().slice(0, 8)}.wav`;
+  const fileName = clipFileName(kind, id, input.segmentIndex);
   const buffer = Buffer.from(input.bytes);
-  fs.writeFileSync(path.join(dir, fileName), buffer);
+  fs.writeFileSync(path.join(audioDir(), fileName), buffer);
+  return recordClip(kind, id, input, fileName, buffer);
+}
+
+/** The same as `saveClip`, writing the file asynchronously: narration clips can be several MB. */
+export async function saveClipAsync(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput, 'bytes'> & { bytes: Buffer }): Promise<AudioClip> {
+  const fileName = clipFileName(kind, id, input.segmentIndex);
+  await fs.promises.writeFile(path.join(audioDir(), fileName), input.bytes);
+  return recordClip(kind, id, input, fileName, input.bytes);
+}
+
+function clipFileName(kind: AudioEntityKind, id: string, segmentIndex: number): string {
+  // Ids from chats and dictionaries are free-form; only the safe characters reach the file name.
+  const safeId = id.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'item';
+  return `${kind}_${safeId}_${String(segmentIndex).padStart(3, '0')}_${randomUUID().slice(0, 8)}.wav`;
+}
+
+function recordClip(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput, 'bytes'>, fileName: string, buffer: Buffer): AudioClip {
   const meta = parseWavMeta(buffer);
   const clip: AudioClip = {
     id: randomUUID(),
@@ -158,6 +184,7 @@ export function saveClip(kind: AudioEntityKind, id: string, input: SaveClipInput
     provider: input.provider,
     voice: input.voice,
     language: input.language,
+    modelId: input.modelId ?? '',
     fileName,
     bytes: buffer.length,
     durationSec: meta.durationSec,
@@ -224,6 +251,45 @@ export function deleteClip(id: string): void {
 
 export function deleteEntityClips(kind: AudioEntityKind, id: string): void {
   clearEntityClips(kind, id);
+}
+
+/** Chat narration is keyed `<conversationId>:<messageId>`: drop the clips of messages that are gone
+ *  (a regenerated answer gets a new id) or of the whole conversation when `keep` is empty. */
+export function reconcileChatNarration(conversationId: string, keepMessageIds: readonly string[] = []): void {
+  const prefix = `${conversationId}:`;
+  const keep = new Set(keepMessageIds.map((messageId) => `${prefix}${messageId}`));
+  try {
+    for (const entityId of listAudioClipEntityIds('chat_message', prefix)) {
+      if (!keep.has(entityId)) clearEntityClips('chat_message', entityId);
+    }
+  } catch { /* narration cleanup never fails a chat save */ }
+}
+
+/** Scriptor narration is keyed `<documentId>:<textHash>`, one entity per version of the text:
+ *  drop every version of a document that is gone. */
+export function deleteScriptorNarration(documentId: string): number {
+  let removed = 0;
+  try {
+    for (const entityId of listAudioClipEntityIds('scriptor_document', `${documentId}:`)) {
+      for (const fileName of deleteAudioClipsForEntity('scriptor_document', entityId)) { removeFile(fileName); removed += 1; }
+    }
+  } catch { /* narration cleanup never fails a delete */ }
+  return removed;
+}
+
+/** Clips of Scriptor documents that no longer exist: notes removed with their collection, or
+ *  study documents in the trash (those are never deleted for good). Kept clips go too. */
+export function pruneOrphanScriptorNarration(): number {
+  const db = getDb();
+  const documentIds = new Set(listAudioClipEntityIds('scriptor_document', '').map((entityId) => entityId.slice(0, entityId.lastIndexOf(':'))));
+  const note = db.prepare('SELECT 1 FROM notes WHERE id = ?');
+  const study = db.prepare('SELECT 1 FROM study_docs WHERE id = ? AND deleted_at IS NULL');
+  let removed = 0;
+  for (const documentId of documentIds) {
+    if (!documentId || note.get(documentId) || study.get(documentId)) continue;
+    removed += deleteScriptorNarration(documentId);
+  }
+  return removed;
 }
 
 /** Raw bytes for playback in the renderer (served as a data URL). */

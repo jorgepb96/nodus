@@ -14,6 +14,9 @@ export const fileConcurrency = 2;
 const allowedSkips = new Map([
   ['streamed protection handles files larger than four GiB', 'Runs in the mandatory four-platform Nodus Support native matrix'],
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
+  // The fake sidecar needs no model, but its clone-prompt cache is a real NumPy .npz written by
+  // serve.py; a runner without NumPy still exercises every other protocol case.
+  ['caches a clone voice and reuses it', 'numpy is not installed'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
   // The route-program contract is checked against the chemistry package's own parser and manifest,
   // which live in a separate repository. Both cases run wherever that checkout is beside this one.

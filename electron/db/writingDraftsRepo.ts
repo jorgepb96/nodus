@@ -18,6 +18,7 @@ import { deleteDecorativeImageRow, getDecorativeImage } from './decorativeImages
 import { deleteAnnotationsForWritingDraft } from './writingAnnotationsRepo';
 import { deleteCompleteGuideArtifacts } from './completeGuideRepo';
 import { relabelSavedDraft } from '../citations/liveCitations';
+import { deleteEntityClips } from '../audio/audioService';
 
 interface SavedWritingDraftRow {
   id: string;
@@ -274,6 +275,7 @@ export function deleteWritingWorkshopDraft(id: string): boolean {
   deleteResearchRuns({ artifactId: id });
   deleteDocumentVisuals(getActiveVault().id, { kind: 'deep-research', id });
   deleteDecorativeImageRow('deep_research', id);
+  deleteEntityClips('deep_research', id);
   deleteAnnotationsForWritingDraft(id);
   deleteCompleteGuideArtifacts(id);
   // Before the report, so a mark can never be left pointing at nothing.

@@ -141,6 +141,7 @@ electron/assets/drift/audio/*
 
 # Compiled native presenter bridge
 build/support-app/
+build/support-linux/
 release-support/
 build/presenter-native/arm64/
 build/presenter-native/x64/

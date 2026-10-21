@@ -14,5 +14,6 @@ module.exports = {
   portable: { artifactName: 'Nodus-Support-win-${arch}-portable.exe' },
   nsis: { oneClick: false, allowToChangeInstallationDirectory: true, deleteAppDataOnUninstall: false },
   linux: { target: ['AppImage','deb','rpm'], category: 'Utility', maintainer: 'Jorge Pérez Burgueño <jorgepb96@users.noreply.github.com>' },
+  rpm: { afterRemove: require('../../build/supportLinux.cjs').prepareSupportRpmScripts() },
   appImage: { artifactName: 'Nodus-Support-${arch}.${ext}' },
 };

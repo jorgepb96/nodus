@@ -67,6 +67,8 @@ test('the image is non-root, health-checked and visibly experimental', () => {
   const dockerfile = read('server/Dockerfile');
   assert.match(dockerfile, /FROM --platform=\$BUILDPLATFORM node:22-alpine AS web-build/,
     'architecture-independent web assets must build natively instead of through QEMU');
+  assert.match(dockerfile, /FROM node:22-alpine\n\n(?:#.*\n)+RUN node -e ".*m=\[22,23,4\]/,
+    'the runtime image must refuse a Node older than the 22.23.4 security release');
   assert.match(dockerfile, /USER node/);
   assert.match(dockerfile, /HEALTHCHECK/);
   assert.match(dockerfile, /app\.nodus\.stability="experimental"/);

@@ -29,13 +29,15 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.14.1');
-  assert.equal(current.highlights.length, 2);
-  assert.deepEqual(current.highlights.map(h => h.category), ['fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','ai']);
-  assert.match(current.highlights[0].en, /^Vaults that were already indexed keep their semantic search after updating to 5\.14/);
-  assert.match(current.highlights[0].en, /no new requests to the provider/);
-  assert.match(current.highlights[1].en, /^Settings no longer freezes Nodus while it shows the embedding indexes/);
+  assert.equal(current.version, '5.15.0');
+  assert.equal(current.highlights.length, 13);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','new',...Array(7).fill('enhancement'),'fix','fix','fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['general','general',...Array(10).fill('ai'),'library']);
+  const outcomes = [/^Nodus Support is a separate application/, /three local engines/, /Context button next to web search/, /Copy without references/, /Cmd\+F on macOS/, /^Harrier 0\.6B/, /three local models to reorder search results/, /^BGE-M3 and GTE Multilingual Base/, /chemical synthesis routes/, /no longer fail while the library is being indexed/, /first saves the API key/, /proxy and certificates configured in the system/, /Ready and Incomplete filters/];
+  outcomes.forEach((outcome, index) => assert.match(current.highlights[index].en, outcome));
+  assert.equal(current.highlights.filter(h => /Nodus Support/.test(h.en)).length, 1, 'Nodus Support is described once with its final behavior');
+  // 5.14.1 restored stored embeddings after the migration. Its note stays as published.
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.14.1').highlights[0].en, /^Vaults that were already indexed keep their semantic search after updating to 5\.14/);
   // 5.14.0 introduced saved embedding indexes. Its note stays as published.
   assert.match(RELEASE_NOTES.find(note => note.version === '5.14.0').highlights[0].en, /^Each vault can keep several embedding indexes/);
   // 5.13.0 introduced Nodus Research Harness. Its note stays as published.
@@ -92,9 +94,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: 5.14.1 has only fixes, so the other two sections state that.
+  // Independently authored section boundaries: two features, seven enhancements and four fixes.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,0,0][i], [0,0,2][i]);
+    const entries = current.highlights.slice([0,2,9][i], [2,9,13][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

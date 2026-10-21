@@ -194,7 +194,7 @@ function nvidiaSmiPath(): string | null {
  * Vulkan build, so the diagnostics can answer "was CUDA detected?" without ever
  * claiming CUDA is being used. Best-effort and cached; never fatal.
  */
-async function probeNvidia(): Promise<{ detected: boolean; driver: string | null } | null> {
+export async function probeNvidia(): Promise<{ detected: boolean; driver: string | null } | null> {
   const executable = nvidiaSmiPath();
   if (!executable) return null;
   try {
@@ -535,7 +535,9 @@ async function downloadFile(
   expectedBytes: number | undefined,
   expectedSha256: string | undefined,
   onBytes: (bytes: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  /** Extra request headers, e.g. a user's Hugging Face token for a gated repository. */
+  extraHeaders?: Record<string, string>
 ): Promise<void> {
   const qaProxy = process.env.NODUS_LOCAL_AI_QA_ASSET_PROXY;
   if (qaProxy) {
@@ -572,7 +574,7 @@ async function downloadFile(
     response = await fetchModelResource(url, {
       redirect: 'follow',
       signal,
-      headers: resumedBytes > 0 ? { Range: `bytes=${resumedBytes}-` } : undefined,
+      headers: { ...(extraHeaders ?? {}), ...(resumedBytes > 0 ? { Range: `bytes=${resumedBytes}-` } : {}) },
     });
   } catch (error) {
     if (signal?.aborted) throw downloadCancelledError();

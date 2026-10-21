@@ -146,6 +146,12 @@ optional publication may include metadata, derived academic content and, only wi
 passages or content created by the user. Before activating the microphone, a previous notice is
 displayed, which the user can accept promptly or remember not to display again.
 
+Narration runs entirely on the user's computer (Ming 3.0 TTS). Reference voices recorded or uploaded
+to clone them stay in the application's data folder on that computer and are never uploaded, synced
+or included in published content; saving one requires confirming that the voice is the user's own or
+that its owner has given permission. Generated narration clips are deleted automatically after the
+retention period chosen in Settings, unless the user keeps them.
+
 Those who record should:
 
 1. inform all persons concerned in advance and in a comprehensible manner;

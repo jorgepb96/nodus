@@ -59,6 +59,7 @@ import { useFeatureModel } from "../hooks/useFeatureModel";
 import { errorText, getActiveLang, pick, t as appT, tr } from "../i18n";
 import { DICTIONARY_TRANSLATIONS } from "../i18n.dictionary";
 import type { DictionarySnapshot } from "../app/viewSnapshots";
+import { ListenButton } from '../components/narration/Listen';
 
 export type DictionaryDetailTab =
   | "overview"
@@ -2010,7 +2011,16 @@ function DictionaryEntryView({
                   </span>
                 )}
               </div>
-              <h2 className="mt-2 text-xl font-semibold">{entry.name}</h2>
+              <div className="mt-2 flex items-center gap-1.5">
+                <h2 className="text-xl font-semibold">{entry.name}</h2>
+                {entry.contentMarkdown?.trim() && (
+                  <ListenButton
+                    testId="dictionary-listen"
+                    size={16}
+                    target={{ kind: 'dictionary_entry', id: entry.id, title: entry.name, markdown: () => `## ${entry.name}\n\n${entry.contentMarkdown}` }}
+                  />
+                )}
+              </div>
               <p className="mt-1 text-xs text-neutral-500">
                 {entry.aliases.length
                   ? entry.aliases.join(" · ")

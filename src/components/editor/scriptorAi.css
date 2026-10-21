@@ -45,6 +45,8 @@ html.dark .scriptor-ai-added { background:#173f50; color:#a5e5ff; }
 @container workspace (max-width:700px) { .editorial-writing-column { --scriptor-ai-inset:8px; } .scriptor-ai-panel header { padding:8px 10px; } .scriptor-ai-status { font-size:10px; } .scriptor-ai-quick { display:none!important; } .scriptor-ai-controls { gap:4px; } }
 @media print { .scriptor-ai-panel { display:none; } }
 
+.scriptor-raw-selection { display:flex; gap:4px; }
+.scriptor-raw-listen { position:relative; }
 .scriptor-raw-polish { display:flex; gap:6px; align-items:center; padding:8px 12px; border:1px solid var(--ew-line); border-radius:8px; background:var(--ew-paper); color:var(--ew-accent); box-shadow:0 3px 12px #0002; }
 .scriptor-ai-controls .model-picker-menu { width:auto; flex:0 1 auto; max-width:100%; min-width:120px; }
 .editorial-editor .scriptor-ai-removed { background:#fce2ee; color:#a21c59; text-decoration:line-through; }

@@ -45,6 +45,7 @@ import { getActiveVault, getVault, getVaultByPath, listVaults, withOwningVault, 
 import { getDb, withVaultDatabase, withoutDatabaseContext } from '../db/database';
 import { notifyDocumentaryPreparation } from './documentaryPreparationEvents';
 import { onResearchCorpusChanged } from './researchCorpusEvents';
+import { startPerf } from '../perf';
 
 let shared: DocumentaryStore | null = null;
 let stopping = false;
@@ -884,28 +885,36 @@ export function notifyResearchCorpusChanged(sourceChanged = true): void {
   if (autoTimer) clearTimeout(autoTimer);
   autoTimer = withoutOwningVault(() => withoutDatabaseContext(() => setTimeout(() => {
     autoTimer = null;
+    const done = startPerf('documentary-corpus-poll', {}, { sourceChanged });
     void withDocumentaryWrites(async () => {
       await initialization;
       const repo = new DocumentaryCampaigns(documentaryStore().db);
+      const reconcile = startPerf('documentary-corpus-reconcile');
       await reconcileResearchDocumentOwnership();
+      reconcile();
       for (const vault of listVaults().filter(vault => vault.type === 'academic')) {
         if (!repo.policy(vault.id).futureAdditions) continue;
-        await withOwningVault(vault.id, () => withVaultDatabase(vault.id, async () => {
-          const policy = repo.policy(vault.id);
-          if (!policy.futureAdditions) return;
-          const inventory = researchCorpusInventory().documents.filter(document => document.workId && !document.noteId && !document.conversationAttachment);
-          // A Set, not `known.includes`: that was one linear scan per library document, on a timer —
-          // 12% of the main thread's busy time in a nine-turn trace (2026-10-09).
-          const known = new Set(policy.known);
-          const added = inventory.filter(document => !known.has(document.id));
-          const changed = inventory.filter(document => known.has(document.id) && policy.authorized[document.id] !== undefined && policy.authorized[document.id] !== document.revision);
-          if (added.length) await prepareResearchDocuments(added.map(document => document.id), 'embeddings', 'new_content');
-          if (changed.length) await prepareResearchDocuments(changed.map(document => document.id), 'embeddings', 'content_changed');
-          const updated = repo.policy(vault.id);
-          repo.savePolicy({ ...updated, known: inventory.map(document => document.id) });
-        })).catch(() => { /* Retry discovery after configuration/import recovery; keep other vaults moving. */ });
+        const vaultDone = startPerf('documentary-corpus-vault', { nodusId: vault.id });
+        let documents = 0;
+        try {
+          await withOwningVault(vault.id, () => withVaultDatabase(vault.id, async () => {
+            const policy = repo.policy(vault.id);
+            if (!policy.futureAdditions) return;
+            const inventory = researchCorpusInventory().documents.filter(document => document.workId && !document.noteId && !document.conversationAttachment);
+            documents = inventory.length;
+            // A Set, not `known.includes`: that was one linear scan per library document, on a timer —
+            // 12% of the main thread's busy time in a nine-turn trace (2026-10-09).
+            const known = new Set(policy.known);
+            const added = inventory.filter(document => !known.has(document.id));
+            const changed = inventory.filter(document => known.has(document.id) && policy.authorized[document.id] !== undefined && policy.authorized[document.id] !== document.revision);
+            if (added.length) await prepareResearchDocuments(added.map(document => document.id), 'embeddings', 'new_content');
+            if (changed.length) await prepareResearchDocuments(changed.map(document => document.id), 'embeddings', 'content_changed');
+            const updated = repo.policy(vault.id);
+            repo.savePolicy({ ...updated, known: inventory.map(document => document.id) });
+          })).catch(() => { /* Retry discovery after configuration/import recovery; keep other vaults moving. */ });
+        } finally { vaultDone({ documents }); }
       }
-    }).catch(() => undefined);
+    }).catch(() => undefined).finally(done);
   }, 1000)));
   autoTimer.unref();
 }
@@ -934,7 +943,10 @@ async function initializeOwnedDocumentaryPreparation(): Promise<void> {
     }));
   }
   // Also catches sources added by long-running importers after their initial event.
-  corpusPoll = withoutOwningVault(() => withoutDatabaseContext(() => setInterval(() => notifyResearchCorpusChanged(false), 30000)));
+  // This fallback reconciles ownership and scans the corpus synchronously (measured 216 ms
+  // on a 15-document vault), so it is deliberately slow: every normal import already emits
+  // its event, and a 30 s timer made the main loop stall that often during narration.
+  corpusPoll = withoutOwningVault(() => withoutDatabaseContext(() => setInterval(() => notifyResearchCorpusChanged(false), 5 * 60_000)));
   corpusPoll.unref();
   const global = onGlobalLibraryChanged(notifyResearchCorpusChanged);
   const authored = onResearchCorpusChanged(notifyResearchCorpusChanged);

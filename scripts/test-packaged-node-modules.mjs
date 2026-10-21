@@ -79,15 +79,12 @@ test('every package the main process loads stays, on every platform', () => {
 
 test('the renderer-only packages are left out of the app', () => {
   for (const at of [
-    'node_modules/onnxruntime-web',
     'node_modules/@huggingface/transformers/node_modules/onnxruntime-web',
     'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-web',
     'node_modules/@mathjax/src',
     'node_modules/@mathjax/mathjax-newcm-font',
     'node_modules/@blocknote/react',
     'node_modules/@emoji-mart/data',
-    'node_modules/kokoro-js',
-    'node_modules/@diffusionstudio/piper-wasm',
     'node_modules/three',
     'node_modules/react-dom',
   ]) {
@@ -172,7 +169,6 @@ test("electron-builder's own matcher keeps exactly this platform's runtime", () 
     'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/darwin/x64/onnxruntime_binding.node',
     'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime.so.1',
     'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/win32/x64/onnxruntime.dll',
-    'node_modules/onnxruntime-web/dist/ort-wasm.wasm',
     'node_modules/@mathjax/src/package.json',
     'node_modules/pdfjs-dist/build/pdf.mjs.map',
     'node_modules/better-sqlite3/deps/sqlite3/sqlite3.c',
@@ -306,7 +302,7 @@ test('the load probe reports a dependency a packed package cannot find', () => {
     write('node_modules/works/package.json', '{"main":"index.js"}');
     write('node_modules/works/index.js', 'module.exports = 1;');
     write('node_modules/broken/package.json', '{"main":"index.js"}');
-    write('node_modules/broken/index.js', 'require("onnxruntime-common");');
+    write('node_modules/broken/index.js', 'require("onnxruntime-node");');
     write('node_modules/esm-only/package.json', '{"type":"module","exports":{".":{"import":"./index.js"}}}');
     write('node_modules/esm-only/index.js', 'export default await Promise.resolve(1);');
     write('node_modules/wants-electron/package.json', '{"main":"index.js"}');
@@ -330,12 +326,12 @@ test('the load probe reports a dependency a packed package cannot find', () => {
     assert.equal(results['cli-only/missing.wasm'].missing, 'cli-only/missing.wasm');
     assert.equal(results.works.error, null);
     assert.equal(results['esm-only'].error, null, 'an ESM-only package with top-level await loads through import()');
-    assert.equal(results.broken.missing, 'onnxruntime-common');
+    assert.equal(results.broken.missing, 'onnxruntime-node');
     assert.equal(results['wants-electron'].missing, 'electron');
 
     // Only a missing production package is a packaging fault.
-    assert.equal(verifier.missingPackage(results.broken.missing), 'onnxruntime-common');
-    assert.ok(pruning.isProductionPackage('onnxruntime-common', packages));
+    assert.equal(verifier.missingPackage(results.broken.missing), 'onnxruntime-node');
+    assert.ok(pruning.isProductionPackage('onnxruntime-node', packages));
     assert.ok(!pruning.isProductionPackage('electron', packages), 'Electron is the runtime, never a packed package');
     assert.equal(verifier.missingPackage('/abs/file.js'), null);
     assert.equal(verifier.missingPackage('./relative'), null);

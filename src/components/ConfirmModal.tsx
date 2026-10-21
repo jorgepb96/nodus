@@ -48,7 +48,7 @@ export function ConfirmModal({
   // is 60% translucent, which let the list behind a confirmation read through the wording
   // of the one action that cannot be undone.
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6" style={{ zIndex }} onClick={onCancel}>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6" style={{ zIndex }} onClick={onCancel} data-balloon-layer>
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}

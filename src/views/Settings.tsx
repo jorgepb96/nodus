@@ -33,7 +33,7 @@ import type { PrimarySourcePolicySettings } from '@shared/primarySourcesTypes';
 import { NODUS_SOCIAL_LINKS } from '@shared/socialLinks';
 import { recoveryHealthAdvice, recoveryHealthAge, recoveryHealthHeadline } from '../recoveryHealth';
 import { ImageGenerationSettings, ProvidersSettings } from './ProvidersSettings';
-import { AudioGenerationSettings } from './AudioGenerationSettings';
+import { NarrationSettings } from './NarrationSettings';
 import { ConnectedVaultsPanel } from '../components/ConnectedVaultsPanel';
 import { LocalServerPanel } from '../components/LocalServerPanel';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -120,11 +120,11 @@ const GRAPH_HEALTH_KEYWORDS = 'salud grafo integridad comprobar reparar ideas te
 
 const SETTINGS_TABS: { id: SettingsTabId; label: string; icon: string; keywords: string }[] = [
   { id: 'providers', label: 'Proveedores', icon: 'key', keywords: 'api key keys claves proveedores provider providers modelos favoritos default openai anthropic deepseek gemini google openrouter xiaomi lm studio ollama vault boveda' },
-  { id: 'models', label: 'Modelos IA', icon: 'wand', keywords: 'model model id embedding embeddings extraccion sintesis tutor resumen fusion razonamiento openrouter unpaywall contexto concurrencia quimica chemistry stock mcule proveedores comprar' },
+  { id: 'models', label: 'Modelos IA', icon: 'wand', keywords: 'model model id embedding embeddings extraccion sintesis tutor resumen fusion razonamiento openrouter unpaywall contexto concurrencia' },
   { id: 'library', label: 'Biblioteca', icon: 'book', keywords: 'zotero sincronizacion tag lectura automatizacion cola analisis resumen relaciones' },
   { id: 'extraction', label: 'Texto y OCR', icon: 'search', keywords: 'pdf texto fulltext zotero ocr tesseract paginas idiomas' },
   { id: 'interface', label: 'Interfaz', icon: 'palette', keywords: 'idioma tema claro oscuro animaciones barra lateral menu navegacion accesibilidad contraste escala fuente lectura enfoque' },
-  { id: 'integrations', label: 'Integraciones', icon: 'link', keywords: 'mcp servidor token puerto chatgpt openai tunnel tunel word copilot certificado addin' },
+  { id: 'integrations', label: 'Integraciones', icon: 'link', keywords: 'mcp servidor token puerto chatgpt openai tunnel tunel word copilot certificado addin quimica chemistry stock mcule enamine proveedores comprar listas' },
   { id: 'browser', label: 'Nodus Browser', icon: 'compass', keywords: 'navegador browser web cookies cache almacenamiento datos permisos sitios descargas privacidad' },
   { id: 'server', label: 'Servidor', icon: 'globe', keywords: 'servidor docker compartir vault boveda estudiantes investigadores dominio subdominio oauth claude chatgpt reverse proxy caddy nginx publicar sincronizar' },
   { id: 'system', label: 'Tutoriales', icon: 'graduation', keywords: 'sistema ayuda tutorial' },
@@ -219,6 +219,7 @@ export function Settings({
 }) {
   const [saved, setSaved] = useState<string | null>(null);
   const [aiConcurrency, setAiConcurrency] = useState<AiConcurrencySnapshot[]>([]);
+  const [chemistryStudioActive, setChemistryStudioActive] = useState(false);
   const [supersededReloadKey, setSupersededReloadKey] = useState(0);
   const [syncHasPassphrase, setSyncHasPassphrase] = useState(true);
   const [importSyncPassphrase, setImportSyncPassphrase] = useState('');
@@ -243,6 +244,19 @@ export function Settings({
     if (!themeEditorOpen) return;
     applyRuntimeAppTheme('custom-preview', [{ id: 'custom-preview', ...themeDraft }]);
   }, [themeEditorOpen, themeDraft]);
+  useEffect(() => {
+    // The stock-list option belongs to Chemistry Studio, not to model selection. Hide it
+    // until the package is actually active, and keep it live while Skills changes.
+    let cancelled = false;
+    const refresh = () => {
+      void window.nodus.listCapabilities().then((payload) => {
+        if (!cancelled) setChemistryStudioActive(payload.plugins.some((plugin) => plugin.id === 'chemistry-studio' && Boolean(plugin.active)));
+      }).catch(() => { /* a broken registry leaves the option hidden */ });
+    };
+    refresh();
+    const off = window.nodus.onCapabilityRegistryChanged(refresh);
+    return () => { cancelled = true; off(); };
+  }, []);
   useEffect(() => {
     if (themeEditorOpen) return;
     applyRuntimeAppTheme(settings.appTheme, settings.customThemes ?? []);
@@ -277,7 +291,7 @@ export function Settings({
   useEffect(() => {
     const applyTarget = () => {
       const target = localStorage.getItem('nodus.settingsTarget');
-      if (target !== 'nodi' && target !== 'models' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
+      if (target !== 'nodi' && target !== 'models' && target !== 'narration' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
       localStorage.removeItem('nodus.settingsTarget');
       if (target === 'sidebar' || target === 'appearance' || target === 'nodi') {
         setSettingsTab('interface');
@@ -285,9 +299,11 @@ export function Settings({
         setInterfaceFocusRequest({ id: target === 'sidebar' ? 'settings-sidebar-editor' : target === 'appearance' ? 'settings-appearance-section' : 'settings-nodi-section' });
       } else if (target === 'help' || target === 'tutorials') {
         setSettingsTab('system'); setSettingsQuery(t('Ayuda'));
-      } else if (target === 'models') {
+      } else if (target === 'models' || target === 'narration') {
         setSettingsTab('models');
         setSettingsQuery('');
+        // Narration links (the listen balloon's «Grabar o subir voz…») land on the voice library.
+        if (target === 'narration') window.setTimeout(() => document.getElementById('narration-voices')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
       }
     };
     applyTarget();
@@ -1008,8 +1024,9 @@ export function Settings({
     visibleSettingsSection('integrations', 'Copiloto de escritura LibreOffice', 'libreoffice copilot macro python install instalacion instalando'),
     visibleSettingsSection('integrations', 'Nodus para Zotero', 'zotero plugin sidebar chat servidor puerto token pagina citas conexiones'),
     visibleSettingsSection('integrations', 'Nodus Research Connector', 'chrome navegador browser extension conector captura metadatos colecciones etiquetas pdf doi isbn'),
+    chemistryStudioActive && visibleSettingsSection('integrations', 'Chemistry Studio', 'quimica chemistry stock mcule enamine proveedores comprar listas'),
     visibleSettingsSection('data', 'Backup / copia de seguridad', 'datos demo exportar importar copia backup cifrada contraseña'),
-    visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz imagen quimica chemistry stock mcule proveedores comprar'),
+    visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz narracion audio ming clonar grabar imagen'),
     visibleSettingsSection('extraction', 'Extracción de texto PDFs grandes', 'pdf texto zotero ocr tesseract paginas idiomas esquemas figuras'),
     activeVault?.type === 'academic' && visibleSettingsSection('data', 'Salud del grafo', GRAPH_HEALTH_KEYWORDS),
     visibleSettingsSection('data', 'Zona de peligro', 'reinicializar grafo borrar ideas temas conexiones autores huecos'),
@@ -2750,6 +2767,26 @@ export function Settings({
           </Section>
       )}
 
+      {chemistryStudioActive && visibleSettingsSection('integrations', 'Chemistry Studio', 'quimica chemistry stock mcule enamine proveedores comprar listas') && (
+          <Section title={t('Química (Chemistry Studio)')}>
+            <label data-testid="chemistry-stock-settings" className="flex cursor-pointer flex-col gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4 transition hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900/40 dark:hover:border-neutral-700 sm:flex-row sm:items-start">
+              <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
+                <Icon name="flask" size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-neutral-900 dark:text-neutral-100">{t('Usar listas de stock comerciales')}</span>
+                <span className="mt-1 block text-xs leading-5 text-neutral-600 dark:text-neutral-400">{t('La búsqueda de rutas se detiene en los precursores que tus listas de proveedores tienen en stock, y el informe indica qué materiales de partida, o el propio objetivo, se pueden comprar. Desactívalo para planificar rutas sin tener en cuenta lo que se vende. Solo actúa si has importado alguna lista.')}</span>
+              </span>
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 shrink-0 self-start accent-indigo-600"
+                checked={settings.chemistryUseStockLists !== false}
+                onChange={(e) => patch({ chemistryUseStockLists: e.target.checked })}
+              />
+            </label>
+          </Section>
+      )}
+
       {visibleSettingsSection('data', 'Backup / copia de seguridad', 'datos demo exportar importar copia backup cifrada contraseña') && (
           <Section title={t('Backup / copia de seguridad')}>
             {settings.demoMode && (
@@ -3236,7 +3273,7 @@ export function Settings({
           </Section>
       )}
 
-      {visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz imagen quimica chemistry stock mcule proveedores comprar') && (<>
+      {visibleSettingsSection('models', 'Modelos de IA', 'basico avanzado modelo general extraccion sintesis tutor resumen fusion embeddings transcripcion voz narracion audio ming clonar grabar imagen') && (<>
           <Section title={t('Selección de modelos')}>
             <p className="mb-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400">
               {t('Solo puede haber un modo de configuración activo. Cambiar de modo modifica qué selección de modelos utiliza Nodus, no solo la vista de este formulario.')}
@@ -3454,19 +3491,7 @@ export function Settings({
           <SttSettings settings={settings} patch={patch} />
           <LocalImageModelSettings settings={settings} patch={patch} />
           <ImageGenerationSettings settings={settings} onChange={onChange} />
-          <AudioGenerationSettings settings={settings} onChange={onChange} />
-          <Section title={t('Química (Chemistry Studio)')}>
-            <Row
-              label={t('Usar listas de stock comerciales')}
-              hint={t('La búsqueda de rutas se detiene en los precursores que tus listas de proveedores tienen en stock, y el informe indica qué materiales de partida, o el propio objetivo, se pueden comprar. Desactívalo para planificar rutas sin tener en cuenta lo que se vende. Solo actúa si has importado alguna lista.')}
-            >
-              <input
-                type="checkbox"
-                checked={settings.chemistryUseStockLists !== false}
-                onChange={(e) => patch({ chemistryUseStockLists: e.target.checked })}
-              />
-            </Row>
-          </Section>
+          <NarrationSettings settings={settings} patch={patch} />
       </>)}
 
       {visibleSettingsSection('extraction', 'Extracción de texto PDFs grandes', 'pdf texto zotero ocr tesseract paginas idiomas') && (

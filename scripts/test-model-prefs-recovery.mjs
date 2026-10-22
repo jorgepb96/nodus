@@ -124,6 +124,8 @@ indexes.commitEmbeddingIndex(db, indexes.indexContext(db, selected));
 assert.equal(settingsRepo.getSettings().embeddingProvider, 'openai', 'a later intentional change is not reverted');
 settingsRepo.updateSettings({ codexReasoningEfforts: { 'gpt-test': 'xhigh', 'stale-model': '../turbo' } });
 settingsRepo.updateSettings({ studyImproveLastStyleId: 'builtin:formal', imageFavorites: [{ provider: 'codex', model: 'image-a' }] });
+settingsRepo.updateSettings({ ttsVoiceFilters: { engines: [], languages: ['fr'] } });
+assert.deepEqual(settingsRepo.getSettings().ttsVoiceFilters, { engines: [], languages: ['fr'] }, 'voice filter overrides preserve an explicit all-models choice');
 assert.deepEqual(
   settingsRepo.getSettings().codexReasoningEfforts,
   { 'gpt-test': 'xhigh' },
@@ -140,6 +142,8 @@ db.prepare(`INSERT INTO ideas (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   .run('openai-idea', 'claim', 'OpenAI', 'Indexed with OpenAI', Buffer.from(new Float32Array([5, 6, 7, 8]).buffer), new Date().toISOString(), 'openai', 'text-embedding-3-small', 4, 'hash-2');
 const secondarySettings = settingsRepo.getSettings();
+assert.deepEqual(secondarySettings.ttsVoiceFilters, { engines: [], languages: ['fr'] }, 'voice filter overrides survive closing the database and switching vaults');
+settingsRepo.updateSettings({ ttsVoiceFilters: {} });
 assert.equal(secondarySettings.studyImproveLastStyleId, 'builtin:clear', 'each vault starts with its own last writing style');
 assert.deepEqual(secondarySettings.imageFavorites, [{ provider: 'codex', model: 'image-a' }], 'image favorites are shared separately from text favorites');
 settingsRepo.updateSettings({ studyImproveLastStyleId: 'builtin:academic' });
@@ -153,6 +157,7 @@ database.closeDb();
 registry.setActiveVault(primary.id);
 db = database.getDb();
 assert.equal(settingsRepo.getSettings().studyImproveLastStyleId, 'builtin:formal', 'changing the style in another vault preserves the original vault preference');
+assert.deepEqual(settingsRepo.getSettings().ttsVoiceFilters, {}, 'restoring automatic voice filters persists across vaults');
 assert.deepEqual(settingsRepo.getSettings().favorites, favoritesPinnedInSecondary, 'models pinned in one vault appear in every other vault');
 
 settingsRepo.updateSettings({ favorites: [integrated] });

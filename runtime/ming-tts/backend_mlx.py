@@ -98,6 +98,17 @@ class MlxBackend:
         return value.astype(getattr(mx, dtype)) if dtype and hasattr(mx, dtype) else value
 
     # -- synthesis --------------------------------------------------------
+    def decode_budget(self, text, prompt, *, prompt_latent=None, prompt_text=None,
+                      spk_emb=None, instruction=None, use_zero_spk_emb=False):
+        from mlx_ming3.bailingmm import MING3_MAX_CACHE_LEN
+
+        model = self.model
+        speaker = model._speaker_embeddings(spk_emb, bool(use_zero_spk_emb))
+        ids, _ = model._prepare_input_embed(prompt=prompt, text=text, instruction=instruction,
+                                           prompt_latent=prompt_latent, prompt_text=prompt_text,
+                                           spk_emb=speaker)
+        return (MING3_MAX_CACHE_LEN - ids.shape[1]) // model.patch_size
+
     def synth_fragment(self, text, prompt, *, max_steps, cfg, flow_steps, sigma, temperature,
                        prompt_latent=None, prompt_text=None, spk_emb=None, instruction=None,
                        use_zero_spk_emb=False, check_cancel=None):

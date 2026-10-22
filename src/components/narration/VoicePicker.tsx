@@ -1,8 +1,9 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { TTS_LANGUAGES, type TtsLanguage } from '@shared/ttsModels';
+import { TTS_LANGUAGES, type TtsModelDefinition } from '@shared/ttsModels';
+import { resolveTtsVoiceFilters, type TtsVoiceFilters } from '@shared/ttsVoiceFilters';
 import type { TtsVoice } from '@shared/ttsVoices';
 import { Icon } from '../ui';
-import { t } from '../../i18n';
+import { getActiveLang, t } from '../../i18n';
 import './voicePicker.css';
 
 /** A voice with the downloaded checkpoint that can actually speak its language. */
@@ -20,17 +21,19 @@ const normalize = (value: string) => value.normalize('NFD').replace(/\p{Diacriti
  * model/language filters, rather than the native select whose long popup overflowed the
  * balloon. Selecting a voice also carries the downloaded model that supports its language.
  */
-export function VoicePicker({ options, value, selectedName, onSelect, disabled = false }: {
+export function VoicePicker({ options, value, selectedName, onSelect, model, filters, onFiltersChange, disabled = false }: {
   options: VoicePickerOption[];
   value: string;
   selectedName?: string;
   onSelect: (option: VoicePickerOption) => void;
+  model?: TtsModelDefinition;
+  filters: TtsVoiceFilters;
+  onFiltersChange: (filters: TtsVoiceFilters) => void;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [engineFilter, setEngineFilter] = useState<Array<'ming' | 'phonon' | 'kokoro'>>([]);
-  const [languageFilter, setLanguageFilter] = useState<TtsLanguage[]>([]);
+  const { engines: engineFilter, languages: languageFilter, modelLanguages } = resolveTtsVoiceFilters(filters, model, getActiveLang());
   const [openFilter, setOpenFilter] = useState<'engine' | 'language' | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const popup = useRef<HTMLDivElement>(null);
@@ -41,7 +44,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
 
   const languages = useMemo(() => {
     const present = new Set(options.map((option) => option.voice.language));
-    return TTS_LANGUAGES.filter((entry) => present.has(entry.code as TtsLanguage));
+    return TTS_LANGUAGES.filter((entry) => present.has(entry.code));
   }, [options]);
   const engines = useMemo(() => {
     const present = new Set(options.map((option) => option.engine));
@@ -52,6 +55,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
     const needle = normalize(query.trim());
     return options.filter((option) => {
       if (engineFilter.length && !engineFilter.includes(option.engine)) return false;
+      if (modelLanguages && !modelLanguages.includes(option.voice.language)) return false;
       if (languageFilter.length && !languageFilter.includes(option.voice.language)) return false;
       if (!needle) return true;
       const languageLabel = TTS_LANGUAGES.find((entry) => entry.code === option.voice.language)?.label ?? '';
@@ -61,7 +65,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
       return order[a.engine] - order[b.engine]
         || a.voice.name.localeCompare(b.voice.name, undefined, { sensitivity: 'base', numeric: true });
     });
-  }, [options, engineFilter, languageFilter, query]);
+  }, [options, engineFilter, languageFilter, modelLanguages, query]);
 
   const groups = useMemo(() => {
     const byEngine = new Map<'ming' | 'phonon' | 'kokoro', VoicePickerOption[]>();
@@ -208,17 +212,18 @@ export function VoicePicker({ options, value, selectedName, onSelect, disabled =
             <span>{languageSummary}</span><Icon name="chevronDown" size={12} />
           </button>
         </div>
-        {(engineFilter.length > 0 || languageFilter.length > 0 || query) && <button type="button" className="voice-picker-clear" onClick={() => { setEngineFilter([]); setLanguageFilter([]); setQuery(''); setOpenFilter(null); }} title={t('Limpiar')} aria-label={t('Limpiar')}><Icon name="x" size={12} /></button>}
+        {(engineFilter.length > 0 || languageFilter.length > 0 || query) && <button type="button" className="voice-picker-clear" onClick={() => { onFiltersChange({ engines: [], languages: [] }); setQuery(''); setOpenFilter(null); }} title={t('Limpiar')} aria-label={t('Limpiar')}><Icon name="x" size={12} /></button>}
+        {(filters.engines !== undefined || filters.languages !== undefined) && <button type="button" className="voice-picker-clear" onClick={() => onFiltersChange({})} title={t('Auto')} aria-label={t('Auto')}><Icon name="rotateCcw" size={12} /></button>}
       </div>
       {openFilter === 'engine' || openFilter === 'language' ? <div className="voice-picker-choice-panel" role="listbox" aria-multiselectable="true" aria-label={openFilter === 'engine' ? t('Modelo') : t('Idioma')} data-testid="listen-voice-filter-panel">
         <div className="voice-picker-choice-head"><strong>{openFilter === 'engine' ? t('Modelo') : t('Idioma')}</strong><button type="button" className="voice-picker-choice-close" aria-label={t('Cerrar')} title={t('Cerrar')} onClick={() => setOpenFilter(null)}><Icon name="x" size={12} /></button></div>
         <label className="voice-picker-choice">
-          <input type="checkbox" checked={(openFilter === 'engine' ? engineFilter : languageFilter).length === 0} onChange={() => { if (openFilter === 'engine') setEngineFilter([]); else setLanguageFilter([]); }} />
+          <input type="checkbox" checked={(openFilter === 'engine' ? engineFilter : languageFilter).length === 0} onChange={() => onFiltersChange(openFilter === 'engine' ? { ...filters, engines: [] } : { ...filters, languages: [] })} />
           <span>{t('Todos')}</span>
         </label>
         {openFilter === 'engine'
-          ? engines.map(([id, name]) => <label key={id} className="voice-picker-choice"><input type="checkbox" checked={engineFilter.includes(id)} onChange={() => setEngineFilter((current) => toggle(current, id))} /><span>{name}</span></label>)
-          : languages.map((entry) => <label key={entry.code} className="voice-picker-choice"><input type="checkbox" checked={languageFilter.includes(entry.code)} onChange={() => setLanguageFilter((current) => toggle(current, entry.code))} /><span>{entry.label}</span></label>)}
+          ? engines.map(([id, name]) => <label key={id} className="voice-picker-choice"><input type="checkbox" checked={engineFilter.includes(id)} onChange={() => onFiltersChange({ ...filters, engines: toggle(engineFilter, id) })} /><span>{name}</span></label>)
+          : languages.map((entry) => <label key={entry.code} className="voice-picker-choice"><input type="checkbox" checked={languageFilter.includes(entry.code)} onChange={() => onFiltersChange({ ...filters, languages: toggle(languageFilter, entry.code) })} /><span>{entry.label}</span></label>)}
       </div> : <div className="voice-picker-list" id={listId} role="listbox" aria-label={t('Todas las voces')}>
         {groups.map(([group, entries]) => <div key={group} className="voice-picker-group">
           <div className="voice-picker-group-label">{group === 'ming' ? 'Ming' : group === 'phonon' ? 'Phonon' : 'Kokoro'}</div>

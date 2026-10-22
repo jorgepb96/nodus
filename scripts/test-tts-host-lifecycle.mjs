@@ -36,7 +36,7 @@ async function handle(m) {
       await new Promise((r) => setTimeout(r, mode === 'stuck' ? 60000 : 30));
       const file = path.join(m.out_dir, String(n).padStart(3, '0') + '.wav');
       fs.writeFileSync(file, 'RIFF');
-      out({ type: 'fragment', job_id: m.job_id, n, total, path: file, duration_s: 2, gen_s: 1 });
+      out({ type: 'fragment', job_id: m.job_id, n, total, path: file, duration_s: 2, gen_s: 1, ...(mode === 'truncated' ? { truncated: true } : {}) });
       // A path outside out_dir must be ignored by the host.
       if (n === 0) out({ type: 'fragment', job_id: m.job_id, n: 99, total, path: '/etc/passwd', duration_s: 2, gen_s: 1 });
     }
@@ -116,6 +116,17 @@ try {
     await host.unload();
     assert.equal(host.snapshot().state, 'unloaded');
     assert.equal(host.isModelInUse('ming3-0.5b-mlx-8bit'), false);
+  }
+
+  // A stale sidecar must not publish clipped speech as a successful fragment.
+  {
+    const { host } = makeHost('truncated');
+    const fragments = [];
+    try {
+      const { done } = host.synth('ming3-0.5b-mlx-8bit', { text: 'one two three four five six', voice: { kind: 'builtin', name: 'US_James' }, language: 'en' }, { onFragment: (fragment) => fragments.push(fragment) });
+      await assert.rejects(done, /TTS_SYNTH_FAILED.*truncated/);
+      assert.deepEqual(fragments, [], 'truncated audio never reaches playback or clip concatenation');
+    } finally { await host.unload(); }
   }
 
   // ── Priority order and cancelling a queued job ──────────────────────────────

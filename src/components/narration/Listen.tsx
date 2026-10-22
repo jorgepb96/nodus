@@ -317,7 +317,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
     // checkpoint. The model may still need downloading: choosing the voice keeps that
     // visible in the engine card instead of hiding voices whose model is not local yet.
     const model = voiceEngine === 'phonon' || voiceEngine === 'kokoro'
-      ? candidates.find((entry) => entry.languages.length === 1) ?? candidates.find((entry) => entry.id === modelId) ?? candidates[0]
+      ? candidates.find((entry) => entry.id === modelId) ?? candidates.find((entry) => entry.languages.length === 1) ?? candidates[0]
       : candidates.find((entry) => entry.id === modelId) ?? candidates.find((entry) => downloadedModels.some((downloaded) => downloaded.id === entry.id)) ?? candidates[0];
     return [{ voice, engine: voiceEngine, modelId: model.id, modelLabel: model.label }];
   });
@@ -351,7 +351,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
             <div className="flex items-center justify-between gap-2">
               <span className="text-neutral-600 dark:text-neutral-400">{modelStatus.downloading ? t('Descargando el modelo…') : tx('Falta el modelo {model}', { model: model?.label ?? '' })}</span>
               {!modelStatus.downloading && model && (model.gated || model.nonCommercial) && <button className="btn btn-ghost h-7 px-2 text-[11px]" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>{t('Abrir Ajustes')}</button>}
-              {!modelStatus.downloading && model && !model.gated && !model.nonCommercial && <button className="btn btn-primary h-7 px-2 text-[11px]" onClick={() => void act('download', async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings?.ttsModelId) await window.nodus.updateSettings({ ttsModelId: model.id }); })}><Icon name="download" size={11} />{tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })}</button>}
+              {!modelStatus.downloading && model && !model.gated && !model.nonCommercial && <button type="button" className="btn btn-primary h-7 w-7 shrink-0 !p-0" title={tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })} aria-label={tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })} onClick={() => void act('download', async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings?.ttsModelId) await window.nodus.updateSettings({ ttsModelId: model.id }); })}><Icon name="download" size={14} /></button>}
             </div>
             {modelStatus.downloading && <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, modelStatus.progress * 100)}%` }} /></div>}
           </div>}
@@ -373,7 +373,11 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
           {downloadedModels.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
         </select>}
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
-          <VoicePicker options={voiceOptions} value={selectedVoiceId} selectedName={selectedVoiceName} onSelect={chooseVoice} disabled={!settings || !voiceOptions.length} />
+          <VoicePicker options={voiceOptions} value={selectedVoiceId} selectedName={selectedVoiceName} onSelect={chooseVoice} model={model} filters={settings?.ttsVoiceFilters ?? {}} onFiltersChange={(ttsVoiceFilters) => {
+            if (!settings) return;
+            setSettings({ ...settings, ttsVoiceFilters });
+            void window.nodus.updateSettings({ ttsVoiceFilters });
+          }} disabled={!settings || !voiceOptions.length} />
           <label className="voice-picker-language" title={t('Idioma')}>
             <Icon name="globe" size={13} />
             <select className="voice-picker-language-select" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">

@@ -185,17 +185,31 @@ class TorchBackend:
         return self.torch.from_numpy(np.asarray(latent, dtype=np.float32)).to(device=self.dev, dtype=self.dtype)
 
     # -- synthesis --------------------------------------------------------
+    def _speaker_conditioning(self, spk_emb, use_zero_spk_emb):
+        if use_zero_spk_emb:
+            return [self.torch.zeros(1, SPEAKER_DIM, dtype=self.dtype)]
+        if spk_emb is not None:
+            return [self.torch.from_numpy(np.asarray(spk_emb, dtype=np.float32).reshape(1, -1)).to(self.dtype)]
+        return None
+
+    def decode_budget(self, text, prompt, *, prompt_latent=None, prompt_text=None,
+                      spk_emb=None, instruction=None, use_zero_spk_emb=False):
+        from modeling_bailingmm import MAX_CACHE_LEN
+
+        with self.torch.inference_mode():
+            ids, _ = self.model.prepare_input_embed(prompt=prompt, text=text, instruction=instruction,
+                                                   prompt_latent=prompt_latent, prompt_text=prompt_text,
+                                                   spk_emb=self._speaker_conditioning(spk_emb, use_zero_spk_emb),
+                                                   use_zero_spk_emb=bool(use_zero_spk_emb))
+        return (MAX_CACHE_LEN - ids.shape[1]) // self.model.patch_size
+
     def synth_fragment(self, text, prompt, *, max_steps, cfg, flow_steps, sigma, temperature,
                        prompt_latent=None, prompt_text=None, spk_emb=None, instruction=None,
                        use_zero_spk_emb=False, check_cancel=None):
         torch, model = self.torch, self.model
         if flow_steps != 10:
             raise ValueError("the official sampler runs 10 flow steps")  # FlowLoss.sample's default
-        speaker = None
-        if use_zero_spk_emb:
-            speaker = [torch.zeros(1, SPEAKER_DIM, dtype=self.dtype)]
-        elif spk_emb is not None:
-            speaker = [torch.from_numpy(np.asarray(spk_emb, dtype=np.float32).reshape(1, -1)).to(self.dtype)]
+        speaker = self._speaker_conditioning(spk_emb, use_zero_spk_emb)
         latents, finished = [], False
         with torch.inference_mode():
             sampler = model.sample(

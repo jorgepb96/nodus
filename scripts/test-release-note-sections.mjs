@@ -29,14 +29,14 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.15.2');
+  assert.equal(current.version, '5.15.3');
   assert.equal(current.highlights.length, 3);
-  assert.deepEqual(current.highlights.map(h => h.category), ['enhancement','fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['general','general','general']);
-  assert.match(current.highlights[0].en, /^Voice filters follow the model and interface language/);
-  assert.match(current.highlights[1].en, /^Ming splits text according to the space available/);
-  assert.match(current.highlights[2].en, /^In My voices, the play button changes to pause/);
-  assert.match(RELEASE_NOTES.find(note => note.version === '5.15.1').highlights[0].en, /^The narration controls fit inside the header sound popover/);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','general','general']);
+  assert.match(current.highlights[0].en, /^Narration adds Pocket TTS/);
+  assert.match(current.highlights[1].en, /^Configure Recovery opens the wizard/);
+  assert.match(current.highlights[2].en, /^Nodus Support is published again/);
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.15.2').highlights[0].en, /^Voice filters follow the model and interface language/);
   // 5.15.0 introduced Nodus Support. Its note stays as published.
   assert.match(RELEASE_NOTES.find(note => note.version === '5.15.0').highlights[0].en, /^Nodus Support is a separate application/);
   // 5.14.1 restored stored embeddings after the migration. Its note stays as published.
@@ -97,9 +97,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: one enhancement and two fixes.
+  // Independently authored section boundaries: one new feature and two fixes.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,0,1][i], [0,1,3][i]);
+    const entries = current.highlights.slice([0,1,1][i], [1,1,3][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

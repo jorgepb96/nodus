@@ -5,18 +5,18 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 # Corresponding source for Nodus
 
-Nodus 5.15.2 is licensed exclusively under the GNU Affero General Public
+Nodus 5.15.3 is licensed exclusively under the GNU Affero General Public
 License v3.0 (`AGPL-3.0-only`). The complete, unmodified license text is in
 [`LICENSE`](LICENSE). Versions published through Nodus 3.2.7 remain available
 under the MIT license that accompanied those releases.
 
-The preferred form for modifying the official Nodus 5.15.2 release is available
+The preferred form for modifying the official Nodus 5.15.3 release is available
 from the immutable release tag and its source archives:
 
-- Tag and release: https://github.com/jorgepb96/nodus/releases/tag/v5.15.2
-- Source tree: https://github.com/jorgepb96/nodus/tree/v5.15.2
-- Tar archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.15.2.tar.gz
-- ZIP archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.15.2.zip
+- Tag and release: https://github.com/jorgepb96/nodus/releases/tag/v5.15.3
+- Source tree: https://github.com/jorgepb96/nodus/tree/v5.15.3
+- Tar archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.15.3.tar.gz
+- ZIP archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.15.3.zip
 
 The source includes the desktop app, Nodus Server, the Zotero add-on, build
 scripts, lockfile and the material needed to rebuild the distributed work.

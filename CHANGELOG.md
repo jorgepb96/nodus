@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.15.3 — 2026-10-22
+
+### New features
+- Pocket TTS joins the narration engines. It is Kyutai’s official implementation for the CPU, with six-layer models and a default voice in seven languages. It can clone a voice from a recording of up to twelve seconds without a transcript, models download on demand, downloads can be paused and resumed, and the audio is generated on your computer. It is available on Apple silicon, Windows and Linux.
+
+### Fixes
+- Configure Recovery opens the wizard when requested from Settings or the update notice, including in an academic vault whose tutorial invitations are still pending.
+- Show the last automatic backup result in the interface language, including after changing language.
+- Publish Nodus Support for Windows and Linux again. The Windows installer keeps its signature check without inheriting incompatible PowerShell module paths, and the Linux packages use the names the app already accepts.
+
 ## 5.15.2 — 2026-10-22
 
 ### Enhancements

@@ -317,7 +317,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
     // checkpoint. The model may still need downloading: choosing the voice keeps that
     // visible in the engine card instead of hiding voices whose model is not local yet.
     const model = voiceEngine === 'phonon' || voiceEngine === 'kokoro'
-      ? candidates.find((entry) => entry.languages.length === 1) ?? candidates.find((entry) => entry.id === modelId) ?? candidates[0]
+      ? candidates.find((entry) => entry.id === modelId) ?? candidates.find((entry) => entry.languages.length === 1) ?? candidates[0]
       : candidates.find((entry) => entry.id === modelId) ?? candidates.find((entry) => downloadedModels.some((downloaded) => downloaded.id === entry.id)) ?? candidates[0];
     return [{ voice, engine: voiceEngine, modelId: model.id, modelLabel: model.label }];
   });
@@ -373,7 +373,11 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
           {downloadedModels.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
         </select>}
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
-          <VoicePicker options={voiceOptions} value={selectedVoiceId} selectedName={selectedVoiceName} onSelect={chooseVoice} disabled={!settings || !voiceOptions.length} />
+          <VoicePicker options={voiceOptions} value={selectedVoiceId} selectedName={selectedVoiceName} onSelect={chooseVoice} model={model} filters={settings?.ttsVoiceFilters ?? {}} onFiltersChange={(ttsVoiceFilters) => {
+            if (!settings) return;
+            setSettings({ ...settings, ttsVoiceFilters });
+            void window.nodus.updateSettings({ ttsVoiceFilters });
+          }} disabled={!settings || !voiceOptions.length} />
           <label className="voice-picker-language" title={t('Idioma')}>
             <Icon name="globe" size={13} />
             <select className="voice-picker-language-select" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">

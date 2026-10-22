@@ -2553,7 +2553,7 @@ function BrowserMediaHeaderAction({ onOpenTab, onOpenDrift, focusKeep = true }: 
           setAnchor((current) => (current ? null : button));
         }}
       />
-      {sources > 1 && <span className="header-action-badge">{sources}</span>}
+      {(sources > 1 || narration.isPlaying) && <span className="header-action-badge" data-testid="media-playback-badge">{sources}</span>}
       <BrowserMediaPopover
         anchorEl={anchor}
         onClose={() => setAnchor(null)}

@@ -14,6 +14,7 @@ import {
 } from '@shared/providers';
 import { isOpenAiStudySttModel } from '@shared/sttModels';
 import { DEFAULT_TTS_RETENTION, TTS_MODELS, isTtsLanguage, sanitizeTtsRetention } from '@shared/ttsModels';
+import { sanitizeTtsVoiceFilters } from '@shared/ttsVoiceFilters';
 import { NODI_ORB_DEFAULT_COLOR } from '@shared/nodiOrb';
 import { NODI_DEFAULT_SCALE, normalizeNodiScale } from '@shared/nodiSize';
 import { lockedApiKeyProviders, providerKeyMap } from '../secrets/secretStore';
@@ -165,6 +166,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   ttsKokoroVoiceId: 'kokoro:ef_dora',
   ttsAcceptedLicenses: [],
   ttsLanguage: 'auto',
+  ttsVoiceFilters: {},
   ttsStreaming: true,
   ttsIdleUnloadMin: 5,
   ttsRetention: DEFAULT_TTS_RETENTION,
@@ -417,6 +419,7 @@ export function getSettings(): AppSettings {
   merged.ttsModelId = TTS_MODELS.some((model) => model.id === merged.ttsModelId) ? merged.ttsModelId : '';
   merged.ttsVoiceId = typeof merged.ttsVoiceId === 'string' && /^(user|cc0|ming):.{1,120}$/.test(merged.ttsVoiceId) ? merged.ttsVoiceId : 'cc0:es-dave';
   merged.ttsLanguage = merged.ttsLanguage === 'auto' || isTtsLanguage(merged.ttsLanguage) ? merged.ttsLanguage : 'auto';
+  merged.ttsVoiceFilters = sanitizeTtsVoiceFilters(merged.ttsVoiceFilters);
   merged.ttsStreaming = merged.ttsStreaming !== false;
   merged.ttsPhononVoiceId = typeof merged.ttsPhononVoiceId === 'string' && merged.ttsPhononVoiceId.startsWith('phonon:') ? merged.ttsPhononVoiceId : DEFAULTS.ttsPhononVoiceId;
   merged.ttsKokoroVoiceId = typeof merged.ttsKokoroVoiceId === 'string' && /^kokoro:[a-z0-9_]+$/.test(merged.ttsKokoroVoiceId) ? merged.ttsKokoroVoiceId : DEFAULTS.ttsKokoroVoiceId;
@@ -668,6 +671,7 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   if ('academicPracticeSession' in patch) patch = { ...patch, academicPracticeSession: sanitizePracticeSession(patch.academicPracticeSession) };
   if (patch.headerActionVisibility !== undefined) patch = { ...patch, headerActionVisibility: sanitizeHeaderActionVisibility(patch.headerActionVisibility) };
   if (patch.ttsRetention !== undefined) patch = { ...patch, ttsRetention: sanitizeTtsRetention(patch.ttsRetention) };
+  if (patch.ttsVoiceFilters !== undefined) patch = { ...patch, ttsVoiceFilters: sanitizeTtsVoiceFilters(patch.ttsVoiceFilters) };
   if (patch.academicInterfaceProfile !== undefined && !['simple', 'intermediate', 'advanced', 'custom'].includes(patch.academicInterfaceProfile)) throw new Error('Invalid academic interface profile.');
   const previous = getSettings();
   if (patch.embeddingProvider !== undefined || patch.embeddingModel !== undefined) {

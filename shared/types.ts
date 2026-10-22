@@ -3,6 +3,7 @@ import type { SkillMarketplace } from './skillMarketplace';
 import type { InboxPluginSummary, InstalledPluginSummary } from '../skill-capabilities/contracts';
 import type { ChatSkill } from './chatSkills';
 import type { TtsLanguageSetting, TtsRetentionSettings } from './ttsModels';
+import type { TtsVoiceFilters } from './ttsVoiceFilters';
 // Type-only, so the pair of modules stays free of a runtime cycle: the reasoning profile
 // needs ModelRef/ModelInfo and the settings shape needs the effort union.
 import type { ResearchEffort } from './researchReasoning';
@@ -2128,6 +2129,8 @@ export interface AppSettings {
   ttsKokoroVoiceId: string;
   /** Narration language; 'auto' detects it from the text. */
   ttsLanguage: TtsLanguageSetting;
+  /** Voice-list filter overrides; absent fields follow the model and interface language. */
+  ttsVoiceFilters?: TtsVoiceFilters;
   /** Start playing as soon as the first fragment is ready instead of after the whole narration. */
   ttsStreaming: boolean;
   /** Minutes without narration work before the model is unloaded from memory. */

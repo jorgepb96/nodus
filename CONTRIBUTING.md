@@ -120,6 +120,13 @@ after publication and appends its signed assets later. See
 [Release execution and measurement](docs/release-performance.md) for installer
 validation and timing definitions.
 
+Nodus Support is published independently after Nodus. Its signed app downloads
+do not require the repair qualification catalog to be populated; repair actions
+and recovery artifacts retain their qualification checks. To backfill an existing
+release after fixing the publisher, dispatch `release-support.yml` from the fixed
+commit with that release's channel and tag. The selected commit's package version
+must match the published tag. Safety checks and packaging use that same commit.
+
 Linux AppImages support both the built-in Electron updater and external
 AppImageUpdate tools. See [AppImage update compatibility](docs/appimage-updates.md)
 for the finalization sequence, preserved download aliases and Linux checks.

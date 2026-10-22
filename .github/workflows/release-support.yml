@@ -2,6 +2,8 @@ name: Independent Nodus Support release
 
 # Explicitly dispatched after publication: GITHUB_TOKEN-created release events
 # do not trigger other workflows. This run can be retried without republishing Nodus.
+# Use the dispatched commit so publisher fixes can backfill an existing release.
+# Version/channel validation still requires its package version to match the tag.
 on:
   workflow_dispatch:
     inputs:
@@ -25,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ github.sha }}
       - name: Validate exact tag and published release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,7 +40,7 @@ jobs:
     needs: validate
     uses: ./.github/workflows/nodus-support.yml
     with:
-      ref: ${{ inputs.tag }}
+      ref: ${{ github.sha }}
   build:
     needs: [validate, safety]
     strategy:
@@ -54,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22

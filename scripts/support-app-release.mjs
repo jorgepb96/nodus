@@ -1,21 +1,17 @@
-import {supportSourceDigest} from './lib/supportEvidence.mjs';
 // Publish the independent diagnostics app only after the matching Nodus release is public.
-// Publication retains the full repair qualification gate, independently of the normal Nodus release.
+// Repair qualification is enforced when repairs run, independently of app distribution.
 import fs from 'node:fs';
 import path from 'node:path';
 import {createPublicKey,sign} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import archiver from 'archiver';
 import yauzl from 'yauzl';
-import {requireQualified} from '../apps/nodus-support/core/qualification.mjs';
 import {hashFile,inventory,assert} from '../apps/nodus-support/core/files.mjs';
 import {executableArchitectures} from '../apps/nodus-support/core/installation.mjs';
 import {extractRuntime,acceptPlatformSignature} from '../apps/nodus-support/core/releases.mjs';
 import {verifySupportApp,supportContentDigest} from '../shared/support/appDistribution.mjs';
 const root=path.resolve(import.meta.dirname,'..'),pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const platform=process.platform,arch=process.arch,tag=`v${pkg.version}`,output=path.join(root,'release-support');
-const qualified=JSON.parse(fs.readFileSync(path.join(root,'apps/nodus-support/qualified-repairs.json'),'utf8'));
-for(const repair of ['interactive-copy','apply-solution','restore-copy','reinstall'])requireQualified(qualified,platform,arch,repair,supportSourceDigest(root));
 const released=JSON.parse(execFileSync('gh',['release','view',tag,'--repo','jorgepb96/nodus','--json','isDraft,tagName'],{encoding:'utf8'}));
 assert(!released.isDraft&&released.tagName===tag,'SUPPORT_RELEASE_NOT_PUBLISHED');
 const keyId=process.env.NODUS_SUPPORT_RELEASE_KEY_ID,privateKey=process.env.NODUS_SUPPORT_RELEASE_PRIVATE_KEY;

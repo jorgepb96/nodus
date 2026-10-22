@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.15.2 — 2026-10-22
+
+### Enhancements
+- Remember voice picker filters, follow the model and interface language by default, show the active voice and use an icon button for model downloads.
+
+### Fixes
+- Regenerate Ming fragments in smaller parts when the reference context would truncate speech.
+- Toggle saved voice previews between play and pause and resume from the same position.
+
 ## 5.15.1 — 2026-10-21
 
 ### Fixes

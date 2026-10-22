@@ -10,6 +10,7 @@ import {hashFile,inventory,assert} from '../apps/nodus-support/core/files.mjs';
 import {executableArchitectures} from '../apps/nodus-support/core/installation.mjs';
 import {extractRuntime,acceptPlatformSignature} from '../apps/nodus-support/core/releases.mjs';
 import {verifySupportApp,supportContentDigest} from '../shared/support/appDistribution.mjs';
+import {publicSupportArtifactName,supportSignatureEnvironment} from './lib/supportPublication.mjs';
 const root=path.resolve(import.meta.dirname,'..'),pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const platform=process.platform,arch=process.arch,tag=`v${pkg.version}`,output=path.join(root,'release-support');
 const released=JSON.parse(execFileSync('gh',['release','view',tag,'--repo','jorgepb96/nodus','--json','isDraft,tagName'],{encoding:'utf8'}));
@@ -27,7 +28,7 @@ function signature(file) {
  if(platform==='darwin') {execFileSync('/usr/bin/codesign',['--verify','--deep','--strict',app]);execFileSync('/usr/sbin/spctl',['--assess','--type','execute',app]);return 'macos-notarized';}
  if(platform==='win32') {
   const powershell=path.join(process.env.SystemRoot??'C:\\Windows','System32/WindowsPowerShell/v1.0/powershell.exe');
-  const status=execFileSync(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env:{...process.env,NODUS_SUPPORT_SIGNATURE_FILE:file},encoding:'utf8'}).trim();
+  const status=execFileSync(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env:supportSignatureEnvironment(file),encoding:'utf8'}).trim();
   acceptPlatformSignature(status,'none');return status==='Valid'?'authenticode':'none';
  }
  return 'none';
@@ -41,7 +42,11 @@ if(platform!=='darwin')await new Promise((resolve,reject)=>{
 const verification=path.join(root,'.ci/support-app-release',`${platform}-${arch}`);await extractRuntime(runtimeFile,verification,yauzl.open);
 const expandedInventory=await inventory(verification,undefined,undefined,{links:true}),contentSha256=supportContentDigest(expandedInventory);
 const artifact=async(name,format,executablePolicy=false)=>({name,format,url:`https://github.com/jorgepb96/nodus/releases/download/${tag}/${name}`,bytes:fs.statSync(path.join(output,name)).size,sha256:await hashFile(path.join(output,name)),platformSignature:signature(executablePolicy?nativeExecutable:path.join(output,name))});
-const names=fs.readdirSync(output).filter(name=>/^Nodus-Support-/.test(name)&&!name.includes('-Runtime-')&&/\.(exe|dmg|deb|rpm|AppImage)$/.test(name));
+const names=fs.readdirSync(output).filter(name=>/^Nodus-Support-/.test(name)&&!name.includes('-Runtime-')&&/\.(exe|dmg|deb|rpm|AppImage)$/.test(name)).map(name=>{
+ const published=publicSupportArtifactName(name);
+ if(published!==name)fs.copyFileSync(path.join(output,name),path.join(output,published),fs.constants.COPYFILE_EXCL);
+ return published;
+});
 const installers=await Promise.all(names.map(name=>artifact(name,name.endsWith('-portable.exe')?'portable':name.endsWith('.exe')?'nsis':name.split('.').at(-1))));
 const manifest={format:'nodus.support-app/1',protocol:1,version:pkg.version,platform,arch,executable,contentSha256,expandedBytes:expandedInventory.bytes,runtime:await artifact(runtimeName,'zip',true),installers};
 const payload=Buffer.from(JSON.stringify(manifest)),envelope={keyId,payload:payload.toString('base64'),signature:sign(null,payload,privateKey).toString('base64')};

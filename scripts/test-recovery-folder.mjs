@@ -26,6 +26,7 @@ if (!process.argv.includes('--electron-recovery-folder-test')) {
 const userData = await mkdtemp(path.join(os.tmpdir(), 'nodus-recovery-userdata-'));
 const recoveryRoot = await mkdtemp(path.join(os.tmpdir(), 'nodus-recovery-root-'));
 const invalidRoot = await mkdtemp(path.join(os.tmpdir(), 'nodus-recovery-invalid-'));
+const emptyRoot = await mkdtemp(path.join(os.tmpdir(), 'nodus-recovery-empty-'));
 installRuntimeHooks(userData);
 
 try {
@@ -153,6 +154,43 @@ try {
     'an unusable destination outranks a successful last run'
   );
 
+  // `lastAutoBackupStatus` stores the Spanish source sentence. The status handed to the
+  // renderer must follow `uiLanguage` without losing the ok:/error: marker, including
+  // for values stored by an older build.
+  settingsRepo.updateSettings({
+    uiLanguage: 'en',
+    autoBackupEnabled: true,
+    autoBackupFolder: emptyRoot,
+    lastAutoBackupStatus: 'error: No hay carpeta de destino configurada.',
+  });
+  const englishHealth = (await recovery.getRecoveryStatus()).health;
+  assert.equal(englishHealth.code, 'last-run-failed', 'the stored error still classifies');
+  assert.equal(
+    englishHealth.detail,
+    'error: No destination folder is configured.',
+    'the health detail follows the interface language'
+  );
+
+  settingsRepo.updateSettings({
+    uiLanguage: 'fr',
+    lastAutoBackupStatus: 'ok: Copia verificada y guardada en /tmp/ejemplo.nodus.',
+  });
+  assert.equal(
+    (await recovery.getRecoveryStatus()).health.detail,
+    'ok: Sauvegarde vérifiée et enregistrée dans /tmp/ejemplo.nodus.',
+    'a stored success line follows the interface language'
+  );
+
+  settingsRepo.updateSettings({
+    uiLanguage: 'es',
+    lastAutoBackupStatus: 'error: No hay carpeta de destino configurada.',
+  });
+  assert.equal(
+    (await recovery.getRecoveryStatus()).health.detail,
+    'error: No hay carpeta de destino configurada.',
+    'Spanish is returned unchanged'
+  );
+
   settingsRepo.updateSettings({ autoBackupEnabled: false });
   assert.equal((await recovery.getRecoveryStatus()).health.code, 'disabled', 'no protection at all is reported as critical');
   assert.equal((await recovery.getRecoveryStatus()).health.level, 'critical');
@@ -164,6 +202,7 @@ try {
     rm(userData, { recursive: true, force: true }),
     rm(recoveryRoot, { recursive: true, force: true }),
     rm(invalidRoot, { recursive: true, force: true }),
+    rm(emptyRoot, { recursive: true, force: true }),
   ]);
 }
 

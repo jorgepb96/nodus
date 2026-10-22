@@ -41,6 +41,7 @@ import {
   probeRecoveryFolderInUtility,
 } from './recoveryProbeUtilityHost';
 import { validateBackupPassword } from '@shared/backupPasswordPolicy';
+import { knownRuntimeErrorText } from '@shared/uiLanguage';
 
 export const RECOVERY_SETUP_VERSION = 1;
 
@@ -234,6 +235,20 @@ function assessRecoveryHealth(
   return { level: 'ok', code: 'ok', daysSinceLastBackup, detail };
 }
 
+/**
+ * Translate the stored backup outcome at read time.
+ *
+ * `lastAutoBackupStatus` keeps the Spanish source sentence — the scheduler is not the
+ * place to decide the interface language, and an existing status must follow a language
+ * switch. The `ok:`/`error:` prefix stays exactly as stored: `assessRecoveryHealth`
+ * classifies on it, and it is a status marker rather than prose.
+ */
+function localizeBackupStatus(status: string, language: AppLanguage): string {
+  const match = /^(ok|error): (.*)$/.exec(status);
+  if (!match) return status;
+  return `${match[1]}: ${knownRuntimeErrorText(match[2], language) ?? match[2]}`;
+}
+
 export async function getRecoveryStatus(): Promise<RecoveryStatus> {
   const settings = getSettings();
   const configuredRoot = settings.autoBackupFolder?.trim() ?? '';
@@ -248,8 +263,9 @@ export async function getRecoveryStatus(): Promise<RecoveryStatus> {
       STARTUP_RECOVERY_PROBE_TIMEOUT_MS,
     ).catch(() => null)
     : null;
+  const health = assessRecoveryHealth(settings, folder);
   return {
-    health: assessRecoveryHealth(settings, folder),
+    health: { ...health, detail: localizeBackupStatus(health.detail, settings.uiLanguage) },
     setupVersion: settings.recoverySetupVersion ?? 0,
     // A previously completed setup is not turned into a blocking full-screen wizard
     // merely because a removable/cloud volume is temporarily offline. Settings and

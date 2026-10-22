@@ -32,7 +32,7 @@ import type {
 } from '@shared/types';
 import type { PrimarySourcePolicySettings } from '@shared/primarySourcesTypes';
 import { NODUS_SOCIAL_LINKS } from '@shared/socialLinks';
-import { recoveryHealthAdvice, recoveryHealthAge, recoveryHealthHeadline } from '../recoveryHealth';
+import { recoveryHealthAdvice, recoveryHealthAge, recoveryHealthHeadline, recoverySetupRequest } from '../recoveryHealth';
 import { ImageGenerationSettings, ProvidersSettings } from './ProvidersSettings';
 import { NarrationSettings } from './NarrationSettings';
 import { ConnectedVaultsPanel } from '../components/ConnectedVaultsPanel';
@@ -2933,7 +2933,7 @@ export function Settings({
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       className="btn btn-ghost border border-neutral-700"
-                      onClick={() => void patch({ recoverySetupVersion: 0 })}
+                      onClick={() => void patch(recoverySetupRequest(settings))}
                     >
                       <Icon name="folder" /> {settings.autoBackupFolder ? t('Cambiar carpeta o recuperar') : t('Configurar carpeta segura')}
                     </button>
@@ -3123,7 +3123,7 @@ export function Settings({
                   <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-300/70 bg-white/60 p-2.5 text-xs text-amber-900 dark:border-amber-900/70 dark:bg-neutral-950/30 dark:text-amber-200">
                     <Icon name="alert" size={14} />
                     <span>{t('Configura primero la carpeta de Recuperación y la contraseña maestra para poder verificar una copia superviviente.')}</span>
-                    <button className="btn btn-ghost ml-auto text-xs" onClick={() => void patch({ recoverySetupVersion: 0 })}>
+                    <button className="btn btn-ghost ml-auto text-xs" onClick={() => void patch(recoverySetupRequest(settings))}>
                       <Icon name="folder" /> {t('Configurar Recuperación')}
                     </button>
                   </div>

@@ -1,4 +1,5 @@
 import type { MainErrorTranslations } from './mainProcessErrors';
+import type { AppLanguage } from './types';
 
 export const BACKUPS_RUNTIME_ERRORS: Record<string, MainErrorTranslations> = {
   'Confirma la exportación de los materiales seleccionados.': {
@@ -196,11 +197,118 @@ export const BACKUPS_RUNTIME_ERRORS: Record<string, MainErrorTranslations> = {
     ja: '保存先のフォルダを利用できません。',
     'pt-BR': 'A pasta de destino não está disponível.',
   },
+  // The backup scheduler writes its own outcome into `lastAutoBackupStatus`, and
+  // `getRecoveryStatus().health.detail` shows that sentence verbatim. These are not
+  // thrown errors, but they cross the same IPC and main-process boundary, so they
+  // live in this catalogue rather than in the renderer's translation tables.
+  'No hay carpeta de destino configurada.': {
+    en: 'No destination folder is configured.',
+    fr: 'Aucun dossier de destination n’est configuré.',
+    de: 'Es ist kein Zielordner konfiguriert.',
+    pt: 'Não há nenhuma pasta de destino configurada.',
+    it: 'Nessuna cartella di destinazione configurata.',
+    tr: 'Hedef klasör yapılandırılmamış.',
+    'zh-CN': '未配置目标文件夹。',
+    'zh-TW': '未設定目標資料夾。',
+    ko: '대상 폴더가 설정되어 있지 않습니다.',
+    ja: '保存先のフォルダが設定されていません。',
+    'pt-BR': 'Nenhuma pasta de destino está configurada.',
+  },
+  'No hay contraseña maestra de copias configurada.': {
+    en: 'No backup master password is configured.',
+    fr: 'Aucun mot de passe maître de sauvegarde n’est configuré.',
+    de: 'Es ist kein Master-Passwort für Sicherungen konfiguriert.',
+    pt: 'Não há nenhuma palavra-passe mestra de cópias configurada.',
+    it: 'Nessuna password principale di backup configurata.',
+    tr: 'Yedekleme ana parolası yapılandırılmamış.',
+    'zh-CN': '未配置备份主密码。',
+    'zh-TW': '未設定備份主密碼。',
+    ko: '백업 마스터 비밀번호가 설정되어 있지 않습니다.',
+    ja: 'バックアップのマスターパスワードが設定されていません。',
+    'pt-BR': 'Nenhuma senha mestra de backup está configurada.',
+  },
+  'No se pudo leer la contraseña maestra del almacén seguro del sistema. Vuelve a introducirla en Ajustes para reanudar las copias.': {
+    en: 'The master password could not be read from the system secure store. Re-enter it in Settings to resume backups.',
+    fr: 'Impossible de lire le mot de passe maître depuis le stockage sécurisé du système. Saisissez-le à nouveau dans les réglages pour reprendre les sauvegardes.',
+    de: 'Das Master-Passwort konnte nicht aus dem sicheren Systemspeicher gelesen werden. Geben Sie es in den Einstellungen erneut ein, um die Sicherungen fortzusetzen.',
+    pt: 'Não foi possível ler a palavra-passe mestra do armazenamento seguro do sistema. Introduza-a novamente nas definições para retomar as cópias.',
+    it: 'Impossibile leggere la password principale dall’archivio sicuro di sistema. Reinseriscila nelle impostazioni per riprendere i backup.',
+    tr: 'Ana parola sistemin güvenli deposundan okunamadı. Yedeklemeleri sürdürmek için Ayarlar’da yeniden girin.',
+    'zh-CN': '无法从系统安全存储中读取主密码。请在设置中重新输入以恢复备份。',
+    'zh-TW': '無法從系統安全儲存區讀取主密碼。請在設定中重新輸入以恢復備份。',
+    ko: '시스템 보안 저장소에서 마스터 비밀번호를 읽을 수 없습니다. 설정에서 다시 입력하여 백업을 재개하세요.',
+    ja: 'システムの安全な保管場所からマスターパスワードを読み取れませんでした。バックアップを再開するには、設定で再入力してください。',
+    'pt-BR': 'Não foi possível ler a senha mestra do armazenamento seguro do sistema. Digite-a novamente nas configurações para retomar os backups.',
+  },
 };
 
 function withValue(messages: MainErrorTranslations, value: string): MainErrorTranslations {
   return Object.fromEntries(
     Object.entries(messages).map(([language, message]) => [language, message.replace('{value}', value)]),
+  ) as MainErrorTranslations;
+}
+
+/** Replace every named placeholder, leaving any unknown one untouched. */
+function withValues(messages: MainErrorTranslations, values: Record<string, string>): MainErrorTranslations {
+  return Object.fromEntries(
+    Object.entries(messages).map(([language, message]) => [
+      language,
+      message.replace(/\{(\w+)\}/g, (placeholder, name: string) => values[name] ?? placeholder),
+    ]),
+  ) as MainErrorTranslations;
+}
+
+/** The labels `withBackupOperation` passes to the busy message. */
+const BACKUP_OPERATION_LABELS: Record<string, MainErrorTranslations> = {
+  'copia de seguridad': {
+    en: 'backup',
+    fr: 'sauvegarde',
+    de: 'Sicherung',
+    pt: 'cópia de segurança',
+    it: 'backup',
+    tr: 'yedekleme',
+    'zh-CN': '备份',
+    'zh-TW': '備份',
+    ko: '백업',
+    ja: 'バックアップ',
+    'pt-BR': 'backup',
+  },
+  'snapshot previo a la actualización': {
+    en: 'pre-update snapshot',
+    fr: 'instantané préalable à la mise à jour',
+    de: 'Momentaufnahme vor dem Update',
+    pt: 'cópia instantânea anterior à atualização',
+    it: 'istantanea precedente all’aggiornamento',
+    tr: 'güncelleme öncesi anlık görüntü',
+    'zh-CN': '更新前快照',
+    'zh-TW': '更新前快照',
+    ko: '업데이트 전 스냅샷',
+    ja: '更新前のスナップショット',
+    'pt-BR': 'snapshot anterior à atualização',
+  },
+  'limpieza de copias': {
+    en: 'backup cleanup',
+    fr: 'nettoyage des sauvegardes',
+    de: 'Bereinigung der Sicherungen',
+    pt: 'limpeza das cópias',
+    it: 'pulizia dei backup',
+    tr: 'yedek temizliği',
+    'zh-CN': '备份清理',
+    'zh-TW': '備份清理',
+    ko: '백업 정리',
+    ja: 'バックアップのクリーンアップ',
+    'pt-BR': 'limpeza dos backups',
+  },
+};
+
+/** Translate the operation label embedded in the busy message, language by language. */
+function withOperationLabel(messages: MainErrorTranslations, operation: string): MainErrorTranslations {
+  const labels = BACKUP_OPERATION_LABELS[operation];
+  return Object.fromEntries(
+    Object.entries(messages).map(([language, message]) => [
+      language,
+      message.replace('{operation}', labels?.[language as AppLanguage] ?? labels?.en ?? operation),
+    ]),
   ) as MainErrorTranslations;
 }
 
@@ -263,6 +371,100 @@ export const BACKUPS_RUNTIME_ERROR_PATTERNS = [
           'pt-BR': 'Caminho de saída duplicado: {value}',
         },
         value,
-      ),
+    ),
+  },
+  {
+    // The success line stored as `lastAutoBackupStatus`, with the optional warning
+    // appended when provider keys could not be read from the system secure store.
+    pattern: /^Copia verificada y guardada en (.+?)\.(?: Aviso: las claves de (.+) no se pudieron leer del almacén seguro y no viajan en esta copia\.)?$/,
+    translate: (target: string, providers?: string) => withValues(
+      providers
+        ? {
+          en: 'Backup verified and saved to {target}. Note: the keys for {providers} could not be read from the secure store and are not included in this backup.',
+          fr: 'Sauvegarde vérifiée et enregistrée dans {target}. Remarque : les clés de {providers} n’ont pas pu être lues dans le stockage sécurisé et ne sont pas incluses dans cette sauvegarde.',
+          de: 'Sicherung überprüft und unter {target} gespeichert. Hinweis: Die Schlüssel für {providers} konnten nicht aus dem sicheren Speicher gelesen werden und sind in dieser Sicherung nicht enthalten.',
+          pt: 'Cópia verificada e guardada em {target}. Aviso: não foi possível ler as chaves de {providers} do armazenamento seguro e não viajam nesta cópia.',
+          it: 'Backup verificato e salvato in {target}. Avviso: le chiavi di {providers} non sono state lette dall’archivio sicuro e non sono incluse in questo backup.',
+          tr: 'Yedek doğrulandı ve {target} konumuna kaydedildi. Uyarı: {providers} anahtarları güvenli depodan okunamadı ve bu yedeğe dahil edilmedi.',
+          'zh-CN': '备份已验证并保存至 {target}。注意：无法从安全存储中读取 {providers} 的密钥，因此未包含在此备份中。',
+          'zh-TW': '備份已驗證並儲存至 {target}。注意：無法從安全儲存區讀取 {providers} 的金鑰，因此未包含在此備份中。',
+          ko: '백업이 검증되어 {target}에 저장되었습니다. 참고: {providers}의 키를 보안 저장소에서 읽을 수 없어 이 백업에 포함되지 않았습니다.',
+          ja: 'バックアップは検証され、{target} に保存されました。注意: {providers} のキーは安全な保管場所から読み取れなかったため、このバックアップには含まれていません。',
+          'pt-BR': 'Backup verificado e salvo em {target}. Aviso: não foi possível ler as chaves de {providers} do armazenamento seguro e elas não estão incluídas neste backup.',
+        }
+        : {
+          en: 'Backup verified and saved to {target}.',
+          fr: 'Sauvegarde vérifiée et enregistrée dans {target}.',
+          de: 'Sicherung überprüft und unter {target} gespeichert.',
+          pt: 'Cópia verificada e guardada em {target}.',
+          it: 'Backup verificato e salvato in {target}.',
+          tr: 'Yedek doğrulandı ve {target} konumuna kaydedildi.',
+          'zh-CN': '备份已验证并保存至 {target}。',
+          'zh-TW': '備份已驗證並儲存至 {target}。',
+          ko: '백업이 검증되어 {target}에 저장되었습니다.',
+          ja: 'バックアップは検証され、{target} に保存されました。',
+          'pt-BR': 'Backup verificado e salvo em {target}.',
+        },
+      { target, providers: providers ?? '' },
+    ),
+  },
+  {
+    // The verification reason is diagnostic prose from the utility process; the
+    // sentence around it is ours and follows the interface language.
+    pattern: /^La copia se escribió pero no se pudo verificar, así que se descartó y no se ha podado ninguna anterior: (.+)$/,
+    translate: (reason: string) => withValues(
+      {
+        en: 'The backup was written but could not be verified, so it was discarded and no earlier backup was pruned: {reason}',
+        fr: 'La sauvegarde a été écrite mais n’a pas pu être vérifiée ; elle a donc été supprimée et aucune sauvegarde antérieure n’a été purgée : {reason}',
+        de: 'Die Sicherung wurde geschrieben, konnte aber nicht überprüft werden. Sie wurde daher verworfen und keine ältere Sicherung gelöscht: {reason}',
+        pt: 'A cópia foi escrita mas não pôde ser verificada, pelo que foi descartada e nenhuma cópia anterior foi removida: {reason}',
+        it: 'Il backup è stato scritto ma non è stato possibile verificarlo, quindi è stato scartato e nessun backup precedente è stato eliminato: {reason}',
+        tr: 'Yedek yazıldı ancak doğrulanamadı; bu nedenle atıldı ve önceki yedeklerden hiçbiri silinmedi: {reason}',
+        'zh-CN': '备份已写入，但无法验证，因此已被丢弃，且未清理任何较早的备份：{reason}',
+        'zh-TW': '備份已寫入，但無法驗證，因此已被丟棄，且未清理任何較早的備份：{reason}',
+        ko: '백업이 작성되었지만 검증할 수 없어 폐기되었으며 이전 백업은 정리되지 않았습니다: {reason}',
+        ja: 'バックアップは書き込まれましたが検証できなかったため、破棄され、古いバックアップは削除されていません: {reason}',
+        'pt-BR': 'O backup foi gravado, mas não pôde ser verificado; por isso foi descartado e nenhum backup anterior foi removido: {reason}',
+      },
+      { reason },
+    ),
+  },
+  {
+    pattern: /^Hay otra operación de copias en curso \((.+)\)\. Vuelve a intentarlo cuando termine\.$/,
+    translate: (operation: string) => withOperationLabel(
+      {
+        en: 'Another backup operation is running ({operation}). Try again when it finishes.',
+        fr: 'Une autre opération de sauvegarde est en cours ({operation}). Réessayez lorsqu’elle sera terminée.',
+        de: 'Eine andere Sicherungsoperation läuft ({operation}). Versuchen Sie es erneut, wenn sie beendet ist.',
+        pt: 'Há outra operação de cópias em curso ({operation}). Tente novamente quando terminar.',
+        it: 'È in corso un’altra operazione di backup ({operation}). Riprova quando sarà terminata.',
+        tr: 'Başka bir yedekleme işlemi sürüyor ({operation}). Bittiğinde yeniden deneyin.',
+        'zh-CN': '另一项备份操作正在进行（{operation}）。请在其完成后重试。',
+        'zh-TW': '另一項備份操作正在進行（{operation}）。請在其完成後重試。',
+        ko: '다른 백업 작업이 진행 중입니다({operation}). 완료된 후 다시 시도하세요.',
+        ja: '別のバックアップ操作が実行中です（{operation}）。完了してから再試行してください。',
+        'pt-BR': 'Há outra operação de backup em andamento ({operation}). Tente novamente quando ela terminar.',
+      },
+      operation,
+    ),
+  },
+  {
+    pattern: /^Hay otra operación de copias en curso \((.+)\)\. No se ha modificado nada\.$/,
+    translate: (operation: string) => withOperationLabel(
+      {
+        en: 'Another backup operation is running ({operation}). Nothing has been changed.',
+        fr: 'Une autre opération de sauvegarde est en cours ({operation}). Rien n’a été modifié.',
+        de: 'Eine andere Sicherungsoperation läuft ({operation}). Es wurde nichts geändert.',
+        pt: 'Há outra operação de cópias em curso ({operation}). Nada foi alterado.',
+        it: 'È in corso un’altra operazione di backup ({operation}). Non è stato modificato nulla.',
+        tr: 'Başka bir yedekleme işlemi sürüyor ({operation}). Hiçbir şey değiştirilmedi.',
+        'zh-CN': '另一项备份操作正在进行（{operation}）。未做任何更改。',
+        'zh-TW': '另一項備份操作正在進行（{operation}）。未做任何變更。',
+        ko: '다른 백업 작업이 진행 중입니다({operation}). 아무것도 변경되지 않았습니다.',
+        ja: '別のバックアップ操作が実行中です（{operation}）。何も変更されていません。',
+        'pt-BR': 'Há outra operação de backup em andamento ({operation}). Nada foi alterado.',
+      },
+      operation,
+    ),
   },
 ];

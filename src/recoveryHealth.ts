@@ -1,4 +1,4 @@
-import type { RecoveryHealth } from '@shared/types';
+import type { AppSettings, RecoveryHealth } from '@shared/types';
 import { t, tx } from './i18n';
 
 /**
@@ -53,4 +53,28 @@ export function recoveryHealthAge(health: RecoveryHealth): string | null {
   // tx() keeps the whole sentence one translatable key, so word order stays natural
   // in every language instead of being hardcoded by concatenation.
   return tx('Última copia hace {days} días.', { days: health.daysSinceLastBackup });
+}
+
+/**
+ * Settings patch for an explicit "configure recovery" request.
+ *
+ * The wizard is a startup guard, not a modal, so resetting `recoverySetupVersion` only
+ * works when the guard is allowed to fire. An academic vault whose learning invitations
+ * are still pending is deliberately skipped by that guard until `realSetupStarted` is
+ * set — and only the learning flow used to set it, which made the Settings buttons and
+ * the update notice inert for exactly that user. An explicit request is the same signal
+ * the learning flow emits, so the guard stops deferring and the wizard mounts.
+ *
+ * The whole progress object is carried over because `updateSettings` replaces
+ * `academicLearningProgress` in place; only `lessons` receives a merge of its own.
+ */
+export function recoverySetupRequest(settings: AppSettings): Partial<AppSettings> {
+  const progress = settings.academicLearningProgress;
+  if (!progress?.invitationsEligible || progress.realSetupStarted) {
+    return { recoverySetupVersion: 0 };
+  }
+  return {
+    recoverySetupVersion: 0,
+    academicLearningProgress: { ...progress, realSetupStarted: true },
+  };
 }

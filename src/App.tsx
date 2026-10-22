@@ -65,7 +65,7 @@ import { useUpdateProgress } from './useUpdateProgress';
 import { pendingUpdateVersion, updateInstallBusy } from './updateStatus';
 import { UpdateReadyNotice } from './components/UpdateReadyNotice';
 import { AiModelRequiredModal } from './components/AiModelRequiredModal';
-import { recoveryHealthAdvice, recoveryHealthHeadline } from './recoveryHealth';
+import { recoveryHealthAdvice, recoveryHealthHeadline, recoverySetupRequest } from './recoveryHealth';
 import { NodiMascot } from './components/nodi/NodiMascot';
 import { NodiStyleModal } from './components/NodiStyleModal';
 import { Icon } from './components/ui';
@@ -1010,7 +1010,7 @@ export function App() {
   useEffect(() => {
     if (!settings || settings.basicsTutorialVersion === 0) return;
     void reloadRecoveryStatus();
-  }, [reloadRecoveryStatus, settings?.basicsTutorialVersion, settings?.recoverySetupVersion, vaults.length]);
+  }, [reloadRecoveryStatus, settings?.basicsTutorialVersion, settings?.recoverySetupVersion, settings?.uiLanguage, vaults.length]);
 
   const refreshHasData = useCallback(async () => {
     if (!window.nodus) return;
@@ -1953,7 +1953,7 @@ export function App() {
         update={updateProgress}
         onUpdate={setUpdateProgress}
         onLater={() => setDeferredUpdate(updateNoticeKey)}
-        onRecovery={() => { void window.nodus.updateSettings({ recoverySetupVersion: 0 }).then(setSettings); }}
+        onRecovery={() => { void window.nodus.updateSettings(recoverySetupRequest(settings)).then(setSettings); }}
       />}
 
       {settings.demoMode && (

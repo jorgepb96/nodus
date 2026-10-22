@@ -24,7 +24,7 @@ test('Authenticode checks drop inherited PowerShell module paths without changin
  assert.equal(env.PSModulePath,'PowerShell 7 modules');
 });
 
-test('Windows PowerShell can load its security module when called through Node from PowerShell 7',{skip:process.platform!=='win32'},()=>{
+test('Windows PowerShell can load its security module when called through Node from PowerShell 7',{skip:process.platform!=='win32'&&'Runs in the mandatory Windows Nodus Support native matrix'},()=>{
  const powershell=path.join(process.env.SystemRoot??'C:\\Windows','System32/WindowsPowerShell/v1.0/powershell.exe');
  const env=supportSignatureEnvironment(process.execPath,{...process.env,PSModulePath:path.join(process.env.ProgramFiles??'C:\\Program Files','PowerShell/7/Modules')});
  const status=execFileSync(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env,encoding:'utf8'}).trim();

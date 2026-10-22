@@ -3127,7 +3127,7 @@ const RELEASE_5_2_2_HIGHLIGHTS: RawReleaseHighlight[] = [
 const RAW_RELEASE_NOTES: RawReleaseNote[] = [
   {
     version: '5.15.3',
-    date: '2026-10-22',
+    date: '2026-10-23',
     highlights: RELEASE_5_15_3_HIGHLIGHTS,
   },
   {

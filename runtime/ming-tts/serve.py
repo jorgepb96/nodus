@@ -415,15 +415,40 @@ class Server:
             raise RequestError("text has nothing to synthesize")
         out_dir.mkdir(parents=True, exist_ok=True)
         prompt = ming_text.tts_prompt(lang)
+        decode_budget = getattr(self.backend, 'decode_budget', None)
+        if decode_budget is not None:
+            from fragment_guard import plan_fragments
+
+            def budget(fragment):
+                self.check_cancel(job_id)
+                return decode_budget(fragment, prompt, **conditioning)
+
+            fragments = plan_fragments(fragments, budget)
         total_audio = total_gen = 0.0
         sample_rate = self.backend.sample_rate
         for n, fragment in enumerate(fragments):
             if self.stop_requested(job_id):
                 raise Cancelled
             started = time.perf_counter()
-            audio, info = self.backend.synth_fragment(
-                fragment, prompt, max_steps=MAX_DECODE_STEPS,
-                check_cancel=lambda: self.check_cancel(job_id), **conditioning, **SAMPLING)
+            def synthesize(part):
+                self.check_cancel(job_id)
+                return self.backend.synth_fragment(
+                    part, prompt, max_steps=MAX_DECODE_STEPS,
+                    check_cancel=lambda: self.check_cancel(job_id), **conditioning, **SAMPLING)
+
+            if phonon or kokoro:
+                audio, info = synthesize(fragment)
+            else:
+                from fragment_guard import synthesize_complete
+
+                def join_audio(parts):
+                    import numpy as np
+
+                    return np.concatenate(parts)
+
+                audio, info = synthesize_complete(fragment, synthesize, join_audio)
+                if info.get('retries'):
+                    log(f"job {job_id}: fragment {n} regenerated in smaller pieces after context truncation ({info['retries']} retries)")
             path = out_dir / f"{n:03d}.wav"
             duration = write_wav(path, audio, sample_rate)
             gen = time.perf_counter() - started

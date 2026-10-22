@@ -205,6 +205,14 @@ export class TtsEngineHost {
       const onMessage = (message: Message) => {
         if (message.job_id !== job.jobId) return false;
         if (message.type === 'fragment') {
+          // Older or mismatched sidecars must not turn an unfinished fragment into
+          // a successful clip and silently skip the rest of its text.
+          if (message.truncated) {
+            this.send({ type: 'cancel', job_id: job.jobId });
+            running.waiters.delete(`job:${job.jobId}`);
+            reject(new Error('TTS_SYNTH_FAILED: Ming returned a truncated audio fragment.'));
+            return true;
+          }
           const fragment: TtsFragment = {
             jobId: job.jobId, index: Number(message.n), total: Number(message.total), path: String(message.path),
             durationS: Number(message.duration_s) || 0, genS: Number(message.gen_s) || 0,

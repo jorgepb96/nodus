@@ -20,6 +20,7 @@ generated.
 | --- | --- |
 | `serve.py` | Entry point: the protocol, the job queue, cancellation, the voice cache and WAV output. Backend-agnostic. |
 | `ming_text.py` | Fragment splitting (a verbatim copy of mlx-audio's `_split_fragments`, checked by the protocol test), the prompt and its `Target language:` line, built-in voice captions. Standard library only. |
+| `fragment_guard.py` | Adapts fragments to the remaining context and regenerates truncated attempts before publication. Standard library only. |
 | `speaker.py` | CAM++ speaker embedding: Kaldi fbank in NumPy plus `campplus.onnx` on onnxruntime. |
 | `prompt_audio.py` | Trims the reference clip's leading and trailing silence before it is encoded (why: below). |
 | `backend_mlx.py`, `backend_torch.py`, `backend_phonon.py`, `backend_kokoro.py`, `backend_fake.py` | One class each with the same small interface (`load`, `encode_prompt`, `synth_fragment`, ...). |
@@ -166,7 +167,16 @@ normalizer is not shipped): write numbers the way they should be read when it ma
 Sampling is fixed at Ming's reference settings, cfg 2.0, 10 flow steps, sigma 0.25,
 temperature 0. Requests cannot lower the step count.
 
-Each fragment is generated, decoded in one pass, trimmed of trailing silence (keeping
+Before synthesis, the MLX and torch adapters count each fragment's actual input positions,
+including the clone reference and its transcript. Fragments are subdivided as needed to
+reserve output room inside the 512-position context. This uses a conservative speech-rate
+estimate; it is not an ASR check. If the model still reaches its context limit before its
+natural stop, the partial attempt is discarded and the entire fragment is regenerated in
+smaller pieces. Only the completed children are joined and published under the original
+fragment index. An unsplittable fragment fails instead of silently losing speech. No
+sampling settings, reference recordings or cached voice prompts are changed.
+
+Each accepted fragment is generated, decoded in one pass per attempt, trimmed of trailing silence (keeping
 0.3 s, as upstream does per fragment) and written to `out_dir/NNN.wav` (`000.wav`,
 `001.wav`, …): PCM16, mono, the model's native rate (44100 Hz). Then:
 
@@ -177,9 +187,9 @@ Each fragment is generated, decoded in one pass, trimmed of trailing silence (ke
 
 - `n` is 0-based and matches the file name. Fragments arrive strictly in order.
 - `gen_s` is wall time for that fragment, including decoding and writing.
-- `steps` is the number of 12.5 Hz latent steps generated. `"truncated":true` appears when
-  a fragment hit the context budget before the model's stop head fired; its audio may end
-  early.
+- `steps` is the number of 12.5 Hz latent steps in the accepted audio (summed across
+  corrected children after a retry). Truncated attempts are never published. The host
+  also rejects legacy `"truncated":true` events before playback or clip concatenation.
 - `out_dir` is created if missing. Existing files with the same names are overwritten.
 
 **Exactly one terminal event per job**: `done`, `cancelled` or

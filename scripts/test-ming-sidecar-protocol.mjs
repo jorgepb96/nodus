@@ -226,3 +226,52 @@ assert ming_text.MING3_MAX_FRAGMENT_LENGTH == 50
   const result = JSON.parse(execFileSync(interpreter, ['-I', '-c', script, runtime], { encoding: 'utf8' }));
   assert.deepEqual(result, { _semantic_length: true, _add_period: true, _split_fragments: true });
 });
+
+test('Ming context planning and recovery preserve all text and reject incomplete audio', { skip: interpreter ? false : 'no Python interpreter on PATH' }, () => {
+  execFileSync(interpreter, ['-I', '-c', `
+import sys
+sys.path.insert(0, sys.argv[1])
+from fragment_guard import plan_fragments, synthesize_complete, FragmentContextError
+text = 'One two three four five six seven eight nine ten.'
+# Long reference leaves less room; every word must still appear, in order.
+planned = plan_fragments([text], lambda fragment: 55 - len(fragment.split()))
+assert len(planned) > 1
+assert ' '.join(planned) == text
+assert plan_fragments([text], lambda _: 400) == [text]
+# Discard truncated attempts, regenerate the entire text in smaller parts,
+# and join only the complete children. Never splice the partial attempt in.
+attempts = []
+def synthesize(fragment):
+    attempts.append(fragment)
+    if len(fragment.split()) > 3:
+        return ['INCOMPLETE'], {'steps': 1, 'truncated': True}
+    return fragment.split(), {'steps': len(fragment.split()), 'truncated': False}
+audio, info = synthesize_complete(text, synthesize, lambda pieces: sum(pieces, []))
+assert audio == text.split()
+assert 'INCOMPLETE' not in audio and info['truncated'] is False and info['retries'] > 0
+# No word left to split: fail, never accept a clipped fragment.
+try:
+    synthesize_complete('word', lambda _: ([], {'steps': 1, 'truncated': True}), lambda pieces: [])
+except FragmentContextError:
+    pass
+else:
+    raise AssertionError('unsplittable truncation was accepted')
+try:
+    plan_fragments(['word'], lambda _: 0)
+except FragmentContextError:
+    pass
+else:
+    raise AssertionError('an exhausted reference context was accepted')
+# Cancellation/errors propagate; they are never mistaken for a retryable cut.
+def cancelled(_): raise InterruptedError('cancelled')
+try:
+    synthesize_complete(text, cancelled, lambda pieces: [])
+except InterruptedError:
+    pass
+else:
+    raise AssertionError('cancellation was swallowed')
+# Upstream does not count Kana semantic units; still terminate and keep text.
+kana = 'あいうえおかきくけこさしすせそ'
+assert ''.join(plan_fragments([kana], lambda _: 24)) == kana
+`, runtime], { stdio: 'pipe' });
+});

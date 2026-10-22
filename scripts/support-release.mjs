@@ -10,6 +10,7 @@ import archiver from 'archiver';
 import { hashFile } from '../apps/nodus-support/core/files.mjs';
 import { acceptPlatformSignature,verifyRelease } from '../apps/nodus-support/core/releases.mjs';
 import { requireQualified } from '../apps/nodus-support/core/qualification.mjs';
+import {supportSignatureEnvironment} from './lib/supportPublication.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -22,7 +23,7 @@ function platformSignature(file) {
   if(platform==='darwin') {execFileSync('/usr/bin/codesign',['--verify','--deep','--strict',app]);execFileSync('/usr/sbin/spctl',['--assess','--type','execute',app]);return 'macos-notarized';}
   if(platform!=='win32')return 'none';
   const powershell=path.join(process.env.SystemRoot??'C:\\Windows','System32/WindowsPowerShell/v1.0/powershell.exe');
-  const status=execFileSync(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env:{...process.env,NODUS_SUPPORT_SIGNATURE_FILE:file},encoding:'utf8'}).trim();
+  const status=execFileSync(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env:supportSignatureEnvironment(file),encoding:'utf8'}).trim();
   acceptPlatformSignature(status,'none');return status==='Valid'?'authenticode':'none';
 }
 if (process.argv.includes('--runtime')) {

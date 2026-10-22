@@ -7,14 +7,15 @@ import { promisify } from 'node:util';
 import * as tar from 'tar';
 import pythonManifest from '../../runtime/zotero-mcp/manifest.json';
 import { findSystemPython } from '../systemPython';
-import type { TtsBackend, TtsDevice } from '@shared/ttsModels';
+import type { TtsBackend, TtsDevice, TtsEngine } from '@shared/ttsModels';
+import { pocketSupportsPlatform } from '@shared/pocketTts';
 
 const run = promisify(execFile);
 const pythonAt = (root: string, platform: NodeJS.Platform) => path.join(root, platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 const basePythonAt = (root: string, platform: NodeJS.Platform) => path.join(root, 'python', platform === 'win32' ? 'python.exe' : 'bin/python3');
 
 /** Which hash-locked dependency set an environment is built from. */
-export type TtsLockFlavor = 'mlx' | 'torch-cpu' | 'torch-cuda' | 'phonon' | 'kokoro';
+export type TtsLockFlavor = 'mlx' | 'torch-cpu' | 'torch-cuda' | 'phonon' | 'kokoro' | 'pocket';
 
 const LOCK_FILES: Record<TtsLockFlavor, string> = {
   mlx: 'requirements-mlx.lock',
@@ -22,13 +23,15 @@ const LOCK_FILES: Record<TtsLockFlavor, string> = {
   'torch-cuda': 'requirements-torch-cuda.lock',
   phonon: 'requirements-phonon.lock',
   kokoro: 'requirements-kokoro.lock',
+  pocket: 'requirements-pocket.lock',
 };
 const EXTRA_INDEX: Partial<Record<TtsLockFlavor, string>> = {
   'torch-cpu': 'https://download.pytorch.org/whl/cpu',
   'torch-cuda': 'https://download.pytorch.org/whl/cu124',
+  pocket: 'https://download.pytorch.org/whl/cpu',
 };
 /** pip timeouts: the CUDA torch wheels alone are ~2.5 GB. */
-const PIP_TIMEOUT_MS: Record<TtsLockFlavor, number> = { mlx: 900_000, 'torch-cpu': 1_200_000, 'torch-cuda': 3_600_000, phonon: 300_000, kokoro: 600_000 };
+const PIP_TIMEOUT_MS: Record<TtsLockFlavor, number> = { mlx: 900_000, 'torch-cpu': 1_200_000, 'torch-cuda': 3_600_000, phonon: 300_000, kokoro: 600_000, pocket: 1_200_000 };
 
 export type TtsInstallPhase = 'checking' | 'python' | 'environment' | 'dependencies' | 'verifying' | 'ready';
 export interface TtsInstallProgress { phase: TtsInstallPhase; fraction: number }
@@ -71,7 +74,7 @@ export class TtsInstaller {
     private host: TtsHost,
     private findPython = () => findSystemPython('3.12', (minor) => minor === '3.12'),
     /** Phonon gets its own small environment (the `ptts` runtime), separate from Ming's. */
-    readonly engine: 'ming' | 'phonon' | 'kokoro' = 'ming',
+    readonly engine: TtsEngine = 'ming',
   ) {}
 
   get busy(): boolean { return this.controller !== null; }
@@ -88,7 +91,14 @@ export class TtsInstaller {
 
   async remove(): Promise<void> {
     if (this.controller) throw new Error('TTS_INSTALL_BUSY');
-    await fs.rm(this.root, { recursive: true, force: true });
+    if (this.engine !== 'ming') {
+      await fs.rm(this.root, { recursive: true, force: true });
+      return;
+    }
+    // Optional engines live below runtime/ too; removing Ming must preserve their environments.
+    for (const entry of await fs.readdir(this.root).catch(() => [] as string[])) {
+      if (!['phonon', 'kokoro', 'pocket'].includes(entry)) await fs.rm(path.join(this.root, entry), { recursive: true, force: true });
+    }
   }
 
   async install(progress: (event: TtsInstallProgress) => void): Promise<TtsInstalledRuntime> {
@@ -101,6 +111,10 @@ export class TtsInstaller {
       await fs.mkdir(this.root, { recursive: true, mode: 0o700 });
       if (this.engine === 'phonon') return await this.build('phonon', signal, progress);
       if (this.engine === 'kokoro') return await this.build('kokoro', signal, progress);
+      if (this.engine === 'pocket') {
+        if (!pocketSupportsPlatform(this.host.platform, this.host.arch)) throw new Error('TTS_INSTALL_PLATFORM_UNSUPPORTED');
+        return await this.build('pocket', signal, progress);
+      }
       const appleSilicon = this.host.platform === 'darwin' && this.host.arch === 'arm64';
       if (appleSilicon) return await this.build('mlx', signal, progress);
       if (await this.host.hasNvidia().catch(() => false)) {
@@ -151,7 +165,7 @@ export class TtsInstaller {
         '--timeout', '60', '--retries', '2', '-r', lockPath], { signal, timeout: PIP_TIMEOUT_MS[flavor], maxBuffer: 8 * 1024 * 1024, windowsHide: true });
       progress({ phase: 'verifying', fraction: 0.92 });
       await run(python, ['-I', '-m', 'pip', '--isolated', 'check'], { signal, timeout: 60_000, windowsHide: true });
-      const backend: TtsBackend = flavor === 'mlx' ? 'mlx' : flavor === 'phonon' ? 'phonon' : flavor === 'kokoro' ? 'kokoro' : 'torch';
+      const backend: TtsBackend = flavor === 'mlx' ? 'mlx' : flavor === 'phonon' ? 'phonon' : flavor === 'kokoro' ? 'kokoro' : flavor === 'pocket' ? 'pocket' : 'torch';
       const check = await this.selfCheck(python, backend, signal);
       signal.throwIfAborted();
       const runtime: TtsInstalledRuntime = { python, digest, flavor, backend, device: check.device, ...(fallbackReason ? { fallbackReason } : {}) };

@@ -7,8 +7,10 @@
  * (CUDA when an NVIDIA GPU answers, CPU otherwise).
  */
 
-export type TtsBackend = 'mlx' | 'torch' | 'phonon' | 'kokoro';
-export type TtsEngine = 'ming' | 'phonon' | 'kokoro';
+import { POCKET_MODEL_ASSETS, POCKET_LANGUAGES, POCKET_MODEL_ID, pocketSupportsPlatform } from './pocketTts';
+
+export type TtsBackend = 'mlx' | 'torch' | 'phonon' | 'kokoro' | 'pocket';
+export type TtsEngine = 'ming' | 'phonon' | 'kokoro' | 'pocket';
 export type TtsDevice = 'metal' | 'cuda' | 'cpu';
 
 export interface TtsModelAsset {
@@ -24,7 +26,7 @@ export interface TtsModelDefinition {
   label: string;
   engine: TtsEngine;
   backend: TtsBackend;
-  quantization: '8bit' | '4bit' | 'bf16' | 'q8' | 'int8';
+  quantization: '8bit' | '4bit' | 'bf16' | 'q8' | 'int8' | 'fp32';
   /** Languages the checkpoint speaks. */
   languages: readonly TtsLanguage[];
   /** Gated on Hugging Face: the user accepts the terms there and gives Nodus a token. */
@@ -226,6 +228,21 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
       },
     ],
   },
+  {
+    id: POCKET_MODEL_ID,
+    label: 'Pocket TTS · multilingüe · 6 capas',
+    engine: 'pocket',
+    backend: 'pocket',
+    quantization: 'fp32',
+    languages: POCKET_LANGUAGES,
+    gated: true,
+    cloning: true,
+    description: 'Implementación oficial de Kyutai optimizada para CPU. Siete idiomas y clonación local, con Lola para español. Requiere aceptar los términos en Hugging Face.',
+    sourceUrl: 'https://huggingface.co/kyutai/pocket-tts',
+    licenseLabel: 'CC BY 4.0',
+    licenseUrl: 'https://huggingface.co/kyutai/pocket-tts',
+    assets: POCKET_MODEL_ASSETS,
+  },
 ];
 
 export function ttsModelBytes(model: TtsModelDefinition): number {
@@ -238,13 +255,15 @@ export function ttsModelsForPlatform(platform: string, arch: string): TtsModelDe
   // PyTorch elsewhere. The PyTorch checkpoint on an Apple Silicon Mac would download 3 GB and
   // then fail to load in the MLX sidecar.
   const backend = ttsBackendForPlatform(platform, arch);
-  return TTS_MODELS.filter((model) => !model.unpublished && (model.engine !== 'ming' || model.backend === backend));
+  return TTS_MODELS.filter((model) => !model.unpublished && (model.engine !== 'ming' || model.backend === backend)
+    && (model.engine !== 'pocket' || pocketSupportsPlatform(platform, arch)));
 }
 
 /** The sidecar backend a checkpoint needs: Phonon has its own; Ming's depends on the machine. */
 export function ttsBackendForModel(model: TtsModelDefinition | undefined, platform: string, arch: string): TtsBackend {
   if (model?.engine === 'phonon') return 'phonon';
   if (model?.engine === 'kokoro') return 'kokoro';
+  if (model?.engine === 'pocket') return 'pocket';
   return ttsBackendForPlatform(platform, arch);
 }
 
@@ -256,11 +275,9 @@ export function ttsBackendForPlatform(platform: string, arch: string): TtsBacken
   return platform === 'darwin' && arch === 'arm64' ? 'mlx' : 'torch';
 }
 
-/**
- * Languages Ming-3.0 speaks. Chinese and English need no language line; the other five
- * require one (`Target language:`), which also keeps them away from the zh/en normalizer.
- */
-export type TtsLanguage = 'es' | 'en' | 'zh' | 'fr' | 'de' | 'ja' | 'ko' | 'pt';
+/** Local-engine language union. `requiresLanguageLine` describes Ming's prompt format;
+ * each checkpoint's `languages` determines which entries it can actually synthesize. */
+export type TtsLanguage = 'es' | 'en' | 'zh' | 'fr' | 'de' | 'ja' | 'ko' | 'pt' | 'it' | 'nl';
 export const TTS_LANGUAGES: ReadonlyArray<{ code: TtsLanguage; label: string; requiresLanguageLine: boolean }> = [
   { code: 'es', label: 'Español', requiresLanguageLine: true },
   { code: 'en', label: 'English', requiresLanguageLine: false },
@@ -269,8 +286,10 @@ export const TTS_LANGUAGES: ReadonlyArray<{ code: TtsLanguage; label: string; re
   { code: 'de', label: 'Deutsch', requiresLanguageLine: true },
   { code: 'ja', label: '日本語', requiresLanguageLine: true },
   { code: 'ko', label: '한국어', requiresLanguageLine: true },
-  // Phonon only; Ming does not speak Portuguese.
+  // Additional CPU engines; Ming does not speak these languages.
   { code: 'pt', label: 'Português', requiresLanguageLine: false },
+  { code: 'it', label: 'Italiano', requiresLanguageLine: false },
+  { code: 'nl', label: 'Nederlands', requiresLanguageLine: false },
 ];
 export type TtsLanguageSetting = TtsLanguage | 'auto';
 
@@ -376,6 +395,8 @@ export interface TtsStatus {
   phononRuntime: TtsRuntimeStatus;
   /** Kokoro-82M's environment (`kokoro-onnx` + espeak-ng, no PyTorch). */
   kokoroRuntime: TtsRuntimeStatus;
+  /** Official Kyutai Pocket TTS, always CPU, in its own optional environment. */
+  pocketRuntime: TtsRuntimeStatus;
   models: TtsModelStatus[];
   /** Checkpoints on disk that this machine cannot run (the PyTorch Ming checkpoint on an Apple
    *  Silicon Mac): listed only so Settings can delete them. `downloadedBytes` is what they use. */

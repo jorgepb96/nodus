@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppSettings } from '@shared/types';
+import { POCKET_MODEL_ID, POCKET_LANGUAGES, POCKET_DEFAULT_VOICES } from '@shared/pocketTts';
 import {
   TTS_LANGUAGES, TTS_MODELS, TTS_SURFACES, PHONON_LANGUAGES, sanitizeTtsRetention, ttsModelBytes,
   type TtsEngine, type TtsLanguage, type TtsLanguageSetting, type TtsModelDefinition, type TtsRetentionRule, type TtsStatus, type TtsSurface,
@@ -66,8 +67,9 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const platformModels = useMemo(() => {
     const backend = status?.runtime.backend;
     // Phonon runs on every platform; Ming's checkpoints follow this machine's backend.
-    return TTS_MODELS.filter((model) => model.engine !== 'ming' || !backend || model.backend === backend);
-  }, [status?.runtime.backend]);
+    return TTS_MODELS.filter((model) => (model.engine !== 'ming' || !backend || model.backend === backend)
+      && (model.engine !== 'pocket' || !status || status.models.some((entry) => entry.id === model.id)));
+  }, [status]);
   const modelStatus = useMemo(() => new Map(status?.models.map((model) => [model.id, model]) ?? []), [status]);
   const selectedModelId = settings.ttsModelId || platformModels.find((model) => !model.unpublished)?.id || '';
   const retention = sanitizeTtsRetention(settings.ttsRetention);
@@ -87,13 +89,16 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const run = async (action: () => Promise<unknown>) => {
     setError('');
     try { await action(); } catch (cause) { setError(ttsErrorMessage(cause)); }
-    finally { void refreshTtsStatus().then(setStatus).catch(() => {}); void refreshUsage(); }
+    finally { void refreshTtsStatus().then(setStatus).catch(() => {}); void refreshUsage(); void refreshVoices().catch(() => {}); }
   };
 
   const runtime = status?.runtime;
   const mingInstalling = install?.engine === 'ming' || Boolean(runtime?.installing);
   const phononInstalling = install?.engine === 'phonon' || Boolean(status?.phononRuntime.installing);
   const kokoroInstalling = install?.engine === 'kokoro' || Boolean(status?.kokoroRuntime?.installing);
+  const pocketInstalling = install?.engine === 'pocket' || Boolean(status?.pocketRuntime?.installing);
+  const pocketPhase = install?.engine === 'pocket' ? install.phase : status?.pocketRuntime?.phase;
+  const pocketFraction = install?.engine === 'pocket' ? install.fraction : status?.pocketRuntime?.progress ?? 0;
   const mingPhase = install?.engine === 'ming' ? install.phase : runtime?.phase;
   const phononPhase = install?.engine === 'phonon' ? install.phase : undefined;
   const kokoroPhase = install?.engine === 'kokoro' ? install.phase : undefined;
@@ -105,7 +110,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   return <div className="mt-5 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950/35" data-testid="narration-settings">
     <div className="min-w-0">
       <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-200">{t('Voz y narración')}</h4>
-      <p className="mt-1 max-w-3xl text-xs leading-5 text-neutral-500">{t('Nodus narra con Ming 3.0 en tu equipo: clona una voz a partir de una grabación corta y habla siete idiomas. El modelo solo se carga mientras lo usas y nada sale de tu ordenador.')}</p>
+      <p className="mt-1 max-w-3xl text-xs leading-5 text-neutral-500">{t('Nodus narra en tu equipo con el motor que elijas. Ming y Pocket TTS permiten clonar una voz a partir de una grabación corta. Los modelos se descargan cuando los necesitas y el audio se procesa localmente.')}</p>
     </div>
 
     {/* 1 · Engine */}
@@ -156,7 +161,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
         {status?.phononRuntime.installed && !phononInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('phonon'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>}
       </div>
       <div className="mt-3 border-t border-neutral-200 pt-2 dark:border-neutral-800" data-testid="narration-hf-token">
-        <p className="text-neutral-600 dark:text-neutral-400">{t('Los modelos Phonon de 40M están restringidos: acepta sus términos en su página de Hugging Face y pega aquí un token de lectura de tu cuenta. Se guarda cifrado en este equipo y solo se envía a Hugging Face al descargar.')}</p>
+        <p className="text-neutral-600 dark:text-neutral-400">{t('Los modelos Phonon de 40M y Pocket TTS requieren aceptar sus términos en Hugging Face y un token de lectura. Se guarda cifrado en este equipo y solo se envía a Hugging Face al descargar.')}</p>
         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
           <button className="text-indigo-600 hover:underline dark:text-indigo-300" data-testid="narration-hf-token-link" onClick={() => void window.nodus.openExternal(HF_TOKENS_URL)}><Icon name="external" size={10} /> {t('Crear un token de lectura')}</button>
           {TTS_MODELS.filter((model) => model.gated && platformModels.includes(model)).map((model) => <button key={model.id} className="text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => void window.nodus.openExternal(model.sourceUrl)}><Icon name="external" size={10} /> {tx('Aceptar los términos de {model}', { model: model.label })}</button>)}
@@ -188,6 +193,28 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
         {status?.kokoroRuntime?.installed && !kokoroInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('kokoro'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>}
       </div>
     </div>
+
+    {platformModels.some((model) => model.engine === 'pocket') && <div className="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 text-xs dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="narration-runtime-pocket">
+      <div className="flex flex-wrap items-center gap-2">
+        <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Motor Pocket TTS')}</h5>
+        {status?.pocketRuntime?.installed && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('Instalado')} · {t('Procesador (CPU)')}</span>}
+      </div>
+      <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Pocket TTS de Kyutai usa su implementación oficial para CPU y modelos de 6 capas. Incluye las voces predeterminadas de siete idiomas y permite clonar una grabación sin transcripción.')}</p>
+      {pocketInstalling && <div className="mt-2">
+        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[pocketPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pocketFraction * 100)}>
+          <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, pocketFraction * 100)}%` }} />
+        </div>
+      </div>}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {!status?.pocketRuntime?.installed && !pocketInstalling && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime('pocket'))}><Icon name="download" size={11} />{t('Instalar motor de voz')}</button>}
+        {pocketInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelInstall()}>{t('Cancelar')}</button>}
+        {status?.pocketRuntime?.installed && !pocketInstalling && <>
+          <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void run(() => window.nodus.ttsInstallRuntime('pocket'))}><Icon name="refresh" size={10} />{t('Reparar')}</button>
+          <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('pocket'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>
+        </>}
+      </div>
+    </div>}
 
     {/* 2 · Models */}
     <div className="mt-5">
@@ -285,7 +312,10 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       selectedVoiceId={settings.ttsVoiceId}
       phononVoiceId={settings.ttsPhononVoiceId}
       kokoroVoiceId={settings.ttsKokoroVoiceId}
-      onSelect={(voiceId) => void patch(voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : voiceId.startsWith('kokoro:') ? { ttsKokoroVoiceId: voiceId } : { ttsVoiceId: voiceId })}
+      pocketVoiceId={settings.ttsPocketVoiceId}
+      cloneEngine={TTS_MODELS.find((model) => model.id === selectedModelId)?.engine === 'pocket' ? 'pocket' : 'ming'}
+      onSelect={(voiceId) => void patch(voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : voiceId.startsWith('kokoro:') ? { ttsKokoroVoiceId: voiceId }
+        : voiceId.startsWith('pocket:') || (selectedModelId === POCKET_MODEL_ID && (voiceId.startsWith('user:') || voiceId.startsWith('cc0:'))) ? { ttsPocketVoiceId: voiceId } : { ttsVoiceId: voiceId })}
       onChanged={() => void refreshVoices()}
       onDelete={(voice) => setConfirm({ kind: 'voice', voice })}
       onError={(message) => setError(message)}
@@ -336,11 +366,13 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   </div>;
 }
 
-function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, onSelect, onChanged, onDelete, onError, sttModel }: {
+function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, pocketVoiceId, cloneEngine, onSelect, onChanged, onDelete, onError, sttModel }: {
   voices: TtsVoice[];
   selectedVoiceId: string;
   phononVoiceId: string;
   kokoroVoiceId: string;
+  pocketVoiceId: string;
+  cloneEngine: 'ming' | 'pocket';
   onSelect: (voiceId: string) => void;
   onChanged: () => void;
   onDelete: (voice: TtsVoice) => void;
@@ -361,6 +393,13 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   const preview = useRef<HTMLAudioElement>(null);
   const previewVoiceId = useRef<string | null>(null);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const syncedPocketSelection = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (cloneEngine === 'pocket' && !(POCKET_LANGUAGES as readonly string[]).includes(language)) {
+      setLanguage('es'); setParagraphIndex(0);
+    }
+  }, [cloneEngine, language]);
 
   useEffect(() => {
     const audio = preview.current;
@@ -379,7 +418,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   const paragraphs = TTS_SAMPLE_PARAGRAPHS[language];
   const paragraph = paragraphs[paragraphIndex % paragraphs.length];
   const minimumTranscript = draft ? minimumVoiceTranscriptChars(draft.durationS) : TTS_VOICE_MIN_TRANSCRIPT_CHARS;
-  const transcriptTooShort = transcript.trim().length < minimumTranscript;
+  const transcriptTooShort = cloneEngine !== 'pocket' && transcript.trim().length < minimumTranscript;
 
   const accept = async (blob: Blob, origin: 'recorded' | 'uploaded') => {
     setBusy('prepare');
@@ -392,7 +431,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
       if (draft) URL.revokeObjectURL(draft.previewUrl);
       setDraft({ origin, wav: prepared.wav, durationS: prepared.durationS, previewUrl: URL.createObjectURL(new Blob([prepared.wav as Uint8Array<ArrayBuffer>], { type: 'audio/wav' })) });
       setTranscript(origin === 'recorded' ? paragraph : '');
-      if (origin === 'uploaded') void autoTranscribe(blob);
+      if (origin === 'uploaded' && cloneEngine !== 'pocket') void autoTranscribe(blob);
     } catch {
       onError(t('No se pudo leer el audio. Prueba con un archivo WAV, MP3, M4A o WebM.'));
     } finally { setBusy(''); }
@@ -420,7 +459,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
     if (!draft || !consent) return;
     setBusy('save');
     try {
-      const voice = await window.nodus.ttsSaveVoice({ name: name.trim() || t('Mi voz'), language, transcript: transcript.trim(), origin: draft.origin, wav: draft.wav, consent: true });
+      const voice = await window.nodus.ttsSaveVoice({ name: name.trim() || t('Mi voz'), language, transcript: transcript.trim(), engine: cloneEngine, origin: draft.origin, wav: draft.wav, consent: true });
       URL.revokeObjectURL(draft.previewUrl);
       setDraft(null); setName(''); setTranscript(''); setConsent(false);
       onChanged();
@@ -452,13 +491,20 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   const phonon = voices.filter((voice) => voice.origin === 'phonon' && (voice.language === phononLanguage));
   const [kokoroLanguage, setKokoroLanguage] = useState<string>('es');
   const kokoro = voices.filter((voice) => voice.origin === 'kokoro' && (voice.language === kokoroLanguage));
+  const [pocketLanguage, setPocketLanguage] = useState<string>('es');
+  const pocket = voices.filter((voice) => voice.origin === 'pocket' && voice.language === pocketLanguage);
+  useEffect(() => {
+    if (syncedPocketSelection.current === pocketVoiceId) return;
+    const selected = voices.find((voice) => voice.id === pocketVoiceId);
+    if (selected?.language) { setPocketLanguage(selected.language); syncedPocketSelection.current = pocketVoiceId; }
+  }, [pocketVoiceId, voices]);
   useEffect(() => {
     const selected = voices.find((voice) => voice.id === kokoroVoiceId);
     if (selected?.language) setKokoroLanguage(selected.language);
   }, [kokoroVoiceId, voices]);
 
   const row = (voice: TtsVoice) => {
-    const selected = voice.id === (voice.origin === 'phonon' ? phononVoiceId : selectedVoiceId);
+    const selected = voice.id === (voice.origin === 'phonon' ? phononVoiceId : voice.origin === 'kokoro' ? kokoroVoiceId : voice.origin === 'pocket' || cloneEngine === 'pocket' ? pocketVoiceId : selectedVoiceId);
     const isEditing = editing?.id === voice.id;
     return <article key={voice.id} data-testid={`narration-voice-${voice.id}`} className={settingsModelRowClass(selected, true, 'flex flex-wrap items-start gap-2')} onClick={() => !selected && onSelect(voice.id)}>
       <SettingsModelDot selected={selected} />
@@ -489,7 +535,13 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
           </>}
       </div>
       {!isEditing && <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
-        {voice.origin !== 'builtin' && voice.origin !== 'phonon' && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={playingVoiceId === voice.id ? t('Pausar') : t('Escuchar la grabación de referencia')} aria-label={playingVoiceId === voice.id ? t('Pausar') : t('Escuchar la grabación de referencia')} onClick={() => play(voice)}><Icon name={playingVoiceId === voice.id ? 'pause' : 'play'} size={12} /></button>}
+        {voice.origin !== 'builtin' && voice.origin !== 'phonon' && voice.origin !== 'kokoro' && voice.origin !== 'pocket' && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={playingVoiceId === voice.id ? t('Pausar') : t('Escuchar la grabación de referencia')} aria-label={playingVoiceId === voice.id ? t('Pausar') : t('Escuchar la grabación de referencia')} onClick={() => play(voice)}><Icon name={playingVoiceId === voice.id ? 'pause' : 'play'} size={12} /></button>}
+        {voice.origin === 'pocket' && (voice.downloaded
+          ? <span className="text-[10px] text-emerald-700 dark:text-emerald-400">{t('Descargado')}</span>
+          : <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={!!busy} onClick={() => {
+            setBusy(voice.id);
+            void window.nodus.ttsDownloadVoice(voice.id).then(onChanged).catch((cause) => onError(ttsErrorMessage(cause))).finally(() => setBusy(''));
+          }}><Icon name="download" size={10} />{busy === voice.id ? t('Descargando…') : t('Descargar')}</button>)}
         {!voice.readOnly && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={t('Editar nombre y transcripción')} onClick={() => setEditing({ id: voice.id, name: voice.name, transcript: voice.transcript ?? '' })}><Icon name="edit" size={12} /></button>}
         {!voice.readOnly && <button className="rounded p-1 text-neutral-500 hover:text-red-400" title={t('Eliminar voz')} onClick={() => onDelete(voice)}><Icon name="trash" size={12} /></button>}
       </div>}
@@ -499,13 +551,17 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   return <div className="mt-5 border-t border-neutral-200 pt-5 dark:border-neutral-800" data-testid="narration-voices" id="narration-voices">
     <audio ref={preview} className="hidden" onPlay={() => setPlayingVoiceId(previewVoiceId.current)} onPause={(event) => { if (event.currentTarget.paused) setPlayingVoiceId(null); }} onEnded={() => setPlayingVoiceId(null)} onError={() => setPlayingVoiceId(null)} />
     <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Voces')}</h5>
-    <p className="mt-1 text-xs text-neutral-500">{t('Graba o sube 6–15 segundos de voz clara, sin ruido de fondo, con su transcripción exacta. Usa solo tu voz o la de alguien que te haya dado permiso.')}</p>
+    <p className="mt-1 text-xs text-neutral-500">{cloneEngine === 'pocket'
+      ? t('Graba o sube 6–15 segundos de voz clara. Pocket TTS no necesita transcripción. La voz se guarda en tu biblioteca para reutilizarla. Usa solo tu voz o una voz autorizada.')
+      : t('Graba o sube 6–15 segundos de voz clara, sin ruido de fondo, con su transcripción exacta. Usa solo tu voz o la de alguien que te haya dado permiso.')}</p>
+
+    {cloneEngine === 'pocket' && <p className="mt-1 text-[10px] text-neutral-500">{t('Pocket TTS usa hasta 12 segundos de la referencia; la grabación original se conserva íntegra.')}</p>}
 
     {/* Record or upload */}
     <div className="mt-3 rounded-lg border border-dashed border-neutral-300 p-3 dark:border-neutral-700" data-testid="narration-voice-new">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <select className="input h-7 py-0 text-xs" value={language} onChange={(event) => { setLanguage(event.target.value as TtsLanguage); setParagraphIndex(0); }}>
-          {TTS_LANGUAGES.map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+          {TTS_LANGUAGES.filter((entry) => cloneEngine !== 'pocket' || (POCKET_LANGUAGES as readonly string[]).includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
         </select>
         {recorder.state === 'idle' && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!!busy} onClick={() => void recorder.start()}><Icon name="microphone" size={11} />{t('Grabar voz')}</button>}
         {recorder.state !== 'idle' && recorder.state !== 'saving' && <button className="btn btn-primary h-7 px-3 text-[11px]" onClick={() => void recorder.finish()}><Icon name="stop" size={11} />{t('Terminar grabación')}</button>}
@@ -533,7 +589,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
           </span>
         </div>
         <input className="input h-8 text-xs" placeholder={t('Nombre de la voz')} value={name} onChange={(event) => setName(event.target.value)} />
-        <textarea className="input min-h-[4rem] text-xs" placeholder={t('Transcripción exacta de lo que se oye en la grabación')} value={transcript} onChange={(event) => setTranscript(event.target.value)} aria-invalid={transcriptTooShort} />
+        <textarea className="input min-h-[4rem] text-xs" placeholder={cloneEngine === 'pocket' ? t('Transcripción (opcional con Pocket TTS)') : t('Transcripción exacta de lo que se oye en la grabación')} value={transcript} onChange={(event) => setTranscript(event.target.value)} aria-invalid={transcriptTooShort} />
         {transcriptTooShort && <p className="text-[10px] leading-4 text-amber-700 dark:text-amber-400" data-testid="narration-voice-transcript-hint">
           {t('La transcripción es demasiado corta para el audio. Escribe exactamente lo que se dice en la grabación.')} ({transcript.trim().length}/{minimumTranscript})
         </p>}
@@ -542,7 +598,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
           {t('Es mi voz o tengo permiso de su titular para usarla en una voz sintética.')}
         </label>
         <div className="flex gap-2">
-          <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!consent || !transcript.trim() || transcriptTooShort || busy === 'save'} onClick={() => void save()}>{t('Guardar voz')}</button>
+          <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!consent || (cloneEngine !== 'pocket' && !transcript.trim()) || transcriptTooShort || busy === 'save'} onClick={() => void save()}>{t('Guardar voz')}</button>
           <button className="btn btn-ghost h-7 px-2 text-[11px]" onClick={() => { URL.revokeObjectURL(draft.previewUrl); setDraft(null); }}>{t('Descartar')}</button>
         </div>
       </div>}
@@ -558,7 +614,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
         {TTS_LANGUAGES.filter((entry) => (PHONON_LANGUAGES as readonly string[]).includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
       </select>
     </div>
-    <p className="mt-1 text-[10px] text-neutral-500">{t('Se usan con los modelos Phonon; tus voces grabadas funcionan con Ming. Cada voz se descarga la primera vez que la usas.')}</p>
+    <p className="mt-1 text-[10px] text-neutral-500">{t('Se usan con los modelos Phonon; tus voces grabadas funcionan con Ming y Pocket TTS. Cada voz se descarga la primera vez que la usas.')}</p>
     <SettingsModelList className="mt-1 max-h-72 overflow-y-auto">{phonon.map(row)}</SettingsModelList>
     <div className="mt-4 flex flex-wrap items-center gap-2">
       <h6 className="text-[11px] font-medium text-neutral-500">{t('Voces de Kokoro')}</h6>
@@ -569,6 +625,15 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
         {kokoro.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}{voice.locale ? ` · ${voice.locale}` : ''}</option>)}
       </select>
     </div>
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      <h6 className="text-[11px] font-medium text-neutral-500">{t('Voces de Pocket TTS')}</h6>
+      <select className="input h-7 min-w-0 py-0 text-[11px]" value={pocketLanguage} onChange={(event) => setPocketLanguage(event.target.value)} aria-label={t('Idioma')} data-testid="narration-pocket-language">
+        {TTS_LANGUAGES.filter((entry) => (POCKET_LANGUAGES as readonly string[]).includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+      </select>
+    </div>
+    <p className="mt-1 text-[10px] text-neutral-500">{t('Las voces predeterminadas se descargan con el modelo. Las demás voces oficiales son opcionales y también se descargan al usarlas. Cada voz conserva su licencia.')}</p>
+    <p className="mt-1 text-[10px] text-neutral-500">{Object.values(POCKET_DEFAULT_VOICES).map((name) => name.replace(/^./, (letter) => letter.toUpperCase())).join(' · ')}</p>
+    <SettingsModelList className="mt-1 max-h-72 overflow-y-auto" data-testid="narration-pocket-voices">{pocket.map(row)}</SettingsModelList>
     <h6 className="mt-4 text-[11px] font-medium text-neutral-500">{t('Voces de ejemplo (dominio público)')}</h6>
     <SettingsModelList className="mt-1">{bundled.map(row)}</SettingsModelList>
     <div className="mt-4 flex items-center gap-2">

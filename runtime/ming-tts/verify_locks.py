@@ -21,7 +21,7 @@ from pathlib import Path
 
 from packaging import tags
 from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name, parse_wheel_filename
+from packaging.utils import InvalidWheelFilename, canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
 HERE = Path(__file__).resolve().parent
@@ -51,6 +51,7 @@ LOCKS = {
     "mlx": ("requirements-mlx.lock", ["darwin-arm64"]),
     "torch-cpu": ("requirements-torch-cpu.lock", ["win32-x64", "linux-x64", "darwin-x64"]),
     "torch-cuda": ("requirements-torch-cuda.lock", ["win32-x64", "linux-x64"]),
+    "pocket": ("requirements-pocket.lock", ["darwin-arm64", "win32-x64", "linux-x64"]),
 }
 
 
@@ -109,7 +110,10 @@ def check(lock: str, targets) -> bool:
             found = False
             for index in indexes:
                 for filename, digest in index_files(index, req.name):
-                    name, version, _build, wheel_tags = parse_wheel_filename(filename)
+                    try:
+                        name, version, _build, wheel_tags = parse_wheel_filename(filename)
+                    except InvalidWheelFilename:
+                        continue  # historical malformed wheels on PyPI are not installable
                     if name == canonicalize_name(req.name) and version == pinned and wheel_tags & accepted and digest in entry["hashes"]:
                         found = True
                         break

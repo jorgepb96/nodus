@@ -8,8 +8,9 @@ import type { TtsLanguage } from './ttsModels';
  *   `ming:<name>`   Ming's built-in voices (no reference audio)
  *   `phonon:<id>`   Phonon's catalogue voices (speaker embeddings)
  *   `kokoro:<id>`   Kokoro's bundled voice embeddings
+ *   `pocket:<name>` Kyutai's official catalogue, downloaded on demand
  */
-export type TtsVoiceOrigin = 'recorded' | 'uploaded' | 'bundled' | 'builtin' | 'phonon' | 'kokoro';
+export type TtsVoiceOrigin = 'recorded' | 'uploaded' | 'bundled' | 'builtin' | 'phonon' | 'kokoro' | 'pocket';
 
 export interface TtsVoice {
   id: string;
@@ -27,12 +28,17 @@ export interface TtsVoice {
   gender?: 'male' | 'female' | 'none';
   description?: string;
   readOnly: boolean;
+  /** Pocket catalogue state for the voice's native language is on disk. */
+  downloaded?: boolean;
 }
 
 export interface TtsVoiceSaveInput {
   name: string;
   language: TtsLanguage;
+  /** Exact transcript for Ming; an empty string is accepted for Pocket references. */
   transcript: string;
+  /** Pocket encodes the reference audio directly and does not need a transcript. */
+  engine?: 'ming' | 'pocket';
   origin: 'recorded' | 'uploaded';
   /** 16-bit PCM mono WAV prepared by the renderer (trimmed and normalized). */
   wav: Uint8Array;
@@ -95,6 +101,8 @@ export const TTS_SAMPLE_PARAGRAPHS: Readonly<Record<TtsLanguage, readonly string
   pt: [
     'Neste capítulo analisaremos a hipótese principal do estudo. Os resultados sugerem que a concentração de zinco influencia diretamente a eficácia do processo, embora convenha interpretá-los com cautela.',
   ],
+  it: ['In questo capitolo analizzeremo l’ipotesi principale dello studio. I risultati suggeriscono che la concentrazione di zinco influisce direttamente sull’efficacia del processo, ma vanno interpretati con cautela.'],
+  nl: ['In dit hoofdstuk onderzoeken we de belangrijkste hypothese van het onderzoek. De resultaten suggereren dat de concentratie zink de efficiëntie van het proces beïnvloedt, maar moeten voorzichtig worden geïnterpreteerd.'],
 };
 
 export interface WavInfo { sampleRate: number; channels: number; bitsPerSample: number; durationS: number }

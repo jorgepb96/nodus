@@ -164,6 +164,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   ttsVoiceId: 'cc0:es-dave',
   ttsPhononVoiceId: 'phonon:b6FvJAiokjdqIti4',
   ttsKokoroVoiceId: 'kokoro:ef_dora',
+  ttsPocketVoiceId: 'pocket:lola',
   ttsAcceptedLicenses: [],
   ttsLanguage: 'auto',
   ttsVoiceFilters: {},
@@ -423,6 +424,7 @@ export function getSettings(): AppSettings {
   merged.ttsStreaming = merged.ttsStreaming !== false;
   merged.ttsPhononVoiceId = typeof merged.ttsPhononVoiceId === 'string' && merged.ttsPhononVoiceId.startsWith('phonon:') ? merged.ttsPhononVoiceId : DEFAULTS.ttsPhononVoiceId;
   merged.ttsKokoroVoiceId = typeof merged.ttsKokoroVoiceId === 'string' && /^kokoro:[a-z0-9_]+$/.test(merged.ttsKokoroVoiceId) ? merged.ttsKokoroVoiceId : DEFAULTS.ttsKokoroVoiceId;
+  merged.ttsPocketVoiceId = typeof merged.ttsPocketVoiceId === 'string' && /^(pocket:[a-z0-9_]+|user:[a-f0-9-]+|cc0:es-dave)$/.test(merged.ttsPocketVoiceId) ? merged.ttsPocketVoiceId : DEFAULTS.ttsPocketVoiceId;
   merged.ttsAcceptedLicenses = Array.isArray(merged.ttsAcceptedLicenses) ? merged.ttsAcceptedLicenses.filter((id): id is string => TTS_MODELS.some((model) => model.id === id && model.nonCommercial)) : [];
   merged.ttsIdleUnloadMin = Math.max(1, Math.min(120, Math.round(Number(merged.ttsIdleUnloadMin) || 5)));
   merged.ttsRetention = sanitizeTtsRetention(merged.ttsRetention);

@@ -1813,7 +1813,7 @@ export type CodexReasoningEffort =
  *  run in a sidecar process (electron/tts). 'piper', 'kokoro' and 'hume' only label clips
  *  made by the engines it replaced; those clips stay playable. `phonon` labels the new
  *  Phonon checkpoints. */
-export type AudioProvider = 'ming' | 'phonon' | 'kokoro' | 'piper' | 'hume';
+export type AudioProvider = 'ming' | 'phonon' | 'kokoro' | 'pocket' | 'piper' | 'hume';
 
 /** Content kinds that can be narrated. Study kinds are stored in the vault's
  * regenerable local audio catalogue rather than in sync/backups. */
@@ -2127,6 +2127,8 @@ export interface AppSettings {
   ttsVoiceId: string;
   /** Kokoro voice (`kokoro:<catalogue id>`), used whenever the selected model is Kokoro. */
   ttsKokoroVoiceId: string;
+  /** Pocket catalogue or saved reference voice, independent of the other engines. */
+  ttsPocketVoiceId: string;
   /** Narration language; 'auto' detects it from the text. */
   ttsLanguage: TtsLanguageSetting;
   /** Voice-list filter overrides; absent fields follow the model and interface language. */

@@ -19,6 +19,7 @@ export const ttsApi: TtsApi = {
   ttsSpeak: (request) => ipcRenderer.invoke('tts:speak', request),
   ttsCancel: (jobId) => ipcRenderer.invoke('tts:cancel', jobId),
   ttsVoices: () => ipcRenderer.invoke('tts:voices:list'),
+  ttsDownloadVoice: (voiceId) => ipcRenderer.invoke('tts:voices:download', voiceId),
   ttsSaveVoice: (input) => ipcRenderer.invoke('tts:voices:save', input),
   ttsUpdateVoice: (voiceId, patch) => ipcRenderer.invoke('tts:voices:update', voiceId, patch),
   ttsDeleteVoice: (voiceId) => ipcRenderer.invoke('tts:voices:delete', voiceId),

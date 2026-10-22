@@ -369,6 +369,28 @@ separate Python environment on the user's machine. Sources:
 - https://github.com/thewh1teagle/kokoro-onnx
 - https://github.com/espeak-ng/espeak-ng
 
+Narration can optionally use Kyutai Pocket TTS. Its official `pocket-tts` 4.0.1
+implementation (MIT) is installed with CPU PyTorch into a separate private environment
+from `runtime/ming-tts/requirements-pocket.lock`. No Pocket runtime packages, weights
+or voice states are included in the installer. Nodus downloads the official six-layer
+checkpoints (CC BY 4.0) after the user accepts Kyutai's terms on Hugging Face and provides
+their own read token. The multilingual catalogue groups seven language checkpoints;
+only one language is resident at a time. There is no MLX Pocket implementation in Nodus.
+
+The official defaults are Alba (English), Lola (Spanish), Estelle (French), Juergen
+(German), Giovanni (Italian), Rafael (Portuguese) and Daan (Dutch). Default voice states
+are included in the optional model download; the remaining official voices download on
+demand. Voice states preserve the source recordings' licences: CC0 for voice donations,
+Voice-Zero and the Common Voice samples; CC BY 4.0 for Alba, VCTK and CML-TTS; CC BY-NC
+4.0 for Expresso (Cosette) and EARS (Jean). The catalogue displays each voice's attribution.
+Saved user references and derived conditioning states stay on the user's machine.
+Sources:
+
+- https://github.com/kyutai-labs/pocket-tts
+- https://huggingface.co/kyutai/pocket-tts
+- https://huggingface.co/kyutai/tts-voices
+- https://huggingface.co/kyutai/pocket-tts-without-voice-cloning
+
 Nodus is free and open-source software. LFM2.5 is governed by the LFM Open
 License v1.0, which contains a separate condition for legal entities with at
 least USD 10 million in annual revenue. Users remain responsible for uses

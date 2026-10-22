@@ -6,7 +6,7 @@ export interface TtsVoiceFilters {
   languages?: TtsLanguage[];
 }
 
-const engines: readonly TtsEngine[] = ['ming', 'phonon', 'kokoro'];
+const engines: readonly TtsEngine[] = ['ming', 'phonon', 'kokoro', 'pocket'];
 
 export function sanitizeTtsVoiceFilters(value: unknown): TtsVoiceFilters {
   if (!value || typeof value !== 'object') return {};

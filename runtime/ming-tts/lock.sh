@@ -13,5 +13,8 @@ uv pip compile requirements-torch-cpu.in $UV_FLAGS --universal \
 uv pip compile requirements-torch-cuda.in $UV_FLAGS --universal \
   --extra-index-url https://download.pytorch.org/whl/cu124 --index-strategy unsafe-best-match \
   -o requirements-torch-cuda.lock
+uv pip compile requirements-pocket.in $UV_FLAGS --universal \
+  --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match \
+  -o requirements-pocket.lock
 # Needs `packaging` in the interpreter that runs it.
 python3 verify_locks.py

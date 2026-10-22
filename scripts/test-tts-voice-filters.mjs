@@ -13,7 +13,8 @@ test('automatic voice filters follow model changes and the interface locale', ()
   for (const [locale, language] of [['pt-BR', 'pt'], ['zh-CN', 'zh'], ['zh-TW', 'zh'], ['ja', 'ja']]) {
     assert.deepEqual(resolveTtsVoiceFilters({}, ming, locale).languages, [language]);
   }
-  assert.deepEqual(resolveTtsVoiceFilters({}, ming, 'it').languages, [], 'unsupported speech languages leave the voice list open');
+  assert.deepEqual(resolveTtsVoiceFilters({}, ming, 'tr').languages, [], 'unsupported speech languages leave the voice list open');
+  assert.deepEqual(resolveTtsVoiceFilters({}, TTS_MODELS.find((model) => model.engine === 'pocket'), 'it').languages, ['it'], 'Pocket adds Italian speech');
 });
 
 test('manual filters override each automatic default independently, including All', () => {

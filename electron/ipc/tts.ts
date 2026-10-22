@@ -19,9 +19,9 @@ export function registerTtsIpc({ h, getWindow }: IpcContext): void {
   const trusted = (event: Electron.IpcMainInvokeEvent) => assertTrustedNodusMainFrame(event, getWindow());
 
   h('tts:status', async (event) => { trusted(event); return service.status(); });
-  h('tts:runtime:install', async (event, engine?: string) => { trusted(event); return service.installRuntime(engine === 'phonon' ? 'phonon' : engine === 'kokoro' ? 'kokoro' : 'ming'); });
-  h('tts:runtime:cancel', async (event) => { trusted(event); service.installer.cancel(); service.phononInstaller.cancel(); service.kokoroInstaller.cancel(); });
-  h('tts:runtime:remove', async (event, engine?: string) => { trusted(event); return service.removeRuntime(engine === 'phonon' ? 'phonon' : engine === 'kokoro' ? 'kokoro' : 'ming'); });
+  h('tts:runtime:install', async (event, engine?: string) => { trusted(event); return service.installRuntime(engine === 'phonon' ? 'phonon' : engine === 'kokoro' ? 'kokoro' : engine === 'pocket' ? 'pocket' : 'ming'); });
+  h('tts:runtime:cancel', async (event) => { trusted(event); service.installer.cancel(); service.phononInstaller.cancel(); service.kokoroInstaller.cancel(); service.pocketInstaller.cancel(); });
+  h('tts:runtime:remove', async (event, engine?: string) => { trusted(event); return service.removeRuntime(engine === 'phonon' ? 'phonon' : engine === 'kokoro' ? 'kokoro' : engine === 'pocket' ? 'pocket' : 'ming'); });
   h('tts:hfToken:set', async (event, token: string) => { trusted(event); return service.setHuggingFaceToken(String(token ?? '')); });
   h('tts:hfToken:status', async (event) => { trusted(event); return service.hasHuggingFaceToken(); });
   h('tts:model:download', async (event, modelId: string) => { trusted(event); return service.downloadModel(String(modelId)); });
@@ -32,6 +32,7 @@ export function registerTtsIpc({ h, getWindow }: IpcContext): void {
   h('tts:speak', async (event, request: TtsSpeakRequest) => { trusted(event); return service.speak(request); });
   h('tts:cancel', async (event, jobId: string) => { trusted(event); service.cancel(String(jobId)); });
   h('tts:voices:list', async (event) => { trusted(event); return service.voices.list(); });
+  h('tts:voices:download', async (event, voiceId: string) => { trusted(event); return service.downloadVoice(String(voiceId)); });
   h('tts:voices:save', async (event, input: TtsVoiceSaveInput) => { trusted(event); return service.saveVoice(input); });
   h('tts:voices:update', async (event, voiceId: string, patch: { name?: string; transcript?: string; language?: TtsLanguage }) => {
     trusted(event);

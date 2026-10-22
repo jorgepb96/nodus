@@ -19,6 +19,7 @@ try {
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/mingBuiltinVoices.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/phononVoices.ts'))};`,
     `export * from ${JSON.stringify(path.join(repoRoot, 'shared/kokoroVoices.ts'))};`,
+    `export * from ${JSON.stringify(path.join(repoRoot, 'shared/pocketTts.ts'))};`,
   ].join('\n'));
   const outfile = path.join(tmp, 'tts.mjs');
   await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
@@ -28,7 +29,7 @@ try {
   for (const model of tts.TTS_MODELS) {
     assert.ok(model.licenseLabel && model.licenseUrl, `${model.id} shows its license before download`);
     if (model.unpublished) { assert.equal(model.assets.length, 0); continue; }
-    assert.ok(model.assets.some((a) => a.file === 'model.safetensors' || a.file === 'model.q8.gguf' || a.file.endsWith('.onnx')), `${model.id} has weights`);
+    assert.ok(model.assets.some((a) => a.file.endsWith('model.safetensors') || a.file === 'model.q8.gguf' || a.file.endsWith('.onnx')), `${model.id} has weights`);
     for (const asset of model.assets) {
       assert.match(asset.url, model.engine === 'kokoro'
         ? /^https:\/\/github\.com\/thewh1teagle\/kokoro-onnx\/releases\/download\/model-files-v1\.0\//
@@ -44,9 +45,9 @@ try {
   assert.ok(mac.includes('ming3-0.5b-mlx-8bit'));
   assert.ok(mac.includes('ming3-0.5b-mlx-4bit'), 'the published 4-bit MLX checkpoint is offered');
   assert.ok(!mac.includes('ming3-0.5b-torch'), 'the MLX sidecar cannot load the PyTorch checkpoint, so Apple Silicon never offers it');
-  assert.deepEqual([...new Set(tts.ttsModelsForPlatform('darwin', 'arm64').map((m) => m.backend))], ['mlx', 'phonon', 'kokoro']);
+  assert.deepEqual([...new Set(tts.ttsModelsForPlatform('darwin', 'arm64').map((m) => m.backend))], ['mlx', 'phonon', 'kokoro', 'pocket']);
   for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'x64']]) {
-    assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], ['torch', 'phonon', 'kokoro']);
+    assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], platform === 'darwin' ? ['torch', 'phonon', 'kokoro'] : ['torch', 'phonon', 'kokoro', 'pocket']);
     assert.equal(tts.ttsBackendForPlatform(platform, arch), 'torch');
   }
   assert.equal(tts.defaultTtsModelId('darwin', 'arm64'), 'ming3-0.5b-mlx-8bit');
@@ -79,6 +80,24 @@ try {
   assert.ok(tts.isKokoroVoiceId('kokoro:ef_dora'));
   assert.equal(tts.isKokoroVoiceId('ef_dora'), false);
 
+  // Pocket uses the official CPU package, all six-layer language checkpoints and their defaults.
+  const pocket = tts.TTS_MODELS.find((model) => model.id === tts.POCKET_MODEL_ID);
+  assert.equal(pocket.backend, 'pocket');
+  assert.equal(pocket.cloning, true);
+  assert.equal(pocket.gated, true, 'cloning weights use the existing HF terms/token flow');
+  assert.equal(tts.ttsBackendForModel(pocket, 'darwin', 'arm64'), 'pocket', 'Apple Silicon still uses CPU Pocket');
+  assert.equal(pocket.assets.length, 21, 'weights, tokenizer and default voice for each of seven languages');
+  assert.equal(tts.POCKET_DEFAULT_VOICES.es, 'lola');
+  assert.equal(tts.POCKET_VOICES.length, 27);
+  for (const language of tts.POCKET_LANGUAGES) {
+    const voice = tts.pocketVoiceAsset(tts.POCKET_DEFAULT_VOICES[language], language);
+    assert.ok(pocket.assets.some((asset) => asset.url === voice.url));
+    assert.ok(tts.POCKET_VOICES.some((entry) => entry.id === tts.POCKET_DEFAULT_VOICES[language] && entry.language === language));
+  }
+  assert.notEqual(tts.pocketVoiceAsset('alba', 'es').sha256, tts.pocketVoiceAsset('alba', 'en').sha256, 'voice state follows the target language weights');
+  assert.equal(tts.pocketVoiceAsset('../escape', 'es'), undefined);
+  assert.ok(!tts.ttsModelsForPlatform('darwin', 'x64').some((model) => model.engine === 'pocket'), 'no compatible torch >=2.5 Intel macOS wheel');
+
   // ── Language detection and resolution ───────────────────────────────────────
   assert.equal(tts.detectTtsLanguage('Los resultados sugieren que la concentración de zinc influye en la eficacia del proceso.'), 'es');
   assert.equal(tts.detectTtsLanguage('The results suggest that the concentration of zinc affects the process.'), 'en');
@@ -91,8 +110,11 @@ try {
   assert.equal(tts.resolveTtsLanguage('fr', 'Hola, ¿qué tal estás hoy?', 'es'), 'fr', 'an explicit choice wins');
   assert.equal(tts.resolveTtsLanguage('auto', 'Hola', 'en'), 'en', 'falls back to the voice language');
   for (const language of tts.TTS_LANGUAGES) {
-    assert.equal(language.requiresLanguageLine, !['zh', 'en', 'pt'].includes(language.code), `${language.code} language line matches Ming`);
+    assert.equal(language.requiresLanguageLine, !['zh', 'en', 'pt', 'it', 'nl'].includes(language.code), `${language.code} language line matches Ming`);
   }
+  assert.equal(tts.detectTtsLanguage('I risultati dello studio sono importanti per questa ricerca.'), 'it');
+  assert.equal(tts.detectTtsLanguage('Os resultados são importantes para a concentração de zinco.'), 'pt');
+  assert.equal(tts.detectTtsLanguage('De resultaten van het onderzoek zijn belangrijk voor deze studie.'), 'nl');
 
   // ── Retention: defaults, inheritance, overrides, sanitizing ─────────────────
   const defaults = tts.sanitizeTtsRetention(undefined);

@@ -7,11 +7,12 @@ import {
   type TtsBackend, type TtsEngine, type TtsFragmentEvent, type TtsJobProgress, type TtsRuntimeStatus, type TtsStatus,
 } from '@shared/ttsModels';
 import { PHONON_VOICES, phononVoiceUrl } from '@shared/phononVoices';
+import { POCKET_VOICES, isPocketLanguage, pocketVoiceAsset, pocketVoiceId, type PocketLanguage } from '@shared/pocketTts';
 import { downloadVerifiedNodusAsset } from '../ai/nodusLocalAi';
 import { clearAudioKey, getAudioKey, hasAudioKey, setAudioKey } from '../secrets/secretStore';
 import { resolveTtsLanguage } from '@shared/ttsLanguage';
 import type { TtsEvent, TtsSpeakRequest, TtsSpeakStarted } from '@shared/api/tts';
-import type { TtsVoiceSaveInput } from '@shared/ttsVoices';
+import { minimumVoiceTranscriptChars, readWavInfo, type TtsVoiceSaveInput } from '@shared/ttsVoices';
 import { getSettings } from '../db/settingsRepo';
 import { probeNvidia } from '../ai/nodusLocalAi';
 import { saveClipAsync, deleteClip, pruneOrphanScriptorNarration } from '../audio/audioService';
@@ -45,6 +46,9 @@ export class TtsService {
   readonly kokoroInstaller = new TtsInstaller(path.join(ttsRuntimeDir(), 'kokoro'), ttsAssetsDir(), ttsBundledPythonRoot(), {
     platform: process.platform, arch: process.arch, hasNvidia: async () => false,
   }, undefined, 'kokoro');
+  readonly pocketInstaller = new TtsInstaller(path.join(ttsRuntimeDir(), 'pocket'), ttsAssetsDir(), ttsBundledPythonRoot(), {
+    platform: process.platform, arch: process.arch, hasNvidia: async () => false,
+  }, undefined, 'pocket');
   readonly voices = new TtsVoiceLibrary(ttsVoicesDir(), ttsBundledVoicesDir());
   readonly host: TtsEngineHost;
   readonly models: TtsModelStore;
@@ -52,6 +56,8 @@ export class TtsService {
   private runtime: TtsInstalledRuntime | null = null;
   private phononRuntime: TtsInstalledRuntime | null = null;
   private kokoroRuntime: TtsInstalledRuntime | null = null;
+  private pocketRuntime: TtsInstalledRuntime | null = null;
+  private pocketDownloads = new Map<string, Promise<string>>();
   private install: { phase: string; fraction: number; engine: TtsEngine } | null = null;
   private installError: { engine: TtsEngine; message: string } | undefined;
   private jobs = new Map<string, { progress: TtsJobProgress; started: number }>();
@@ -62,7 +68,9 @@ export class TtsService {
         ? (this.phononRuntime ??= await this.phononInstaller.installed())?.python ?? null
         : backend === 'kokoro'
           ? (this.kokoroRuntime ??= await this.kokoroInstaller.installed())?.python ?? null
-          : (this.runtime ??= await this.installer.installed())?.python ?? null,
+          : backend === 'pocket'
+            ? (this.pocketRuntime ??= await this.pocketInstaller.installed())?.python ?? null
+            : (this.runtime ??= await this.installer.installed())?.python ?? null,
       backend: (modelId) => ttsBackendForModel(TTS_MODELS.find((model) => model.id === modelId), process.platform, process.arch),
       serveScript: path.join(ttsAssetsDir(), 'serve.py'),
       modelPath: (modelId) => this.models.dir(modelId),
@@ -96,13 +104,13 @@ export class TtsService {
   }
 
   private runtimeStatus(engineName: TtsEngine): TtsRuntimeStatus {
-    const runtime = engineName === 'phonon' ? this.phononRuntime : engineName === 'kokoro' ? this.kokoroRuntime : this.runtime;
-    const installer = engineName === 'phonon' ? this.phononInstaller : engineName === 'kokoro' ? this.kokoroInstaller : this.installer;
+    const runtime = engineName === 'phonon' ? this.phononRuntime : engineName === 'kokoro' ? this.kokoroRuntime : engineName === 'pocket' ? this.pocketRuntime : this.runtime;
+    const installer = this.installerFor(engineName);
     const install = this.install?.engine === engineName ? this.install : null;
     const error = this.installError?.engine === engineName ? this.installError.message : undefined;
     return {
       engine: engineName,
-      backend: engineName === 'phonon' ? 'phonon' : engineName === 'kokoro' ? 'kokoro' : ttsBackendForPlatform(process.platform, process.arch),
+      backend: engineName === 'ming' ? ttsBackendForPlatform(process.platform, process.arch) : engineName,
       installed: !!runtime,
       installing: installer.busy,
       ...(install ? { phase: install.phase, progress: install.fraction } : {}),
@@ -115,6 +123,7 @@ export class TtsService {
     this.runtime ??= await this.installer.installed();
     this.phononRuntime ??= await this.phononInstaller.installed();
     this.kokoroRuntime ??= await this.kokoroInstaller.installed();
+    this.pocketRuntime ??= await this.pocketInstaller.installed();
     const engine = this.host.snapshot();
     const supported = ['darwin', 'win32', 'linux'].includes(process.platform) && ['arm64', 'x64'].includes(process.arch);
     return {
@@ -122,6 +131,7 @@ export class TtsService {
       runtime: this.runtimeStatus('ming'),
       phononRuntime: this.runtimeStatus('phonon'),
       kokoroRuntime: this.runtimeStatus('kokoro'),
+      pocketRuntime: this.runtimeStatus('pocket'),
       models: (await this.models.statuses()).filter((model) => ttsModelsForPlatform(process.platform, process.arch).some((entry) => entry.id === model.id)),
       unsupportedModels: await this.unsupportedModels(),
       engine: { state: engine.state, modelId: engine.modelId, idleUnloadAt: engine.idleUnloadAt, ...(engine.error ? { error: engine.error } : {}) },
@@ -130,7 +140,7 @@ export class TtsService {
 
   async installRuntime(engineName: TtsEngine = 'ming'): Promise<TtsStatus> {
     this.installError = undefined;
-    const installer = engineName === 'phonon' ? this.phononInstaller : engineName === 'kokoro' ? this.kokoroInstaller : this.installer;
+    const installer = this.installerFor(engineName);
     try {
       const runtime = await installer.install((progress) => {
         this.install = { ...progress, engine: engineName };
@@ -138,6 +148,7 @@ export class TtsService {
       });
       if (engineName === 'phonon') this.phononRuntime = runtime;
       else if (engineName === 'kokoro') this.kokoroRuntime = runtime;
+      else if (engineName === 'pocket') this.pocketRuntime = runtime;
       else this.runtime = runtime;
     } catch (error) {
       this.installError = { engine: engineName, message: error instanceof Error ? error.message : String(error) };
@@ -149,10 +160,15 @@ export class TtsService {
     return this.status();
   }
 
+  private installerFor(engine: TtsEngine): TtsInstaller {
+    return engine === 'phonon' ? this.phononInstaller : engine === 'kokoro' ? this.kokoroInstaller : engine === 'pocket' ? this.pocketInstaller : this.installer;
+  }
+
   async removeRuntime(engineName: TtsEngine = 'ming'): Promise<TtsStatus> {
     await this.host.unload();
     if (engineName === 'phonon') { await this.phononInstaller.remove(); this.phononRuntime = null; }
     else if (engineName === 'kokoro') { await this.kokoroInstaller.remove(); this.kokoroRuntime = null; }
+    else if (engineName === 'pocket') { await this.pocketInstaller.remove(); this.pocketRuntime = null; }
     else { await this.installer.remove(); this.runtime = null; }
     void this.emitStatus();
     return this.status();
@@ -219,6 +235,11 @@ export class TtsService {
       if (!this.kokoroRuntime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
       return;
     }
+    if (model.engine === 'pocket') {
+      this.pocketRuntime ??= await this.pocketInstaller.installed();
+      if (!this.pocketRuntime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
+      return;
+    }
     this.runtime ??= await this.installer.installed();
     if (!this.runtime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
   }
@@ -232,9 +253,13 @@ export class TtsService {
     const model = TTS_MODELS.find((entry) => entry.id === modelId)!;
     const phonon = model.engine === 'phonon';
     const kokoro = model.engine === 'kokoro';
-    const voiceId = request.voiceId || (phonon ? settings.ttsPhononVoiceId : kokoro ? settings.ttsKokoroVoiceId : settings.ttsVoiceId);
-    if (phonon !== voiceId.startsWith('phonon:') || kokoro !== voiceId.startsWith('kokoro:')) throw new Error('TTS_VOICE_ENGINE_MISMATCH');
-    const { ref, language: voiceLanguage } = phonon ? await this.phononVoice(voiceId) : await this.voices.resolve(voiceId);
+    const pocket = model.engine === 'pocket';
+    const voiceId = request.voiceId || (phonon ? settings.ttsPhononVoiceId : kokoro ? settings.ttsKokoroVoiceId : pocket ? settings.ttsPocketVoiceId : settings.ttsVoiceId);
+    if (phonon !== voiceId.startsWith('phonon:') || kokoro !== voiceId.startsWith('kokoro:') || (!pocket && voiceId.startsWith('pocket:')) || (pocket && voiceId.startsWith('ming:'))) throw new Error('TTS_VOICE_ENGINE_MISMATCH');
+    const official = pocket && voiceId.startsWith('pocket:') ? POCKET_VOICES.find((voice) => pocketVoiceId(voice.id) === voiceId) : undefined;
+    if (pocket && voiceId.startsWith('pocket:') && !official) throw new Error('TTS_VOICE_NOT_FOUND');
+    const resolved = official ? { ref: null, language: official.language } : phonon ? await this.phononVoice(voiceId) : await this.voices.resolve(voiceId);
+    const voiceLanguage = resolved.language;
     const detected = resolveTtsLanguage(request.language ?? settings.ttsLanguage, text, voiceLanguage);
     // Phonon and Kokoro voices carry a language: the phonemizer and the embedding have to
     // agree with it, so the voice's language wins over text detection. Ming only speaks the
@@ -244,6 +269,13 @@ export class TtsService {
       : kokoro
         ? (model.languages.includes(voiceLanguage) ? voiceLanguage : model.languages[0])
         : (model.languages.includes(detected) ? detected : model.languages[0]);
+    const ref: TtsVoiceRef = official && isPocketLanguage(language)
+      ? { kind: 'embedding', name: official.id, path: await this.pocketVoice(official.id, language) }
+      : resolved.ref!;
+    if (!pocket && ref.kind === 'clone') {
+      const info = readWavInfo(await fs.readFile(ref.wavPath));
+      if (ref.text.trim().length < minimumVoiceTranscriptChars(info?.durationS ?? 3)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
+    }
     const started = Date.now();
     const { jobId, done } = this.host.synth(modelId, { text, voice: ref, language, priority: request.priority ?? 0 }, {
       onStart: (id) => this.progress(id, { state: 'generating' }),
@@ -296,6 +328,27 @@ export class TtsService {
   }
 
   async saveVoice(input: TtsVoiceSaveInput) { return this.voices.save(input); }
+
+  async downloadVoice(voiceId: string): Promise<void> {
+    const voice = POCKET_VOICES.find((entry) => pocketVoiceId(entry.id) === voiceId);
+    if (!voice) throw new Error('TTS_VOICE_NOT_FOUND');
+    await this.pocketVoice(voice.id, voice.language);
+  }
+
+  /** The downloader owns network access. Pocket only receives local, verified safetensors. */
+  private async pocketVoice(name: string, language: PocketLanguage): Promise<string> {
+    const asset = pocketVoiceAsset(name, language);
+    if (!asset) throw new Error('TTS_VOICE_NOT_FOUND');
+    const bundled = this.voices.pocketDefaultPath(name, language);
+    if (await fs.stat(bundled).then((stat) => stat.size === asset.bytes).catch(() => false)) return bundled;
+    const file = this.voices.pocketPath(name, language);
+    const active = this.pocketDownloads.get(file);
+    if (active) return active;
+    const download = downloadVerifiedNodusAsset(asset.url, file, asset.bytes, asset.sha256, () => {}).then(() => file)
+      .finally(() => { this.pocketDownloads.delete(file); });
+    this.pocketDownloads.set(file, download);
+    return download;
+  }
 
   /** A Phonon catalogue voice, downloaded on first use (pinned revision, size and SHA-256). */
   private async phononVoice(voiceId: string): Promise<{ ref: TtsVoiceRef; language: import('@shared/ttsModels').TtsLanguage }> {

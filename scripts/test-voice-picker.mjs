@@ -19,7 +19,7 @@ test('the voice picker has a search box and model/language filters', () => {
   assert.match(picker, /engineFilter\.length && !engineFilter\.includes\(option\.engine\)/, 'the multi-model filter narrows the list');
   assert.match(picker, /languageFilter\.length && !languageFilter\.includes\(option\.voice\.language\)/, 'the multi-language filter narrows the list');
   assert.match(picker, /normalize\(\[option\.voice\.name/, 'search covers name and metadata');
-  assert.match(picker, /order = \{ ming: 0, phonon: 1, kokoro: 2 \}/, 'model groups keep a stable order');
+  assert.match(picker, /order = \{ ming: 0, phonon: 1, kokoro: 2, pocket: 3 \}/, 'model groups keep a stable order');
   assert.match(picker, /aria-multiselectable="true"/);
   assert.match(picker, /type="checkbox"/);
   assert.match(picker, /voice-picker-choice-panel/);

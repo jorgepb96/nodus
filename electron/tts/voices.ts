@@ -6,6 +6,7 @@ import { isTtsLanguage, type TtsLanguage } from '@shared/ttsModels';
 import { MING_BUILTIN_VOICES, mingBuiltinInvocation } from '@shared/mingBuiltinVoices';
 import { PHONON_VOICES } from '@shared/phononVoices';
 import { KOKORO_VOICES, isKokoroVoiceId, kokoroVoiceId } from '@shared/kokoroVoices';
+import { POCKET_MODEL_ID, POCKET_VOICES, pocketVoiceAsset, pocketVoiceId } from '@shared/pocketTts';
 import {
   TTS_VOICE_MAX_BYTES, TTS_VOICE_MAX_S, TTS_VOICE_MIN_S, builtinVoiceId, isBuiltinVoiceId, isUserVoiceId, minimumVoiceTranscriptChars, readWavInfo,
   type TtsVoice, type TtsVoiceSaveInput,
@@ -38,6 +39,18 @@ const dirName = (id: string) => id.replace(':', '_');
 export class TtsVoiceLibrary {
   constructor(readonly root: string, readonly bundledDir: string) {}
 
+  pocketPath(name: string, language: import('@shared/pocketTts').PocketLanguage): string {
+    const asset = pocketVoiceAsset(name, language);
+    if (!asset) throw new Error('TTS_VOICE_NOT_FOUND');
+    return path.join(this.root, 'pocket', asset.file);
+  }
+
+  pocketDefaultPath(name: string, language: import('@shared/pocketTts').PocketLanguage): string {
+    const asset = pocketVoiceAsset(name, language);
+    if (!asset) throw new Error('TTS_VOICE_NOT_FOUND');
+    return path.join(this.root, '..', 'models', POCKET_MODEL_ID, asset.file);
+  }
+
   private dir(id: string): string {
     if (!/^(user:[0-9a-f-]{36}|cc0:[a-z0-9-]{1,40})$/.test(id)) throw new Error('TTS_VOICE_INVALID');
     return path.join(this.root, dirName(id));
@@ -67,6 +80,12 @@ export class TtsVoiceLibrary {
     for (const voice of KOKORO_VOICES) {
       voices.push({ id: kokoroVoiceId(voice.id), name: voice.name, origin: 'kokoro', language: voice.language, locale: voice.locale, gender: voice.gender, description: `Kokoro v1.0 · ${voice.quality}`, attribution: 'hexgrad · Apache-2.0', readOnly: true });
     }
+    for (const voice of POCKET_VOICES) {
+      const asset = pocketVoiceAsset(voice.id, voice.language)!;
+      const downloaded = (await Promise.all([this.pocketPath(voice.id, voice.language), this.pocketDefaultPath(voice.id, voice.language)]
+        .map((file) => fs.stat(file).then((stat) => stat.size === asset.bytes).catch(() => false)))).some(Boolean);
+      voices.push({ id: pocketVoiceId(voice.id), name: voice.name, origin: 'pocket', language: voice.language, attribution: voice.attribution, readOnly: true, downloaded });
+    }
     return voices;
   }
 
@@ -74,14 +93,14 @@ export class TtsVoiceLibrary {
     if (input.consent !== true) throw new Error('TTS_VOICE_CONSENT_REQUIRED');
     const name = String(input.name ?? '').trim().slice(0, 80);
     const transcript = String(input.transcript ?? '').trim().slice(0, 2000);
-    if (!name || !transcript) throw new Error('TTS_VOICE_INVALID');
+    if (!name || (!transcript && input.engine !== 'pocket')) throw new Error('TTS_VOICE_INVALID');
     if (!isTtsLanguage(input.language)) throw new Error('TTS_VOICE_INVALID');
     const bytes = input.wav instanceof Uint8Array ? input.wav : new Uint8Array(input.wav as ArrayBuffer);
     if (bytes.byteLength > TTS_VOICE_MAX_BYTES) throw new Error('TTS_VOICE_TOO_LARGE');
     const info = readWavInfo(bytes);
     if (!info || info.channels !== 1 || info.bitsPerSample !== 16) throw new Error('TTS_VOICE_BAD_AUDIO');
     if (info.durationS < TTS_VOICE_MIN_S || info.durationS > TTS_VOICE_MAX_S) throw new Error('TTS_VOICE_BAD_LENGTH');
-    if (transcript.length < minimumVoiceTranscriptChars(info.durationS)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
+    if (input.engine !== 'pocket' && transcript.length < minimumVoiceTranscriptChars(info.durationS)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
     const id = `user:${randomUUID()}`;
     const dir = this.dir(id);
     const staging = `${dir}.tmp-${randomUUID()}`;
@@ -104,7 +123,7 @@ export class TtsVoiceLibrary {
     const meta = JSON.parse(await fs.readFile(file, 'utf8')) as StoredMeta;
     const next: StoredMeta = { ...meta };
     if (typeof patch.name === 'string' && patch.name.trim()) next.name = patch.name.trim().slice(0, 80);
-    if (typeof patch.transcript === 'string') {
+    if (typeof patch.transcript === 'string' && patch.transcript.trim() !== meta.transcript) {
       const transcript = patch.transcript.trim().slice(0, 2000);
       if (!transcript) throw new Error('TTS_VOICE_INVALID');
       if (transcript.length < minimumVoiceTranscriptChars(meta.durationS)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');

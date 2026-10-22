@@ -140,6 +140,7 @@ export function ttsReady(status: TtsStatus | null, modelId?: string | null): boo
     const engine = TTS_MODELS.find((model) => model.id === id)?.engine;
     if (engine === 'phonon') return status.phononRuntime.installed;
     if (engine === 'kokoro') return Boolean(status.kokoroRuntime?.installed);
+    if (engine === 'pocket') return Boolean(status.pocketRuntime?.installed);
     return status.runtime.installed;
   };
   const models = status.models.filter((model) => model.downloaded && runtimeFor(model.id));

@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { TTS_LANGUAGES, type TtsModelDefinition } from '@shared/ttsModels';
+import { TTS_LANGUAGES, type TtsEngine, type TtsModelDefinition } from '@shared/ttsModels';
 import { resolveTtsVoiceFilters, type TtsVoiceFilters } from '@shared/ttsVoiceFilters';
 import type { TtsVoice } from '@shared/ttsVoices';
 import { Icon } from '../ui';
@@ -9,7 +9,7 @@ import './voicePicker.css';
 /** A voice with the downloaded checkpoint that can actually speak its language. */
 export interface VoicePickerOption {
   voice: TtsVoice;
-  engine: 'ming' | 'phonon' | 'kokoro';
+  engine: TtsEngine;
   modelId: string;
   modelLabel: string;
 }
@@ -39,7 +39,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, model, fil
   const popup = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const listId = useId();
-  const selected = options.find((option) => option.voice.id === value);
+  const selected = options.find((option) => option.voice.id === value && (!model || option.engine === model.engine));
   const label = selected?.voice.name || selectedName || t('Voz');
 
   const languages = useMemo(() => {
@@ -48,7 +48,7 @@ export function VoicePicker({ options, value, selectedName, onSelect, model, fil
   }, [options]);
   const engines = useMemo(() => {
     const present = new Set(options.map((option) => option.engine));
-    return ([['ming', 'Ming'], ['phonon', 'Phonon'], ['kokoro', 'Kokoro']] as const).filter(([id]) => present.has(id));
+    return ([['ming', 'Ming'], ['phonon', 'Phonon'], ['kokoro', 'Kokoro'], ['pocket', 'Pocket TTS']] as const).filter(([id]) => present.has(id));
   }, [options]);
 
   const filtered = useMemo(() => {
@@ -61,14 +61,14 @@ export function VoicePicker({ options, value, selectedName, onSelect, model, fil
       const languageLabel = TTS_LANGUAGES.find((entry) => entry.code === option.voice.language)?.label ?? '';
       return normalize([option.voice.name, option.voice.locale ?? '', option.voice.description ?? '', languageLabel].join(' ')).includes(needle);
     }).sort((a, b) => {
-      const order = { ming: 0, phonon: 1, kokoro: 2 } as const;
+      const order = { ming: 0, phonon: 1, kokoro: 2, pocket: 3 } as const;
       return order[a.engine] - order[b.engine]
         || a.voice.name.localeCompare(b.voice.name, undefined, { sensitivity: 'base', numeric: true });
     });
   }, [options, engineFilter, languageFilter, modelLanguages, query]);
 
   const groups = useMemo(() => {
-    const byEngine = new Map<'ming' | 'phonon' | 'kokoro', VoicePickerOption[]>();
+    const byEngine = new Map<TtsEngine, VoicePickerOption[]>();
     for (const option of filtered) byEngine.set(option.engine, [...(byEngine.get(option.engine) ?? []), option]);
     return [...byEngine.entries()];
   }, [filtered]);
@@ -226,10 +226,10 @@ export function VoicePicker({ options, value, selectedName, onSelect, model, fil
           : languages.map((entry) => <label key={entry.code} className="voice-picker-choice"><input type="checkbox" checked={languageFilter.includes(entry.code)} onChange={() => onFiltersChange({ ...filters, languages: toggle(languageFilter, entry.code) })} /><span>{entry.label}</span></label>)}
       </div> : <div className="voice-picker-list" id={listId} role="listbox" aria-label={t('Todas las voces')}>
         {groups.map(([group, entries]) => <div key={group} className="voice-picker-group">
-          <div className="voice-picker-group-label">{group === 'ming' ? 'Ming' : group === 'phonon' ? 'Phonon' : 'Kokoro'}</div>
+          <div className="voice-picker-group-label">{group === 'ming' ? 'Ming' : group === 'phonon' ? 'Phonon' : group === 'pocket' ? 'Pocket TTS' : 'Kokoro'}</div>
           {entries.map((option) => {
             const languageLabel = TTS_LANGUAGES.find((entry) => entry.code === option.voice.language)?.label ?? option.voice.language;
-            const active = option.voice.id === value;
+            const active = option.voice.id === value && (!model || option.engine === model.engine);
             return <button
               key={option.voice.id}
               type="button"

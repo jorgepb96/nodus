@@ -595,7 +595,9 @@ async function downloadFile(
     await fsp.rm(partial, { force: true });
     resumedBytes = 0;
   }
-  const file = fs.createWriteStream(partial, { flags: resumed ? 'a' : 'wx' });
+  // Await every disk write before cancellation can close the file. Destroying a
+  // WriteStream with an outstanding write can emit an unhandled ERR_STREAM_DESTROYED.
+  const file = await fsp.open(partial, resumed ? 'a' : 'wx');
   const hash = createHash('sha256');
   let received = resumedBytes;
   try {
@@ -613,16 +615,16 @@ async function downloadFile(
       const chunk = Buffer.from(value);
       received += chunk.length;
       hash.update(chunk);
-      if (!file.write(chunk)) await new Promise<void>((resolve) => file.once('drain', resolve));
+      await file.writeFile(chunk);
       onBytes(chunk.length);
     }
-    await new Promise<void>((resolve, reject) => file.end((error?: Error | null) => error ? reject(error) : resolve()));
   } catch (error) {
-    file.destroy();
     // Preserve a bounded partial file. A later request resumes it with HTTP Range;
     // checksum verification still guards against a corrupt server response.
     if (signal?.aborted) throw downloadCancelledError();
     throw error;
+  } finally {
+    await file.close();
   }
   throwIfDownloadCancelled(signal);
   if (expectedBytes && received !== expectedBytes) {

@@ -210,7 +210,7 @@ class Server:
         model_id = _require(msg, "model_id")
         if not _MODEL_ID_RE.match(model_id):
             raise RequestError("'model_id' may only contain letters, digits, '.', '_' and '-'")
-        if self.backend.name != "kokoro" and not (model_path / "config.json").is_file():
+        if self.backend.name not in ("kokoro", "pocket") and not (model_path / "config.json").is_file():
             raise RequestError(f"no model at {model_path}")
         if self.model_path == model_path.resolve() and self.backend.loaded:
             self.model_id = model_id
@@ -376,7 +376,8 @@ class Server:
         lang = str(msg.get("lang") or "en").strip().lower()
         phonon = self.backend.name == "phonon"
         kokoro = self.backend.name == "kokoro"
-        languages = PHONON_LANGUAGES if phonon else KOKORO_LANGUAGES if kokoro else ming_text.LANGUAGES
+        pocket = self.backend.name == "pocket"
+        languages = PHONON_LANGUAGES if phonon else KOKORO_LANGUAGES if kokoro else POCKET_LANGUAGES if pocket else ming_text.LANGUAGES
         if lang not in languages:
             raise RequestError(f"unsupported lang {lang!r}; expected one of {', '.join(languages)}")
         voice = msg.get("voice")
@@ -384,7 +385,11 @@ class Server:
             raise RequestError("'voice' is required")
         kind = voice.get("kind")
         conditioning = {}
-        if phonon:
+        if pocket:
+            if kind not in ("embedding", "clone"):
+                raise RequestError("Pocket voice.kind must be 'embedding' or 'clone'")
+            conditioning = {"lang": lang, "reference": voice}
+        elif phonon:
             conditioning = {"lang": lang, "voice": self.phonon_voice(voice)}
         elif kokoro:
             if kind != "kokoro":
@@ -414,7 +419,7 @@ class Server:
         if not fragments:
             raise RequestError("text has nothing to synthesize")
         out_dir.mkdir(parents=True, exist_ok=True)
-        prompt = ming_text.tts_prompt(lang)
+        prompt = "" if pocket else ming_text.tts_prompt(lang)
         decode_budget = getattr(self.backend, 'decode_budget', None)
         if decode_budget is not None:
             from fragment_guard import plan_fragments
@@ -436,7 +441,7 @@ class Server:
                     part, prompt, max_steps=MAX_DECODE_STEPS,
                     check_cancel=lambda: self.check_cancel(job_id), **conditioning, **SAMPLING)
 
-            if phonon or kokoro:
+            if phonon or kokoro or pocket:
                 audio, info = synthesize(fragment)
             else:
                 from fragment_guard import synthesize_complete
@@ -471,11 +476,13 @@ _PACKAGES = {
               "accelerate", "onnxruntime", "soundfile", "numpy"),
     "phonon": ("ptts", "numpy"),
     "kokoro": ("kokoro-onnx", "onnxruntime", "phonemizer", "espeakng-loader"),
+    "pocket": ("pocket-tts", "torch", "tokenizers", "safetensors", "numpy", "pyyaml"),
     "fake": (),
 }
 
 PHONON_LANGUAGES = ("en", "fr", "de", "es", "pt")
 KOKORO_LANGUAGES = ("es", "en")
+POCKET_LANGUAGES = ("es", "en", "fr", "de", "it", "pt", "nl")
 
 
 def self_check(backend: str, device: str) -> int:
@@ -522,6 +529,12 @@ def self_check(backend: str, device: str) -> int:
 
             ptts.build_info()
             kind = "cpu"
+        elif backend == "pocket":
+            from backend_pocket import PocketBackend
+
+            backend_instance = PocketBackend()
+            backend_instance._torch.ones(4, device="cpu").sum().item()
+            kind = "cpu"
         elif backend == "kokoro":
             import kokoro_onnx  # noqa: F401
             import onnxruntime  # noqa: F401
@@ -555,7 +568,7 @@ def self_check(backend: str, device: str) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Nodus Ming-3.0 TTS sidecar")
-    parser.add_argument("--backend", choices=("mlx", "torch", "phonon", "kokoro", "fake"), required=True)
+    parser.add_argument("--backend", choices=("mlx", "torch", "phonon", "kokoro", "pocket", "fake"), required=True)
     parser.add_argument("--models-dir")
     parser.add_argument("--device", choices=("auto", "cuda", "cpu"), default="auto", help="torch only")
     # fp32 by default: on the one CPU measured (Apple M2, qnnpack) int8 was no
@@ -602,6 +615,9 @@ def main() -> None:
         elif args.backend == "kokoro":
             from backend_kokoro import KokoroBackend
             server.backend = KokoroBackend()
+        elif args.backend == "pocket":
+            from backend_pocket import PocketBackend
+            server.backend = PocketBackend()
         elif args.backend == "torch":
             from backend_torch import TorchBackend
             server.backend = TorchBackend(args.device, args.cpu_quant)

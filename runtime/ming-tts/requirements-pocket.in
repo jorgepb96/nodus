@@ -1,0 +1,6 @@
+# Official Kyutai CPU implementation, CPython 3.12. No MLX or CUDA.
+# macOS Apple Silicon, Windows x64 and Linux x64.
+pocket-tts==4.0.1
+torch==2.6.0+cpu ; sys_platform != 'darwin'
+torch==2.6.0 ; sys_platform == 'darwin'
+pyyaml==6.0.3

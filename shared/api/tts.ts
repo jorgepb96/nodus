@@ -43,6 +43,8 @@ export interface TtsApi {
   ttsSpeak(request: TtsSpeakRequest): Promise<TtsSpeakStarted>;
   ttsCancel(jobId: string): Promise<void>;
   ttsVoices(): Promise<TtsVoice[]>;
+  /** Download an optional official Pocket voice for its native language. */
+  ttsDownloadVoice(voiceId: string): Promise<void>;
   ttsSaveVoice(input: TtsVoiceSaveInput): Promise<TtsVoice>;
   ttsUpdateVoice(voiceId: string, patch: { name?: string; transcript?: string; language?: TtsLanguage }): Promise<void>;
   ttsDeleteVoice(voiceId: string): Promise<void>;

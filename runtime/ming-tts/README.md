@@ -1,5 +1,53 @@
 # Ming-3.0 TTS sidecar
 
+## Optional Pocket TTS backend
+
+`--backend pocket` runs Kyutai's official `pocket-tts==4.0.1` Python implementation
+on CPU, including on Apple Silicon. It uses one torch thread and the official parallel
+audio decoder. Its private, hash-locked environment never installs MLX or CUDA packages.
+Supported wheel targets are macOS arm64, Windows x64 and Linux x64. PyTorch >=2.5
+(required by Pocket) does not publish Intel macOS wheels.
+
+The catalogue entry `pocket-tts-6l` groups Kyutai's seven six-layer language checkpoints
+(English, Spanish, French, German, Italian, Portuguese, Dutch). They are separate official
+weights, rather than a single checkpoint that accepts every language. Electron downloads
+all seven language weights, tokenizers and native default voice states with the existing
+model manager; only one language is loaded into memory. No weights or voices ship in the
+installer. The pinned metadata in `shared/pocketTtsAssets.json` follows the configs and
+predefined-voice mapping in the official 4.0.1 wheel. All assets have exact sizes and SHA-256s.
+
+Cloning weights are gated on Hugging Face. Users accept Kyutai's terms and supply their
+own read token through the existing settings UI. The backend receives only local paths;
+its rewritten configs disable the upstream fallback to non-cloning weights. Defaults:
+Alba (en), Lola (es), Estelle (fr), Juergen (de), Giovanni (it), Rafael (pt), Daan (nl).
+The other 20 named official voices can be downloaded in Settings or on first use.
+Precomputed voice states are selected for the **target** language, not reused across
+incompatible language weights. The original recording licences are shown in the library.
+
+Recorded/uploaded references use the existing voice library and consent control. Pocket
+does not require a transcript; Ming continues to require one. Pocket conditioning uses
+at most the first 12 seconds, resampled with the official audio helpers. Live tests with
+a 27-second reference produced incorrect text, while bounded references preserved it;
+the full original recording remains saved. Derived states use the
+official safetensors export/import functions and are cached by audio digest, checkpoint
+identity and language in the voice's `cache/`, so they survive app restarts. Job fragments,
+cancellation, idle unloading, playback, retention and saved clips use the existing host.
+
+Validation:
+
+```sh
+node --test scripts/test-pocket-tts.mjs scripts/test-tts-*.mjs scripts/test-ming-sidecar-protocol.mjs
+<pocket-python> -I -B runtime/ming-tts/serve.py --self-check --backend pocket
+<pocket-python> -B scripts/test_pocket_tts_backend.py
+<pocket-python> runtime/ming-tts/verify_locks.py pocket
+```
+
+The Python backend unit tests need the Pocket environment, but no weights or network.
+End-to-end synthesis and cloning with the production checkpoint additionally require
+an HF account that has accepted the model's terms.
+
+## Ming backend
+
 Narration with voice cloning runs Ming-3.0-tts-0.5B (MIT) in a Python process that the
 Electron main process spawns (`electron/tts/host.ts`). Inference never runs in Electron's
 main or renderer process, so a long narration cannot freeze the window. The sidecar is

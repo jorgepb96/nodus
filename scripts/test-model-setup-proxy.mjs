@@ -63,7 +63,11 @@ test('real Electron routes model catalogues and verified downloads through a pro
         const setup = require(${JSON.stringify(bundle)});
         const ses = session.defaultSession;
         await ses.setProxy({mode:'fixed_servers',proxyRules:'http=127.0.0.1:${port};https=127.0.0.1:${port}',proxyBypassRules:'<-loopback>'});
-        assert.match(await ses.resolveProxy('http://models.nodus.invalid'), /PROXY/);
+        // A newly created session can still resolve DIRECT after setProxy resolves.
+        // Flush Chromium's proxy service before asserting or exercising production fetches.
+        // https://github.com/electron/electron/issues/26166
+        await ses.forceReloadProxyConfig();
+        assert.equal(await ses.resolveProxy('http://models.nodus.invalid'), 'PROXY 127.0.0.1:${port}');
         await ses.cookies.set({ url:'http://models.nodus.invalid', name:'private-cookie', value:'must-not-travel' });
         globalThis.modelSetupSettings = {customProvider:{baseUrl:'http://models.nodus.invalid/v1',models:[]},localProviders:{ollama:{baseUrl:${JSON.stringify(directBase)}},lmstudio:{baseUrl:${JSON.stringify(directBase)}}}};
         assert.equal((await setup.listModels('custom','synthetic-key'))[0].id,'proxy-model');
@@ -75,7 +79,9 @@ test('real Electron routes model catalogues and verified downloads through a pro
         assert.deepEqual(await fs.readFile(file),bytes);
         for (const provider of ['ollama','lmstudio']) assert.equal((await setup.listModels(provider,null))[0].id,'local-model');
         await ses.setProxy({mode:'direct'});
+        await ses.forceReloadProxyConfig();
         await ses.closeAllConnections();
+        assert.equal(await ses.resolveProxy(${JSON.stringify(directBase + '/asset')}), 'DIRECT');
         await setup.downloadVerifiedNodusAsset(${JSON.stringify(directBase + '/asset')},path.join(${JSON.stringify(tmp)},'direct.bin'),bytes.length,${JSON.stringify(sha)},()=>{});
         console.log('MODEL_SETUP_PROXY_OK '+JSON.stringify({electron:process.versions.electron,proxyCatalogue:true,proxyDownload:true,redirectAndRange:true,localProviders:true,directDownload:true,cookiesOmitted:true}));
         app.quit();

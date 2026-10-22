@@ -359,6 +359,22 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   const [editing, setEditing] = useState<{ id: string; name: string; transcript: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const preview = useRef<HTMLAudioElement>(null);
+  const previewVoiceId = useRef<string | null>(null);
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const audio = preview.current;
+    return () => { audio?.pause(); };
+  }, []);
+
+  useEffect(() => {
+    if (previewVoiceId.current && !voices.some((voice) => voice.id === previewVoiceId.current)) {
+      preview.current?.pause();
+      preview.current?.removeAttribute('src');
+      previewVoiceId.current = null;
+      setPlayingVoiceId(null);
+    }
+  }, [voices]);
 
   const paragraphs = TTS_SAMPLE_PARAGRAPHS[language];
   const paragraph = paragraphs[paragraphIndex % paragraphs.length];
@@ -416,7 +432,16 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   const play = (voice: TtsVoice) => {
     const el = preview.current;
     if (!el) return;
-    el.src = voiceUrl(voice.id);
+    if (previewVoiceId.current === voice.id && !el.paused) {
+      el.pause();
+      return;
+    }
+    if (previewVoiceId.current !== voice.id) {
+      el.pause();
+      setPlayingVoiceId(null);
+      previewVoiceId.current = voice.id;
+      el.src = voiceUrl(voice.id);
+    }
     void el.play().catch(() => {});
   };
 
@@ -464,7 +489,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
           </>}
       </div>
       {!isEditing && <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
-        {voice.origin !== 'builtin' && voice.origin !== 'phonon' && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={t('Escuchar la grabación de referencia')} onClick={() => play(voice)}><Icon name="play" size={12} /></button>}
+        {voice.origin !== 'builtin' && voice.origin !== 'phonon' && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={playingVoiceId === voice.id ? t('Pausar') : t('Escuchar la grabación de referencia')} aria-label={playingVoiceId === voice.id ? t('Pausar') : t('Escuchar la grabación de referencia')} onClick={() => play(voice)}><Icon name={playingVoiceId === voice.id ? 'pause' : 'play'} size={12} /></button>}
         {!voice.readOnly && <button className="rounded p-1 text-neutral-500 hover:text-indigo-500" title={t('Editar nombre y transcripción')} onClick={() => setEditing({ id: voice.id, name: voice.name, transcript: voice.transcript ?? '' })}><Icon name="edit" size={12} /></button>}
         {!voice.readOnly && <button className="rounded p-1 text-neutral-500 hover:text-red-400" title={t('Eliminar voz')} onClick={() => onDelete(voice)}><Icon name="trash" size={12} /></button>}
       </div>}
@@ -472,7 +497,7 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, o
   };
 
   return <div className="mt-5 border-t border-neutral-200 pt-5 dark:border-neutral-800" data-testid="narration-voices" id="narration-voices">
-    <audio ref={preview} className="hidden" />
+    <audio ref={preview} className="hidden" onPlay={() => setPlayingVoiceId(previewVoiceId.current)} onPause={(event) => { if (event.currentTarget.paused) setPlayingVoiceId(null); }} onEnded={() => setPlayingVoiceId(null)} onError={() => setPlayingVoiceId(null)} />
     <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Voces')}</h5>
     <p className="mt-1 text-xs text-neutral-500">{t('Graba o sube 6–15 segundos de voz clara, sin ruido de fondo, con su transcripción exacta. Usa solo tu voz o la de alguien que te haya dado permiso.')}</p>
 

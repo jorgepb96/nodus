@@ -1,0 +1,52 @@
+name: Zotero plugin
+
+on:
+  pull_request:
+    paths:
+      - zotero-plugin/**
+      - scripts/test-zotero-plugin.mjs
+      - scripts/build-zotero-xpi.mjs
+      - scripts/smoke-zotero-xpi.mjs
+      - scripts/zotero-local-embedding-worker.mjs
+      - package.json
+      - package-lock.json
+      - .github/workflows/zotero-plugin.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zotero-plugin-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  plugin:
+    name: Plugin tests and XPI packaging
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      ONNXRUNTIME_NODE_INSTALL: skip
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies without native app build hooks
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test plugin behavior and release packaging contracts
+        run: node --test scripts/test-zotero-plugin.mjs
+      - name: Build the installable Zotero plugin
+        run: npm run zotero:xpi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nodus-zotero-plugin
+          path: |
+            dist-zotero/nodus-zotero.xpi
+            dist-zotero/updates.json
+          if-no-files-found: error
+          retention-days: 7

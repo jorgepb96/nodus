@@ -161,9 +161,9 @@
   function setAgentAuto(v) { S("agentAuto", v ? "1" : "0"); }
 
   // ---- local history privacy/retention ----
-  // History is private-by-default. Users can explicitly opt in from Settings;
-  // disabling it also removes the already persisted conversation file.
-  function getHistoryEnabled() { return P("history.enabled", "0") === "1"; }
+  // Chats stay local to this Zotero profile. An explicit opt-out in Settings
+  // still disables persistence and removes the saved conversation file.
+  function getHistoryEnabled() { return P("history.enabled", "1") === "1"; }
   function setHistoryEnabled(v) { S("history.enabled", v ? "1" : "0"); }
   function getHistoryRetention() {
     const value = Number(P("history.retentionDays", 365));
@@ -194,6 +194,29 @@
   function convPath() {
     const dir = Services.dirsvc.get("ProfD", Components.interfaces.nsIFile).path;
     return PathUtils.join(dir, "nodus-zotero-conversations.json");
+  }
+  function conversationItem(conversation) {
+    const owner = conversation && conversation.zoteroItem;
+    if (owner && Number.isInteger(Number(owner.libraryID)) && Number(owner.libraryID) > 0 && /^[A-Za-z0-9_-]{1,80}$/.test(String(owner.key || ""))) {
+      return { libraryID: Number(owner.libraryID), key: String(owner.key) };
+    }
+    // Older histories only recorded the source attachments. Recover the owner
+    // when every attachment belongs to the same item; never guess for a corpus.
+    const match = /^current:(\d+:[A-Za-z0-9_-]+(?:,\d+:[A-Za-z0-9_-]+)*)$/.exec(String(conversation && conversation.sourceIdentity || ""));
+    if (!match) return null;
+    let resolved = null;
+    try {
+      for (const source of match[1].split(",")) {
+        const [libraryID, key] = source.split(":");
+        const item = Zotero.Items.getByLibraryAndKey(Number(libraryID), key);
+        const parent = item && (item.parentItem || item);
+        if (!parent) return null;
+        const next = { libraryID: Number(parent.libraryID), key: String(parent.key) };
+        if (resolved && (resolved.libraryID !== next.libraryID || resolved.key !== next.key)) return null;
+        resolved = next;
+      }
+    } catch (e) { return null; }
+    return resolved;
   }
   function compactAudit(audit) {
     if (!audit || typeof audit !== "object") return audit || null;
@@ -236,6 +259,7 @@
         mode: conversation.mode === "standalone" ? "standalone" : "connected",
         sourceScope: SOURCE_SCOPES.includes(conversation.sourceScope) ? conversation.sourceScope : "current",
         sourceIdentity: String(conversation.sourceIdentity || "").slice(0, 20000),
+        zoteroItem: conversationItem(conversation),
         model: conversation.model && typeof conversation.model === "object" ? {
           provider: String(conversation.model.provider || "").slice(0, 80),
           model: String(conversation.model.model || "").slice(0, 240),
@@ -285,21 +309,33 @@
     }
     catch (e) { return []; }
   }
-  async function saveConversations(list) {
-    try {
+  let conversationWrites = Promise.resolve();
+  function queueConversationWrite(write) {
+    conversationWrites = conversationWrites.then(write).catch((e) => {
+      try { Zotero.logError(e); } catch (x) {}
+      return false;
+    });
+    return conversationWrites;
+  }
+  function saveConversations(list) {
+    // Capture this revision before awaiting earlier writes. Sending, streaming
+    // completion and navigation can otherwise race over the same .tmp file.
+    const serialized = JSON.stringify(compactConversations(list));
+    return queueConversationWrite(async () => {
       const target = convPath();
       const temp = target + ".tmp";
-      await IOUtils.writeUTF8(temp, JSON.stringify(compactConversations(list)));
+      await IOUtils.writeUTF8(temp, serialized);
       await IOUtils.move(temp, target, { noOverwrite: false });
       if (IOUtils.setPermissions) await IOUtils.setPermissions(target, 0o600);
-    } catch (e) { try { Zotero.logError(e); } catch (x) {} }
+      return true;
+    });
   }
-  async function deleteConversationHistory() {
-    try {
+  function deleteConversationHistory() {
+    return queueConversationWrite(async () => {
       await IOUtils.remove(convPath(), { ignoreAbsent: true });
       await IOUtils.remove(convPath() + ".tmp", { ignoreAbsent: true });
       return true;
-    } catch (e) { try { Zotero.logError(e); } catch (x) {} return false; }
+    });
   }
   const EVIDENCE_CACHE_VERSION = 1;
   let evidenceDbPromise = null;
@@ -647,7 +683,7 @@
     getAutoUpdate, setAutoUpdate,
     getAgent, setAgent, getAgentAuto, setAgentAuto,
     getHistoryEnabled, setHistoryEnabled, getHistoryRetention, setHistoryRetention,
-    getManual, setManual, loadConversations, saveConversations, deleteConversationHistory, compactAudit, compactConversations,
+    getManual, setManual, loadConversations, saveConversations, deleteConversationHistory, conversationItem, compactAudit, compactConversations,
     EVIDENCE_CACHE_VERSION, gzipText, gunzipText, compactEvidenceIndex, detachEmbeddings, attachEmbeddings,
     loadEvidenceIndex, saveEvidenceIndex, deleteEvidenceIndex, listEvidenceRecords, loadEvidenceIndexes,
     pruneEvidenceIndexes, clearEvidenceIndexes, evidenceCacheStats, closeEvidenceDb, newId,

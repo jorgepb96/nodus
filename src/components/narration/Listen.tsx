@@ -39,7 +39,7 @@ export interface ListenTarget {
 
 type Confirm = null | { kind: 'clip'; clip: AudioClip } | { kind: 'all' };
 
-export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, autoStart = false, direct = false, bare = false, onUnavailable, open: openProp, onOpenChange }: {
+export function ListenButton({ target, size = 13, className = '', testId, label, toolbar = false, direct = false, bare = false, onUnavailable, open: openProp, onOpenChange }: {
   target: ListenTarget;
   size?: number;
   className?: string;
@@ -47,8 +47,6 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
   label?: string;
   /** The header action uses the chat's button shape, shows its label and no progress ring. */
   toolbar?: boolean;
-  /** Opening from the header action starts the saved clip or generation immediately. */
-  autoStart?: boolean;
   /** The per-answer chat action plays immediately instead of opening the balloon. */
   direct?: boolean;
   /** Only `className` styles the button, so it can sit in another toolbar (Scriptor). */
@@ -148,7 +146,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         {/* The labelled toolbar action only opens the balloon: its progress lives there, not on the button. */}
         {toolbar ? null : starting ? <LoadingRing /> : generating ? <ProgressRing fraction={fraction} /> : direct && player?.source?.key === key ? <ProgressRing fraction={playbackFraction} /> : null}
       </button>
-      {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} autoStart={autoStart} />}
+      {open && player && <ListenBalloon target={target} anchor={anchor} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -193,15 +191,13 @@ function useTtsStatus(): TtsStatus | null {
   return status;
 }
 
-export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { target: ListenTarget; anchor: React.RefObject<HTMLElement>; onClose: () => void; autoStart?: boolean }) {
+export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarget; anchor: React.RefObject<HTMLElement>; onClose: () => void }) {
   const player = useAudioPlayer();
   const status = useTtsStatus();
   const progress = useGeneration(target.kind, target.id);
-  const autoStarted = useRef(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [voices, setVoices] = useState<TtsVoice[]>([]);
   const [clips, setClips] = useState<AudioClip[]>([]);
-  const [clipsLoaded, setClipsLoaded] = useState(false);
   const [language, setLanguage] = useState<TtsLanguageSetting>('auto');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -216,10 +212,8 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   const refreshClips = async () => {
     const next = await window.nodus.listAudioClips(target.kind, target.id).catch(() => []);
     setClips(next);
-    setClipsLoaded(true);
   };
   useEffect(() => {
-    setClipsLoaded(false);
     void window.nodus.getSettings().then((next) => { setSettings(next); setLanguage(next.ttsLanguage); });
     void window.nodus.ttsVoices().then(setVoices).catch(() => {});
     void refreshClips();
@@ -328,18 +322,6 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   };
   const transportPause = () => { if (playing) player.toggle(); };
   const transportRestart = () => { if (playable.length) player.play(playable, 0, source); };
-
-  useEffect(() => {
-    if (!autoStart || autoStarted.current) return;
-    // Wait for the persisted clips before deciding whether to replay or generate, and for
-    // the engine status before deciding whether generation is possible at all.
-    if (!clipsLoaded || !settings || !status) return;
-    if (progress || player.source?.key === key) { autoStarted.current = true; return; }
-    if (!ready) { autoStarted.current = true; return; }
-    autoStarted.current = true;
-    if (playable.length) { player.play(playable, 0, source); return; }
-    narrate();
-  }, [autoStart, clipsLoaded, settings, status, progress, player.source?.key, ready, playable, source, player, narrate]);
 
   const removeClip = async (clip: AudioClip) => {
     if (player.currentTrackId === clip.id) player.stop();

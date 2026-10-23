@@ -1,6 +1,6 @@
 // The Research chat header has a listen action for the latest finished answer: it only opens
 // the Listen balloon (no auto-start, no progress ring on the button). The per-message icon
-// plays directly. Scriptor's header icon still opens its balloon with autoStart.
+// plays directly. Scriptor's header icon also only toggles its balloon.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -12,7 +12,7 @@ const read = (file) => readFileSync(path.join(root, file), 'utf8');
 const modal = read('src/views/ResearchAssistantModal.tsx');
 const listen = read('src/components/narration/Listen.tsx');
 
-test('the Research chat header narrates the latest finished answer', () => {
+test('the Research chat header opens the Listen balloon for the latest finished answer', () => {
   assert.match(modal, /testId="research-chat-header-listen"/);
   assert.match(modal, /<ListenButton[\s\S]{0,120}toolbar/);
   const header = modal.slice(modal.indexOf('latestListenTarget && <ListenButton'), modal.indexOf('target={latestListenTarget}'));
@@ -28,20 +28,6 @@ test('the Research chat header narrates the latest finished answer', () => {
   const headerCss = read('src/views/researchAssistant.css');
   assert.match(headerCss, /\.research-assistant-actions \.concilium-control > \.concilium-trigger \{ box-sizing: border-box; height: 36px;/, 'Concilium matches the 36px header controls');
   assert.match(headerCss, /\.research-assistant-actions \.concilium-control \{ flex: 0 0 auto; \}/, 'Concilium keeps its full width beside the rightmost listen action');
-});
-
-test('autoStart (Scriptor header) opens the balloon and starts playback or generation once', () => {
-  assert.match(listen, /autoStart\?: boolean/);
-  assert.match(listen, /if \(!clipsLoaded \|\| !settings \|\| !status\) return;/,
-    'it waits for clips and engine status before choosing');
-  assert.match(listen, /if \(playable\.length\) \{ player\.play\(playable, 0, source\); return; \}/,
-    'an existing clip plays immediately');
-  assert.match(listen, /if \(!ready\) \{ autoStarted\.current = true; return; \}/,
-    'without a ready engine it leaves the configuration visible');
-  assert.match(listen, /narrate\(\);/,
-    'with no clip it starts generation');
-  assert.match(listen, /autoStarted\.current = true;/,
-    'the effect is one-shot');
 });
 
 test('the per-answer listen action plays directly while the header keeps the config balloon', () => {

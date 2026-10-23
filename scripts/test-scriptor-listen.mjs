@@ -15,7 +15,8 @@ const listen = read('src/components/narration/Listen.tsx');
 const narrate = read('src/lib/narration/narrate.ts');
 
 test('the Scriptor header opens the Listen balloon for the document', () => {
-  assert.match(editor, /trailing=\{<ListenButton bare autoStart testId="scriptor-header-listen"[^>]*open=\{listenOpen\} onOpenChange=\{setListen\} target=\{listenTarget\} \/>\}/);
+  assert.match(editor, /trailing=\{<ListenButton bare testId="scriptor-header-listen"[^>]*open=\{listenOpen\} onOpenChange=\{setListen\} target=\{listenTarget\} \/>\}/);
+  assert.doesNotMatch(listen, /autoStart/, 'opening the balloon never starts playback or generation');
   assert.match(chrome, /\{trailing\}<button className="editorial-header-action editorial-header-icon" aria-label=\{contextLabel\}/,
     'it sits in the header, before Context and Focus');
   assert.match(editor, /kind: 'scriptor_document', id: `\$\{active\.id\}:\$\{listenVersion\}`/,

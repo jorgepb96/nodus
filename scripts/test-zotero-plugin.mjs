@@ -275,7 +275,7 @@ const FAKE_STORE = {
   newId: () => 'conv-1', compactAudit: (a) => a, compactConversations: (a) => a,
 };
 
-function conversationSidebar({ history = [], historyEnabled = true, sourceScope = 'current', providers, embeddings } = {}) {
+function conversationSidebar({ history = [], historyEnabled = true, sourceScope = 'current', providers, embeddings, evidence } = {}) {
   const doc = stubDoc();
   const items = new Map();
   let selected = [], reader = null, nextID = 0, saved = null;
@@ -295,7 +295,7 @@ function conversationSidebar({ history = [], historyEnabled = true, sourceScope 
     saveConversations: async (list) => { saved = JSON.parse(JSON.stringify(list)); return true; },
   };
   const sandbox = {
-    window: { NodusStore: store, NodusProviders: providers, NodusLocalEmbeddings: embeddings }, document: doc, console,
+    window: { NodusStore: store, NodusProviders: providers, NodusLocalEmbeddings: embeddings, NodusEvidence: evidence }, document: doc, console,
     ChromeUtils: { importESModule: () => ({ Zotero }) },
     AbortController, DOMException, setTimeout, clearTimeout,
   };
@@ -2083,7 +2083,7 @@ test('local models: failed vector publication preserves the previous complete ca
 });
 
 function selectableEmbeddingStub(infer) {
-  const models = [{ key: 'e5-small', label: 'E5', dimensions: 384 }, { key: 'granite-97m', label: 'Granite', dimensions: 384 }];
+  const models = [{ key: 'e5-small', label: 'E5', dimensions: 384, fingerprint: 'e5-contract' }, { key: 'granite-97m', label: 'Granite', dimensions: 384, fingerprint: 'granite-contract' }];
   let active = models[0];
   return {
     get MODEL() { return active; }, MODELS: models,
@@ -2166,4 +2166,128 @@ test('local model activation: Prepare also validates the already-active model', 
   await sidebar.run('changeEmbeddingModel()');
   assert.equal(calls, 1);
   assert.equal(saved, 'e5-small');
+});
+
+function automaticSidebar() {
+  let warmups = 0, indexed = 0, embedded = 0, saved = null;
+  const embeddings = selectableEmbeddingStub(async () => []);
+  embeddings.warmup = async () => { warmups++; };
+  embeddings.useIndex = index => index;
+  embeddings.embedPassages = async values => { embedded += values.length; return values.map(() => [1, 0]); };
+  const evidence = {
+    ensureIndex: async attachment => { indexed++; return { index: { libraryID: attachment.libraryID, attachmentKey: attachment.key, chunks: [{ id: attachment.key, text: 'Synthetic research passage' }] } }; },
+  };
+  const sidebar = conversationSidebar({ embeddings, evidence });
+  sidebar.store.getContext = () => ({ useFulltext: true });
+  sidebar.doc.querySelector("#nd-embedding-model").value = embeddings.MODEL.key;
+  sidebar.store.saveEvidenceIndex = async index => { saved = JSON.parse(JSON.stringify(index)); return true; };
+  return { ...sidebar, embeddings, evidence, counts: () => ({ warmups, indexed, embedded }), saved: () => saved,
+    async close() { sidebar.run('automaticPreparation.closed = true'); await sidebar.run('pauseAutomaticPreparation(true)'); },
+  };
+}
+
+test('automatic preparation: startup warms only the selected model without locking the chat or scanning the library', async () => {
+  const sidebar = automaticSidebar();
+  sidebar.store.listEvidenceRecords = () => assert.fail('startup must not scan the library');
+  try {
+    await sidebar.run('runAutomaticPreparation()');
+    assert.deepEqual(sidebar.counts(), { warmups: 1, indexed: 0, embedded: 0 });
+    assert.equal(sidebar.run('state.busy'), false);
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(sidebar.counts().warmups, 1, 'polling does not repeatedly reload the idle model');
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: opening a reader creates semantic vectors once without visiting Settings', async () => {
+  const sidebar = automaticSidebar();
+  try {
+    const parent = sidebar.item('AUTO-PARENT'), att = sidebar.attachment(parent, 'AUTO-PDF');
+    await sidebar.reader(att);
+    await sidebar.run('runAutomaticPreparation()');
+    assert.deepEqual(sidebar.counts(), { warmups: 1, indexed: 1, embedded: 1 });
+    assert.equal(sidebar.saved().attachmentKey, 'AUTO-PDF');
+    assert.equal(sidebar.saved().chunks[0].embeddingModel, 'e5-contract');
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(sidebar.counts().indexed, 1);
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: a foreground operation cancels document work and prevents stale vector writes', async () => {
+  const sidebar = automaticSidebar();
+  let started = false;
+  sidebar.embeddings.embedPassages = (values, opts) => new Promise((resolve, reject) => {
+    started = true;
+    opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  });
+  try {
+    await sidebar.reader(sidebar.attachment(sidebar.item('A'), 'PDF-A'));
+    const job = sidebar.run('runAutomaticPreparation()');
+    assert.ok(await waitFor(() => started, 1000));
+    sidebar.run('state.busy = true');
+    await sidebar.run('pauseAutomaticPreparation(false)'); await job;
+    assert.equal(sidebar.saved(), null);
+    assert.equal(sidebar.run('automaticPreparation.job'), null);
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: failed downloads back off and leave the chat enabled', async () => {
+  const sidebar = automaticSidebar(); let attempts = 0;
+  sidebar.embeddings.warmup = async () => { attempts++; throw new Error('offline'); };
+  try {
+    await sidebar.run('runAutomaticPreparation()');
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(attempts, 1);
+    assert.equal(sidebar.run('state.busy'), false);
+    assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /offline/);
+    assert.ok(sidebar.run('automaticPreparation.retryAt > Date.now()'));
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: disabling document context prevents automatic downloads', async () => {
+  const sidebar = automaticSidebar();
+  sidebar.store.getContext = () => ({ useFulltext: false });
+  try {
+    await sidebar.run('runAutomaticPreparation()');
+    assert.deepEqual(sidebar.counts(), { warmups: 0, indexed: 0, embedded: 0 });
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: refreshes share an in-flight warmup instead of loading another model', async () => {
+  const sidebar = automaticSidebar(); let finish, calls = 0;
+  sidebar.embeddings.warmup = () => { calls++; return new Promise(resolve => { finish = resolve; }); };
+  try {
+    const job = sidebar.run('runAutomaticPreparation()');
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(calls, 1);
+    assert.equal(sidebar.run('state.busy'), false);
+    finish(); await job;
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: status does not hide an error for a manually requested target', async () => {
+  const sidebar = automaticSidebar();
+  try {
+    sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+    sidebar.doc.querySelector('#nd-embedding-status').textContent = 'The requested model failed';
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(sidebar.doc.querySelector('#nd-embedding-status').textContent, 'The requested model failed');
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: an explicit model switch cancels automatic warmup before loading its target', async () => {
+  const sidebar = automaticSidebar(); let started = false, saved;
+  sidebar.embeddings.warmup = opts => new Promise((resolve, reject) => {
+    started = true;
+    opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  });
+  sidebar.store.listEvidenceRecords = async () => [];
+  sidebar.store.setEmbeddingModel = key => { saved = key; };
+  try {
+    const warmup = sidebar.run('runAutomaticPreparation()');
+    assert.equal(started, true);
+    sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+    await sidebar.run('changeEmbeddingModel()'); await warmup;
+    assert.equal(saved, 'granite-97m');
+    assert.equal(sidebar.embeddings.MODEL.key, 'granite-97m');
+  } finally { await sidebar.close(); }
 });

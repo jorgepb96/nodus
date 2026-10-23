@@ -103,8 +103,11 @@
           <option value="full" data-i18n="evidence.full">Complete text</option>
         </select>
         <label for="nd-embedding-model" data-i18n="evidence.chooseModel">Local semantic model</label>
+        <div id="nd-embedding-active" class="nd-muted"></div>
         <select id="nd-embedding-model"></select>
         <button id="nd-embedding-apply" data-i18n="evidence.applyModel">Prepare and activate</button>
+        <button id="nd-embedding-cancel" data-i18n="evidence.cancelModel" hidden>Cancel preparation</button>
+        <div id="nd-embedding-status" role="status" aria-live="polite"></div>
         <div id="nd-local-embedding" class="nd-muted" data-i18n="evidence.localEmbedding">Only the selected model is downloaded. Changing models prepares its own index on this device.</div>
         <label data-i18n="settings.ocrMode">Visual OCR for text-poor pages</label>
         <select id="nd-ctx-ocr">

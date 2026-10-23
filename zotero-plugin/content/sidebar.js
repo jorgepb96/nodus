@@ -56,6 +56,10 @@ const I18N = {
     "evidence.vision": "Vision", "evidence.visionTitle": "Analyze and attach the current rendered PDF page",
     "evidence.auto": "Auto: full text when small, retrieval when large", "evidence.retrieval": "Semantic retrieval", "evidence.full": "Complete text",
     "evidence.localEmbedding": "Only the selected model is downloaded. Each model keeps its own index on this device.",
+    "evidence.waitModel": "Wait for the current operation to finish before changing models.",
+    "evidence.activeModel": "Active model: {model}",
+    "evidence.preparingModel": "Preparing {model}… Your current model remains active until preparation completes.",
+    "evidence.activatedModel": "{model} is now active.", "evidence.cancelModel": "Cancel preparation",
     "evidence.chooseModel": "Local semantic model", "evidence.applyModel": "Prepare and activate",
     "evidence.modelDownload": "Preparing the local semantic model · {pct}%",
     "evidence.embeddingBg": "Embedding in background · {pct}%",
@@ -193,6 +197,10 @@ const I18N = {
     "evidence.vision": "Visión", "evidence.visionTitle": "Analizar y adjuntar la página PDF renderizada actual",
     "evidence.auto": "Auto: texto completo si es pequeño; recuperación si es grande", "evidence.retrieval": "Búsqueda semántica", "evidence.full": "Texto completo",
     "evidence.localEmbedding": "Solo se descarga el modelo elegido. Cada modelo conserva su propio índice en este dispositivo.",
+    "evidence.waitModel": "Espera a que termine la operación actual para cambiar de modelo.",
+    "evidence.activeModel": "Modelo activo: {model}",
+    "evidence.preparingModel": "Preparando {model}… El modelo actual seguirá activo hasta completar la preparación.",
+    "evidence.activatedModel": "{model} ya está activo.", "evidence.cancelModel": "Cancelar preparación",
     "evidence.chooseModel": "Modelo semántico local", "evidence.applyModel": "Preparar y activar",
     "evidence.modelDownload": "Preparando el modelo semántico local · {pct}%",
     "evidence.embeddingBg": "Calculando embeddings en segundo plano · {pct}%",
@@ -309,7 +317,7 @@ const state = {
   connAttempts: 0, connMisses: 0, connOkAt: 0,
   modelsConnected: [], model: null,
   item: null, attachmentKey: null, selection: "", ideaLabels: {},
-  conversations: [], conv: null, busy: false, lastItemKey: null, abort: null,
+  conversations: [], conv: null, busy: false, lastItemKey: null, abort: null, embeddingSwitch: null,
   itemConversations: new Map(), conversationItemKey: null,
   lastReaderContext: null, libraryContext: null,
   agentEnabled: false, selectionDraft: null,
@@ -486,7 +494,7 @@ function updateSendEnabled() {
   $("#nd-send").hidden = state.busy;
   $("#nd-stop").hidden = !state.busy;
 }
-function stopStreaming() { if (state.abort) { try { state.abort.abort(); } catch (e) {} } }
+function stopStreaming() { const controller = state.embeddingSwitch || state.abort; if (controller) { try { controller.abort(); } catch (e) {} } }
 function closeSidebar() {
   try {
     const p = window.parent; if (!p || !p.document) return;
@@ -2540,46 +2548,63 @@ function applyIcons() {
   set("#nd-send", "send", 15); set("#nd-stop", "square", 14); set("#nd-close", "x");
   set("#nd-history-close", "x"); set(".nd-think-ico", "idea", 15);
 }
-// Stage a complete library without changing the active model. Cancellation or
-// inference failure leaves the old vectors and saved preference usable.
+// Model preparation belongs to the local library, not the currently selected
+// reading item. Reader/selection refreshes must not cancel it as a chat request.
+function renderEmbeddingActiveModel() {
+  const active = $("#nd-embedding-active");
+  if (active && NL) active.textContent = tf("evidence.activeModel", { model: NL.MODEL.label });
+}
+function embeddingSettingsStatus(text, tone) {
+  const box = $("#nd-embedding-status");
+  if (box) { box.textContent = text; box.className = tone ? "nd-index-status nd-index-status--" + tone : "nd-muted"; }
+}
 async function changeEmbeddingModel() {
-  if (state.busy) return;
+  if (state.embeddingSwitch) return;
+  if (state.busy) { embeddingSettingsStatus(t("evidence.waitModel"), "warn"); return; }
   const key = $("#nd-embedding-model").value;
-  if (key === NL.MODEL.key) return;
   const model = NL.MODELS.find(m => m.key === key);
   if (!model) return;
   state.busy = true; updateSendEnabled();
-  const controller = new AbortController(); state.abort = controller;
-  $("#nd-stop").hidden = false;
-  $("#nd-embedding-apply").disabled = true;
+  const controller = new AbortController(); state.embeddingSwitch = controller;
+  const apply = $("#nd-embedding-apply"), select = $("#nd-embedding-model"), cancel = $("#nd-embedding-cancel");
+  apply.disabled = true; select.disabled = true; cancel.hidden = false;
+  const onStatus = text => embeddingSettingsStatus(text, "busy");
+  onStatus(tf("evidence.preparingModel", { model: model.label }));
+  const stopProgress = NL.onProgress(progress => {
+    if (progress && progress.status === "progress") onStatus(tf("evidence.modelDownload", { pct: Math.round(Number(progress.progress) || 0) }));
+  });
   try {
     await cancelBackgroundEmbeddings(true);
     const records = await NS.listEvidenceRecords();
+    let prepared = 0;
     for (const record of records) {
       if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
       const original = await NS.loadEvidenceIndex(record.libraryID, record.attachmentKey);
-      if (!original) continue;
+      if (!original) throw new Error("evidence-cache-unreadable");
       const staged = JSON.parse(JSON.stringify(original));
       globalThis.NodusEmbeddingModels.useIndex(staged, model);
-      await ensureEmbeddings([staged], controller.signal, { model, staging: true });
-      // Save both model variants; active-model reads restore their own vectors.
+      await ensureEmbeddings([staged], controller.signal, { model, staging: true, onStatus });
       if (!(await NS.saveEvidenceIndex(staged))) throw new Error("evidence-save-failed");
-
+      prepared++;
     }
-    // Even an empty library validates and downloads the chosen runtime first.
-    if (!records.length) await NL.embedQueries(["model readiness"], { model, signal: controller.signal });
+    // Validate even if all cached documents already have compatible vectors.
+    if (!prepared) await NL.embedQueries(["model readiness"], { model, signal: controller.signal });
     if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
     NL.select(key); NS.setEmbeddingModel(key);
     state.indexes = []; state.evidence = new Map();
+    renderEmbeddingActiveModel();
+    embeddingSettingsStatus(tf("evidence.activatedModel", { model: model.label }), "ok");
     await refreshScopeStatus();
   } catch (error) {
-    setIndexStatus(tf("evidence.failed", { error: friendlyErr(error.message || error) }), "warn");
+    const aborted = error && error.name === "AbortError";
+    embeddingSettingsStatus(aborted ? t("evidence.stopped") : tf("evidence.failed", { error: friendlyErr(error.message || error) }), aborted ? "" : "warn");
+    if (!aborted) { try { Zotero.logError(error); } catch (e) {} }
+    // Keep the requested selection visible for retry; show the active model
+    // separately instead of silently snapping the dropdown back after failure.
   } finally {
-    // Releases the staged session, so the active model loads alone next time.
-    NL.reset(); state.busy = false; state.abort = null; updateSendEnabled();
-    $("#nd-stop").hidden = true;
-    $("#nd-embedding-apply").disabled = false;
-    $("#nd-embedding-model").value = NL.MODEL.key;
+    stopProgress(); NL.reset(); state.embeddingSwitch = null; state.busy = false; updateSendEnabled();
+    apply.disabled = false; select.disabled = false; cancel.hidden = true;
+    renderEmbeddingActiveModel();
   }
 }
 function applyI18n() {
@@ -2589,6 +2614,7 @@ function applyI18n() {
   $$("button[title]").forEach((n) => { if (!n.getAttribute("aria-label")) n.setAttribute("aria-label", n.getAttribute("title")); });
   renderPromptMenu();
   renderReasoningSelect();
+  renderEmbeddingActiveModel();
 }
 // Build the reasoning-effort dropdown (in the Thinking modal) and mirror the
 // current level onto the chat-bar button.
@@ -2908,6 +2934,7 @@ function registerNotifier() {
     };
     state.notifierID = Zotero.Notifier.registerObserver(observer, ["item", "tab", "collection"], "nodus-sidebar");
     window.addEventListener("unload", () => {
+      try { if (state.embeddingSwitch) state.embeddingSwitch.abort(); } catch (e) {}
       try { if (state.abort) state.abort.abort(); } catch (e) {}
       try { if (state.notifierID) Zotero.Notifier.unregisterObserver(state.notifierID); } catch (e) {}
       try { if (state.pollTimer) clearInterval(state.pollTimer); } catch (e) {}
@@ -2937,16 +2964,18 @@ async function boot() {
   state.historyEnabled = NS.getHistoryEnabled();
   state.historyRetention = NS.getHistoryRetention();
   if (NL) {
-  const savedEmbedding = NS.getEmbeddingModel();
-  // Preserve the historical choice when upgrading a library with old vectors.
-  const existingEmbeddingRecords = !savedEmbedding ? await NS.listEvidenceRecords() : [];
-  NL.select(savedEmbedding || (existingEmbeddingRecords.length ? "e5-small" : globalThis.NodusEmbeddingModels.defaultKey));
-  for (const model of NL.MODELS) {
-    const option = document.createElement("option"); option.value = model.key; option.textContent = model.label;
-    $("#nd-embedding-model").appendChild(option);
-  }
-  $("#nd-embedding-model").value = NL.MODEL.key;
-  $("#nd-embedding-apply").addEventListener("click", changeEmbeddingModel);
+    // Historical E5 vectors are cache data, not a user preference. Only a
+    // successfully saved explicit selection overrides the Granite default.
+    const savedEmbedding = NS.getEmbeddingModel();
+    NL.select(savedEmbedding || globalThis.NodusEmbeddingModels.defaultKey);
+    for (const model of NL.MODELS) {
+      const option = document.createElement("option"); option.value = model.key; option.textContent = model.label;
+      $("#nd-embedding-model").appendChild(option);
+    }
+    $("#nd-embedding-model").value = NL.MODEL.key;
+    $("#nd-embedding-apply").addEventListener("click", changeEmbeddingModel);
+    $("#nd-embedding-cancel").addEventListener("click", () => { if (state.embeddingSwitch) state.embeddingSwitch.abort(); });
+    renderEmbeddingActiveModel();
   }
   wire();
   $("#nd-lang").value = state.lang;

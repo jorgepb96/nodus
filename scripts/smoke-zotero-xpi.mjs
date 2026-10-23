@@ -29,6 +29,7 @@ const argValue = (name) => {
   if (exact >= 0) return process.argv[exact + 1];
   return process.argv.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
 };
+const embeddingContextSwitchSmoke = process.argv.includes('--embedding-context-switch-smoke');
 const embeddingSwitchSmoke = process.argv.includes('--embedding-switch-smoke');
 const embeddingBenchmark = process.argv.includes('--embedding-benchmark');
 const benchmarkOutput = path.resolve(argValue('--benchmark-output') || path.join(repoRoot, 'audit/zotero-embeddings/native-results.json'));
@@ -109,6 +110,15 @@ function startup() {
           const select = frame.document.getElementById('nd-embedding-model');
           const apply = frame.document.getElementById('nd-embedding-apply');
           select.value = 'granite-97m'; apply.click();
+          if (${embeddingContextSwitchSmoke}) {
+            const nextItem = new Zotero.Item('book');
+            nextItem.setField('title', 'Synthetic embedding preparation context switch');
+            await nextItem.saveTx();
+            await win.ZoteroPane.selectItem(nextItem.id);
+            // Source polling and the item notifier must be allowed to execute
+            // while the destination model is loading in its worker.
+            await new Promise(resolve => setTimeout(resolve, 2500));
+          }
           await waitUntil(() => !apply.disabled);
           expect(store.getEmbeddingModel() === 'granite-97m', 'Granite activation');
           const saved = await store.loadEvidenceIndex(index.libraryID, index.attachmentKey);

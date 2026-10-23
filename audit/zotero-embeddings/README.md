@@ -77,5 +77,11 @@ controlled index. The smoke runner also checks startup, evidence persistence,
 encrypted credentials across restart, and normal shutdown. It fails if any
 model benchmark fails or activation/reuse/cancellation proof is missing.
 
-Validation completed: 91 plugin tests, one operator parity test, real packaged
+Validation completed: 103 plugin tests after merging main (including PR #1304), one operator parity test, real packaged
 retrieval for all three models, and native activation/reuse/cancellation smoke.
+
+Integration with #1304 also passes the packaged native smoke: per-item history
+persists across restart and deletion, alongside embedding activation, binary
+vector reuse, cancellation and credential lifecycle checks. The dedicated
+Zotero workflow runs both plugin regressions and operator parity before XPI
+packaging.

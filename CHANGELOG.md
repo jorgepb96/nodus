@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.15.4 — 2026-10-23
+
+### Fixes
+- Show voice engine installation phases, progress, cancellation and errors in the Listen panel. Model downloads show activity from the click, opening the panel refreshes the status, and models that require accepting terms open the model section in Settings.
+- Make the Listen button in the Nodus Scriptor header only open or close the panel. Playback and audio generation start from their controls, including when reading selected text.
+
 ## 5.15.3 — 2026-10-22
 
 ### New features

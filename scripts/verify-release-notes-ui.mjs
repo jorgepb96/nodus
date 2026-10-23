@@ -10,10 +10,10 @@ const { RELEASE_NOTES } = await import('data:text/javascript;base64,' + Buffer.f
 const current = RELEASE_NOTES[0];
 const pkg = JSON.parse(await fs.readFile('package.json', 'utf8'));
 assert.equal(current.version, pkg.version);
-// Independently authored order for v5.15.3: one new feature, no enhancements and two fixes.
-assert.equal(current.version, '5.15.3');
+// Independently authored order for v5.15.4: no new features or enhancements and two fixes.
+assert.equal(current.version, '5.15.4');
 const expected = current.highlights;
-assert.deepEqual(expected.map(h => h.category), ['new','fix','fix']);
+assert.deepEqual(expected.map(h => h.category), ['fix','fix']);
 const output = `artifacts/release-${current.version}`;
 const baseUrl = process.env.NODUS_RELEASE_NOTES_URL ?? 'http://127.0.0.1:5198';
 // The modal caps its own height and scrolls its body, and the shell pins html/body/#root
@@ -39,6 +39,7 @@ try {
     assert.equal(await release.locator('svg, img').count(), expected.length, 'every entry has an icon');
     if (lang === 'es') await page.screenshot({ path: `${output}/modal-${theme}.png`, animations: 'disabled' });
     await page.getByTestId('whats-new-version-trigger').click();
+    assert.equal(await page.getByTestId('whats-new-version-5.15.3').count(), 1, `${theme}/${lang}: the release just superseded stays in the picker`);
     assert.equal(await page.getByTestId('whats-new-version-5.15.2').count(), 1);
     assert.equal(await page.getByTestId('whats-new-version-5.15.1').count(), 1, `${theme}/${lang}: the release just superseded stays in the picker`);
     assert.equal(await page.getByTestId('whats-new-version-5.15.0').count(), 1);
@@ -90,5 +91,5 @@ try {
   }
   assert.deepEqual(errors, []);
   await fs.writeFile(`${output}/modal-order-es.md`, `# Novedades de Nodus ${current.version}\n\n${releaseNoteSections(current).map(section => `## ${RELEASE_SECTION_LABELS.es[section.category]}\n\n` + section.highlights.map(highlight => `- [${highlight.scope}] ${highlight.es}`).join('\n\n')).join('\n\n')}\n`);
-  console.log(`PASS: ${current.highlights.length} release notes in exact displayed order, all twelve languages in light/dark, v5.15.3 active, all historical v5 sections translated and v4 layout unchanged and unpublished v5.3.2 absent.`);
+  console.log(`PASS: ${current.highlights.length} release notes in exact displayed order, all twelve languages in light/dark, v5.15.4 active, all historical v5 sections translated and v4 layout unchanged and unpublished v5.3.2 absent.`);
 } finally { await browser.close(); }

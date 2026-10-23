@@ -1484,9 +1484,11 @@ export function App() {
     return () => window.removeEventListener('nodus:interface-tab', open);
   }, []);
   useEffect(() => {
-    // The listen balloon's voice links open Settings on the narration voice library.
-    const open = () => {
-      localStorage.setItem('nodus.settingsTarget', 'narration');
+    // The listen balloon's links open Settings on the narration panel: the voice library for
+    // «Grabar o subir una voz…», the model list when a gated model has to be downloaded there.
+    const open = (event: Event) => {
+      const models = (event as CustomEvent<string>).detail === 'models';
+      localStorage.setItem('nodus.settingsTarget', models ? 'narration-models' : 'narration');
       setView('settings');
       window.dispatchEvent(new Event('nodus:settings-target'));
     };

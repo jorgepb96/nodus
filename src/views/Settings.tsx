@@ -292,7 +292,7 @@ export function Settings({
   useEffect(() => {
     const applyTarget = () => {
       const target = localStorage.getItem('nodus.settingsTarget');
-      if (target !== 'nodi' && target !== 'models' && target !== 'narration' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
+      if (target !== 'nodi' && target !== 'models' && target !== 'narration' && target !== 'narration-models' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
       localStorage.removeItem('nodus.settingsTarget');
       if (target === 'sidebar' || target === 'appearance' || target === 'nodi') {
         setSettingsTab('interface');
@@ -300,11 +300,13 @@ export function Settings({
         setInterfaceFocusRequest({ id: target === 'sidebar' ? 'settings-sidebar-editor' : target === 'appearance' ? 'settings-appearance-section' : 'settings-nodi-section' });
       } else if (target === 'help' || target === 'tutorials') {
         setSettingsTab('system'); setSettingsQuery(t('Ayuda'));
-      } else if (target === 'models' || target === 'narration') {
+      } else if (target === 'models' || target === 'narration' || target === 'narration-models') {
         setSettingsTab('models');
         setSettingsQuery('');
-        // Narration links (the listen balloon's «Grabar o subir voz…») land on the voice library.
+        // Narration links land on what they were about: the voice library for «Grabar o subir
+        // una voz…», the checkpoint list for a model the balloon cannot download itself.
         if (target === 'narration') window.setTimeout(() => document.getElementById('narration-voices')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+        if (target === 'narration-models') window.setTimeout(() => document.querySelector('[data-testid="narration-models"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
       }
     };
     applyTarget();

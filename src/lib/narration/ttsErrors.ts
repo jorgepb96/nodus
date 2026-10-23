@@ -41,3 +41,17 @@ export function ttsErrorMessage(error: unknown): string {
   const code = /TTS_[A-Z_]+/.exec(raw)?.[0];
   return code && MESSAGES[code] ? t(MESSAGES[code]) : raw;
 }
+
+/** What an engine install is doing, shared by the listen balloon and the settings panel. */
+const INSTALL_PHASES: Record<string, string> = {
+  checking: 'Comprobando…',
+  python: 'Descargando Python…',
+  environment: 'Creando el entorno…',
+  dependencies: 'Instalando dependencias (puede tardar varios minutos)…',
+  verifying: 'Verificando el motor…',
+  ready: 'Listo',
+};
+
+export function ttsInstallPhaseLabel(phase: string | undefined): string {
+  return t(INSTALL_PHASES[phase ?? 'checking'] ?? 'Instalando…');
+}

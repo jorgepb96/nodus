@@ -1,4 +1,4 @@
-import { t } from "../i18n";
+import { hasTranslation, t } from "../i18n";
 
 const errors: Record<string, string> = {
   INVALID_SIGNATURE_PAGE: "La selección de páginas de la firma no es válida.",
@@ -51,6 +51,13 @@ export function signErrorText(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   const code = Object.keys(errors).find((k) => message.includes(k));
   if (code) return t(errors[code]);
-  const local = ["No se pudo abrir la imagen.", "Dibuja o importa una firma antes de guardarla.", "Usa una imagen PNG, JPEG o WebP de menos de 8 MB."];
-  return t(local.includes(message) ? message : "No se ha podido completar la operación. Vuelve a intentarlo.");
+  // The view throws its own sentences ("No hay documento.", "Confirma la operación antes de
+  // firmar."), and they live in the Sign catalogue beside the rest of its copy. Ask the
+  // catalogue rather than a list kept here: an allow-list only ever names the sentences
+  // somebody remembered to add, so a sentence translated in eleven languages still collapsed
+  // into the generic line whenever its author forgot this file. `t()` cannot answer the
+  // question — it returns an unknown key as the Spanish source — so `hasTranslation` decides,
+  // and only genuinely unknown prose (a provider's wording, a raw IPC detail) is replaced.
+  if (hasTranslation(message)) return t(message);
+  return t("No se ha podido completar la operación. Vuelve a intentarlo.");
 }

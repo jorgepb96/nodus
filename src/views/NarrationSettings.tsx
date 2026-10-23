@@ -18,7 +18,7 @@ import { LocalAudioRecorderPanel, useLocalAudioRecorder } from '../components/me
 import { STUDY_MEDIA_ACCENT } from '../components/media/mediaFormat';
 import { refreshTtsStatus, subscribeTtsEvents, subscribeTtsStatus, voiceUrl } from '../lib/narration/ttsClient';
 import { prepareReferenceAudio } from '../lib/narration/voiceAudio';
-import { ttsErrorMessage } from '../lib/narration/ttsErrors';
+import { ttsErrorMessage, ttsInstallPhaseLabel } from '../lib/narration/ttsErrors';
 
 /**
  * «Voz y narración»: the Ming TTS engine, its checkpoints, the voice library and the
@@ -42,15 +42,6 @@ const SURFACE_LABELS: Record<TtsSurface, string> = {
   scriptor: 'Nodus Scriptor',
 };
 const SURFACE_KINDS: Record<TtsSurface, string> = { research_chat: 'chat_message', dictionary: 'dictionary_entry', deep_research: 'deep_research', immersion: 'immersion', scriptor: 'scriptor_document' };
-
-const INSTALL_PHASES: Record<string, string> = {
-  checking: 'Comprobando…',
-  python: 'Descargando Python…',
-  environment: 'Creando el entorno…',
-  dependencies: 'Instalando dependencias (puede tardar varios minutos)…',
-  verifying: 'Verificando el motor…',
-  ready: 'Listo',
-};
 
 export function NarrationSettings({ settings, patch }: { settings: AppSettings; patch: (value: Partial<AppSettings>) => Promise<void> }) {
   const [status, setStatus] = useState<TtsStatus | null>(null);
@@ -126,7 +117,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       </p>
       {runtime?.fallbackReason && <p className="mt-1 text-amber-700 dark:text-amber-400">{t('No se pudo usar la GPU NVIDIA; la narración funcionará en el procesador, más despacio.')}</p>}
       {mingInstalling && <div className="mt-2">
-        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[mingPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <p className="text-neutral-600 dark:text-neutral-400">{ttsInstallPhaseLabel(mingPhase)}</p>
         <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(mingFraction * 100)}>
           <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, mingFraction * 100)}%` }} />
         </div>
@@ -150,7 +141,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       </div>
       <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Phonon (Gradium) es muy ligero y genera mucho más rápido que el tiempo real en el procesador, también en Windows y Linux. Usa su catálogo de voces; no clona grabaciones propias.')}</p>
       {phononInstalling && <div className="mt-2">
-        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[phononPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <p className="text-neutral-600 dark:text-neutral-400">{ttsInstallPhaseLabel(phononPhase)}</p>
         <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(phononFraction * 100)}>
           <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, phononFraction * 100)}%` }} />
         </div>
@@ -182,7 +173,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       </div>
       <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Un solo modelo de 82M con 31 voces inglesas y españolas. ONNX Runtime en el procesador, varias veces más rápido que el tiempo real.')}</p>
       {kokoroInstalling && <div className="mt-2">
-        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[kokoroPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <p className="text-neutral-600 dark:text-neutral-400">{ttsInstallPhaseLabel(kokoroPhase)}</p>
         <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(kokoroFraction * 100)}>
           <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, kokoroFraction * 100)}%` }} />
         </div>
@@ -201,7 +192,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       </div>
       <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Pocket TTS de Kyutai usa su implementación oficial para CPU y modelos de 6 capas. Incluye las voces predeterminadas de siete idiomas y permite clonar una grabación sin transcripción.')}</p>
       {pocketInstalling && <div className="mt-2">
-        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[pocketPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <p className="text-neutral-600 dark:text-neutral-400">{ttsInstallPhaseLabel(pocketPhase)}</p>
         <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pocketFraction * 100)}>
           <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, pocketFraction * 100)}%` }} />
         </div>

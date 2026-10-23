@@ -13,8 +13,8 @@ import {
   type AudioGenerationProgress, type AudioGenerationRequest, type AudioGenerationResult,
 } from '../../backgroundJobs';
 import { segmentNarrator, startNarration } from '../../lib/narration/narrate';
-import { refreshTtsStatus, subscribeTtsStatus, ttsReady } from '../../lib/narration/ttsClient';
-import { ttsErrorMessage } from '../../lib/narration/ttsErrors';
+import { currentTtsStatus, refreshTtsStatus, subscribeTtsEvents, subscribeTtsStatus, ttsReady } from '../../lib/narration/ttsClient';
+import { ttsErrorMessage, ttsInstallPhaseLabel } from '../../lib/narration/ttsErrors';
 import { t, tx } from '../../i18n';
 
 /**
@@ -183,7 +183,13 @@ function useGeneration(kind: AudioEntityKind, id: string): AudioGenerationProgre
 
 function useTtsStatus(): TtsStatus | null {
   const [status, setStatus] = useState<TtsStatus | null>(null);
-  useEffect(() => subscribeTtsStatus(setStatus), []);
+  useEffect(() => {
+    const off = subscribeTtsStatus(setStatus);
+    // The cache is shared between openings and only events update it. Ask once so a balloon
+    // opened after a change it never saw — an install started in Settings — is not stale.
+    if (currentTtsStatus()) void refreshTtsStatus().catch(() => {});
+    return off;
+  }, []);
   return status;
 }
 
@@ -200,6 +206,10 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [confirm, setConfirm] = useState<Confirm>(null);
+  /** The engine install the main process is running, as the `install` events report it. */
+  const [install, setInstall] = useState<{ engine: TtsEngine; phase: string; fraction: number } | null>(null);
+  /** The model whose download this balloon asked for, before the first byte is announced. */
+  const [downloadingModel, setDownloadingModel] = useState('');
   const key = `${target.kind}:${target.id}`;
   const isChat = target.kind === 'chat_message';
 
@@ -221,6 +231,12 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
     void refreshClips();
     if (job.status === 'failed' && job.error) setError(ttsErrorMessage(job.error));
   }), [target.kind, target.id]);
+  // An install is minutes of pip work: without these events the balloon would look inert
+  // until the one status emitted when the whole environment is ready.
+  useEffect(() => subscribeTtsEvents((event) => {
+    if (event.kind !== 'install') return;
+    setInstall(event.phase === 'ready' ? null : { engine: event.engine, phase: event.phase, fraction: event.fraction });
+  }), []);
 
   const modelId = settings?.ttsModelId || status?.models.find((model) => model.downloaded)?.id || status?.models[0]?.id || '';
   const model = TTS_MODELS.find((entry) => entry.id === modelId);
@@ -231,15 +247,46 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   const platformModels = TTS_MODELS.filter((entry) => !status || status.models.some((m) => m.id === entry.id));
   const modelStatus = status?.models.find((entry) => entry.id === modelId);
   const ready = ttsReady(status, modelId);
-  const runtimeInstalled = phononModel ? status?.phononRuntime.installed : kokoroModel ? status?.kokoroRuntime?.installed : pocketModel ? status?.pocketRuntime?.installed : status?.runtime.installed;
+  const modelEngine: TtsEngine = phononModel ? 'phonon' : kokoroModel ? 'kokoro' : pocketModel ? 'pocket' : 'ming';
+  const runtimeState = !status ? undefined
+    : modelEngine === 'phonon' ? status.phononRuntime
+      : modelEngine === 'kokoro' ? status.kokoroRuntime
+        : modelEngine === 'pocket' ? status.pocketRuntime
+          : status.runtime;
+  const runtimeInstalled = Boolean(runtimeState?.installed);
+  const liveInstall = install?.engine === modelEngine ? install : null;
+  const installing = Boolean(liveInstall || runtimeState?.installing);
+  const installPhase = liveInstall?.phase ?? runtimeState?.phase ?? '';
+  const installFraction = liveInstall?.fraction ?? runtimeState?.progress ?? 0;
+  const runtimeError = runtimeState?.error;
+  // The click starts the transfer in the main process; the first byte is what produces the
+  // first `model` event, so until then nothing else would change in this row.
+  const downloadStarting = busy === 'download' && downloadingModel === modelId && !modelStatus?.downloading;
+  const downloadActive = Boolean(modelStatus?.downloading) || downloadStarting;
+  const downloadFraction = Math.round((modelStatus?.progress ?? 0) * 100);
   const engine = status?.engine;
   const engineActive = engine?.state === 'ready' || engine?.state === 'busy';
   const unloadTime = engine?.idleUnloadAt ? new Date(engine.idleUnloadAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
+  // The marker outlives the call so the row keeps saying «Descargando…» until the status
+  // catches up with the finished transfer; a failure ends it with `busy` instead.
+  useEffect(() => {
+    if (downloadingModel && (downloadingModel !== modelId || modelStatus?.downloaded)) setDownloadingModel('');
+  }, [downloadingModel, modelId, modelStatus?.downloaded]);
+
+  // A finished install is announced only by its final status: without clearing the marker
+  // the row would keep showing the last phase forever.
+  const seenStatus = useRef(status);
+  useEffect(() => {
+    if (seenStatus.current === status) return;
+    seenStatus.current = status;
+    if (!runtimeState?.installing) setInstall(null);
+  }, [status, runtimeState?.installing]);
+
   const act = async (name: string, action: () => Promise<unknown>) => {
     setBusy(name); setError('');
     try { await action(); } catch (cause) { setError(ttsErrorMessage(cause)); }
-    finally { setBusy(''); void refreshTtsStatus().catch(() => {}); }
+    finally { setBusy(''); if (name === 'install') setInstall(null); void refreshTtsStatus().catch(() => {}); }
   };
 
   const playable = useMemo<PlayerTrack[]>(() => clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec })), [clips, target.title]);
@@ -349,17 +396,38 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
         {/* Engine */}
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="listen-engine">
           {!status && <span className="text-neutral-500">{t('Comprobando el motor de voz…')}</span>}
-          {status && !runtimeInstalled && <div className="flex items-center justify-between gap-2">
-            <span className="text-neutral-600 dark:text-neutral-400">{((phononModel ? status.phononRuntime : kokoroModel ? status.kokoroRuntime : pocketModel ? status.pocketRuntime : status.runtime)?.installing) ? t('Instalando el motor de voz…') : t('El motor de voz no está instalado.')}</span>
-            {!((phononModel ? status.phononRuntime : kokoroModel ? status.kokoroRuntime : pocketModel ? status.pocketRuntime : status.runtime)?.installing) && <button className="btn btn-primary h-7 px-2 text-[11px]" disabled={!!busy} onClick={() => void act('install', () => window.nodus.ttsInstallRuntime(phononModel ? 'phonon' : kokoroModel ? 'kokoro' : pocketModel ? 'pocket' : 'ming'))}><Icon name="download" size={11} />{t('Instalar')}</button>}
-          </div>}
-          {runtimeInstalled && modelStatus && !modelStatus.downloaded && <div className="grid gap-1.5">
+          {status && !runtimeInstalled && <div className="grid gap-1.5" data-testid="listen-install">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-neutral-600 dark:text-neutral-400">{modelStatus.downloading ? t('Descargando el modelo…') : tx('Falta el modelo {model}', { model: model?.label ?? '' })}</span>
-              {!modelStatus.downloading && model && (model.gated || model.nonCommercial) && <button className="btn btn-ghost h-7 px-2 text-[11px]" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>{t('Abrir Ajustes')}</button>}
-              {!modelStatus.downloading && model && !model.gated && !model.nonCommercial && <button type="button" className="btn btn-primary h-7 w-7 shrink-0 !p-0" title={tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })} aria-label={tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })} onClick={() => void act('download', async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings?.ttsModelId) await window.nodus.updateSettings({ ttsModelId: model.id }); })}><Icon name="download" size={14} /></button>}
+              <span className="text-neutral-600 dark:text-neutral-400">{installing ? t('Instalando el motor de voz…') : t('El motor de voz no está instalado.')}</span>
+              {installing
+                ? <button type="button" className="btn btn-ghost h-7 px-2 text-[11px]" data-testid="listen-install-cancel" onClick={() => void window.nodus.ttsCancelInstall()}>{t('Cancelar')}</button>
+                : <button type="button" className="btn btn-primary h-7 px-2 text-[11px]" data-testid="listen-install-start" disabled={!!busy} onClick={() => void act('install', () => window.nodus.ttsInstallRuntime(modelEngine))}><Icon name="download" size={11} />{t('Instalar')}</button>}
             </div>
-            {modelStatus.downloading && <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, modelStatus.progress * 100)}%` }} /></div>}
+            {installing && <>
+              <span className="text-[10px] text-neutral-500" data-testid="listen-install-phase">{ttsInstallPhaseLabel(installPhase)}</span>
+              <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(installFraction * 100)}>
+                <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, installFraction * 100)}%` }} />
+              </div>
+            </>}
+            {/* The last install error survives in the engine status; without it a balloon
+                reopened after a failed install looked like nothing had ever been attempted. */}
+            {runtimeError && !error && <p className="text-[10px] leading-4 text-red-600 dark:text-red-400" role="alert">{ttsErrorMessage(runtimeError)}</p>}
+          </div>}
+          {runtimeInstalled && modelStatus && !modelStatus.downloaded && <div className="grid gap-1.5" data-testid="listen-model">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-neutral-600 dark:text-neutral-400">{downloadActive ? t('Descargando el modelo…') : tx('Falta el modelo {model}', { model: model?.label ?? '' })}</span>
+              {!downloadActive && model && (model.gated || model.nonCommercial) && <button type="button" className="btn btn-ghost h-7 px-2 text-[11px]" onClick={() => { onClose(); openNarrationSettings('models'); }}>{t('Abrir Ajustes')}</button>}
+              {!downloadActive && model && !model.gated && !model.nonCommercial && <button type="button" className="btn btn-primary h-7 w-7 shrink-0 !p-0" title={tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })} aria-label={tx('Descargar · {size}', { size: formatGb(ttsModelBytes(model)) })} disabled={!!busy} onClick={() => {
+                setDownloadingModel(model.id);
+                void act('download', async () => {
+                  await window.nodus.ttsDownloadModel(model.id);
+                  if (!settings?.ttsModelId) await window.nodus.updateSettings({ ttsModelId: model.id });
+                });
+              }}><Icon name="download" size={14} /></button>}
+            </div>
+            {downloadActive && <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={downloadFraction}>
+              <div className={`h-full bg-indigo-500 transition-all ${downloadStarting ? 'animate-pulse' : ''}`} style={{ width: `${Math.max(3, downloadFraction)}%` }} />
+            </div>}
           </div>}
           {ready && <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
@@ -395,7 +463,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
             <Icon name="chevronDown" size={12} />
           </label>
         </div>
-        <button className="justify-self-start text-[11px] text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>
+        <button className="justify-self-start text-[11px] text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => { onClose(); openNarrationSettings('voices'); }}>
           <Icon name="microphone" size={10} /> {t('Grabar o subir una voz…')}
         </button>
 
@@ -458,6 +526,11 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
       </div>}
     </HeaderBalloon>
   );
+}
+
+/** Opens Ajustes on the narration panel: the voice library, or the model list a gated model needs. */
+function openNarrationSettings(target: 'voices' | 'models'): void {
+  window.dispatchEvent(new CustomEvent('nodus:open-narration-settings', { detail: target }));
 }
 
 function retentionFor(settings: AppSettings, kind: AudioEntityKind): number | null {

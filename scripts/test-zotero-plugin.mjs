@@ -54,7 +54,7 @@ function makeEl(tag, doc) {
     children: [],
     attrs: {},
     classList: { add() {} },
-    appendChild(c) { this.children.push(c); return c; },
+    appendChild(c) { this.children.push(c); c.parentNode = this; return c; },
     setAttribute(k, v) { this.attrs[k] = v; },
     getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
     removeAttribute(k) { delete this.attrs[k]; },
@@ -231,7 +231,7 @@ function stubEl(doc, tag) {
     className: '', id: '', value: '', textContent: '', innerHTML: '', hidden: false, disabled: false,
     style: {}, dataset: {},
     classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
-    appendChild(c) { this.children.push(c); return c; },
+    appendChild(c) { this.children.push(c); c.parentNode = this; return c; },
     insertBefore(c) { this.children.push(c); return c; },
     removeChild() {}, remove() {}, focus() {}, blur() {}, scrollIntoView() {},
     setAttribute(k, v) { attrs[k] = v; }, getAttribute: (k) => (k in attrs ? attrs[k] : null), removeAttribute(k) { delete attrs[k]; },
@@ -274,6 +274,249 @@ const FAKE_STORE = {
   evidenceCacheStats: async () => ({ documents: 0, pages: 0, bytes: 0 }), pruneEvidenceIndexes: async () => 0, clearEvidenceIndexes: async () => 0,
   newId: () => 'conv-1', compactAudit: (a) => a, compactConversations: (a) => a,
 };
+
+function conversationSidebar({ history = [], historyEnabled = true, sourceScope = 'current', providers } = {}) {
+  const doc = stubDoc();
+  const items = new Map();
+  let selected = [], reader = null, nextID = 0, saved = null;
+  const mainWindow = {
+    Zotero_Tabs: { selectedID: 'library' },
+    ZoteroPane: { getSelectedItems: () => selected },
+  };
+  const Zotero = {
+    logError(error) { throw error; }, getMainWindow: () => mainWindow,
+    Reader: { getByTabID: () => reader },
+    Items: { get: (id) => Array.isArray(id) ? id.map((key) => items.get(key)) : items.get(id) },
+  };
+  const store = {
+    ...FAKE_STORE,
+    newId: () => `conversation-${++nextID}`,
+    getContext: () => ({ useFulltext: false }),
+    saveConversations: async (list) => { saved = JSON.parse(JSON.stringify(list)); return true; },
+  };
+  const sandbox = {
+    window: { NodusStore: store, NodusProviders: providers }, document: doc, console,
+    ChromeUtils: { importESModule: () => ({ Zotero }) },
+    AbortController, setTimeout, clearTimeout,
+  };
+  vm.createContext(sandbox);
+  const run = (code) => vm.runInContext(code, sandbox);
+  const src = readSource('zotero-plugin/content/sidebar.js');
+  vm.runInContext(src.slice(0, src.lastIndexOf('\nboot().catch(')), sandbox);
+  sandbox.initialHistory = history;
+  run(`state.mode = 'standalone'; state.model = { provider: 'test', model: 'test' };
+    state.historyEnabled = ${historyEnabled}; state.sourceScope = '${sourceScope}';
+    state.conversations = initialHistory; startNewConversation(null);`);
+  return {
+    run, doc, store,
+    get saved() { return saved; },
+    item(key, libraryID = 1) {
+      const item = {
+        id: items.size + 1, key, libraryID,
+        getDisplayTitle: () => key, getField: () => '', getAttachments: () => [],
+      };
+      items.set(item.id, item); return item;
+    },
+    attachment(parent, key) {
+      const attachment = {
+        id: items.size + 1, key, libraryID: parent.libraryID, parentItem: parent,
+        isAttachment: () => true, attachmentContentType: 'application/pdf',
+      };
+      items.set(attachment.id, attachment); return attachment;
+    },
+    async library(selection) {
+      reader = null; selected = selection; mainWindow.Zotero_Tabs.selectedID = 'library';
+      await run('refreshItem(false)');
+    },
+    async reader(attachment) {
+      reader = { itemID: attachment.id }; mainWindow.Zotero_Tabs.selectedID = `reader-${attachment.id}`;
+      await run('refreshItem(false)');
+    },
+    async message(text) {
+      sandbox.testMessage = text;
+      await run(`state.conv.messages.push({role: 'user', content: testMessage}); persistConv()`);
+      return run('state.conv.id');
+    },
+  };
+}
+
+test('conversations: items keep their own active chat, history and new-chat drafts', async () => {
+  const sidebar = conversationSidebar();
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const firstA = await sidebar.message('First question about A');
+  assert.equal(sidebar.run('state.conv.zoteroItem.key'), 'A');
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  const firstB = await sidebar.message('Question about B');
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), firstA);
+  assert.deepEqual(Array.from(sidebar.run('itemHistory().map(c => c.id)')), [firstA]);
+  sidebar.run('loadConversation(' + JSON.stringify(firstB) + ')');
+  assert.equal(sidebar.run('state.conv.id'), firstA, 'another item cannot be loaded through history');
+  sidebar.run('startNewConversation()');
+  const draft = sidebar.run('state.conv.id');
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), firstB);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), draft, 'a new empty chat remains the active chat');
+  const secondA = await sidebar.message('Second question about A');
+  assert.deepEqual(new Set(Array.from(sidebar.run('itemHistory().map(c => c.id)'))), new Set([firstA, secondA]));
+  sidebar.run('loadConversation(' + JSON.stringify(firstA) + ')');
+  await sidebar.library([b]);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), firstA, 'history selection becomes the active chat');
+});
+
+test('conversations: reader tabs share a parent item; the library retains the open chat and sources', async () => {
+  const sidebar = conversationSidebar();
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  const a1 = sidebar.attachment(a, 'A1'), a2 = sidebar.attachment(a, 'A2'), b1 = sidebar.attachment(b, 'B1');
+  await sidebar.library([b]); // Library selection differs from the reader.
+  await sidebar.reader(a1);
+  const aChat = await sidebar.message('A question');
+  await sidebar.reader(a2);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  assert.equal(sidebar.run('getCurrentItem().attachment.key'), 'A2');
+  await sidebar.run('refreshItem(true)');
+  assert.equal(sidebar.run('state.conv.id'), aChat, 'later polls preserve the library chat too');
+  await sidebar.reader(b1);
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  const bChat = await sidebar.message('B question');
+  await sidebar.reader(a1);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([a]); // Explicit selection releases the retained reader sources.
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), bChat);
+});
+
+test('conversations: library-wide sources still keep separate chats for identical keys in different libraries', async () => {
+  const sidebar = conversationSidebar({ sourceScope: 'library' });
+  const personal = sidebar.item('SAME', 1), group = sidebar.item('SAME', 8);
+  await sidebar.library([personal]);
+  const personalChat = await sidebar.message('Personal library');
+  await sidebar.library([group]);
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  const groupChat = await sidebar.message('Group library');
+  assert.notEqual(personalChat, groupChat);
+  await sidebar.library([personal]);
+  assert.equal(sidebar.run('state.conv.id'), personalChat);
+  assert.equal(sidebar.run('itemHistory().length'), 1);
+});
+
+test('conversations: saved item histories restore after sidebar restart', async () => {
+  const first = conversationSidebar();
+  await first.library([first.item('A')]);
+  const id = await first.message('Persist across restart');
+  const second = conversationSidebar({ history: first.saved });
+  await second.library([second.item('A')]);
+  assert.equal(second.run('state.conv.id'), id);
+  assert.equal(second.run('state.conv.messages[0].content'), 'Persist across restart');
+  await second.library([second.item('B')]);
+  assert.equal(second.run('state.conv.messages.length'), 0);
+});
+
+test('conversations: deleting an item history leaves other items intact and does not resurrect deleted chats', async () => {
+  const sidebar = conversationSidebar();
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const aChat = await sidebar.message('A');
+  await sidebar.library([b]);
+  const bChat = await sidebar.message('B');
+  await sidebar.run('clearItemHistory()');
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([b]);
+  assert.notEqual(sidebar.run('state.conv.id'), bChat);
+  assert.equal(sidebar.run('itemHistory().length'), 0);
+  await sidebar.message('Replacement B');
+  await sidebar.run('deleteConversation(state.conv.id)');
+  await sidebar.library([a]);
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('itemHistory().length'), 0);
+  assert.deepEqual(sidebar.saved.map((conversation) => conversation.id), [aChat]);
+});
+
+test('conversations: opting out keeps item chats in memory without writing them to disk', async () => {
+  const sidebar = conversationSidebar({ historyEnabled: false });
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const aChat = await sidebar.message('In memory');
+  await sidebar.library([b]);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  assert.equal(sidebar.saved, null);
+});
+
+test('conversations: send persists the user turn before starting the provider response', async () => {
+  const sidebar = conversationSidebar();
+  await sidebar.library([sidebar.item('A')]);
+  let generated = false;
+  sidebar.store.saveConversations = async (list) => {
+    assert.notEqual(sidebar.run('window.generated'), true);
+    assert.equal(list[0].messages[0].content, 'Save before response');
+    assert.equal(list[0].zoteroItem.key, 'A');
+    return true;
+  };
+  sidebar.run('generateAssistant = async () => { window.generated = true; }');
+  await sidebar.run('send("Save before response")');
+  generated = sidebar.run('window.generated');
+  assert.equal(generated, true);
+});
+
+test('conversations: switching items during a response keeps the sent question and rejects late replies', async () => {
+  let entered, finish;
+  const started = new Promise((resolve) => { entered = resolve; });
+  const sidebar = conversationSidebar({ providers: {
+    chatStream: async (model, options, onDelta, signal) => {
+      entered(signal);
+      await new Promise((resolve) => { finish = resolve; });
+      onDelta('Late response from A');
+    },
+  } });
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const sending = sidebar.run('send("Question for A")');
+  const signal = await started;
+  assert.equal(sidebar.saved[0].messages[0].content, 'Question for A');
+  await sidebar.library([b]);
+  assert.equal(signal.aborted, true);
+  finish();
+  await sending;
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.messages.length'), 1);
+  assert.equal(sidebar.run('state.conv.messages[0].content'), 'Question for A');
+  assert.equal(sidebar.run('state.busy'), false);
+});
+
+test('conversations: returning to the library preserves an in-flight reader conversation', async () => {
+  let entered, finish;
+  const started = new Promise((resolve) => { entered = resolve; });
+  const sidebar = conversationSidebar({ providers: {
+    chatStream: async (model, options, onDelta, signal) => {
+      entered(signal);
+      await new Promise((resolve) => { finish = resolve; });
+      onDelta('Answer about A');
+    },
+  } });
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([b]);
+  await sidebar.reader(sidebar.attachment(a, 'PDF'));
+  const sending = sidebar.run('send("Question about A")');
+  const signal = await started;
+  await sidebar.library([b]);
+  assert.equal(signal.aborted, false);
+  finish();
+  await sending;
+  assert.equal(sidebar.run('state.conv.zoteroItem.key'), 'A');
+  assert.equal(sidebar.run('state.conv.messages[1].content'), 'Answer about A');
+  assert.equal(sidebar.saved.find((conversation) => conversation.zoteroItem.key === 'A').messages.length, 2);
+});
 // A stand-in for electron/zotero-plugin/server.ts: every Zotero route,
 // including health, requires the bridge bearer token.
 const openServers = new Set();
@@ -494,6 +737,55 @@ test('store: conversation audits are compacted without persisting embeddings', (
   assert.equal(compact[0].messages[0].audit.invalidCitations[0].embedding, undefined);
   assert.equal(compact[0].messages[0].evidence[0].groupID, 42, 'history retains group provenance for PDF fallbacks');
   assert.ok(!JSON.stringify(compact).includes('embedding'));
+});
+
+test('store: local history defaults on and respects an explicit opt-out', () => {
+  const prefs = new Map();
+  const Zotero = { Prefs: { get: (key) => prefs.get(key), set: (key, value) => prefs.set(key, value) } };
+  const { NodusStore: store } = loadModule('store.js', { ChromeUtils: { importESModule: () => ({ Zotero }) } });
+  assert.equal(store.getHistoryEnabled(), true);
+  store.setHistoryEnabled(false);
+  assert.equal(store.getHistoryEnabled(), false);
+  store.setHistoryEnabled(true);
+  assert.equal(store.getHistoryEnabled(), true);
+});
+
+test('store: owner metadata survives compaction and legacy attachment histories recover their parent', () => {
+  const parent = { libraryID: 8, key: 'PARENT' };
+  const Zotero = { Items: { getByLibraryAndKey: (libraryID, key) => libraryID === 8 && key === 'ATT' ? { parentItem: parent } : null } };
+  const { NodusStore: store } = loadModule('store.js', { ChromeUtils: { importESModule: () => ({ Zotero }) } });
+  const list = store.compactConversations([
+    { id: 'new', zoteroItem: { libraryID: 1, key: 'ITEM' } },
+    { id: 'legacy', sourceScope: 'current', sourceIdentity: 'current:8:ATT' },
+    { id: 'unknown', sourceIdentity: 'library:indexed:1:hash' },
+  ]);
+  assert.deepEqual(JSON.parse(JSON.stringify(list.find((conversation) => conversation.id === 'new').zoteroItem)), { libraryID: 1, key: 'ITEM' });
+  assert.deepEqual(JSON.parse(JSON.stringify(list.find((conversation) => conversation.id === 'legacy').zoteroItem)), parent);
+  assert.equal(list.find((conversation) => conversation.id === 'unknown').zoteroItem, null);
+});
+
+test('store: concurrent history saves are serialized, reloadable, and deletion wins over pending writes', async () => {
+  const files = new Map();
+  const { NodusStore: store } = loadModule('store.js', {
+    Services: { dirsvc: { get: () => ({ path: '/profile' }) } },
+    Components: { interfaces: { nsIFile: {} } },
+    PathUtils: { join: (...parts) => parts.join('/') },
+    IOUtils: {
+      async writeUTF8(target, text) { await Promise.resolve(); files.set(target, text); },
+      async move(source, target) { assert.ok(files.has(source)); files.set(target, files.get(source)); files.delete(source); },
+      async readUTF8(target) { return files.get(target); },
+      async stat(target) { return { size: files.get(target).length }; },
+      async remove(target) { files.delete(target); },
+    },
+  });
+  const a = { id: 'a', zoteroItem: { libraryID: 1, key: 'A' }, messages: [{ role: 'user', content: 'Saved' }] };
+  const b = { id: 'b', zoteroItem: { libraryID: 8, key: 'B' }, messages: [{ role: 'user', content: 'Group' }] };
+  assert.deepEqual(await Promise.all([store.saveConversations([a]), store.saveConversations([a, b])]), [true, true]);
+  const restored = await store.loadConversations();
+  assert.equal(restored.length, 2);
+  assert.equal(restored.find((conversation) => conversation.id === 'b').zoteroItem.libraryID, 8);
+  await Promise.all([store.saveConversations([a]), store.deleteConversationHistory()]);
+  assert.equal(files.size, 0);
 });
 
 test('store: evidence cache separates compressed metadata from Float32 vectors', () => {

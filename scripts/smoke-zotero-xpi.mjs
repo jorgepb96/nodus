@@ -6,7 +6,7 @@
 // disposable profile, enables foreign-extension scanning only in that profile,
 // and proves that the built XPI is registered, active and actually reaches its
 // bootstrap startup, opens its evidence database, persists encrypted credentials
-// across a restart, and exits normally. The user's
+// and item conversation history across a restart, and exits normally. The user's
 // Zotero profile and library are never opened.
 import { spawn } from 'node:child_process';
 import {
@@ -85,6 +85,7 @@ function startup() {
   async function check() {
     try {
       if (await IOUtils.exists(${JSON.stringify(quitRequestPath)})) {
+        await Zotero.uiReadyPromise;
         const win = Zotero.getMainWindow();
         const store = win?.document.getElementById('nodus-sidebar-frame')?.contentWindow?.NodusStore;
         // Bootstrap finishes before the sidebar's content scripts necessarily do.
@@ -167,6 +168,13 @@ function startup() {
           }
         }
         if (phase === 'save-credentials') {
+          expect(store.getHistoryEnabled(), 'Local conversation history should default on');
+          expect(await store.saveConversations([{
+            id: 'nodus-smoke-conversation', title: 'Item history',
+            zoteroItem: { libraryID: Zotero.Libraries.userLibraryID, key: 'SMOKEKEY' },
+            messages: [{ role: 'user', content: 'Remember this item conversation' }],
+          }]), 'Conversation save failed');
+          expect((await store.loadConversations()).length === 1, 'Saved conversation is not readable');
           expect(typeof Services.logins.addLoginAsync === 'function', 'Async Login Manager API missing');
           expect(await store.setKey('openai', 'nodus-smoke-first-key'), 'First API key save failed');
           expect(await store.setKey('openai', 'nodus-smoke-updated-key'), 'API key update failed');
@@ -182,6 +190,12 @@ function startup() {
           expect(Zotero.Prefs.get('nodus.key.openai') === '' && Zotero.Prefs.get('nodus.token') === '', 'Plaintext credentials remain in prefs');
           Zotero.debug('[Nodus smoke] encrypted credential saves, updates and migrations passed on Zotero ' + Zotero.version);
         } else if (phase === 'verify-credentials') {
+          const history = await store.loadConversations();
+          expect(history.length === 1 && history[0].id === 'nodus-smoke-conversation', 'Conversation lost after restart');
+          expect(history[0].zoteroItem.key === 'SMOKEKEY'
+            && history[0].zoteroItem.libraryID === Zotero.Libraries.userLibraryID
+            && history[0].messages[0].content === 'Remember this item conversation', 'Conversation owner or messages lost after restart');
+          expect(await store.deleteConversationHistory(), 'Conversation deletion failed');
           expect(await store.getKey('openai') === 'nodus-smoke-updated-key', 'API key lost after restart');
           expect(await store.getKey('gemini') === 'nodus-smoke-legacy-key', 'Migrated key lost after restart');
           const manual = await store.getManual();
@@ -206,6 +220,9 @@ writeFileSync(path.join(profileDir, 'prefs.js'), [
   'user_pref("extensions.autoDisableScopes", 0);',
   'user_pref("extensions.update.enabled", false);',
   'user_pref("extensions.zotero.httpServer.enabled", false);',
+  'user_pref("extensions.zotero.sync.autoSync", false);',
+  'user_pref("extensions.zoteroMacWordIntegration.skipInstallation", true);',
+  'user_pref("extensions.zoteroOpenOfficeIntegration.skipInstallation", true);',
   'user_pref("extensions.zotero.nodus.mode", "standalone");',
   'user_pref("extensions.zotero.useDataDir", true);',
   `user_pref("extensions.zotero.dataDir", ${JSON.stringify(dataDir)});`,
@@ -341,7 +358,7 @@ try {
   }
   succeeded = true;
   console.log(`Zotero live smoke passed: ${addon.id} v${manifest.version}`);
-  console.log('registered=true active=true appDisabled=false userDisabled=false backgroundUpdates=disabled startup=true ui=true evidence=true normalShutdown=true credentials=encrypted migration=true credentialRestart=true credentialDeletion=true');
+  console.log('registered=true active=true appDisabled=false userDisabled=false backgroundUpdates=disabled startup=true ui=true evidence=true normalShutdown=true credentials=encrypted migration=true credentialRestart=true credentialDeletion=true itemHistory=true historyRestart=true historyDeletion=true');
 } finally {
   await stopZotero();
   writeFileSync(path.join(profileDir, 'smoke.log'), output);

@@ -30,7 +30,7 @@ const I18N = {
   en: {
     "tab.chat": "Chat", "tab.providers": "Providers", "tab.settings": "Settings",
     "composer.send": "Send", "composer.placeholder": "Ask about this document…",
-    "chat.new": "New conversation", "chat.history": "Conversations",
+    "chat.new": "New conversation", "chat.history": "Item conversations",
     "settings.mode": "Mode", "mode.connected": "Linked with Nodus", "mode.standalone": "Standalone", "mode.linkTag": "Link mode",
     "mode.hint.connected": "Uses your running Nodus app: library context, ideas, page citations.",
     "mode.hint.standalone": "Works without Nodus, using your own provider API keys. Nodus-only features are off.",
@@ -81,14 +81,15 @@ const I18N = {
     "providers.secureUnavailable": "Zotero's encrypted credential store is unavailable, so the secret was not saved.",
     "providers.sub": "Subscription — sign in through the Nodus app and use it in Link mode.",
     "providers.subCodex": "Uses your ChatGPT/Codex subscription credits. Sign in through the Nodus app and use it in Link mode.",
-    "history.search": "Search conversations…", "history.clearAll": "Delete all conversations", "history.empty": "No conversations yet.",
+    "history.search": "Search conversations…", "history.clearAll": "Delete this item's conversations", "history.empty": "No conversations for this item yet.",
     "history.deleteFailed": "The local conversation file could not be deleted. Check the Zotero profile permissions.",
+    "history.saveFailed": "The conversation could not be saved. Check the Zotero profile permissions.",
     "modal.cancel": "Cancel", "modal.delete": "Delete", "modal.close": "Close",
     "modal.save": "Save", "modal.highlight": "Highlight", "modal.enable": "Enable",
     "confirm.saveNote": "Save this conversation as a note in Zotero?",
     "confirm.highlight": "Analyze the whole document and highlight its most important passages? Highlights are added to the PDF and can be undone.",
     "confirm.agentOn": "Enable Agent mode? Nodus will be able to propose actions on your Zotero library (create notes, highlight, tag). Every action still requires your approval.",
-    "modal.delOne": "Delete this conversation? This cannot be undone.", "modal.delAll": "Delete ALL conversations? This cannot be undone.",
+    "modal.delOne": "Delete this conversation? This cannot be undone.", "modal.delAll": "Delete all conversations for this item? This cannot be undone.",
     "conn.on": "Connected", "conn.off": "Not connected",
     "conn.detailOn": "Connected to Nodus on port", "conn.detailOff": "Looking for Nodus… Start the app and enable Nodus → Settings → Nodus for Zotero; the sidebar connects on its own.",
     "conn.autoOn": "Connected to Nodus.", "conn.autoOff": "Lost the connection to Nodus. Retrying automatically.",
@@ -166,7 +167,7 @@ const I18N = {
   es: {
     "tab.chat": "Chat", "tab.providers": "Proveedores", "tab.settings": "Ajustes",
     "composer.send": "Enviar", "composer.placeholder": "Pregunta sobre este documento…",
-    "chat.new": "Nueva conversación", "chat.history": "Conversaciones",
+    "chat.new": "Nueva conversación", "chat.history": "Conversaciones del ítem",
     "settings.mode": "Modo", "mode.connected": "Vinculado con Nodus", "mode.standalone": "Autónomo", "mode.linkTag": "Modo Link",
     "mode.hint.connected": "Usa tu app de Nodus en marcha: contexto de biblioteca, ideas, citas de página.",
     "mode.hint.standalone": "Funciona sin Nodus, con tus propias API keys. Las funciones exclusivas de Nodus quedan desactivadas.",
@@ -217,14 +218,15 @@ const I18N = {
     "providers.secureUnavailable": "El almacén cifrado de credenciales de Zotero no está disponible; el secreto no se guardó.",
     "providers.sub": "Suscripción — inicia sesión en la app de Nodus y úsala en modo Link.",
     "providers.subCodex": "Usa los créditos de tu suscripción ChatGPT/Codex. Inicia sesión desde la app de Nodus y úsala en modo Link.",
-    "history.search": "Buscar conversaciones…", "history.clearAll": "Eliminar todas las conversaciones", "history.empty": "Aún no hay conversaciones.",
+    "history.search": "Buscar conversaciones…", "history.clearAll": "Eliminar las conversaciones de este ítem", "history.empty": "Aún no hay conversaciones de este ítem.",
     "history.deleteFailed": "No se pudo eliminar el archivo local de conversaciones. Revisa los permisos del perfil de Zotero.",
+    "history.saveFailed": "No se pudo guardar la conversación. Revisa los permisos del perfil de Zotero.",
     "modal.cancel": "Cancelar", "modal.delete": "Eliminar", "modal.close": "Cerrar",
     "modal.save": "Guardar", "modal.highlight": "Subrayar", "modal.enable": "Activar",
     "confirm.saveNote": "¿Guardar esta conversación como nota en Zotero?",
     "confirm.highlight": "¿Analizar todo el documento y subrayar sus pasajes más importantes? Los subrayados se añaden al PDF y se pueden deshacer.",
     "confirm.agentOn": "¿Activar el modo Agente? Nodus podrá proponer acciones sobre tu biblioteca de Zotero (crear notas, subrayar, etiquetar). Cada acción seguirá requiriendo tu aprobación.",
-    "modal.delOne": "¿Eliminar esta conversación? No se puede deshacer.", "modal.delAll": "¿Eliminar TODAS las conversaciones? No se puede deshacer.",
+    "modal.delOne": "¿Eliminar esta conversación? No se puede deshacer.", "modal.delAll": "¿Eliminar todas las conversaciones de este ítem? No se puede deshacer.",
     "conn.on": "Conectado", "conn.off": "Sin conexión",
     "conn.detailOn": "Conectado a Nodus en el puerto", "conn.detailOff": "Buscando Nodus… Abre la app y actívalo en Nodus → Ajustes → Nodus para Zotero; la barra se conecta sola.",
     "conn.autoOn": "Conectado con Nodus.", "conn.autoOff": "Se perdió la conexión con Nodus. Reintentando automáticamente.",
@@ -308,6 +310,8 @@ const state = {
   modelsConnected: [], model: null,
   item: null, attachmentKey: null, selection: "", ideaLabels: {},
   conversations: [], conv: null, busy: false, lastItemKey: null, abort: null,
+  itemConversations: new Map(), conversationItemKey: null,
+  lastReaderContext: null, libraryContext: null,
   agentEnabled: false, selectionDraft: null,
   items: [], maxTokens: 8192, reasoning: "default", notifierID: null, pollTimer: null,
   hlColors: { high: "#ff6666", medium: "#ffd400" }, lastHighlightKeys: [],
@@ -547,10 +551,28 @@ function activeReader() {
 }
 function getCurrentItem() {
   const reader = activeReader();
-  if (reader && reader.itemID) { try { const att = Zotero.Items.get(reader.itemID); const parent = att && att.parentItem ? att.parentItem : att; return { item: parent, attachment: att, reader }; } catch (e) {} }
+  if (reader && reader.itemID) {
+    try {
+      const att = Zotero.Items.get(reader.itemID); const parent = att && att.parentItem ? att.parentItem : att;
+      if (parent) {
+        state.lastReaderContext = { item: parent, attachment: att, reader: null };
+        state.libraryContext = null;
+        return { item: parent, attachment: att, reader };
+      }
+    } catch (e) {}
+  }
   try {
     const w = Zotero.getMainWindow(); const zp = (w && w.ZoteroPane) || (Zotero.getActiveZoteroPane && Zotero.getActiveZoteroPane());
     const items = zp && zp.getSelectedItems ? zp.getSelectedItems() : [];
+    const selectionKey = (items || []).map((item) => Number(item.libraryID) + ":" + item.key).sort().join(",");
+    // The library tab keeps the last reader's chat and sources. Selecting
+    // another library item explicitly then moves to that item's conversation.
+    if (state.lastReaderContext) {
+      state.libraryContext = { ...state.lastReaderContext, selectionKey };
+      state.lastReaderContext = null;
+    }
+    if (state.libraryContext && state.libraryContext.selectionKey === selectionKey) return state.libraryContext;
+    state.libraryContext = null;
     if (items && items.length) { let it = items[0]; let att = null; if (it.isAttachment && it.isAttachment()) { att = it; if (it.parentItem) it = it.parentItem; } return { item: it, attachment: att, reader: null }; }
   } catch (e) {}
   return { item: null, attachment: null, reader: null };
@@ -626,7 +648,7 @@ function getSelectedItemInfos() {
     return infos;
   } catch (e) { return []; }
 }
-async function resetSourceContext(announce) {
+async function resetSourceContext(announce, keepConversation) {
   state.sourceGeneration += 1;
   const foreground = state.abort;
   if (foreground) { try { foreground.abort(); } catch (e) {} }
@@ -635,18 +657,27 @@ async function resetSourceContext(announce) {
   state.ideaLabels = {}; state.citationAllow = emptyCitationAllow();
   state.retrieval = null; state.visuals = []; state.indexes = [];
   showSelection();
-  if (state.conv && state.conv.messages && state.conv.messages.length) {
+  if (!keepConversation) {
     await persistConv();
     startNewConversation();
   }
   if (announce) showToast(t("source.changed"));
   updateSendEnabled();
 }
+let itemRefreshPromise = null;
 async function refreshItem(force) {
+  if (itemRefreshPromise) {
+    await itemRefreshPromise;
+    return refreshItem(force);
+  }
+  itemRefreshPromise = refreshCurrentItem(force);
+  try { await itemRefreshPromise; } finally { itemRefreshPromise = null; }
+}
+async function refreshCurrentItem(force) {
   const cur = getCurrentItem();
   const key = cur.item ? cur.item.key : null;
   // Track multi-selection independently of the single focused item.
-  state.items = cur.reader ? [] : getSelectedItemInfos();
+  state.items = cur.reader || state.libraryContext ? [] : getSelectedItemInfos();
   let multiKey = state.sourceScope + ":";
   if (state.sourceScope === "library") {
     const records = NS.listEvidenceRecords ? await NS.listEvidenceRecords() : [];
@@ -668,10 +699,14 @@ async function refreshItem(force) {
     if (state.sourceScope === "current" && cur.attachment) multiKey += "#active=" + Number(cur.attachment.libraryID) + ":" + cur.attachment.key;
   }
   if (!multiKey.slice(state.sourceScope.length + 1)) multiKey += cur.item ? Number(cur.item.libraryID) + ":" + key : "none";
-  if (!force && multiKey === state.lastItemKey) return;
+  const owner = cur.item ? { libraryID: Number(cur.item.libraryID), key: String(cur.item.key) } : null;
+  const ownerKey = conversationItemKey(owner);
+  const conversationChanged = ownerKey !== state.conversationItemKey;
+  if (!force && multiKey === state.lastItemKey && !conversationChanged) return;
   const sourceChanged = state.lastItemKey != null && multiKey !== state.lastItemKey;
   state.lastItemKey = multiKey;
-  if (sourceChanged) await resetSourceContext(false);
+  if (sourceChanged || conversationChanged) await resetSourceContext(false, true);
+  if (conversationChanged) await switchItemConversation(owner);
   const box = $("#nd-item");
   if (state.items.length > 1) {
     state.item = null; state.attachmentKey = null;
@@ -1840,19 +1875,76 @@ async function selectInZotero(key) {
 }
 
 // ─────────────────────────────────────────── conversations
-function startNewConversation() {
+function conversationItemKey(owner) {
+  return owner ? Number(owner.libraryID) + ":" + owner.key : "";
+}
+function conversationOwner(conversation) {
+  return NS.conversationItem ? NS.conversationItem(conversation) : (conversation && conversation.zoteroItem) || null;
+}
+function itemHistory() {
+  const key = conversationItemKey(conversationOwner(state.conv));
+  return state.conversations.filter((conversation) => conversationItemKey(conversationOwner(conversation)) === key);
+}
+function conversationContextMismatch(conversation) {
+  return conversation.sourceScope !== state.sourceScope
+    || (state.sourceScope !== "current" && !!state.sourceIdentity && conversation.sourceIdentity !== state.sourceIdentity);
+}
+async function switchItemConversation(owner) {
+  const previous = state.conv;
+  if (previous) state.itemConversations.set(conversationItemKey(conversationOwner(previous)), previous);
+  state.conversationItemKey = conversationItemKey(owner);
+  const saved = state.itemConversations.get(state.conversationItemKey)
+    || state.conversations.filter((conversation) => conversationItemKey(conversationOwner(conversation)) === state.conversationItemKey)
+      .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  if (saved) {
+    state.conv = saved;
+    state.loadedContextMismatch = conversationContextMismatch(saved);
+    rerenderConversation();
+  } else startNewConversation(owner);
+  const history = $("#nd-history");
+  if (history && !history.hidden) renderHistory($("#nd-history-search").value);
+  await persistConv(previous);
+}
+function startNewConversation(owner) {
+  if (owner === undefined) {
+    owner = conversationOwner(state.conv);
+    if (!owner) {
+      const current = getCurrentItem().item;
+      owner = current ? { libraryID: Number(current.libraryID), key: String(current.key) } : null;
+    }
+  }
+  if (state.abort) { try { state.abort.abort(); } catch (e) {} }
   state.loadedContextMismatch = false;
-  state.conv = { id: NS.newId(), title: "", mode: state.mode, model: state.model, sourceScope: state.sourceScope, sourceIdentity: state.sourceIdentity, createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
+  state.conv = { id: NS.newId(), title: "", mode: state.mode, model: state.model, sourceScope: state.sourceScope, sourceIdentity: state.sourceIdentity, zoteroItem: owner, createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
+  state.itemConversations.set(conversationItemKey(owner), state.conv);
   messagesEl().innerHTML = "";
   const h = el("div", "nd-hint"); h.textContent = t("chat.hint"); messagesEl().appendChild(h);
 }
-async function persistConv() {
-  if (!state.historyEnabled || !state.conv || !state.conv.messages.length) return;
-  if (!state.conv.title) { const first = state.conv.messages.find((m) => m.role === "user"); state.conv.title = first ? first.content.slice(0, 60) : "Conversation"; }
-  state.conv.updatedAt = Date.now();
-  const i = state.conversations.findIndex((c) => c.id === state.conv.id);
-  if (i >= 0) state.conversations[i] = state.conv; else state.conversations.unshift(state.conv);
-  await NS.saveConversations(state.conversations);
+async function persistConv(conversation = state.conv) {
+  if (!conversation || !conversation.messages.length) return;
+  if (!conversation.title) { const first = conversation.messages.find((m) => m.role === "user"); conversation.title = first ? first.content.slice(0, 60) : "Conversation"; }
+  conversation.updatedAt = Date.now();
+  const i = state.conversations.findIndex((c) => c.id === conversation.id);
+  if (i >= 0) state.conversations[i] = conversation; else state.conversations.unshift(conversation);
+  if (state.historyEnabled && await NS.saveConversations(state.conversations) === false) showToast(t("history.saveFailed"));
+}
+async function deleteConversation(id) {
+  state.conversations = state.conversations.filter((conversation) => conversation.id !== id);
+  for (const [key, conversation] of state.itemConversations) {
+    if (conversation.id === id) state.itemConversations.delete(key);
+  }
+  if (state.conv && state.conv.id === id) startNewConversation();
+  if (state.historyEnabled) await NS.saveConversations(state.conversations);
+}
+async function clearItemHistory() {
+  const key = conversationItemKey(conversationOwner(state.conv));
+  state.conversations = state.conversations.filter((conversation) => conversationItemKey(conversationOwner(conversation)) !== key);
+  state.itemConversations.delete(key);
+  startNewConversation();
+  if (state.historyEnabled) {
+    if (state.conversations.length) await NS.saveConversations(state.conversations);
+    else if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed"));
+  }
 }
 // Save the current conversation as a Zotero note (child of the open item, or a
 // standalone note when nothing is open). Reuses the agent's create_note path.
@@ -1866,10 +1958,12 @@ async function saveConversationAsNote() {
   showToast(res && res.ok ? t("note.saved") : t("agent.fail"));
 }
 function loadConversation(id) {
-  const c = state.conversations.find((x) => x.id === id);
+  const c = itemHistory().find((x) => x.id === id);
   if (!c) return;
+  if (state.abort) { try { state.abort.abort(); } catch (e) {} }
   state.conv = c;
-  state.loadedContextMismatch = Boolean(state.sourceIdentity && c.sourceIdentity !== state.sourceIdentity);
+  state.itemConversations.set(conversationItemKey(conversationOwner(c)), c);
+  state.loadedContextMismatch = conversationContextMismatch(c);
   rerenderConversation();
   closeHistory();
   if (state.loadedContextMismatch) showToast(t("source.historyMismatch"));
@@ -1950,11 +2044,20 @@ async function send(text) {
   // source identity or conversation.
   await refreshItem(false);
   await syncLibraryIdentityBeforeSend();
+  if (state.busy) return;
   if (state.loadedContextMismatch) startNewConversation();
   if (!state.conv) startNewConversation();
   const uidx = state.conv.messages.push({ role: "user", content: text }) - 1;
   addMessage("user", text, uidx);
-  await generateAssistant();
+  const conversation = state.conv;
+  state.busy = true; updateSendEnabled();
+  try {
+    await persistConv(conversation);
+    if (state.conv !== conversation) return;
+    await generateAssistant();
+  } finally {
+    if (!state.abort) { state.busy = false; updateSendEnabled(); }
+  }
 }
 
 // Streams an assistant reply for the current conversation tail (which must end
@@ -2263,7 +2366,8 @@ function trapDialogKey(event, dialog, close) {
     event.preventDefault(); (event.shiftKey ? last : first).focus();
   }
 }
-function openHistory() {
+async function openHistory() {
+  await refreshItem(false);
   historyPreviousFocus = document.activeElement; renderHistory("");
   const dialog = $("#nd-history"); dialog.hidden = false; dialog.onkeydown = (event) => trapDialogKey(event, dialog, closeHistory);
   $("#nd-history-search").value = ""; $("#nd-history-search").focus();
@@ -2272,7 +2376,7 @@ function closeHistory() { const dialog = $("#nd-history"); dialog.hidden = true;
 function renderHistory(filter) {
   const list = $("#nd-history-list"); list.innerHTML = "";
   const f = (filter || "").toLowerCase();
-  const items = state.conversations
+  const items = itemHistory()
     .filter((c) => !f || (c.title || "").toLowerCase().includes(f) || c.messages.some((m) => m.content.toLowerCase().includes(f)))
     .sort((a, b) => b.updatedAt - a.updatedAt);
   if (!items.length) { list.appendChild(el("div", "nd-muted", t("history.empty"))); return; }
@@ -2283,7 +2387,7 @@ function renderHistory(filter) {
     main.appendChild(el("div", "nd-conv-meta", new Date(c.updatedAt).toLocaleString() + " · " + (c.mode === "standalone" ? t("mode.standalone") : t("mode.linkTag"))));
     main.addEventListener("click", () => loadConversation(c.id));
     const del = el("button", "nd-conv-del"); del.type = "button"; del.setAttribute("aria-label", t("modal.delete")); del.innerHTML = ico("trash", 15);
-    del.addEventListener("click", async (e) => { e.stopPropagation(); if (await showConfirm(t("modal.delOne"))) { state.conversations = state.conversations.filter((x) => x.id !== c.id); await NS.saveConversations(state.conversations); if (state.conv && state.conv.id === c.id) startNewConversation(); renderHistory($("#nd-history-search").value); } });
+    del.addEventListener("click", async (e) => { e.stopPropagation(); if (await showConfirm(t("modal.delOne"))) { await deleteConversation(c.id); renderHistory($("#nd-history-search").value); } });
     row.appendChild(main); row.appendChild(del); list.appendChild(row);
   }
 }
@@ -2646,7 +2750,7 @@ function wire() {
   $("#nd-maxtokens").addEventListener("change", (e) => { const n = parseInt(e.target.value, 10); state.maxTokens = Number.isFinite(n) && n > 0 ? n : 8192; NS.setMaxTokens(state.maxTokens); e.target.value = state.maxTokens; });
   $("#nd-reasoning-btn").addEventListener("click", (e) => { e.stopPropagation(); toggleThinkMenu(); });
   document.addEventListener("click", (e) => { const dd = $("#nd-think-dd"); if (dd && !dd.contains(e.target)) closeThinkMenu(); });
-  $("#nd-new").addEventListener("click", () => startNewConversation());
+  $("#nd-new").addEventListener("click", async () => { await refreshItem(false); startNewConversation(); });
   $("#nd-save-note").addEventListener("click", async () => {
     if (!(await showConfirm(t("confirm.saveNote"), t("modal.save"), { danger: false }))) return;
     saveConversationAsNote().catch((e) => { try { Zotero.logError(e); } catch (x) {} });
@@ -2660,7 +2764,7 @@ function wire() {
   $("#nd-history-btn").addEventListener("click", openHistory);
   $("#nd-history-close").addEventListener("click", closeHistory);
   $("#nd-history-search").addEventListener("input", (e) => renderHistory(e.target.value));
-  $("#nd-history-clear").addEventListener("click", async () => { if (await showConfirm(t("modal.delAll"))) { state.conversations = []; if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed")); startNewConversation(); renderHistory(""); } });
+  $("#nd-history-clear").addEventListener("click", async () => { if (await showConfirm(t("modal.delAll"))) { await clearItemHistory(); renderHistory(""); } });
   $("#nd-ctx-fulltext").addEventListener("change", saveContext);
   $("#nd-ctx-strategy").addEventListener("change", saveContext);
   $("#nd-ctx-ocr").addEventListener("change", saveContext);
@@ -2719,7 +2823,8 @@ function wire() {
   $("#nd-history-enabled").addEventListener("change", async (e) => {
     state.historyEnabled = !!e.target.checked; NS.setHistoryEnabled(state.historyEnabled);
     $("#nd-history-retention").disabled = !state.historyEnabled;
-    if (!state.historyEnabled) { state.conversations = []; if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed")); }
+    if (!state.historyEnabled) { state.conversations = []; state.itemConversations.clear(); if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed")); }
+    else await persistConv();
   });
   $("#nd-history-retention").addEventListener("change", async (e) => {
     state.historyRetention = Number(e.target.value); NS.setHistoryRetention(state.historyRetention);
@@ -2864,7 +2969,7 @@ async function boot() {
   renderMode();
   if (!state.historyEnabled && NS.deleteConversationHistory && !(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed"));
   state.conversations = state.historyEnabled ? await NS.loadConversations() : [];
-  startNewConversation();
+  startNewConversation(null);
   await connect({ quiet: true });
   await loadModelsForMode();
   // Keep looking for Nodus in the background: it may not be running yet (or may

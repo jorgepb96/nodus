@@ -55,7 +55,12 @@ const I18N = {
     "evidence.cleared": "Evidence index cleared.", "evidence.clearConfirm": "Delete all locally indexed evidence? It can be rebuilt from Zotero attachments.",
     "evidence.vision": "Vision", "evidence.visionTitle": "Analyze and attach the current rendered PDF page",
     "evidence.auto": "Auto: full text when small, retrieval when large", "evidence.retrieval": "Semantic retrieval", "evidence.full": "Complete text",
-    "evidence.localEmbedding": "Only the selected model is downloaded. Each model keeps its own index on this device.",
+    "evidence.localEmbedding": "The selected model downloads automatically in the background. Open documents are prepared automatically; each model keeps its own local index.",
+    "evidence.autoModel": "Downloading and preparing {model} in the background…",
+    "evidence.modelReady": "{model} is ready on this device.",
+    "evidence.autoDocument": "Preparing the open document in the background…",
+    "evidence.autoDocumentReady": "The open document is ready for semantic search.",
+    "evidence.autoFailed": "Background preparation could not finish: {error}. It will retry automatically.",
     "evidence.waitModel": "Wait for the current operation to finish before changing models.",
     "evidence.activeModel": "Active model: {model}",
     "evidence.preparingModel": "Preparing {model}… Your current model remains active until preparation completes.",
@@ -196,7 +201,12 @@ const I18N = {
     "evidence.cleared": "Índice de evidencia vaciado.", "evidence.clearConfirm": "¿Eliminar toda la evidencia indexada localmente? Se puede reconstruir desde los adjuntos de Zotero.",
     "evidence.vision": "Visión", "evidence.visionTitle": "Analizar y adjuntar la página PDF renderizada actual",
     "evidence.auto": "Auto: texto completo si es pequeño; recuperación si es grande", "evidence.retrieval": "Búsqueda semántica", "evidence.full": "Texto completo",
-    "evidence.localEmbedding": "Solo se descarga el modelo elegido. Cada modelo conserva su propio índice en este dispositivo.",
+    "evidence.localEmbedding": "El modelo elegido se descarga automáticamente en segundo plano. Los documentos se preparan al abrirlos; cada modelo conserva su propio índice local.",
+    "evidence.autoModel": "Descargando y preparando {model} en segundo plano…",
+    "evidence.modelReady": "{model} está listo en este dispositivo.",
+    "evidence.autoDocument": "Preparando el documento abierto en segundo plano…",
+    "evidence.autoDocumentReady": "El documento abierto está listo para la búsqueda semántica.",
+    "evidence.autoFailed": "No se pudo completar la preparación en segundo plano: {error}. Se reintentará automáticamente.",
     "evidence.waitModel": "Espera a que termine la operación actual para cambiar de modelo.",
     "evidence.activeModel": "Modelo activo: {model}",
     "evidence.preparingModel": "Preparando {model}… El modelo actual seguirá activo hasta completar la preparación.",
@@ -679,7 +689,7 @@ async function refreshItem(force) {
     return refreshItem(force);
   }
   itemRefreshPromise = refreshCurrentItem(force);
-  try { await itemRefreshPromise; } finally { itemRefreshPromise = null; }
+  try { await itemRefreshPromise; } finally { itemRefreshPromise = null; scheduleAutomaticPreparation(); }
 }
 async function refreshCurrentItem(force) {
   const cur = getCurrentItem();
@@ -925,9 +935,10 @@ async function ensureEmbeddings(indexes, signal, opts) {
     for (let idxPos = 0; idxPos < indexes.length; idxPos++) {
       const index = indexes[idxPos];
       const missing = missingByIndex[idxPos];
-      for (let i = 0; i < missing.length; i += 24) {
+      const batchSize = opts.background ? 2 : 24;
+      for (let i = 0; i < missing.length; i += batchSize) {
         assertCurrent();
-        const batch = missing.slice(i, i + 24);
+        const batch = missing.slice(i, i + batchSize);
         onStatus(tf("evidence.embedding", { done: Math.min(i + batch.length, missing.length), total: missing.length, source: index.title || index.attachmentKey }));
         const vectors = await NL.embedPassages(batch.map((chunk) =>
           [index.title, chunk.section, chunk.text].filter(Boolean).join("\n")
@@ -993,6 +1004,7 @@ function embedIndexesBackground(indexes) {
   state.embedController = controller;
   showEmbedProgress(0);
   return ensureEmbeddingsSerialized(indexes, controller.signal, {
+    background: true,
     isCurrent: () => generation === state.embedGeneration && state.embedController === controller,
     onStatus: () => {},
     onProgress: (done, total) => showEmbedProgress(total ? Math.round((done / total) * 100) : 100),
@@ -1007,6 +1019,108 @@ function embedIndexesBackground(indexes) {
     if (state.embedController === controller) state.embedController = null;
     if (generation === state.embedGeneration) showEmbedProgress(null);
   });
+}
+// Anticipate the selected encoder and only the actual open reader. This owns
+// no chat lock, performs no OCR, and never scans a collection or the library.
+const automaticPreparation = { timer: null, job: null, controller: null, phase: null,
+  readyModel: "", readyDocument: "", retryAt: 0, failures: 0, closed: false };
+function automaticReaderTarget() {
+  if (!NL || !NE || !activeReader()) return null;
+  const current = getCurrentItem();
+  if (!current.reader || !isSupportedAttachment(current.attachment)) return null;
+  const attachment = current.attachment;
+  return { attachment, key: NL.MODEL.fingerprint + ":" + Number(attachment.libraryID) + ":" + attachment.key };
+}
+function automaticPreparationStatus(text, tone) {
+  const select = $("#nd-embedding-model");
+  if (!state.embeddingSwitch && select && select.value === NL.MODEL.key) embeddingSettingsStatus(text, tone);
+}
+function automaticPreparationEnabled() {
+  return !!(NL && typeof NL.warmup === "function" && NS.getContext().useFulltext && !automaticPreparation.closed);
+}
+function scheduleAutomaticPreparation(delay = 600) {
+  if (!automaticPreparationEnabled()) return;
+  const target = automaticReaderTarget();
+  if (automaticPreparation.phase === "document" && automaticPreparation.controller
+    && (!target || target.key !== automaticPreparation.runningDocument)) automaticPreparation.controller.abort();
+  if (automaticPreparation.timer) return;
+  automaticPreparation.timer = setTimeout(() => {
+    automaticPreparation.timer = null;
+    runAutomaticPreparation().catch(error => { try { Zotero.logError(error); } catch (e) {} });
+  }, delay);
+}
+async function pauseAutomaticPreparation(stopWarmup) {
+  if (automaticPreparation.timer) clearTimeout(automaticPreparation.timer);
+  automaticPreparation.timer = null;
+  if (automaticPreparation.controller && (stopWarmup || automaticPreparation.phase === "document")) {
+    automaticPreparation.controller.abort();
+    if (automaticPreparation.job) { try { await automaticPreparation.job; } catch (e) {} }
+  }
+}
+async function runAutomaticPreparation() {
+  if (!automaticPreparationEnabled() || automaticPreparation.job || state.busy || state.embeddingSwitch
+    || Date.now() < automaticPreparation.retryAt) return;
+  const model = NL.MODEL;
+  const target = automaticReaderTarget();
+  if (automaticPreparation.readyModel === model.fingerprint && (!target || automaticPreparation.readyDocument === target.key)) return;
+  const controller = new AbortController();
+  automaticPreparation.controller = controller;
+  const assertCurrent = () => {
+    if (controller.signal.aborted || !automaticPreparationEnabled() || model.fingerprint !== NL.MODEL.fingerprint
+      || state.embeddingSwitch || state.busy) throw new DOMException("Aborted", "AbortError");
+  };
+  const onStatus = text => automaticPreparationStatus(text, "busy");
+  const stopProgress = NL.onProgress(progress => {
+    if (progress && progress.status === "progress") onStatus(tf("evidence.modelDownload", { pct: Math.round(Number(progress.progress) || 0) }));
+  });
+  const job = (async () => {
+    if (automaticPreparation.readyModel !== model.fingerprint) {
+      automaticPreparation.phase = "warmup";
+      onStatus(tf("evidence.autoModel", { model: model.label }));
+      await NL.warmup({ signal: controller.signal });
+      if (controller.signal.aborted || model.fingerprint !== NL.MODEL.fingerprint) throw new DOMException("Aborted", "AbortError");
+      automaticPreparation.readyModel = model.fingerprint;
+      automaticPreparationStatus(tf("evidence.modelReady", { model: model.label }), "ok");
+    }
+    assertCurrent();
+    const current = automaticReaderTarget();
+    if (!current || automaticPreparation.readyDocument === current.key) return;
+    automaticPreparation.phase = "document"; automaticPreparation.runningDocument = current.key;
+    const documentCurrent = () => { const next = automaticReaderTarget(); return !!next && next.key === current.key; };
+    const checkDocument = () => { assertCurrent(); if (!documentCurrent()) throw new DOMException("Aborted", "AbortError"); };
+    onStatus(t("evidence.autoDocument"));
+    const guardedStore = {
+      loadEvidenceIndex: (...args) => NS.loadEvidenceIndex(...args),
+      saveEvidenceIndex: async index => { checkDocument(); const saved = await NS.saveEvidenceIndex(index); if (!saved) throw new Error("evidence-save-failed"); return saved; },
+    };
+    const result = await NE.ensureIndex(current.attachment, guardedStore, {});
+    checkDocument(); NL.useIndex(result.index);
+    showEmbedProgress(0);
+    await ensureEmbeddingsSerialized([result.index], controller.signal, { background: true,
+      isCurrent: () => !state.busy && !state.embeddingSwitch && documentCurrent() && NL.MODEL.fingerprint === model.fingerprint,
+      onStatus,
+      onProgress: (done, total) => showEmbedProgress(total ? done / total * 100 : 100),
+    });
+    checkDocument(); automaticPreparation.readyDocument = current.key;
+    automaticPreparationStatus(t("evidence.autoDocumentReady"), "ok");
+  })();
+  automaticPreparation.job = job;
+  try {
+    await job; automaticPreparation.failures = 0; automaticPreparation.retryAt = 0;
+  } catch (error) {
+    if (!(error && error.name === "AbortError")) {
+      automaticPreparation.failures++;
+      automaticPreparation.retryAt = Date.now() + Math.min(300000, 30000 * 2 ** automaticPreparation.failures);
+      automaticPreparationStatus(tf("evidence.autoFailed", { error: friendlyErr(error.message || error) }), "warn");
+      try { Zotero.logError(error); } catch (e) {}
+    }
+  } finally {
+    stopProgress(); showEmbedProgress(null);
+    automaticPreparation.job = null; automaticPreparation.controller = null; automaticPreparation.phase = null;
+    const next = automaticReaderTarget();
+    if (automaticPreparationEnabled() && !state.busy && !state.embeddingSwitch && next && next.key !== automaticPreparation.readyDocument
+      && Date.now() >= automaticPreparation.retryAt) scheduleAutomaticPreparation();
+  }
 }
 // Query-time BOUNDED embedding. Embedding every chunk of a several-hundred-page
 // book up front is what makes the first answer hang for minutes. Instead embed
@@ -2087,6 +2201,8 @@ async function generateAssistant() {
   bodyEl.innerHTML = TYPING_HTML; // animated dots until the first token streams in
   let acc = "";
   try {
+    await pauseAutomaticPreparation(false);
+    await cancelBackgroundEmbeddings(true);
     let docInfo = { text: "", hits: [], method: "off", truncated: false };
     if (NS.getContext().useFulltext) {
       const lastUser = [...conversation.messages].reverse().find((m) => m.role === "user");
@@ -2174,7 +2290,7 @@ async function generateAssistant() {
   } finally {
     cancelStreamingRich(bodyEl);
     setStreamingAccessibility(bodyEl, false);
-    if (state.abort === controller) { state.busy = false; state.abort = null; updateSendEnabled(); }
+    if (state.abort === controller) { state.busy = false; state.abort = null; updateSendEnabled(); scheduleAutomaticPreparation(); }
   }
 }
 
@@ -2574,6 +2690,7 @@ async function changeEmbeddingModel() {
     if (progress && progress.status === "progress") onStatus(tf("evidence.modelDownload", { pct: Math.round(Number(progress.progress) || 0) }));
   });
   try {
+    await pauseAutomaticPreparation(true);
     await cancelBackgroundEmbeddings(true);
     const records = await NS.listEvidenceRecords();
     let prepared = 0;
@@ -2591,6 +2708,7 @@ async function changeEmbeddingModel() {
     if (!prepared) await NL.embedQueries(["model readiness"], { model, signal: controller.signal });
     if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
     NL.select(key); NS.setEmbeddingModel(key);
+    automaticPreparation.retryAt = 0; automaticPreparation.failures = 0;
     state.indexes = []; state.evidence = new Map();
     renderEmbeddingActiveModel();
     embeddingSettingsStatus(tf("evidence.activatedModel", { model: model.label }), "ok");
@@ -2605,6 +2723,7 @@ async function changeEmbeddingModel() {
     stopProgress(); NL.reset(); state.embeddingSwitch = null; state.busy = false; updateSendEnabled();
     apply.disabled = false; select.disabled = false; cancel.hidden = true;
     renderEmbeddingActiveModel();
+    scheduleAutomaticPreparation();
   }
 }
 function applyI18n() {
@@ -2811,6 +2930,7 @@ function wire() {
     if (state.busy) return;
     state.busy = true; state.abort = new AbortController(); updateSendEnabled();
     try {
+      await pauseAutomaticPreparation(false);
       await refreshItem(true);
       const indexes = await buildSelectedIndexes(true, state.abort.signal);
       if (!indexes.length) return;
@@ -2831,7 +2951,7 @@ function wire() {
       const aborted = e && (e.name === "AbortError" || String(e.message || e).toLowerCase().includes("abort"));
       setIndexStatus(aborted ? t("evidence.stopped") : tf("evidence.failed", { error: friendlyErr(e.message || e) }), aborted ? "" : "warn");
     }
-    finally { state.busy = false; state.abort = null; updateSendEnabled(); }
+    finally { state.busy = false; state.abort = null; updateSendEnabled(); scheduleAutomaticPreparation(); }
   });
   $("#nd-index-prune").addEventListener("click", async () => {
     if (state.busy) return;
@@ -2898,6 +3018,8 @@ function saveContext() {
     strategy: state.contextStrategy,
     ocr: $("#nd-ctx-ocr").value,
   });
+  if (!NS.getContext().useFulltext) pauseAutomaticPreparation(true).catch(() => {});
+  else scheduleAutomaticPreparation();
 }
 function saveHlColors() { state.hlColors = { high: $("#nd-hl-high").value || "#ff6666", medium: $("#nd-hl-medium").value || "#ffd400" }; NS.setHlColors(state.hlColors); }
 
@@ -2934,6 +3056,8 @@ function registerNotifier() {
     };
     state.notifierID = Zotero.Notifier.registerObserver(observer, ["item", "tab", "collection"], "nodus-sidebar");
     window.addEventListener("unload", () => {
+      automaticPreparation.closed = true;
+      pauseAutomaticPreparation(true).catch(() => {});
       try { if (state.embeddingSwitch) state.embeddingSwitch.abort(); } catch (e) {}
       try { if (state.abort) state.abort.abort(); } catch (e) {}
       try { if (state.notifierID) Zotero.Notifier.unregisterObserver(state.notifierID); } catch (e) {}
@@ -2999,6 +3123,7 @@ async function boot() {
   if (!state.historyEnabled && NS.deleteConversationHistory && !(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed"));
   state.conversations = state.historyEnabled ? await NS.loadConversations() : [];
   startNewConversation(null);
+  scheduleAutomaticPreparation();
   await connect({ quiet: true });
   await loadModelsForMode();
   // Keep looking for Nodus in the background: it may not be running yet (or may

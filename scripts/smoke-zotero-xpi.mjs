@@ -29,6 +29,7 @@ const argValue = (name) => {
   if (exact >= 0) return process.argv[exact + 1];
   return process.argv.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
 };
+const automaticPreparationSmoke = process.argv.includes('--automatic-preparation-smoke');
 const embeddingContextSwitchSmoke = process.argv.includes('--embedding-context-switch-smoke');
 const embeddingSwitchSmoke = process.argv.includes('--embedding-switch-smoke');
 const embeddingBenchmark = process.argv.includes('--embedding-benchmark');
@@ -63,6 +64,17 @@ const installedXpi = path.join(extensionsDir, `${addon.id}.xpi`);
 mkdirSync(dataDir, { recursive: true });
 mkdirSync(extensionsDir, { recursive: true });
 cpSync(xpiPath, installedXpi);
+// A minimal authored PDF exercises the actual Zotero reader/text extractor.
+const automaticPdfPath = path.join(profileDir, 'synthetic-automatic.pdf');
+if (automaticPreparationSmoke) {
+  const stream = 'BT /F1 12 Tf 50 750 Td (Randomization balances confounders between treatment groups.) Tj 0 -20 Td (Allocation concealment prevents prediction of treatment assignment.) Tj ET';
+  const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>', '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>', '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream'];
+  let pdf = '%PDF-1.4\n'; const offsets = [0];
+  for (let i = 0; i < objects.length; i++) { offsets.push(Buffer.byteLength(pdf)); pdf += (i + 1) + ' 0 obj\n' + objects[i] + '\nendobj\n'; }
+  const xref = Buffer.byteLength(pdf);
+  pdf += 'xref\n0 6\n0000000000 65535 f \n' + offsets.slice(1).map(n => String(n).padStart(10, '0') + ' 00000 n \n').join('') + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+  writeFileSync(automaticPdfPath, pdf);
+}
 // A separate diagnostic add-on requests a normal quit only after the host has
 // verified startup. It never closes Nodus resources itself: that is the test.
 const quitRequestPath = path.join(profileDir, 'request-normal-quit');
@@ -98,6 +110,26 @@ function startup() {
         if (!(await IOUtils.exists(stats.database))) throw new Error('Evidence database missing');
         const phase = await IOUtils.readUTF8(${JSON.stringify(quitRequestPath)});
         function expect(value, message) { if (!value) throw new Error(message); }
+        if (phase === 'save-credentials' && ${automaticPreparationSmoke}) {
+          const frame = win.document.getElementById('nodus-sidebar-frame').contentWindow;
+          const waitUntil = async fn => { const deadline = Date.now() + 90000; while (!(await fn())) { if (Date.now() > deadline) throw new Error('Automatic preparation timeout'); await new Promise(resolve => setTimeout(resolve, 100)); } };
+          // Do not call warmup/embed or click Prepare: startup must do this.
+          await waitUntil(() => frame.document.getElementById('nd-embedding-status').textContent.includes('is ready on this device'));
+          expect(frame.NodusLocalEmbeddings.MODEL.key === 'granite-97m', 'Automatic default encoder');
+          const parent = new Zotero.Item('journalArticle'); parent.setField('title', 'Synthetic automatic preparation'); await parent.saveTx();
+          const attachment = await Zotero.Attachments.importFromFile({ file: ${JSON.stringify(automaticPdfPath)}, parentItemID: parent.id });
+          await Zotero.Reader.open(attachment.id);
+          await waitUntil(async () => {
+            const index = await store.loadEvidenceIndex(attachment.libraryID, attachment.key);
+            return index && index.chunks.length > 0 && index.chunks.every(chunk => chunk.embeddingModel === frame.NodusLocalEmbeddings.MODEL.fingerprint && chunk.embedding?.length === 384);
+          });
+          win.document.getElementById('nodus-sidebar').hidden = false;
+          const splitter = win.document.getElementById('nodus-splitter'); splitter.hidden = false;
+          await new Promise(resolve => setTimeout(resolve, 200));
+          expect(splitter.getBoundingClientRect().width >= 6, 'Six-pixel sidebar drag target');
+          expect(win.getComputedStyle(splitter).cursor === 'col-resize', 'Resize cursor');
+          Zotero.debug('[Nodus smoke] automatic model download, reader vectors and six-pixel divider passed');
+        }
         if (phase === 'save-credentials' && ${embeddingSwitchSmoke}) {
           const frame = win.document.getElementById('nodus-sidebar-frame').contentWindow;
           const embeddings = frame.NodusLocalEmbeddings;
@@ -259,7 +291,7 @@ const startZotero = () => {
     env: { ...globalThis.process.env, MOZ_NO_REMOTE: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  const append = (chunk) => { output = (output + chunk.toString()).slice(-2_000_000); if (embeddingBenchmark || embeddingSwitchSmoke) writeFileSync(path.join(profileDir, 'live.log'), output); };
+  const append = (chunk) => { output = (output + chunk.toString()).slice(-2_000_000); if (embeddingBenchmark || embeddingSwitchSmoke || automaticPreparationSmoke) writeFileSync(path.join(profileDir, 'live.log'), output); };
   process.stdout.on('data', append);
   process.stderr.on('data', append);
   return process;
@@ -331,7 +363,7 @@ try {
     throw new Error(`Zotero did not start the registered add-on within ${timeoutMs} ms\nstate=${JSON.stringify(readState())}\n${diagnostic()}`);
   }
   writeFileSync(quitRequestPath, 'save-credentials');
-  const shutdownDeadline = Date.now() + ((embeddingBenchmark || embeddingSwitchSmoke) ? 1_800_000 : 20_000);
+  const shutdownDeadline = Date.now() + ((embeddingBenchmark || embeddingSwitchSmoke || automaticPreparationSmoke) ? 1_800_000 : 20_000);
   while (child.exitCode === null && child.signalCode === null && Date.now() < shutdownDeadline) {
     if (output.includes('[Nodus smoke] FAILED:')) throw new Error(diagnostic());
     await wait(100);
@@ -341,6 +373,7 @@ try {
     || !output.includes('[Nodus smoke] encrypted credential saves, updates and migrations passed')) {
     throw new Error(`Zotero did not exit normally after opening the evidence database\n${diagnostic()}`);
   }
+  if (automaticPreparationSmoke && !output.includes('[Nodus smoke] automatic model download, reader vectors and six-pixel divider passed')) throw new Error('Missing automatic preparation proof');
   if (embeddingSwitchSmoke && !output.includes('[Nodus smoke] embedding activation, binary reuse and cancellation passed')) throw new Error('Missing model-switch proof');
   const encryptedLogins = JSON.parse(readFileSync(path.join(profileDir, 'logins.json'), 'utf8'));
   const providerLogins = encryptedLogins.logins.filter((login) => login.hostname === 'chrome://nodus');

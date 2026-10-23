@@ -30,7 +30,7 @@ caveats and fixture digest. Timing is one run, on this machine only.
 Granite is the default for a new empty installation: it provided better first
 results than E5 and matched Harrier's first-result accuracy at much lower
 latency on this fixture. Existing cached libraries without a saved model choice
-retain E5. Explicit choices persist. No automatic later model migration occurs.
+also adopt Granite; historical E5 cache data is not a user preference. Explicit choices persist. No automatic later model migration occurs.
 Native Windows/Linux measurements and broader corpus validation remain pending.
 
 ## Integration and recovery
@@ -85,3 +85,14 @@ persists across restart and deletion, alongside embedding activation, binary
 vector reuse, cancellation and credential lifecycle checks. The dedicated
 Zotero workflow runs both plugin regressions and operator parity before XPI
 packaging.
+
+## Activation correction
+
+The original activation used the chat abort controller. Selecting another item
+while the destination model loaded cancelled preparation. A native regression
+with a synthetic item reproduces `Granite activation` failure on the original
+package and passes with the separate library-preparation controller. Settings
+now shows its own active-model label, progress, errors and cancel action; failed
+choices remain selected for retry. Preparing the already-active model also
+validates/downloads its runtime and prepares missing vectors. See
+[activation correction evidence](activation-fix.md).

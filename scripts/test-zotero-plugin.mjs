@@ -275,7 +275,7 @@ const FAKE_STORE = {
   newId: () => 'conv-1', compactAudit: (a) => a, compactConversations: (a) => a,
 };
 
-function conversationSidebar({ history = [], historyEnabled = true, sourceScope = 'current', providers } = {}) {
+function conversationSidebar({ history = [], historyEnabled = true, sourceScope = 'current', providers, embeddings } = {}) {
   const doc = stubDoc();
   const items = new Map();
   let selected = [], reader = null, nextID = 0, saved = null;
@@ -295,9 +295,9 @@ function conversationSidebar({ history = [], historyEnabled = true, sourceScope 
     saveConversations: async (list) => { saved = JSON.parse(JSON.stringify(list)); return true; },
   };
   const sandbox = {
-    window: { NodusStore: store, NodusProviders: providers }, document: doc, console,
+    window: { NodusStore: store, NodusProviders: providers, NodusLocalEmbeddings: embeddings }, document: doc, console,
     ChromeUtils: { importESModule: () => ({ Zotero }) },
-    AbortController, setTimeout, clearTimeout,
+    AbortController, DOMException, setTimeout, clearTimeout,
   };
   vm.createContext(sandbox);
   const run = (code) => vm.runInContext(code, sandbox);
@@ -2080,4 +2080,90 @@ test('local models: failed vector publication preserves the previous complete ca
   assert.ok(await context.saveEvidenceIndex({ libraryID: 1, attachmentKey: 'A' }));
   assert.ok(files.has(row.data_path) && files.has(row.vector_path));
   assert.equal(files.has('/cache/old.f32'), false);
+});
+
+function selectableEmbeddingStub(infer) {
+  const models = [{ key: 'e5-small', label: 'E5', dimensions: 384 }, { key: 'granite-97m', label: 'Granite', dimensions: 384 }];
+  let active = models[0];
+  return {
+    get MODEL() { return active; }, MODELS: models,
+    select(key) { active = models.find(m => m.key === key); },
+    reset() {}, onProgress: () => () => {}, embedQueries: infer,
+  };
+}
+
+test('local model activation: changing reading item does not cancel library model preparation', async () => {
+  let finish, signal;
+  const embeddings = selectableEmbeddingStub((values, opts) => {
+    signal = opts.signal;
+    return new Promise((resolve, reject) => {
+      finish = resolve;
+      signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    });
+  });
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.store.listEvidenceRecords = async () => [];
+  let saved;
+  sidebar.store.setEmbeddingModel = key => { saved = key; };
+  await sidebar.library([sidebar.item('A')]);
+  sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+  const pending = sidebar.run('changeEmbeddingModel()');
+  assert.ok(await waitFor(() => !!signal, 1000));
+  assert.equal(sidebar.run('state.abort'), null, 'preparation is independent of the chat request');
+  await sidebar.library([sidebar.item('B')]);
+  assert.equal(signal.aborted, false);
+  finish([]); await pending;
+  assert.equal(saved, 'granite-97m');
+  assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /now active/);
+});
+
+test('local model activation: failures stay visible in Settings and retain the target for retry', async () => {
+  const embeddings = selectableEmbeddingStub(async () => { throw new Error('download-offline'); });
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.store.listEvidenceRecords = async () => [];
+  sidebar.store.setEmbeddingModel = () => assert.fail('failed model cannot be saved');
+  sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+  await sidebar.run('changeEmbeddingModel()');
+  assert.equal(embeddings.MODEL.key, 'e5-small');
+  assert.equal(sidebar.doc.querySelector('#nd-embedding-model').value, 'granite-97m');
+  assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /download-offline/);
+  assert.match(sidebar.doc.querySelector('#nd-embedding-active').textContent, /E5/);
+  assert.equal(sidebar.doc.querySelector('#nd-embedding-apply').disabled, false);
+});
+
+test('local model default: legacy E5 cache does not override Granite, explicit selection does', async () => {
+  const embeddings = selectableEmbeddingStub(async () => []);
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.run('globalThis.NodusEmbeddingModels = { defaultKey: "granite-97m" }');
+  sidebar.store.listEvidenceRecords = async () => [{ embeddingModel: 'historical E5' }];
+  let preference = '';
+  sidebar.store.getEmbeddingModel = () => preference;
+  const source = readSource('zotero-plugin/content/sidebar.js');
+  const start = source.indexOf('  if (NL) {', source.indexOf('async function boot()'));
+  const block = source.slice(start, source.indexOf('  wire();', start));
+  await sidebar.run('(async () => {' + block + '})()');
+  assert.equal(embeddings.MODEL.key, 'granite-97m');
+  preference = 'e5-small';
+  await sidebar.run('(async () => {' + block + '})()');
+  assert.equal(embeddings.MODEL.key, 'e5-small');
+});
+
+test('local model activation: a busy chat explains why preparation cannot start', async () => {
+  const embeddings = selectableEmbeddingStub(() => assert.fail('busy operation must not start inference'));
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.run('state.busy = true');
+  await sidebar.run('changeEmbeddingModel()');
+  assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /Wait for the current operation/);
+});
+
+test('local model activation: Prepare also validates the already-active model', async () => {
+  let calls = 0, saved;
+  const embeddings = selectableEmbeddingStub(async () => { calls++; return []; });
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.store.listEvidenceRecords = async () => [];
+  sidebar.store.setEmbeddingModel = key => { saved = key; };
+  sidebar.doc.querySelector('#nd-embedding-model').value = 'e5-small';
+  await sidebar.run('changeEmbeddingModel()');
+  assert.equal(calls, 1);
+  assert.equal(saved, 'e5-small');
 });

@@ -55,7 +55,8 @@ const I18N = {
     "evidence.cleared": "Evidence index cleared.", "evidence.clearConfirm": "Delete all locally indexed evidence? It can be rebuilt from Zotero attachments.",
     "evidence.vision": "Vision", "evidence.visionTitle": "Analyze and attach the current rendered PDF page",
     "evidence.auto": "Auto: full text when small, retrieval when large", "evidence.retrieval": "Semantic retrieval", "evidence.full": "Complete text",
-    "evidence.localEmbedding": "Local semantic model: multilingual E5 small (INT8). Runs on this device; no embedding API key required.",
+    "evidence.localEmbedding": "Only the selected model is downloaded. Each model keeps its own index on this device.",
+    "evidence.chooseModel": "Local semantic model", "evidence.applyModel": "Prepare and activate",
     "evidence.modelDownload": "Preparing the local semantic model · {pct}%",
     "evidence.embeddingBg": "Embedding in background · {pct}%",
     "evidence.embedding": "Embedding {done}/{total} · {source}", "evidence.completeText": "Complete text · {passages} citable passages",
@@ -190,7 +191,8 @@ const I18N = {
     "evidence.cleared": "Índice de evidencia vaciado.", "evidence.clearConfirm": "¿Eliminar toda la evidencia indexada localmente? Se puede reconstruir desde los adjuntos de Zotero.",
     "evidence.vision": "Visión", "evidence.visionTitle": "Analizar y adjuntar la página PDF renderizada actual",
     "evidence.auto": "Auto: texto completo si es pequeño; recuperación si es grande", "evidence.retrieval": "Búsqueda semántica", "evidence.full": "Texto completo",
-    "evidence.localEmbedding": "Modelo semántico local: multilingual E5 small (INT8). Se ejecuta en este dispositivo; no requiere API key de embeddings.",
+    "evidence.localEmbedding": "Solo se descarga el modelo elegido. Cada modelo conserva su propio índice en este dispositivo.",
+    "evidence.chooseModel": "Modelo semántico local", "evidence.applyModel": "Preparar y activar",
     "evidence.modelDownload": "Preparando el modelo semántico local · {pct}%",
     "evidence.embeddingBg": "Calculando embeddings en segundo plano · {pct}%",
     "evidence.embedding": "Embeddings {done}/{total} · {source}", "evidence.completeText": "Texto completo · {passages} pasajes citables",
@@ -862,7 +864,7 @@ async function ensureEmbeddings(indexes, signal, opts) {
     if ((signal && signal.aborted) || (opts.isCurrent && !opts.isCurrent())) throw new DOMException("Aborted", "AbortError");
   };
   if (!NL) throw new Error("local-embeddings-unavailable");
-  const model = NL.MODEL;
+  const model = opts.model || NL.MODEL;
   let embedded = 0;
   const stopProgress = NL.onProgress((progress) => {
     if (!progress || progress.status !== "progress") return;
@@ -886,7 +888,8 @@ async function ensureEmbeddings(indexes, signal, opts) {
         onStatus(tf("evidence.embedding", { done: Math.min(i + batch.length, missing.length), total: missing.length, source: index.title || index.attachmentKey }));
         const vectors = await NL.embedPassages(batch.map((chunk) =>
           [index.title, chunk.section, chunk.text].filter(Boolean).join("\n")
-        ), { signal });
+        ), { signal, model });
+        assertCurrent();
         batch.forEach((chunk, j) => {
           chunk.embedding = vectors[j];
           chunk.embeddingModel = model.fingerprint;
@@ -896,12 +899,12 @@ async function ensureEmbeddings(indexes, signal, opts) {
         onProgress(doneSoFar, totalMissing);
         // Checkpoint long books so closing Zotero or cancelling does not throw
         // away several minutes of completed local work.
-        if (i > 0 && i % 240 === 0) { assertCurrent(); await NS.saveEvidenceIndex(index); }
+        if (!opts.staging && i > 0 && i % 240 === 0) { assertCurrent(); await NS.saveEvidenceIndex(index); }
       }
       assertCurrent();
       index.embeddingModel = model.fingerprint;
       index.updatedAt = Date.now();
-      await NS.saveEvidenceIndex(index);
+      if (!opts.staging && !(await NS.saveEvidenceIndex(index))) throw new Error("evidence-save-failed");
     }
   } finally {
     stopProgress();
@@ -971,6 +974,7 @@ function embedIndexesBackground(indexes) {
 async function embedCandidatesInline(indexes, query, extraHits, signal) {
   if (!NL || !NE || !indexes || !indexes.length) return null;
   const model = NL.MODEL;
+  indexes.forEach(index => NL.useIndex(index));
   const wanted = new Set(NE.candidateChunkIdsForQuery(indexes, query, { limit: 96 }));
   for (const h of extraHits || []) if (h && h.id) wanted.add(h.id);
   const missing = [];
@@ -1238,6 +1242,7 @@ async function buildSelectedIndexes(force, signal) {
         validated.push(result.index);
       } catch (e) { try { Zotero.logError(e); } catch (x) {} }
     }
+    validated.forEach(index => NL && NL.useIndex(index));
     state.indexes = validated;
     setIndexStatus(validated.length
       ? evidenceReadyText(validated.length, validated.reduce((n, x) => n + (x.chunks || []).length, 0))
@@ -1267,6 +1272,7 @@ async function buildSelectedIndexes(force, signal) {
     });
     indexes.push(result.index);
   }
+  indexes.forEach(index => NL && NL.useIndex(index));
   state.indexes = indexes;
   setIndexStatus(evidenceReadyText(indexes.length, indexes.reduce((n, x) => n + (x.chunks || []).length, 0)), "ok");
   return indexes;
@@ -2430,6 +2436,48 @@ function applyIcons() {
   set("#nd-send", "send", 15); set("#nd-stop", "square", 14); set("#nd-close", "x");
   set("#nd-history-close", "x"); set(".nd-think-ico", "idea", 15);
 }
+// Stage a complete library without changing the active model. Cancellation or
+// inference failure leaves the old vectors and saved preference usable.
+async function changeEmbeddingModel() {
+  if (state.busy) return;
+  const key = $("#nd-embedding-model").value;
+  if (key === NL.MODEL.key) return;
+  const model = NL.MODELS.find(m => m.key === key);
+  if (!model) return;
+  state.busy = true; updateSendEnabled();
+  const controller = new AbortController(); state.abort = controller;
+  $("#nd-stop").hidden = false;
+  $("#nd-embedding-apply").disabled = true;
+  try {
+    await cancelBackgroundEmbeddings(true);
+    const records = await NS.listEvidenceRecords();
+    for (const record of records) {
+      if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+      const original = await NS.loadEvidenceIndex(record.libraryID, record.attachmentKey);
+      if (!original) continue;
+      const staged = JSON.parse(JSON.stringify(original));
+      globalThis.NodusEmbeddingModels.useIndex(staged, model);
+      await ensureEmbeddings([staged], controller.signal, { model, staging: true });
+      // Save both model variants; active-model reads restore their own vectors.
+      if (!(await NS.saveEvidenceIndex(staged))) throw new Error("evidence-save-failed");
+
+    }
+    // Even an empty library validates and downloads the chosen runtime first.
+    if (!records.length) await NL.embedQueries(["model readiness"], { model, signal: controller.signal });
+    if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+    NL.select(key); NS.setEmbeddingModel(key);
+    state.indexes = []; state.evidence = new Map();
+    await refreshScopeStatus();
+  } catch (error) {
+    setIndexStatus(tf("evidence.failed", { error: friendlyErr(error.message || error) }), "warn");
+  } finally {
+    // Releases the staged session, so the active model loads alone next time.
+    NL.reset(); state.busy = false; state.abort = null; updateSendEnabled();
+    $("#nd-stop").hidden = true;
+    $("#nd-embedding-apply").disabled = false;
+    $("#nd-embedding-model").value = NL.MODEL.key;
+  }
+}
 function applyI18n() {
   $$("[data-i18n]").forEach((n) => (n.textContent = t(n.getAttribute("data-i18n"))));
   $$("[data-i18n-ph]").forEach((n) => n.setAttribute("placeholder", t(n.getAttribute("data-i18n-ph"))));
@@ -2656,11 +2704,13 @@ function wire() {
     finally { state.busy = false; state.abort = null; updateSendEnabled(); }
   });
   $("#nd-index-prune").addEventListener("click", async () => {
+    if (state.busy) return;
     await cancelBackgroundEmbeddings(true);
     const removed = await NS.pruneEvidenceIndexes();
     showToast(tf("evidence.pruned", { count: removed })); await refreshIndexStats(); await refreshScopeStatus();
   });
   $("#nd-index-clear").addEventListener("click", async () => {
+    if (state.busy) return;
     if (!(await showConfirm(t("evidence.clearConfirm")))) return;
     await cancelBackgroundEmbeddings(true);
     await NS.clearEvidenceIndexes(); state.indexes = []; state.evidence = new Map();
@@ -2781,6 +2831,18 @@ async function boot() {
   state.sourceScope = NS.getSourceScope();
   state.historyEnabled = NS.getHistoryEnabled();
   state.historyRetention = NS.getHistoryRetention();
+  if (NL) {
+  const savedEmbedding = NS.getEmbeddingModel();
+  // Preserve the historical choice when upgrading a library with old vectors.
+  const existingEmbeddingRecords = !savedEmbedding ? await NS.listEvidenceRecords() : [];
+  NL.select(savedEmbedding || (existingEmbeddingRecords.length ? "e5-small" : globalThis.NodusEmbeddingModels.defaultKey));
+  for (const model of NL.MODELS) {
+    const option = document.createElement("option"); option.value = model.key; option.textContent = model.label;
+    $("#nd-embedding-model").appendChild(option);
+  }
+  $("#nd-embedding-model").value = NL.MODEL.key;
+  $("#nd-embedding-apply").addEventListener("click", changeEmbeddingModel);
+  }
   wire();
   $("#nd-lang").value = state.lang;
   $("#nd-maxtokens").value = state.maxTokens;

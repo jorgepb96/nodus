@@ -373,6 +373,7 @@
     const copy = { ...(index || {}) };
     const chunks = [];
     let totalFloats = 0;
+    const allVectors = [];
     for (const source of Array.isArray(index && index.chunks) ? index.chunks : []) {
       const chunk = { ...source };
       const vector = Array.isArray(source.embedding) ? source.embedding : null;
@@ -380,9 +381,17 @@
         chunk.embeddingOffset = totalFloats;
         chunk.embeddingLength = vector.length;
         totalFloats += vector.length;
+        allVectors.push(vector);
       } else {
         delete chunk.embeddingOffset;
         delete chunk.embeddingLength;
+      }
+      chunk.embeddingVariants = {};
+      for (const [fingerprint, value] of Object.entries(source.embeddingVariants || {})) {
+        if (fingerprint === source.embeddingModel || !Array.isArray(value)) continue;
+        chunk.embeddingVariants[fingerprint] = { offset: totalFloats, length: value.length };
+        totalFloats += value.length;
+        allVectors.push(value);
       }
       chunk.embedding = null;
       chunks.push(chunk);
@@ -390,10 +399,9 @@
     copy.chunks = chunks;
     const vectors = new Float32Array(totalFloats);
     let cursor = 0;
-    for (const source of Array.isArray(index && index.chunks) ? index.chunks : []) {
-      if (!Array.isArray(source.embedding) || !source.embedding.length) continue;
-      vectors.set(source.embedding.map(Number), cursor);
-      cursor += source.embedding.length;
+    for (const vector of allVectors) {
+      vectors.set(vector.map(Number), cursor);
+      cursor += vector.length;
     }
     copy.cache = {
       schema: EVIDENCE_CACHE_VERSION,
@@ -408,6 +416,11 @@
     const raw = source.byteLength ? new Uint8Array(source).buffer : new ArrayBuffer(0);
     const vectors = new Float32Array(raw);
     for (const chunk of Array.isArray(copy.chunks) ? copy.chunks : []) {
+      const variants = {};
+      for (const [key, ref] of Object.entries(chunk.embeddingVariants || {})) {
+        if (Number.isInteger(ref.offset) && Number.isInteger(ref.length) && ref.offset >= 0 && ref.length > 0 && ref.offset + ref.length <= vectors.length) variants[key] = Array.from(vectors.subarray(ref.offset, ref.offset + ref.length));
+      }
+      chunk.embeddingVariants = variants;
       const offset = Number(chunk.embeddingOffset);
       const length = Number(chunk.embeddingLength);
       if (Number.isInteger(offset) && Number.isInteger(length) && offset >= 0 && length > 0 && offset + length <= vectors.length) {
@@ -473,8 +486,8 @@
         vectorPath = String(row.vector_path);
       }
     } catch (e) { try { Zotero.logError(e); } catch (x) {} }
-    // The sidecars remain independently recoverable if SQLite metadata was
-    // interrupted after the atomic file move.
+    // The SQLite pointer identifies a complete file pair; interrupted writes
+    // leave the previous published generation available.
     try {
       const packed = await IOUtils.read(dataPath);
       const vectors = await IOUtils.read(vectorPath);
@@ -498,8 +511,16 @@
   async function saveEvidenceIndex(index) {
     try {
       await IOUtils.makeDirectory(evidenceDir(), { ignoreExisting: true });
-      const target = evidenceDataPath(index.libraryID, index.attachmentKey);
-      const vectorsTarget = evidenceVectorPath(index.libraryID, index.attachmentKey);
+      const db = await evidenceDb();
+      const previous = await db.rowQueryAsync(
+        "SELECT data_path, vector_path FROM evidence_indexes WHERE library_id=? AND attachment_key=?",
+        [Number(index.libraryID), String(index.attachmentKey || "")]
+      );
+      // Publish the pair through one SQLite row update. A failed write or move
+      // cannot overwrite either file belonging to the previous generation.
+      const generation = evidenceStem(index.libraryID, index.attachmentKey) + "-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      const target = PathUtils.join(evidenceDir(), generation + ".json.gz");
+      const vectorsTarget = PathUtils.join(evidenceDir(), generation + ".f32");
       const packed = detachEmbeddings(index);
       const dataBytes = await gzipText(JSON.stringify(packed.index));
       const dataTmp = target + ".tmp";
@@ -512,7 +533,6 @@
         await IOUtils.setPermissions(target, 0o600);
         await IOUtils.setPermissions(vectorsTarget, 0o600);
       }
-      const db = await evidenceDb();
       await db.queryAsync(
         "INSERT INTO evidence_indexes " +
         "(library_id, attachment_key, item_key, signature, index_version, embedding_model, total_pages, total_chars, data_path, vector_path, updated_at) " +
@@ -528,14 +548,21 @@
           target, vectorsTarget, Number(index.updatedAt) || Date.now(),
         ]
       );
+      if (previous) {
+        for (const file of [previous.data_path, previous.vector_path]) {
+          try { await IOUtils.remove(String(file), { ignoreAbsent: true }); } catch (e) {}
+        }
+      }
       return target;
     } catch (e) { try { Zotero.logError(e); } catch (x) {} return null; }
   }
   async function deleteEvidenceIndex(libraryID, attachmentKey) {
     try {
-      await IOUtils.remove(evidenceDataPath(libraryID, attachmentKey), { ignoreAbsent: true });
-      await IOUtils.remove(evidenceVectorPath(libraryID, attachmentKey), { ignoreAbsent: true });
       const db = await evidenceDb();
+      const row = await db.rowQueryAsync("SELECT data_path, vector_path FROM evidence_indexes WHERE library_id=? AND attachment_key=?", [Number(libraryID), String(attachmentKey || "")]);
+      const paths = new Set([evidenceDataPath(libraryID, attachmentKey), evidenceVectorPath(libraryID, attachmentKey)]);
+      if (row) { paths.add(String(row.data_path)); paths.add(String(row.vector_path)); }
+      for (const file of paths) await IOUtils.remove(file, { ignoreAbsent: true });
       await db.queryAsync("DELETE FROM evidence_indexes WHERE library_id=? AND attachment_key=?", [Number(libraryID), String(attachmentKey || "")]);
       return true;
     } catch (e) { return false; }
@@ -640,6 +667,8 @@
   function newId() { return "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8); }
 
   window.NodusStore = {
+    getEmbeddingModel: () => P("embeddingModel", ""),
+    setEmbeddingModel: (key) => S("embeddingModel", key),
     getMode, setMode, getLang, setLang, getModel, setModel, getMaxTokens, setMaxTokens, getReasoning, setReasoning, getHlColors, setHlColors, getContext, setContext,
     SOURCE_SCOPES, getSourceScope, setSourceScope, getOnboarded, setOnboarded,
     getKey, setKey, getSecretStorageStatus, getLocalBase, setLocalBase, getPinned, setPinned, isPinned, togglePinned,

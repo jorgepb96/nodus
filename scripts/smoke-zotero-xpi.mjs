@@ -29,6 +29,10 @@ const argValue = (name) => {
   if (exact >= 0) return process.argv[exact + 1];
   return process.argv.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
 };
+const embeddingSwitchSmoke = process.argv.includes('--embedding-switch-smoke');
+const embeddingBenchmark = process.argv.includes('--embedding-benchmark');
+const benchmarkOutput = path.resolve(argValue('--benchmark-output') || path.join(repoRoot, 'audit/zotero-embeddings/native-results.json'));
+const benchmarkFixture = JSON.parse(readFileSync(path.join(repoRoot, 'scripts/fixtures/zotero-embeddings/retrieval.json'), 'utf8'));
 const keepProfile = process.argv.includes('--keep-profile');
 const timeoutMs = Number(argValue('--timeout-ms') || process.env.ZOTERO_SMOKE_TIMEOUT_MS || 90_000);
 const xpiPath = path.resolve(argValue('--xpi') || path.join(repoRoot, 'dist-zotero', 'nodus-zotero.xpi'));
@@ -92,6 +96,76 @@ function startup() {
         if (!(await IOUtils.exists(stats.database))) throw new Error('Evidence database missing');
         const phase = await IOUtils.readUTF8(${JSON.stringify(quitRequestPath)});
         function expect(value, message) { if (!value) throw new Error(message); }
+        if (phase === 'save-credentials' && ${embeddingSwitchSmoke}) {
+          const frame = win.document.getElementById('nodus-sidebar-frame').contentWindow;
+          const embeddings = frame.NodusLocalEmbeddings;
+          const catalog = frame.NodusEmbeddingModels;
+          const waitUntil = async (fn) => { const deadline = Date.now() + 90000; while (!fn()) { if (Date.now() > deadline) throw new Error('Model switch timeout'); await new Promise(r => setTimeout(r, 100)); } };
+          embeddings.select('e5-small'); store.setEmbeddingModel('e5-small');
+          const vector = (await embeddings.embedPassages(['Allocation concealment prevents prediction of treatment assignment.']))[0];
+          const index = { libraryID: Zotero.Libraries.userLibraryID, attachmentKey: 'EMBEDQA1', itemKey: 'ITEMQA01', signature: 'qa-v1', version: 1, title: 'QA controlled passage', totalPages: 1, totalChars: 75, pages: [], chunks: [{ id: 'qa', text: 'Allocation concealment prevents prediction of treatment assignment.', embedding: vector, embeddingModel: embeddings.MODEL.fingerprint }] };
+          expect(await store.saveEvidenceIndex(index), 'Initial vector save');
+          const select = frame.document.getElementById('nd-embedding-model');
+          const apply = frame.document.getElementById('nd-embedding-apply');
+          select.value = 'granite-97m'; apply.click();
+          await waitUntil(() => !apply.disabled);
+          expect(store.getEmbeddingModel() === 'granite-97m', 'Granite activation');
+          const saved = await store.loadEvidenceIndex(index.libraryID, index.attachmentKey);
+          catalog.useIndex(saved, catalog.get('e5-small'));
+          expect(saved.chunks[0].embedding.every((v,i) => Math.abs(v-vector[i]) < 0.000001), 'Old vectors preserved');
+          select.value = 'e5-small'; apply.click();
+          await waitUntil(() => !apply.disabled);
+          expect(store.getEmbeddingModel() === 'e5-small', 'Return to saved model');
+          select.value = 'harrier-270m'; apply.click();
+          frame.document.getElementById('nd-stop').click();
+          await waitUntil(() => !apply.disabled);
+          expect(store.getEmbeddingModel() === 'e5-small', 'Cancellation preserves active model');
+          await store.deleteEvidenceIndex(index.libraryID, index.attachmentKey);
+          embeddings.reset();
+          Zotero.debug('[Nodus smoke] embedding activation, binary reuse and cancellation passed');
+        }
+        if (phase === 'save-credentials' && ${embeddingBenchmark}) {
+          const embeddings = win.document.getElementById('nodus-sidebar-frame').contentWindow.NodusLocalEmbeddings;
+          const fixture = ${JSON.stringify(benchmarkFixture)};
+          const report = { runtime: 'Zotero ' + Zotero.version, backend: 'wasm', fixture: fixture.description, models: [] };
+          for (const model of embeddings.MODELS) {
+            embeddings.select(model.key);
+            const row = { key: model.key, contract: model.fingerprint };
+            try {
+              let peak = null;
+              const sample = () => { try { const manager = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager); peak = Math.max(peak || 0, manager.resident); } catch (e) {} };
+              sample();
+              const start = Date.now();
+              await embeddings.embedQuery(fixture.queries[0].text);
+              row.coldQueryMs = Date.now() - start;
+              sample();
+              const docStart = Date.now();
+              const vectors = [];
+              for (const p of fixture.passages) { vectors.push((await embeddings.embedPassages([p.text]))[0]); sample(); }
+              row.indexMs = Date.now() - docStart;
+              const ranks = [], latencies = [];
+              for (const q of fixture.queries) {
+                const qStart = Date.now();
+                const vector = await embeddings.embedQuery(q.text); latencies.push(Date.now() - qStart); sample();
+                const scored = vectors.map((v, i) => ({ id: fixture.passages[i].id, score: v.reduce((n, x, j) => n + x * vector[j], 0) })).sort((a,b) => b.score - a.score);
+                ranks.push(scored.findIndex(p => q.relevant.includes(p.id)) + 1);
+              }
+              row.recall1 = ranks.filter(r => r <= 1).length / ranks.length;
+              row.recall5 = ranks.filter(r => r <= 5).length / ranks.length;
+              row.recall10 = ranks.filter(r => r <= 10).length / ranks.length;
+              row.mrr = ranks.reduce((n,r) => n + 1/r, 0) / ranks.length;
+              latencies.sort((a,b) => a-b);
+              row.warmQueryMedianMs = latencies[Math.floor(latencies.length/2)];
+              row.warmQueryP95Ms = latencies[Math.ceil(latencies.length*.95)-1];
+              row.sampledZoteroResidentBytes = peak;
+              row.ranks = ranks;
+            } catch (error) { row.error = String(error) + '\\n' + String(error.stack || ''); }
+            finally { embeddings.reset(); }
+            report.models.push(row);
+            await IOUtils.writeUTF8(${JSON.stringify(benchmarkOutput)}, JSON.stringify(report, null, 2));
+            Zotero.debug('[Nodus benchmark] ' + JSON.stringify(row));
+          }
+        }
         if (phase === 'save-credentials') {
           expect(typeof Services.logins.addLoginAsync === 'function', 'Async Login Manager API missing');
           expect(await store.setKey('openai', 'nodus-smoke-first-key'), 'First API key save failed');
@@ -158,7 +232,7 @@ const startZotero = () => {
     env: { ...globalThis.process.env, MOZ_NO_REMOTE: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  const append = (chunk) => { output = (output + chunk.toString()).slice(-2_000_000); };
+  const append = (chunk) => { output = (output + chunk.toString()).slice(-2_000_000); if (embeddingBenchmark || embeddingSwitchSmoke) writeFileSync(path.join(profileDir, 'live.log'), output); };
   process.stdout.on('data', append);
   process.stderr.on('data', append);
   return process;
@@ -172,6 +246,7 @@ const stopZotero = async () => {
     await Promise.race([new Promise((resolve) => child.once('exit', resolve)), wait(2_000)]);
   }
 };
+if (embeddingBenchmark) mkdirSync(path.dirname(benchmarkOutput), { recursive: true });
 const diagnostic = () => output.split('\n')
   .filter((line) => /nodus|extension is invalid|update_url|bootstrap|error/i.test(line))
   .slice(-80)
@@ -229,7 +304,7 @@ try {
     throw new Error(`Zotero did not start the registered add-on within ${timeoutMs} ms\nstate=${JSON.stringify(readState())}\n${diagnostic()}`);
   }
   writeFileSync(quitRequestPath, 'save-credentials');
-  const shutdownDeadline = Date.now() + 20_000;
+  const shutdownDeadline = Date.now() + ((embeddingBenchmark || embeddingSwitchSmoke) ? 1_800_000 : 20_000);
   while (child.exitCode === null && child.signalCode === null && Date.now() < shutdownDeadline) {
     if (output.includes('[Nodus smoke] FAILED:')) throw new Error(diagnostic());
     await wait(100);
@@ -239,6 +314,7 @@ try {
     || !output.includes('[Nodus smoke] encrypted credential saves, updates and migrations passed')) {
     throw new Error(`Zotero did not exit normally after opening the evidence database\n${diagnostic()}`);
   }
+  if (embeddingSwitchSmoke && !output.includes('[Nodus smoke] embedding activation, binary reuse and cancellation passed')) throw new Error('Missing model-switch proof');
   const encryptedLogins = JSON.parse(readFileSync(path.join(profileDir, 'logins.json'), 'utf8'));
   const providerLogins = encryptedLogins.logins.filter((login) => login.hostname === 'chrome://nodus');
   if (providerLogins.length !== 3 || providerLogins.some((login) => !login.encryptedUsername || !login.encryptedPassword)
@@ -258,6 +334,10 @@ try {
   if (child.exitCode !== 0 || child.signalCode !== null
     || !output.includes('[Nodus smoke] encrypted credential restart and deletion passed')) {
     throw new Error(`Credential verification after restart failed\n${diagnostic()}`);
+  }
+  if (embeddingBenchmark) {
+    const report = JSON.parse(readFileSync(benchmarkOutput, 'utf8'));
+    if (report.models.length !== 3 || report.models.some(model => model.error)) throw new Error('Local embedding benchmark incomplete: inspect ' + benchmarkOutput);
   }
   succeeded = true;
   console.log(`Zotero live smoke passed: ${addon.id} v${manifest.version}`);

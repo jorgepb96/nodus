@@ -102,7 +102,10 @@
           <option value="retrieval" data-i18n="evidence.retrieval">Semantic retrieval</option>
           <option value="full" data-i18n="evidence.full">Complete text</option>
         </select>
-        <div id="nd-local-embedding" class="nd-muted" data-i18n="evidence.localEmbedding">Local semantic model: multilingual E5 small (INT8). Runs on this device; no embedding API key required.</div>
+        <label for="nd-embedding-model" data-i18n="evidence.chooseModel">Local semantic model</label>
+        <select id="nd-embedding-model"></select>
+        <button id="nd-embedding-apply" data-i18n="evidence.applyModel">Prepare and activate</button>
+        <div id="nd-local-embedding" class="nd-muted" data-i18n="evidence.localEmbedding">Only the selected model is downloaded. Changing models prepares its own index on this device.</div>
         <label data-i18n="settings.ocrMode">Visual OCR for text-poor pages</label>
         <select id="nd-ctx-ocr">
           <option value="off" data-i18n="evidence.ocrOff">Off (fastest indexing)</option>
@@ -208,6 +211,7 @@
   <script src="chrome://nodus/content/icons.js"></script>
   <script src="chrome://nodus/content/providers.js"></script>
   <script src="chrome://nodus/content/store.js"></script>
+  <script src="chrome://nodus/content/embedding-models.js"></script>
   <script src="chrome://nodus/content/local-embeddings.js"></script>
   <script src="chrome://nodus/content/evidence.js"></script>
   <script src="chrome://nodus/content/multimodal.js"></script>

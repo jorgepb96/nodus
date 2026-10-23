@@ -90,6 +90,7 @@ function loadModule(file, extraGlobals = {}) {
     ...extraGlobals,
   };
   vm.createContext(sandbox);
+  vm.runInContext(readFileSync(path.join(contentDir, "embedding-models.js"), "utf8"), sandbox);
   vm.runInContext(src, sandbox, { filename: file });
   return sandbox.window;
 }
@@ -1543,15 +1544,15 @@ test('security: Zotero-required update feed is HTTPS while background updates st
   assert.doesNotMatch(`${html}\n${sidebar}`, /installs? the packaged XPI|instala el XPI empaquetado/i);
 });
 
-test('local retrieval: E5 is pinned, isolated in a worker and requires no embedding setting or API', () => {
+test('local retrieval: selectable Q8 models are pinned and isolated without an embedding API', () => {
   const worker = readSource('scripts/zotero-local-embedding-worker.mjs');
   const bridge = readSource('zotero-plugin/content/local-embeddings.js');
   const sidebar = readSource('zotero-plugin/content/sidebar.js');
   const html = readSource('zotero-plugin/content/sidebar.html');
-  assert.ok(worker.includes("Xenova/multilingual-e5-small"));
-  assert.match(worker, /MODEL_REVISION = '[0-9a-f]{40}'/);
+  assert.ok(readSource("zotero-plugin/content/embedding-models.js").includes("Xenova/multilingual-e5-small"));
+  assert.match(readSource("zotero-plugin/content/embedding-models.js"), /revision: '[0-9a-f]{40}'/);
   assert.ok(worker.includes("MODEL_DTYPE = 'q8'"));
-  assert.ok(worker.includes("device: 'wasm'") && worker.includes("pooling: 'mean'") && worker.includes('normalize: true'));
+  assert.ok(worker.includes("device: 'wasm'") && worker.includes("pooling: activeModel.pooling") && worker.includes('normalize: true'));
   assert.ok(worker.includes("'query'") && worker.includes("'passage'"), 'E5 query/passage prefixes are distinct');
   assert.match(worker, /env\.useBrowserCache = false/);
   assert.match(worker, /env\.useCustomCache = true/);
@@ -1561,7 +1562,7 @@ test('local retrieval: E5 is pinned, isolated in a worker and requires no embedd
   assert.match(bridge, /addEventListener\("unload", reset/);
   assert.ok(sidebar.includes('NL.embedPassages') && sidebar.includes('NL.embedQuery'));
   assert.ok(!sidebar.includes('NP.embed('), 'retrieval no longer calls a provider embedding API');
-  assert.ok(!html.includes('nd-embedding-model'), 'embedding configuration was removed');
+  assert.ok(html.includes('nd-embedding-model') && html.includes('nd-embedding-apply'));
 });
 
 test('local retrieval: completed workers terminate when idle and pending work terminates on unload', async () => {
@@ -1986,4 +1987,97 @@ test('#9: stable release blocks publication until the Zotero assets exist', () =
   assert.match(verificationJob, /- build-zotero-plugin/, 'publication waits for the plugin job');
   assert.match(verificationJob, /nodus-zotero\.xpi/, 'publication verifies the XPI asset');
   assert.match(verificationJob, /updates\.json/, 'publication verifies the update manifest asset');
+});
+
+test('local models: equal dimensions never imply compatibility and returning reuses vectors', () => {
+  const sandbox = {}; vm.createContext(sandbox);
+  vm.runInContext(readSource('zotero-plugin/content/embedding-models.js'), sandbox);
+  const catalog = sandbox.NodusEmbeddingModels;
+  const e5 = catalog.get('e5-small'), granite = catalog.get('granite-97m');
+  const vector = Array(384).fill(0); vector[0] = 1;
+  const index = { chunks: [{ embedding: vector, embeddingModel: e5.fingerprint }] };
+  catalog.useIndex(index, granite);
+  assert.equal(index.chunks[0].embedding, null);
+  catalog.useIndex(index, e5);
+  assert.equal(index.chunks[0].embedding, vector);
+  assert.equal(catalog.input(granite, 'query', '  evidencia  '), 'evidencia');
+  assert.match(catalog.input(catalog.get('harrier-270m'), 'query', 'evidencia'), /^Instruct: .*\nQuery: evidencia$/);
+  assert.equal(catalog.input(catalog.get('harrier-270m'), 'passage', 'evidencia'), 'evidencia');
+  assert.throws(() => catalog.get('unknown'));
+});
+
+test('local models: request captures staging model without changing the active model', async () => {
+  let worker;
+  class FakeWorker {
+    constructor() { this.listeners = {}; worker = this; }
+    addEventListener(k, fn) { this.listeners[k] = fn; }
+    postMessage(message) { this.message = message; }
+    terminate() { this.terminated = true; }
+  }
+  const { NodusLocalEmbeddings: embeddings } = loadModule('local-embeddings.js', {
+    ChromeWorker: FakeWorker, setTimeout: () => 1, clearTimeout() {}, DOMException,
+    window: { addEventListener() {} },
+  });
+  const granite = embeddings.MODELS.find(m => m.key === 'e5-small');
+  const pending = embeddings.embedPassages(['evidence'], { model: granite });
+  assert.equal(worker.message.modelKey, 'e5-small');
+  assert.equal(embeddings.MODEL.key, 'granite-97m');
+  const rejected = assert.rejects(pending, /local-embedding-reset/);
+  embeddings.select('harrier-270m');
+  await rejected;
+  assert.equal(worker.terminated, true);
+  assert.equal(embeddings.MODEL.dimensions, 640);
+});
+
+test('local models: binary cache round-trips independent vector families and legacy vectors', () => {
+  const src = readSource('zotero-plugin/content/store.js');
+  const context = { compactEvidenceIndex() {}, EVIDENCE_CACHE_VERSION: 1, Uint8Array, Float32Array };
+  vm.createContext(context);
+  for (const name of ['detachEmbeddings', 'attachEmbeddings']) {
+    const start = src.indexOf(`function ${name}(`);
+    const brace = src.indexOf('{', start);
+    vm.runInContext(src.slice(start, brace) + sliceBalanced(src, brace), context);
+  }
+  const index = { chunks: [{ embedding: [1, 0], embeddingModel: 'e5', embeddingVariants: { e5: [1, 0], granite: [0, 1], harrier: [0, 0, 1] } }] };
+  const packed = context.detachEmbeddings(index);
+  assert.equal(packed.bytes.length, 7 * 4, 'active vector is stored once');
+  const restored = context.attachEmbeddings(packed.index, packed.bytes).chunks[0];
+  assert.deepEqual(Array.from(restored.embedding), [1, 0]);
+  assert.deepEqual(Array.from(restored.embeddingVariants.granite), [0, 1]);
+  assert.deepEqual(Array.from(restored.embeddingVariants.harrier), [0, 0, 1]);
+  assert.equal(restored.embeddingModel, 'e5');
+  const legacy = context.detachEmbeddings({ chunks: [{ embedding: [1, 0], embeddingModel: 'e5' }] });
+  assert.deepEqual(Array.from(context.attachEmbeddings(legacy.index, legacy.bytes).chunks[0].embedding), [1, 0]);
+});
+
+test('local models: failed vector publication preserves the previous complete cache generation', async () => {
+  const source = readSource('zotero-plugin/content/store.js');
+  const files = new Map([['/cache/old.json.gz', 'metadata'], ['/cache/old.f32', 'vectors']]);
+  let row = { data_path: '/cache/old.json.gz', vector_path: '/cache/old.f32' };
+  let fail = true;
+  const db = {
+    rowQueryAsync: async () => ({ ...row }),
+    queryAsync: async (sql, args) => { row = { data_path: args[8], vector_path: args[9] }; },
+  };
+  const context = {
+    Zotero: { logError() {} }, PathUtils: { join: (...parts) => parts.join('/') },
+    evidenceDir: () => '/cache', evidenceStem: () => '1-A', evidenceDb: async () => db,
+    detachEmbeddings: index => ({ index, bytes: new Uint8Array([0]) }), gzipText: async value => value,
+    IOUtils: {
+      makeDirectory: async () => {}, write: async (p, v) => files.set(p, v),
+      move: async (from, to) => { if (fail && to.endsWith('.f32')) throw new Error('disk failure'); files.set(to, files.get(from)); files.delete(from); },
+      remove: async p => files.delete(p),
+    },
+  };
+  vm.createContext(context);
+  const start = source.indexOf('async function saveEvidenceIndex('), brace = source.indexOf('{', start);
+  vm.runInContext(source.slice(start, brace) + sliceBalanced(source, brace), context);
+  assert.equal(await context.saveEvidenceIndex({ libraryID: 1, attachmentKey: 'A' }), null);
+  assert.equal(row.data_path, '/cache/old.json.gz');
+  assert.equal(files.get('/cache/old.json.gz'), 'metadata');
+  assert.equal(files.get('/cache/old.f32'), 'vectors');
+  fail = false;
+  assert.ok(await context.saveEvidenceIndex({ libraryID: 1, attachmentKey: 'A' }));
+  assert.ok(files.has(row.data_path) && files.has(row.vector_path));
+  assert.equal(files.has('/cache/old.f32'), false);
 });

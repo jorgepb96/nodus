@@ -7,13 +7,8 @@
 (function () {
   "use strict";
 
-  const MODEL = Object.freeze({
-    id: "Xenova/multilingual-e5-small",
-    revision: "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
-    dtype: "q8",
-    dimensions: 384,
-    fingerprint: "Xenova/multilingual-e5-small@761b726dd34fb83930e26aab4e9ac3899aa1fa78:q8:mean:l2:v1",
-  });
+  const catalog = globalThis.NodusEmbeddingModels;
+  let selected = catalog.get(catalog.defaultKey);
   const WORKER_URL = "chrome://nodus/content/runtime/local-embedding-worker.js";
   // Keeping the WASM model alive costs hundreds of MiB. A short grace period
   // avoids reloading it between related questions, while still returning that
@@ -76,7 +71,7 @@
       scheduleIdleTermination();
     });
     instance.addEventListener("error", (event) => {
-      const error = new Error(String(event && (event.message || event.error) || "local-embedding-worker-failed"));
+      const error = new Error(String(event && (event.message || event.error) || "local-embedding-worker-failed") + " @ " + String(event && event.filename || "") + ":" + String(event && event.lineno || ""));
       for (const job of pending.values()) {
         if (job.cleanup) job.cleanup();
         job.reject(error);
@@ -107,7 +102,7 @@
       const cleanup = signal ? () => signal.removeEventListener("abort", onAbort) : null;
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
       pending.set(id, { resolve, reject, cleanup });
-      try { makeWorker().postMessage({ id, type, ...(payload || {}) }); }
+      try { makeWorker().postMessage({ id, type, modelKey: selected.key, ...(payload || {}) }); }
       catch (error) {
         pending.delete(id);
         if (cleanup) cleanup();
@@ -124,10 +119,10 @@
   }
 
   async function embedPassages(values, opts) {
-    return request("embed", { role: "passage", values: Array.isArray(values) ? values : [] }, opts && opts.signal);
+    return request("embed", { role: "passage", modelKey: opts && opts.model ? opts.model.key : selected.key, values: Array.isArray(values) ? values : [] }, opts && opts.signal);
   }
   async function embedQueries(values, opts) {
-    return request("embed", { role: "query", values: Array.isArray(values) ? values : [] }, opts && opts.signal);
+    return request("embed", { role: "query", modelKey: opts && opts.model ? opts.model.key : selected.key, values: Array.isArray(values) ? values : [] }, opts && opts.signal);
   }
   async function embedQuery(value, opts) {
     const vectors = await embedQueries([String(value || "")], opts);
@@ -153,7 +148,10 @@
   window.addEventListener("unload", reset, { once: true });
 
   window.NodusLocalEmbeddings = {
-    MODEL,
+    get MODEL() { return selected; },
+    MODELS: catalog.models,
+    select(key) { const next = catalog.get(key); reset(); selected = next; },
+    useIndex(index) { return catalog.useIndex(index, selected); },
     embedPassages,
     embedQueries,
     embedQuery,

@@ -85,8 +85,8 @@ export function buildXpi() {
       define: { 'process.env.NODE_ENV': '"production"' },
       logLevel: 'warning',
     });
-    for (const name of ['ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm']) {
-      cpSync(path.join(repoRoot, 'node_modules', '@huggingface', 'transformers', 'dist', name), path.join(runtimeDir, name));
+    for (const name of ['ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm', 'ort-wasm-simd-threaded.asyncify.mjs', 'ort-wasm-simd-threaded.asyncify.wasm', 'ort-wasm-simd-threaded.jspi.mjs', 'ort-wasm-simd-threaded.jspi.wasm']) {
+      cpSync(path.join(repoRoot, 'node_modules', '@nodus', 'embeddinggemma-transformers', 'node_modules', 'onnxruntime-web', 'dist', name), path.join(runtimeDir, name));
     }
 
     files = collectFiles(staging);
@@ -94,6 +94,13 @@ export function buildXpi() {
     for (const required of [
       'content/evidence-db.sys.mjs',
       'content/local-embeddings.js',
+      'content/embedding-models.js',
+      'content/models/harrier-270m-q8-wasm.onnx',
+      'content/models/NOTICE.md',
+      'content/runtime/ort-wasm-simd-threaded.asyncify.mjs',
+      'content/runtime/ort-wasm-simd-threaded.asyncify.wasm',
+      'content/runtime/ort-wasm-simd-threaded.jspi.mjs',
+      'content/runtime/ort-wasm-simd-threaded.jspi.wasm',
       'content/runtime/local-embedding-worker.js',
       'content/runtime/ort-wasm-simd-threaded.jsep.mjs',
       'content/runtime/ort-wasm-simd-threaded.jsep.wasm',

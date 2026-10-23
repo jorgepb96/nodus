@@ -7,13 +7,12 @@
  * DOMCacheThread while committing the quantised ONNX response. IndexedDB keeps
  * the same one-time-download behaviour without touching that unstable path.
  */
-import { env, pipeline } from '@huggingface/transformers';
+import '../zotero-plugin/content/embedding-models.js';
+import { env, pipeline, AutoModel, AutoTokenizer } from '@nodus/embeddinggemma-transformers';
 
-const MODEL_ID = 'Xenova/multilingual-e5-small';
-const MODEL_REVISION = '761b726dd34fb83930e26aab4e9ac3899aa1fa78';
+const catalog = globalThis.NodusEmbeddingModels;
+let activeModel = catalog.get(catalog.defaultKey);
 const MODEL_DTYPE = 'q8';
-const MODEL_DIMENSIONS = 384;
-const MODEL_FINGERPRINT = `${MODEL_ID}@${MODEL_REVISION}:${MODEL_DTYPE}:mean:l2:v1`;
 const WASM_ROOT = 'chrome://nodus/content/runtime/';
 const CACHE_DB = 'nodus-local-embedding-models-v1';
 const CACHE_STORE = 'responses';
@@ -89,6 +88,13 @@ function createIndexedDbCache() {
 
   return {
     async match(request) {
+      // The pinned Q8 export uses a CPU-only GatherBlockQuantized kernel.
+      // Bundle its equivalent standard-op graph; external Q8 weights retain
+      // their pinned upstream address and are downloaded only on selection.
+      const url = cacheKey(request);
+      if (url.split('?')[0].endsWith('/harrier-oss-v1-270m-ONNX/resolve/' + catalog.get('harrier-270m').revision + '/onnx/model_quantized.onnx')) {
+        return fetch('chrome://nodus/content/models/harrier-270m-q8-wasm.onnx');
+      }
       const record = await read(cacheKey(request));
       if (!record || !record.body) return undefined;
       return new Response(record.body, {
@@ -133,76 +139,63 @@ async function extractor() {
   return extractorPromise;
 }
 
-// WebGPU is much faster than WASM for this model when it's actually available
-// and stable, but Zotero runs on Firefox's engine where WebGPU support in
-// ChromeWorkers varies by platform/version. Probe for navigator.gpu first and
-// fall back to WASM on any failure so indexing never hard-fails because of it.
 async function createExtractor() {
-  const canTryWebgpu = typeof navigator !== 'undefined' && !!navigator.gpu;
-  if (canTryWebgpu) {
-    try {
-      const model = await pipeline('feature-extraction', MODEL_ID, {
-        revision: MODEL_REVISION,
-        dtype: MODEL_DTYPE,
-        device: 'webgpu',
-        progress_callback: progressCallback,
-      });
-      backendUsed = 'webgpu';
-      globalThis.postMessage({ type: 'backend', backend: backendUsed });
-      return model;
-    } catch (error) {
-      // Fall through to WASM below.
-    }
-  }
-  const model = await pipeline('feature-extraction', MODEL_ID, {
-    revision: MODEL_REVISION,
-    dtype: MODEL_DTYPE,
-    device: 'wasm',
-    progress_callback: progressCallback,
-  });
+  const m = activeModel;
+  const options = { revision: m.revision, dtype: MODEL_DTYPE, device: 'wasm', progress_callback: progressCallback };
+  // CPU/WASM is the common Zotero backend. One input at a time bounds padding
+  // and memory; never keep two model sessions resident.
   backendUsed = 'wasm';
   globalThis.postMessage({ type: 'backend', backend: backendUsed });
-  return model;
-}
-
-function prefix(role, value) {
-  const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
-  return `${role === 'query' ? 'query' : 'passage'}: ${text}`;
+  if (m.pooling !== 'sentence_embedding') return pipeline('feature-extraction', m.id, options);
+  const tokenizer = await AutoTokenizer.from_pretrained(m.id, { revision: m.revision });
+  const model = await AutoModel.from_pretrained(m.id, options);
+  const run = async (texts) => {
+    const inputs = tokenizer(texts, { padding: true, truncation: true, max_length: m.maxTokens });
+    const { sentence_embedding } = await model(inputs);
+    return sentence_embedding;
+  };
+  run.dispose = () => model.dispose();
+  return run;
 }
 
 async function embed(role, values) {
-  const list = Array.isArray(values) ? values : [];
-  if (!list.length) return [];
   const model = await extractor();
-  const output = await model(list.map((value) => prefix(role, value)), {
-    pooling: 'mean',
-    normalize: true,
-  });
-  const vectors = output.tolist();
-  if (
-    !Array.isArray(vectors)
-    || vectors.length !== list.length
-    || vectors.some((vector) => !Array.isArray(vector) || vector.length !== MODEL_DIMENSIONS)
-  ) {
-    throw new Error('local-embedding-shape-mismatch');
+  const vectors = [];
+  for (const value of Array.isArray(values) ? values : []) {
+    const output = await model([catalog.input(activeModel, role, value)], {
+      pooling: activeModel.pooling, normalize: true, truncation: true, max_length: activeModel.maxTokens,
+    });
+    const vector = output.tolist()[0];
+    const norm = Math.hypot(...vector);
+    if (vector.length !== activeModel.dimensions || !vector.every(Number.isFinite) || !(norm > 0)) throw new Error('local-embedding-shape-mismatch');
+    vectors.push(vector.map(v => v / norm));
   }
   return vectors;
 }
 
-globalThis.addEventListener('message', async (event) => {
+let queue = Promise.resolve();
+globalThis.addEventListener('message', (event) => {
+  queue = queue.then(() => handleMessage(event));
+});
+async function handleMessage(event) {
   const message = event && event.data ? event.data : {};
   const id = String(message.id || '');
   try {
+    const next = catalog.get(message.modelKey || catalog.defaultKey);
+    if (next !== activeModel) {
+      if (extractorPromise) { try { await (await extractorPromise).dispose(); } catch (e) {} }
+      extractorPromise = null; activeModel = next;
+    }
     if (message.type === 'info') {
       globalThis.postMessage({
         type: 'result',
         id,
         result: {
-          model: MODEL_ID,
-          revision: MODEL_REVISION,
+          model: activeModel.id,
+          revision: activeModel.revision,
           dtype: MODEL_DTYPE,
-          dimensions: MODEL_DIMENSIONS,
-          fingerprint: MODEL_FINGERPRINT,
+          dimensions: activeModel.dimensions,
+          fingerprint: activeModel.fingerprint,
           backend: backendUsed,
         },
       });
@@ -220,7 +213,7 @@ globalThis.addEventListener('message', async (event) => {
     globalThis.postMessage({
       type: 'error',
       id,
-      error: String(error && (error.stack || error.message) || error),
+      error: String(error) + "\n" + String(error && error.stack || ""),
     });
   }
-});
+}

@@ -5,6 +5,9 @@ on:
     paths:
       - zotero-plugin/**
       - scripts/test-zotero-plugin.mjs
+      - scripts/test-zotero-harrier-graph.mjs
+      - scripts/fixtures/zotero-embeddings/**
+      - scripts/prepare-zotero-harrier-onnx.py
       - scripts/build-zotero-xpi.mjs
       - scripts/smoke-zotero-xpi.mjs
       - scripts/zotero-local-embedding-worker.mjs
@@ -40,6 +43,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test plugin behavior and release packaging contracts
         run: node --test scripts/test-zotero-plugin.mjs
+      - name: Verify Harrier block-gather parity (sequential CPU sessions)
+        run: node --test --test-concurrency=1 scripts/test-zotero-harrier-graph.mjs
       - name: Build the installable Zotero plugin
         run: npm run zotero:xpi
       - uses: actions/upload-artifact@v7

@@ -86,8 +86,10 @@ export function t(es: string): string {
  * the Spanish source, which is the leak this predicate exists to prevent.
  */
 export function hasTranslation(es: string): boolean {
-  if (activeLang === 'es') return true;
-  return Boolean(TABLES[activeLang]?.[es] ?? TABLES.en?.[es]);
+  // Spanish uses the source text, but still needs a known catalogue key. Own entries
+  // also exclude inherited names such as "toString" from the error-message boundary.
+  const table = activeLang === 'es' ? TABLES.en : TABLES[activeLang];
+  return Object.hasOwn(table, es) || Object.hasOwn(TABLES.en, es);
 }
 
 /**

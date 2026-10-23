@@ -10,7 +10,7 @@ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-sign-i18n-'));
 const require=createRequire(import.meta.url);
 function load(entry){const out=path.join(temp,path.basename(entry)+'.cjs');buildSync({entryPoints:[entry],outfile:out,bundle:true,platform:'node',format:'cjs',logLevel:'silent'});return require(out);}
 const {SIGN_TRANSLATIONS,signText}=load('shared/signI18n.ts');
-const {setActiveLang,t}=load('src/i18n.ts');
+const {setActiveLang,t,hasTranslation}=load('src/i18n.ts');
 const {EN}=load('src/i18n.en.ts');
 const errorsOut=path.join(temp,'errors.cjs');
 buildSync({stdin:{contents:`export { signErrorText } from ${JSON.stringify(path.resolve('src/sign/errors.ts'))}; export { setActiveLang } from ${JSON.stringify(path.resolve('src/i18n.ts'))};`,loader:'ts',resolveDir:process.cwd()},outfile:errorsOut,bundle:true,platform:'node',format:'cjs',logLevel:'silent'});
@@ -29,7 +29,33 @@ test('Sign translated data labels, errors, installers and placement controls hav
   for(const key of keys)assert.ok(Object.hasOwn(EN,key),`Untranslated Sign source: ${key}`);
 });
 
-test('known and unexpected Sign failures stay localized, without exposing raw IPC errors',()=>{for(const locale of locales){errorRuntime.setActiveLang(locale);for(const [message,key] of [['Error invoking remote method: CERTIFICATE_PASSWORD_OR_FORMAT','La contraseña o el archivo PKCS#12 no son correctos.'],['Internal detail /private/example','No se ha podido completar la operación. Vuelve a intentarlo.'],['No se pudo abrir la imagen.','No se pudo abrir la imagen.']])assert.equal(errorRuntime.signErrorText(new Error(message)),SIGN_TRANSLATIONS[locale][key]);}});
+test('known and unexpected Sign failures stay localized, without exposing raw IPC errors', () => {
+  for (const locale of ['es', ...locales]) {
+    errorRuntime.setActiveLang(locale);
+    for (const [message, key] of [
+      ['Error invoking remote method: CERTIFICATE_PASSWORD_OR_FORMAT', 'La contraseña o el archivo PKCS#12 no son correctos.'],
+      ['Internal detail /private/example', 'No se ha podido completar la operación. Vuelve a intentarlo.'],
+      ...['constructor', 'toString', '__proto__', 'hasOwnProperty', ''].map(message => [message, 'No se ha podido completar la operación. Vuelve a intentarlo.']),
+      ...['No se pudo abrir la imagen.', 'No hay documento.', 'Añade una firma antes de guardar.', 'Confirma la operación antes de firmar.', 'Indica páginas válidas, por ejemplo: 1, 3-5.'].map(message => [message, message]),
+    ]) {
+      const expected = locale === 'es' ? key : SIGN_TRANSLATIONS[locale][key];
+      assert.equal(errorRuntime.signErrorText(new Error(message)), expected, `${locale}: ${message}`);
+      assert.equal(errorRuntime.signErrorText(message), expected, `${locale}, string rejection: ${message}`);
+    }
+  }
+});
+
+test('translation membership requires a catalogue entry in every language, including Spanish', () => {
+  for (const locale of ['es', ...locales]) {
+    setActiveLang(locale);
+    for (const key of Object.keys(SIGN_TRANSLATIONS.en)) {
+      assert.equal(hasTranslation(key), true, `${locale}: ${key}`);
+    }
+    for (const message of ['Internal detail /private/example', 'constructor', 'toString', '__proto__', 'hasOwnProperty', '']) {
+      assert.equal(hasTranslation(message), false, `${locale}: ${message}`);
+    }
+  }
+});
 
 /**
  * A sentence this surface throws must arrive as itself, never as the generic line.
@@ -69,9 +95,9 @@ test('every sentence the Sign surface throws reaches the reader in their own wor
   }
   assert.ok(literals.size > 0, 'the sweep found no error literals, so it is not reading the Sign surface');
   const erased = [];
-  for (const locale of locales) {
+  for (const locale of ['es', ...locales]) {
     errorRuntime.setActiveLang(locale);
-    const generic = SIGN_TRANSLATIONS[locale][GENERIC_KEY];
+    const generic = locale === 'es' ? GENERIC_KEY : SIGN_TRANSLATIONS[locale][GENERIC_KEY];
     for (const [text, file] of literals) {
       const shown = errorRuntime.signErrorText(new Error(text));
       if (shown === generic) erased.push(`${JSON.stringify(text)} — ${file} (${locale})`);

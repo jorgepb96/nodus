@@ -32,7 +32,7 @@ history/restart/deletion.
 
 ```sh
 node --test --test-concurrency=1 scripts/test-zotero-plugin.mjs
-node scripts/smoke-zotero-xpi.mjs --xpi dist-zotero/nodus-zotero-5.15.6.xpi \
+node scripts/smoke-zotero-xpi.mjs --xpi dist-zotero/nodus-zotero-5.15.5.xpi \
   --embedding-switch-smoke --embedding-context-switch-smoke --keep-profile
 ```
 
@@ -41,7 +41,7 @@ an explicit preference, saved model choices, context changes during preparation,
 visible failure/retry state, preparing the active encoder and busy-operation
 feedback. Local model tests are sequential. No personal Zotero profile is used.
 
-5.15.6 is the separately numbered local plugin artifact requested for this fix;
+5.15.5 is the local plugin artifact version, unchanged until the next release;
 the desktop/server release version is unchanged. It retains the existing addon
 ID and update channel. The earlier three-model retrieval measurements remain
 unchanged; this correction does not change vector semantics or inference.

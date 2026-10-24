@@ -8,7 +8,7 @@ import vm from 'node:vm';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readSource = (relativePath) => readFileSync(path.join(repoRoot, relativePath), 'utf8');
 
-function loadContentScript(relativePath, extraGlobals = {}) {
+function loadContentScript(relativePaths, extraGlobals = {}) {
   const sandbox = {
     window: {},
     Zotero: { logError() {} },
@@ -17,7 +17,9 @@ function loadContentScript(relativePath, extraGlobals = {}) {
     ...extraGlobals,
   };
   vm.createContext(sandbox);
-  vm.runInContext(readSource(relativePath), sandbox, { filename: relativePath });
+  for (const relativePath of [relativePaths].flat()) {
+    vm.runInContext(readSource(relativePath), sandbox, { filename: relativePath });
+  }
   return sandbox.window;
 }
 
@@ -53,7 +55,11 @@ test('embedding worker terminates after idle and on sidebar unload', async () =>
   const fakeWindow = {
     addEventListener(type, listener) { if (type === 'unload') unload = listener; },
   };
-  const { NodusLocalEmbeddings: embeddings } = loadContentScript('zotero-plugin/content/local-embeddings.js', {
+  const { NodusLocalEmbeddings: embeddings } = loadContentScript([
+    // The bridge reads the model catalogue the sidebar loads before it.
+    'zotero-plugin/content/embedding-models.js',
+    'zotero-plugin/content/local-embeddings.js',
+  ], {
     window: fakeWindow,
     ChromeWorker: FakeWorker,
     DOMException,

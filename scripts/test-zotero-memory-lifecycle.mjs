@@ -8,7 +8,7 @@ import vm from 'node:vm';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readSource = (relativePath) => readFileSync(path.join(repoRoot, relativePath), 'utf8');
 
-function loadContentScript(relativePath, extraGlobals = {}) {
+function loadContentScript(relativePath, extraGlobals = {}, prerequisites = []) {
   const sandbox = {
     window: {},
     Zotero: { logError() {} },
@@ -17,7 +17,9 @@ function loadContentScript(relativePath, extraGlobals = {}) {
     ...extraGlobals,
   };
   vm.createContext(sandbox);
-  vm.runInContext(readSource(relativePath), sandbox, { filename: relativePath });
+  for (const source of [...prerequisites, relativePath]) {
+    vm.runInContext(readSource(source), sandbox, { filename: source });
+  }
   return sandbox.window;
 }
 
@@ -59,7 +61,7 @@ test('embedding worker terminates after idle and on sidebar unload', async () =>
     DOMException,
     setTimeout(listener, ms) { const id = ++nextTimer; timers.set(id, { listener, ms }); return id; },
     clearTimeout(id) { timers.delete(id); },
-  });
+  }, ['zotero-plugin/content/embedding-models.js']);
 
   const completed = embeddings.embedPassages(['alpha']);
   workers[0].reply([[0.1, 0.2]]);

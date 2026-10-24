@@ -1,6 +1,7 @@
 // The platform slice of the window.nodus contract. NodusApi extends it, so the
 // renderer surface stays flat and every call site is unchanged.
 import type { NodusLocalAiStatus } from '../localAiModels';
+import type { ClipSync } from '../narrationSync';
 import type { NodusLocalImageStatus } from '../localImageModels';
 import type { CloudflareCompleteDirectDeployInput, CloudflareDeployState, CloudflareDirectDeployPreparation, CloudflareVaultInventory } from '../cloudflare';
 import type { BrowserConnectorPairingPrompt } from '../browserConnector';
@@ -256,6 +257,8 @@ export interface PlatformApi {
   deleteAudioClip(clipId: string): Promise<void>;
   deleteEntityAudioClips(entityKind: AudioEntityKind, entityId: string): Promise<void>;
   exportAudioClip(clipId: string): Promise<{ path: string } | null>;
+  /** Text and silences of a saved clip's fragments, for the read-along highlight. */
+  getAudioClipSync(clipId: string): Promise<ClipSync | null>;
   listStudyAudioBookmarks(entityKind: AudioEntityKind, entityId: string): Promise<StudyAudioBookmark[]>;
   createStudyAudioBookmark(entityKind: AudioEntityKind, entityId: string, segmentIndex: number, label: string): Promise<StudyAudioBookmark>;
   deleteStudyAudioBookmark(id: string): Promise<void>;

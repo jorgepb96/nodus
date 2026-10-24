@@ -412,6 +412,10 @@ export interface TtsFragmentEvent {
   url: string;
   durationS: number;
   genS: number;
+  /** What the engine spoke, for the read-along highlight (empty when the sidecar did not say). */
+  text: string;
+  /** Silent stretches of the fragment's audio, `[start, end]` in seconds (`detectPauses`). */
+  pauses: Array<[number, number]>;
 }
 
 export interface TtsJobProgress {

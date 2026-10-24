@@ -25,6 +25,8 @@ import { relabelCitations } from '../citations/liveCitations';
 import { deepResearchSegments, immersionSegments, studyNarrationSegments } from './speakable';
 import { activeVaultDir } from '../vaults/vaultRegistry';
 import { audioDir, audioFilePath } from './audioPaths';
+import type { ClipSync } from '@shared/narrationSync';
+import { pausesOfWav } from '../tts/fragmentSync';
 import {
   deleteAudioClipRow,
   deleteAudioClipsForEntity,
@@ -160,11 +162,51 @@ export function saveClip(kind: AudioEntityKind, id: string, input: SaveClipInput
   return recordClip(kind, id, input, fileName, buffer);
 }
 
-/** The same as `saveClip`, writing the file asynchronously: narration clips can be several MB. */
-export async function saveClipAsync(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput, 'bytes'> & { bytes: Buffer }): Promise<AudioClip> {
+/** The same as `saveClip`, writing the file asynchronously: narration clips can be several MB.
+ *  `sync` (the fragments' text and silences) goes next to the WAV for the read-along highlight. */
+export async function saveClipAsync(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput, 'bytes'> & { bytes: Buffer; sync?: ClipSync }): Promise<AudioClip> {
   const fileName = clipFileName(kind, id, input.segmentIndex);
   await fs.promises.writeFile(path.join(audioDir(), fileName), input.bytes);
+  if (input.sync) await fs.promises.writeFile(clipSyncPath(fileName), JSON.stringify(input.sync)).catch(() => {});
   return recordClip(kind, id, input, fileName, input.bytes);
+}
+
+function clipSyncPath(fileName: string): string { return `${audioFilePath(fileName)}.sync.json`; }
+
+function isClipSync(value: unknown): value is ClipSync {
+  const sync = value as Partial<ClipSync> | null;
+  return !!sync && sync.version === 1 && Array.isArray(sync.fragments)
+    && sync.fragments.every((fragment) => fragment && typeof fragment.text === 'string' && Number.isFinite(fragment.offsetS) && Number.isFinite(fragment.durationS) && Array.isArray(fragment.pauses));
+}
+
+/**
+ * Where each fragment of a saved clip starts, what it says and where it is silent. Clips saved
+ * before the read-along highlight have no map: their silences are read from the WAV once and
+ * cached, as one fragment whose text is the segment's when this process can rebuild it (saved
+ * reports and immersions) and empty otherwise, for the renderer to fill from the text it shows.
+ */
+export async function getClipSync(id: string): Promise<ClipSync | null> {
+  const study = readStudyAudioStore().clips.find((clip) => clip.id === id);
+  const row = study
+    ? { fileName: study.fileName, kind: study.entityKind, entityId: study.entityId, segmentIndex: study.segmentIndex, durationSec: study.durationSec }
+    : (getDb().prepare('SELECT file_name AS fileName, entity_kind AS kind, entity_id AS entityId, segment_index AS segmentIndex, duration_sec AS durationSec FROM audio_clips WHERE id = ?').get(id) as
+      | { fileName: string; kind: AudioEntityKind; entityId: string; segmentIndex: number; durationSec: number }
+      | undefined);
+  if (!row) return null;
+  try {
+    const stored = JSON.parse(await fs.promises.readFile(clipSyncPath(row.fileName), 'utf8')) as unknown;
+    if (isClipSync(stored)) return stored;
+  } catch { /* no map yet */ }
+  let bytes: Buffer;
+  try { bytes = await fs.promises.readFile(audioFilePath(row.fileName)); } catch { return null; }
+  let text = '';
+  if (row.kind === 'deep_research' || row.kind === 'immersion') {
+    try { text = getEntitySegments(row.kind, row.entityId).find((segment) => segment.index === row.segmentIndex)?.text ?? ''; } catch { text = ''; }
+  }
+  const sync: ClipSync = { version: 1, gapS: 0, fragments: [{ offsetS: 0, durationS: parseWavMeta(bytes).durationSec || row.durationSec, text, pauses: pausesOfWav(bytes) }] };
+  // Only a map with its text is worth keeping: the renderer may supply the text next time.
+  if (text) await fs.promises.writeFile(clipSyncPath(row.fileName), JSON.stringify(sync)).catch(() => {});
+  return sync;
 }
 
 function clipFileName(kind: AudioEntityKind, id: string, segmentIndex: number): string {
@@ -343,6 +385,7 @@ export function listStudyAudioPlaylist(subjectId: string): StudyAudioPlaylistIte
 function removeFile(fileName: string): void {
   try {
     fs.rmSync(audioFilePath(fileName), { force: true });
+    fs.rmSync(clipSyncPath(fileName), { force: true });
   } catch {
     /* best effort */
   }

@@ -26,7 +26,7 @@ import { generateEditorImage } from '../ai/editorImages';
 import type { EditorImageRequest } from '@shared/editorAiReview';
 import { deleteDecorativeImage, queueDecorativeImageGeneration, revertDecorativeImage, saveCustomDecorativeImage, streamDecorativeImageContext } from '../ai/decorativeImages';
 import { getDecorativeImage, getDecorativeImageData } from '../db/decorativeImagesRepo';
-import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, saveClip, setStudyPronunciations } from '../audio/audioService';
+import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getClipSync, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, saveClip, setStudyPronunciations } from '../audio/audioService';
 import { disconnectNodusServerVault, getNodusServerOverview, pairNodusServer, setNodusServerLanguage, syncNodusServerVaultNow } from '../serverSync/serverSyncService';
 import { clearServerInbox, clearServerInboxEntry, listServerInbox, markServerInboxRead } from '../db/serverInboxRepo';
 import { localServerStatusAsync, restartLocalServer, startLocalServer, stopLocalServer } from '../localServer/process';
@@ -377,6 +377,7 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     const picked = await dialog.showSaveDialog(getWindow() ?? undefined!, { title: dialogTitle('saveAudio', getSettings().uiLanguage), defaultPath: path.basename(source), filters: [{ name: 'Audio WAV', extensions: ['wav'] }] });
     if (picked.canceled || !picked.filePath) return null; fs.copyFileSync(source, picked.filePath); return { path: picked.filePath };
   });
+  h('audio:clipSync', async (_e, clipId: string) => getClipSync(clipId));
   h('audio:study:bookmarks', async (_e, kind: AudioEntityKind, id: string) => listStudyAudioBookmarks(kind, id));
   h('audio:study:bookmark:create', async (_e, kind: AudioEntityKind, id: string, segmentIndex: number, label: string) => createStudyAudioBookmark(kind, id, segmentIndex, label));
   h('audio:study:bookmark:delete', async (_e, id: string) => deleteStudyAudioBookmark(id));

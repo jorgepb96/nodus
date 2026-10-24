@@ -191,6 +191,7 @@ export const platformApi: PlatformApi = {
   deleteEntityAudioClips: (entityKind, entityId) =>
     ipcRenderer.invoke('audio:deleteEntityClips', entityKind, entityId).then(() => undefined),
   exportAudioClip: (clipId) => ipcRenderer.invoke('audio:exportClip', clipId),
+  getAudioClipSync: (clipId) => ipcRenderer.invoke('audio:clipSync', clipId),
   listStudyAudioBookmarks: (entityKind, entityId) => ipcRenderer.invoke('audio:study:bookmarks', entityKind, entityId),
   createStudyAudioBookmark: (entityKind, entityId, segmentIndex, label) => ipcRenderer.invoke('audio:study:bookmark:create', entityKind, entityId, segmentIndex, label),
   deleteStudyAudioBookmark: (id) => ipcRenderer.invoke('audio:study:bookmark:delete', id).then(() => undefined),

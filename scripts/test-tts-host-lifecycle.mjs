@@ -36,7 +36,7 @@ async function handle(m) {
       await new Promise((r) => setTimeout(r, mode === 'stuck' ? 60000 : 30));
       const file = path.join(m.out_dir, String(n).padStart(3, '0') + '.wav');
       fs.writeFileSync(file, 'RIFF');
-      out({ type: 'fragment', job_id: m.job_id, n, total, path: file, duration_s: 2, gen_s: 1, ...(mode === 'truncated' ? { truncated: true } : {}) });
+      out({ type: 'fragment', job_id: m.job_id, n, total, path: file, duration_s: 2, gen_s: 1, text: words.slice(n * 5, n * 5 + 5).join(' '), ...(mode === 'truncated' ? { truncated: true } : {}) });
       // A path outside out_dir must be ignored by the host.
       if (n === 0) out({ type: 'fragment', job_id: m.job_id, n: 99, total, path: '/etc/passwd', duration_s: 2, gen_s: 1 });
     }
@@ -103,6 +103,7 @@ try {
     assert.equal(result.cancelled, false);
     assert.equal(result.fragments.length, 3);
     assert.deepEqual(fragments.map((f) => f.index), [0, 1, 2], 'fragments arrive one by one and outside paths are dropped');
+    assert.deepEqual(fragments.map((f) => f.text), ['uno dos tres cuatro cinco', 'seis siete ocho nueve diez', 'once'], 'each fragment keeps the text it spoke, for the read-along highlight');
     assert.equal(result.audioS, 6);
     assert.ok(states.includes('loading') && states.includes('busy'));
     assert.equal(host.snapshot().modelId, 'ming3-0.5b-mlx-8bit');

@@ -485,7 +485,7 @@ export class LibraryOperations {
       }
       if (item.files?.reader) {
         const reader = assertInside(folder, path.join(folder, item.files.reader));
-        if (!fs.existsSync(reader)) { missingFiles += 1; issues.push({ code: 'missing-reader', itemId: item.id, path: reader, message: 'Clean Markdown is missing.', recoverable: true }); }
+        if (!fs.existsSync(reader)) { missingFiles += 1; issues.push({ code: 'missing-reader', itemId: item.id, path: reader, message: 'Markdown is missing.', recoverable: true }); }
       }
     }
     let orphanFolders = 0;

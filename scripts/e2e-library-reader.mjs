@@ -165,7 +165,7 @@ ${longReaderBody}
     mimetype: 'application/epub+zip',
     'META-INF/container.xml': '<?xml version="1.0"?><container><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
     'OEBPS/content.opf': '<?xml version="1.0"?><package><manifest><item id="intro" href="intro.xhtml" media-type="application/xhtml+xml"/><item id="results" href="results.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="intro"/><itemref idref="results"/></spine></package>',
-    'OEBPS/intro.xhtml': '<html><head><title>Introducción EPUB</title></head><body><h1>Introducción EPUB</h1><p>Este texto refluye y admite subrayados independientes del Markdown limpio.</p></body></html>',
+    'OEBPS/intro.xhtml': '<html><head><title>Introducción EPUB</title></head><body><h1>Introducción EPUB</h1><p>Este texto refluye y admite subrayados independientes del Markdown.</p></body></html>',
     'OEBPS/results.xhtml': '<html><head><title>Resultados EPUB</title></head><body><h1>Resultados</h1><p>El segundo capítulo conserva su propio contexto de anotación.</p></body></html>',
   });
   writeZip(path.join(documentFolder, 'reader.docx'), {
@@ -280,7 +280,7 @@ ${longReaderBody}
   assert.equal(await page.evaluate(() => localStorage.getItem('nodus.libraryReader.openingFormat')), 'clean', 'the user can remember one opening format across Library items');
   const documentRoot = page.getByTestId('library-reader-document');
   await documentRoot.waitFor({ state: 'visible' });
-  assert.match(await page.getByTestId('library-reader-freshness').innerText(), /Markdown limpio/);
+  assert.match(await page.getByTestId('library-reader-freshness').innerText(), /Markdown/);
 
   await page.getByTestId(`library-workspace-close-${globalItemId}`).click();
   await globalRow.waitFor({ state: 'visible' });

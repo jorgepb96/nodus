@@ -990,7 +990,7 @@ export async function resolveWorkText(
         contentHash: textHash(text),
         pageCount: clean.document.pageCount,
         hasPageMarkers: /\[\[p\.\s*\d+\]\]/i.test(text),
-      }], 'Versión limpia de la Biblioteca global.', clean.document.originalAvailable);
+      }], 'Versión Markdown de la Biblioteca global.', clean.document.originalAvailable);
     }
   } catch {
     // The backup folder may be unconfigured in headless/first-run contexts.

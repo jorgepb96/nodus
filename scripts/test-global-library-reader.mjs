@@ -189,7 +189,7 @@ try {
     authors: document.authors,
     year: document.year,
     markdown,
-    sourceLabel: 'Markdown limpio',
+    sourceLabel: 'Markdown',
     sourceId: 'clean',
     annotations: [],
     sections: document.sections.map((section) => ({ id: section.id, title: section.title, page: section.page })),
@@ -201,14 +201,14 @@ try {
   assert.deepEqual(groundedChat.readerGrounding.sections.map((section) => section.page), [1, 1, 2]);
 
   const localizedReaderMarkers = {
-    es: ['Markdown limpio', 'contenido central omitido'],
-    en: ['Clean Markdown', 'middle content omitted'],
-    fr: ['Markdown nettoyé', 'contenu central omis'],
-    de: ['Bereinigtes Markdown', 'mittlerer Inhalt'],
-    pt: ['Markdown limpo', 'conteúdo central omitido'],
-    'pt-BR': ['Markdown limpo', 'conteúdo central omitido'],
-    it: ['Markdown pulito', 'contenuto centrale omesso'],
-    tr: ['Temiz Markdown', 'orta bölüm atlandı'],
+    es: ['Markdown', 'contenido central omitido'],
+    en: ['Markdown', 'middle content omitted'],
+    fr: ['Markdown', 'contenu central omis'],
+    de: ['Markdown', 'mittlerer Inhalt'],
+    pt: ['Markdown', 'conteúdo central omitido'],
+    'pt-BR': ['Markdown', 'conteúdo central omitido'],
+    it: ['Markdown', 'contenuto centrale omesso'],
+    tr: ['Markdown', 'orta bölüm atlandı'],
   };
   for (const [language, [sourceMarker, truncationMarker]] of Object.entries(localizedReaderMarkers)) {
     const localized = readerChat.buildLibraryReaderNodiContext({

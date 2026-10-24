@@ -1837,7 +1837,7 @@ export function Library({
                         testId={`vault-library-index-${w.nodus_id}`} onClick={() => void indexWorks([w.nodus_id])} />;
                     })()}
                     <RowIconButton
-                      title={t('Abrir lector limpio')}
+                      title={t('Abrir Markdown')}
                       icon="book"
                       tone="cyan"
                       onClick={() => openReader(w)}
@@ -1860,7 +1860,7 @@ export function Library({
                           { label: t('Ver en Queue'), icon: 'list', onClick: openResearchPreparationQueue },
                         ] : []),
                         {
-                          label: t('Abrir lector limpio'),
+                          label: t('Abrir Markdown'),
                           icon: 'book',
                           onClick: () => openReader(w),
                         },

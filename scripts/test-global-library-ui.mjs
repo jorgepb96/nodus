@@ -111,7 +111,7 @@ test('the Library UI exposes hierarchy, search, bulk operations, imports and bac
   assert.match(itemManager, /const deleteNote = async[\s\S]*await confirm\([\s\S]*danger: true[\s\S]*deleteGlobalLibraryNote/, 'note deletion requires a destructive confirmation before the write');
   assert.match(librarySettings, /DEFAULT_GLOBAL_LIBRARY_SETTINGS[\s\S]*autoRenameAttachments[\s\S]*attachmentRenameTemplate/, 'the settings dialog exposes Zotero-compatible attachment naming defaults');
   assert.match(librarySettings, /testId="library-auto-rename-attachments"/, 'automatic attachment renaming has a stable interactive test hook');
-  assert.match(view, /t\('Reconstruir versión limpia'\)/, 'clean Markdown rebuilding is named explicitly');
+  assert.match(view, /t\('Reconstruir Markdown'\)/, 'clean Markdown rebuilding is named explicitly');
   assert.match(view, /window\.nodus\.cancelLibraryExtraction/, 'visible background preparation can be canceled');
   assert.match(view, /refreshSelectedLibraryDetail/, 'terminal extraction progress refreshes the selected detail in place');
   assert.match(view, /progress\.status === 'done' \|\| progress\.status === 'failed' \|\| progress\.status === 'canceled'/, 'every terminal extraction state reconciles stale detail state');
@@ -158,7 +158,7 @@ test('the Library UI exposes hierarchy, search, bulk operations, imports and bac
   assert.match(vaultLibrary, /data-testid=\{`vault-library-item-[\s\S]*onClick=\{\(event\)[\s\S]*openVaultWorkAnalysis\(w\)/, 'clicking a non-interactive part of a vault row opens its analysis modal');
   assert.match(vaultLibrary, /data-testid=\{`vault-library-title-[\s\S]*onClick=\{\(\) => simple \? openReader\(w\) : openVaultWorkAnalysis\(w\)\}/, 'Simple opens the source reader; other profiles retain work analysis');
   assert.doesNotMatch(vaultLibrary, /data-testid=\{`vault-library-item-[\s\S]*onDoubleClick=\{\(event\)[\s\S]*openReader\(w\)/, 'vault rows never reuse the Global reader gesture');
-  assert.match(vaultLibrary, /<RowIconButton[\s\S]{0,240}title=\{t\('Abrir lector limpio'\)\}[\s\S]{0,240}onClick=\{\(\) => openReader\(w\)\}/, 'the clean reader remains available from the vault action column');
+  assert.match(vaultLibrary, /<RowIconButton[\s\S]{0,240}title=\{t\('Abrir Markdown'\)\}[\s\S]{0,240}onClick=\{\(\) => openReader\(w\)\}/, 'the clean reader remains available from the vault action column');
   assert.match(view, /data-testid="library-workspace-tabs"/, 'open documents share one compact workspace tab strip');
   assert.match(view, /homeTestId="library-workspace-tab-library"/, 'the Library remains a fixed, non-closable workspace tab');
   assert.match(workspaceTabs, /data-testid=\{homeTestId\}/, 'the shared strip renders that fixed tab, and the Workspace passes its own');
@@ -337,7 +337,7 @@ test('the global reader exposes annotations, metadata, chat and native attachmen
   assert.match(attachmentViewer, /pageIndex % 4 === 0[\s\S]*setTimeout/, 'long PDF indexing yields to the renderer');
   assert.match(attachmentViewer, /content\.chapters\.map\(\(chapter\) => \(\{ id: chapter\.id, text: chapter\.text/ , 'EPUB search indexes every chapter');
   assert.match(attachmentViewer, /FindInPage targetRef=\{targetRef\} segments=\{findSegments\}/, 'reflowable readers use the segmented document index');
-  assert.match(attachmentViewer, /library-reader-image-viewer[\s\S]*FindInPage[\s\S]*Markdown limpio para buscar el OCR/, 'image files still open the find panel and explain their missing text layer');
+  assert.match(attachmentViewer, /library-reader-image-viewer[\s\S]*FindInPage[\s\S]*Markdown para buscar el OCR/, 'image files still open the find panel and explain their missing text layer');
   assert.match(findSource, /event\.metaKey \|\| event\.ctrlKey[\s\S]*key\.toLowerCase\(\) === 'f'/, 'Cmd/Ctrl+F always opens the Nodus document search');
   assert.match(findSource, /caseSensitive[\s\S]*wholeWord[\s\S]*markAll/, 'document search exposes case, whole-term, and visible-match controls');
   assert.match(findSource, /activeSegmentId[\s\S]*onActivateSegment/, 'segmented results navigate to their PDF page or EPUB chapter');

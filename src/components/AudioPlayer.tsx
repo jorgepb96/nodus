@@ -394,7 +394,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       const el = elements.current[active.current];
       const track = tracksRef.current[indexRef.current];
       if (!el || !track || el.dataset.trackId !== track.id) return null;
-      return { trackId: track.id, index: indexRef.current, time: el.currentTime, rate: rateRef.current, playing: !el.paused && !el.ended };
+      return { trackId: track.id, index: indexRef.current, time: el.currentTime, rate: el.playbackRate || rateRef.current, playing: !el.paused && !el.ended };
     },
     tracks: () => tracksRef.current,
     source: () => sourceRef.current,

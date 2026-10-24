@@ -1,5 +1,23 @@
 # Changelog
 
+## 5.16.0 — 2026-10-24
+
+### New features
+- Highlight the sentence and the word being read aloud in Deep Research, Research chat, the Dictionary, Nodus Scriptor, study documents and Immersion. The view follows the reading, a button returns to the narration after manual scrolling, and ⌥/Alt + click on a word jumps the audio to it. The Library's Markdown reader can read aloud from the visible block or the selection. Settings choose word and sentence, sentence only or no highlight, and a colour fill or underline.
+- Offer three local embedding models in the Nodus add-on for Zotero: Multilingual E5 small, Granite 97M Multilingual R2 and Harrier 270M. Only the chosen model is downloaded, Granite is the default without an explicit choice, and switching prepares the new vectors before activation while keeping the current model on cancellation or failure.
+
+### Enhancements
+- Prepare the local model when the Zotero add-on starts, and prepare the text and vectors of an attachment opened in the reader in the background, without opening Settings.
+- Sync linked Zotero collections after the window opens and when an academic vault opens, including in manual sync mode, and add a manual Zotero sync button with compact icons to This vault in the Library.
+- Widen the Zotero add-on sidebar resize handle from 1 to 6 pixels, with a resize cursor and hover feedback.
+- Call the Library's generated reading version Markdown instead of clean version, with Open Markdown and Rebuild Markdown actions, also in the Nodus Server web app.
+
+### Fixes
+- Keep one conversation per item in the Zotero add-on and restore it when returning to the item. Messages are saved before the response starts.
+- Keep the macOS window responsive while syncing Zotero collections during idea extraction, and recover saved summaries left marked as pending.
+- Show Nodus Sign's specific error sentences, such as an invalid page range, instead of the generic failure message.
+- Update adm-zip to 0.6.1, which fixes seven published security advisories.
+
 ## 5.15.4 — 2026-10-23
 
 ### Fixes

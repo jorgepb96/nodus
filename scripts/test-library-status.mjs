@@ -154,6 +154,29 @@ test('a persisted resumption marker is pending, never falsely running', () => {
   assert.equal(pending.steps.ideas.state, 'pending');
 });
 
+test('a summary left pending without a live job remains visible and retryable', () => {
+  const orphan = work({ summary_status: 'pending' });
+  const idle = deriveWorkStatus(orphan, embedded(), indexed());
+  assert.equal(idle.steps.summary.state, 'missing');
+  assert.ok(retryableSteps(idle).includes('summary'), 'the Galant 2017 ghost cannot disable its own recovery');
+  const active = deriveWorkStatus(orphan, embedded(), indexed(), [
+    { id: 'summary-job', nodus_id: 'w1', kind: 'summary', state: 'queued' },
+  ]);
+  assert.equal(active.steps.summary.state, 'pending');
+  assert.ok(!retryableSteps(active).includes('summary'), 'a real summary job cannot be duplicated');
+  const chained = deriveWorkStatus(orphan, embedded(), indexed(), [
+    { id: 'deep-job', nodus_id: 'w1', kind: 'deep', state: 'running' },
+  ]);
+  assert.equal(chained.steps.summary.state, 'pending', 'a required summary can belong to a deep chain');
+  const both = [
+    { id: 'summary-job', nodus_id: 'w1', kind: 'summary', state: 'running' },
+    { id: 'deep-job', nodus_id: 'w1', kind: 'deep', state: 'running' },
+  ];
+  for (const order of [both, [...both].reverse()]) {
+    assert.equal(deriveWorkStatus(orphan, embedded(), indexed(), order).steps.summary.state, 'running');
+  }
+});
+
 test('queue indexing keeps only live items and groups them by work', () => {
   const map = queueItemsByWork([
     { id: 'q1', nodus_id: 'w1', kind: 'light', state: 'running' },

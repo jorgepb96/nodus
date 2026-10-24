@@ -17,6 +17,7 @@ const stubs = new Map([
   ['./pdfjsLoader', 'export const openPdf = async () => globalThis.__pdfOcrProvenance.pdf; export const pageText = async page => page.text; export const pageTextWithSchemes = async page => ({ text: page.text, declutteredText: "[scheme]", schemeLines: [], marginLines: [] });'],
   // Durable work/attachment choices have real-SQLite coverage in test-scheme-declutter.
   ['./schemeDeclutter', 'export const declutterForWorkSource = () => false; export const schemeClassifierForWorkSource = () => null; export const declutterCacheKey = file => `${file}#declutter`; export const pdfBodySize = async () => 0;'],
+  ['./pdfBodySize', 'export const pdfBodySize = async () => 0;'],
   ['../db/settingsRepo', 'export const getSettings = () => ({ declutterNewDocuments: true });'],
   ['./pdfAnalyzer', 'export const analyzePdf = async () => globalThis.__pdfOcrProvenance.analysis;'],
   ['./ocr', 'export const ocrPdfPages = (...args) => globalThis.__pdfOcrProvenance.ocr(...args); export const ocrImageFile = async () => ({text:""});'],

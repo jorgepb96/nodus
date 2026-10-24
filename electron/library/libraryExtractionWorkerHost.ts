@@ -13,6 +13,7 @@ import {
 } from './libraryExtractionEngine';
 import { LibraryDiskStore } from './libraryStorage';
 import { recordEmbeddingTrace } from '../qa/embeddingTrace';
+import { withDocumentWork } from '../workers/documentWork';
 
 export interface LibraryWorkerExtractionInput {
   item: LibraryItemRecord;
@@ -42,6 +43,10 @@ function abortError(): Error {
 
 /** Run the complete extraction pipeline in an owned process outside Electron's main process. */
 export async function extractLibraryItemInWorker(input: LibraryWorkerExtractionInput): Promise<LibraryExtractionResult> {
+  return withDocumentWork(() => executeLibraryItemInWorker(input), input.signal);
+}
+
+async function executeLibraryItemInWorker(input: LibraryWorkerExtractionInput): Promise<LibraryExtractionResult> {
   if (!libraryExtractionWorkerAvailable()) {
     if (process.type === 'browser') throw new Error('Library extraction process is unavailable.');
     // Source-level unit tests do not build the worker entry. Production and

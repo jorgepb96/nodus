@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import { getDb } from '../db/database';
-import { type LayoutItem } from './schemeLayout';
-import { CURRENT_SCHEME_CLASSIFIER, isSchemeClassifier, schemeClassifier, type SchemeClassifier } from './schemeClassifiers';
+import { CURRENT_SCHEME_CLASSIFIER, isSchemeClassifier, type SchemeClassifier } from './schemeClassifiers';
 
 /**
  * A PDF's extraction choice belongs to its work and attachment in the owning vault.
@@ -10,7 +9,6 @@ import { CURRENT_SCHEME_CLASSIFIER, isSchemeClassifier, schemeClassifier, type S
  * Direct file extraction (Toolkit, translation, etc.) stays plain unless requested.
  */
 
-const SAMPLE_PAGES = 40;
 
 export function declutterForWorkSource(zoteroKey: string, sourceRef: string, preferred: boolean): boolean {
   return schemeClassifierForWorkSource(zoteroKey, sourceRef, preferred) !== null;
@@ -46,22 +44,4 @@ export function declutterCacheKey(filePath: string, classifier: SchemeClassifier
   return `${filePath}#declutter-${classifier}`;
 }
 
-/** A book's body type size, from up to 40 evenly spaced pages. */
-export async function pdfBodySize(pdf: { numPages: number; getPage(page: number): Promise<any> }, signal?: AbortSignal, classifier?: SchemeClassifier): Promise<number> {
-  const { typeSizeWeights, bodySizeOf } = schemeClassifier(classifier);
-  const weights = new Map<number, number>();
-  const total = pdf.numPages;
-  const samples = Math.min(SAMPLE_PAGES, total);
-  for (let k = 0; k < samples; k++) {
-    signal?.throwIfAborted();
-    const page = await pdf.getPage(1 + Math.floor(samples > 1 ? k * (total - 1) / (samples - 1) : 0));
-    try {
-      const content = await page.getTextContent();
-      signal?.throwIfAborted();
-      typeSizeWeights((content.items as LayoutItem[]).filter((item) => typeof item?.str === 'string' && Array.isArray(item.transform)), weights);
-    } finally {
-      page.cleanup?.();
-    }
-  }
-  return bodySizeOf(weights);
-}
+export { pdfBodySize } from './pdfBodySize';

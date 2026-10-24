@@ -21,12 +21,12 @@ import type { ZoteroCollection, ZoteroLibrary } from '@shared/types';
 import { scanQueue } from '../pipeline/scanQueue';
 import type { SyncLogEntry, WorkCreator, ZoteroItem } from '@shared/types';
 import { bylineFromCreators, linkZoteroAuthors } from '../db/authorsRepo';
-import { getDb } from '../db/database';
+import { getDb, withDatabaseContext } from '../db/database';
 import { probeWorkTextAvailability } from '../extraction/textExtractor';
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { documentIndexQueue } from '../pipeline/documentIndexQueue';
 import { DOCUMENT_INDEX_CONTINUOUS_AVAILABLE } from '@shared/documentIndexPolicy';
-import type { ZoteroSyncOptions } from '@shared/types';
+import type { ZoteroSyncOptions, ZoteroSyncStatus } from '@shared/types';
 import {
   classifyZoteroItemChange,
   persistedZoteroVersion,
@@ -36,6 +36,39 @@ import {
   type ZoteroSyncMode,
 } from './zoteroSyncPolicy';
 
+const syncs = new Map<string, { controller: AbortController; promise: Promise<SyncLogEntry> }>();
+const syncStatuses = new Map<string, ZoteroSyncStatus>();
+const statusListeners = new Set<(status: ZoteroSyncStatus) => void>();
+let startupTimer: NodeJS.Timeout | null = null;
+
+export function getZoteroSyncStatus(): ZoteroSyncStatus {
+  const vaultId = getActiveVault().id;
+  return syncStatuses.get(vaultId) ?? { vaultId, running: false, lastSync: null };
+}
+
+export function onZoteroSyncStatus(listener: (status: ZoteroSyncStatus) => void): () => void {
+  statusListeners.add(listener);
+  return () => { statusListeners.delete(listener); };
+}
+
+function publishSyncStatus(status: ZoteroSyncStatus): void {
+  syncStatuses.set(status.vaultId, status);
+  for (const listener of statusListeners) {
+    try { listener(status); } catch (error) { console.warn('[zotero-sync] status listener failed', error); }
+  }
+}
+
+/** A bounded slice of metadata writes, with room for window and IPC events between slices. */
+function syncCooperator(assertActive: () => void): () => Promise<void> {
+  let sliceStarted = performance.now();
+  return async () => {
+    assertActive();
+    if (performance.now() - sliceStarted < 8) return;
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assertActive();
+    sliceStarted = performance.now();
+  };
+}
 
 /** Structured creators kept for building canonical author identity. Only authors
  *  and editors feed the author layer (translators, series editors, … are ignored). */
@@ -116,14 +149,14 @@ export function ingestZoteroItem(item: ZoteroItem, readTagName: string): { nodus
 
 /** Refresh the stored collection tree (key → name, parent) for every monitored
  *  collection and its descendants, so the Library collection filter shows names. */
-async function refreshCollectionTree(userId: string, monitored: string[], failures: string[]): Promise<void> {
+async function refreshCollectionTree(userId: string, monitored: string[], failures: string[], signal: AbortSignal, cooperate: () => Promise<void>): Promise<void> {
   if (monitored.length === 0) return;
   const all = new Map<string, ZoteroCollection>();
   let top: ZoteroCollection[] = [];
   try {
-    const libs = await zoteroLibraries();
+    const libs = await zoteroLibraries(signal);
     top = (await Promise.all(libs.map(async (library) => {
-      try { return await topCollections(userId, library); }
+      try { return await topCollections(userId, library, signal); }
       catch (error) {
         failures.push(`${library.type}:${library.id}:top:${error instanceof Error ? error.message : 'unknown'}`);
         return [];
@@ -136,11 +169,12 @@ async function refreshCollectionTree(userId: string, monitored: string[], failur
   for (const c of top) all.set(c.key, c);
   const visited = new Set<string>();
   const visit = async (key: string): Promise<void> => {
+    signal.throwIfAborted();
     if (visited.has(key)) return;
     visited.add(key);
     let children: ZoteroCollection[] = [];
     try {
-      children = await childCollections(userId, key);
+      children = await childCollections(userId, key, undefined, signal);
     } catch (error) {
       failures.push(`${key}:tree-children:${error instanceof Error ? error.message : 'unknown'}`);
       return;
@@ -153,7 +187,11 @@ async function refreshCollectionTree(userId: string, monitored: string[], failur
   // Walk from monitored roots (and any top collection, so names resolve fully).
   for (const c of top) await visit(c.key);
   for (const key of monitored) if (!visited.has(key)) await visit(key);
-  if (all.size > 0) upsertCollections(Array.from(all.values()));
+  const collections = Array.from(all.values());
+  for (let offset = 0; offset < collections.length; offset += 50) {
+    await cooperate();
+    upsertCollections(collections.slice(offset, offset + 50));
+  }
 }
 
 export interface SyncResult {
@@ -191,22 +229,24 @@ async function collectionItemsRecursiveObserved(
   userId: string,
   collectionKey: string,
   failures: string[],
+  signal: AbortSignal,
 ): Promise<ZoteroItem[]> {
   const seen = new Map<string, ZoteroItem>();
   const visited = new Set<string>();
   const visit = async (key: string): Promise<void> => {
+    signal.throwIfAborted();
     if (visited.has(key)) return;
     visited.add(key);
     let items: ZoteroItem[] = [];
     try {
-      items = await collectionItems(userId, key);
+      items = await collectionItems(userId, key, { signal });
     } catch (error) {
       failures.push(`${key}:items:${error instanceof Error ? error.message : 'unknown'}`);
     }
     for (const item of items) if (!seen.has(item.key)) seen.set(item.key, item);
     let children: ZoteroCollection[] = [];
     try {
-      children = await childCollections(userId, key);
+      children = await childCollections(userId, key, undefined, signal);
     } catch (error) {
       failures.push(`${key}:children:${error instanceof Error ? error.message : 'unknown'}`);
     }
@@ -224,11 +264,12 @@ async function collectionItemsRecursiveObserved(
  * was observed successfully; an empty result caused by a failed request is not an
  * authoritative deletion.
  */
-function reconcileMonitoredCollectionMemberships(
+async function reconcileMonitoredCollectionMemberships(
   observedMemberships: Map<string, Set<string>>,
   monitored: string[],
   previousScope: string[] = [],
-): string[] {
+  cooperate: () => Promise<void>,
+): Promise<string[]> {
   // Membership rows carry the direct child collection key, not necessarily the
   // monitored root. Expand the persisted hierarchy so a deletion/move from any
   // descendant is reconciled as well. Stale collection rows are intentionally
@@ -278,17 +319,53 @@ function reconcileMonitoredCollectionMemberships(
   });
   if (stale.length === 0) return [];
   const remove = db.prepare('DELETE FROM work_collections WHERE nodus_id = ? AND collection_key = ?');
-  db.transaction(() => {
-    for (const row of stale) remove.run(row.nodus_id, row.collection_key);
-  })();
+  for (const row of stale) {
+    await cooperate();
+    remove.run(row.nodus_id, row.collection_key);
+  }
   // Works that just lost their last monitored membership: the caller asks Zotero whether the
   // item left the collection or left the library.
   const remaining = db.prepare(`SELECT 1 FROM work_collections WHERE nodus_id = ? AND collection_key IN (${placeholders}) LIMIT 1`);
-  return [...new Set(stale.map((row) => row.nodus_id))].filter((nodusId) => !remaining.get(nodusId, ...keys));
+  const unmoored: string[] = [];
+  for (const nodusId of new Set(stale.map((row) => row.nodus_id))) {
+    await cooperate();
+    if (!remaining.get(nodusId, ...keys)) unmoored.push(nodusId);
+  }
+  return unmoored;
 }
 
-/** Full sync over all monitored collections. */
-export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions = {}): Promise<SyncLogEntry> {
+/** One pass per vault, shared by startup, manual controls and realtime polling. */
+export function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions = {}): Promise<SyncLogEntry> {
+  const vaultId = getActiveVault().id;
+  const existing = syncs.get(vaultId);
+  if (existing) return existing.promise;
+  const controller = new AbortController();
+  const database = getDb();
+  const assertActive = () => {
+    controller.signal.throwIfAborted();
+    if (getActiveVault().id !== vaultId) throw new DOMException('Sync cancelled', 'AbortError');
+  };
+  const sync = { controller, promise: null! as Promise<SyncLogEntry> };
+  // Defer the first read too, so callers get their event loop back before ingestion starts.
+  sync.promise = Promise.resolve().then(() => withDatabaseContext(database, async () => {
+    assertActive();
+    publishSyncStatus({ vaultId, running: true, lastSync: syncStatuses.get(vaultId)?.lastSync ?? null });
+    return performFullSync(mode, options, controller.signal, assertActive);
+  })).then(result => {
+    assertActive();
+    syncStatuses.set(vaultId, { vaultId, running: true, lastSync: result });
+    return result;
+  }).finally(() => {
+    if (syncs.get(vaultId) !== sync) return;
+    syncs.delete(vaultId);
+    publishSyncStatus({ vaultId, running: false, lastSync: syncStatuses.get(vaultId)?.lastSync ?? null });
+  });
+  syncs.set(vaultId, sync);
+  return sync.promise;
+}
+
+async function performFullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions, signal: AbortSignal, assertActive: () => void): Promise<SyncLogEntry> {
+  const cooperate = syncCooperator(assertActive);
   const settings = getSettings();
   const userId = settings.zoteroUserId;
   const catalogOnly = options.catalogOnly === true;
@@ -303,10 +380,11 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
   let startingVersions: Record<string, number> | null = null;
 
   try {
-    startingVersions = await fetchLibraryVersions(userId, settings.monitoredCollections);
+    startingVersions = await fetchLibraryVersions(userId, settings.monitoredCollections, signal);
   } catch (error) {
     collectionFailures.push(`versions:start:${error instanceof Error ? error.message : 'unknown'}`);
   }
+  assertActive();
 
   const observedMemberships = new Map<string, Set<string>>();
   const observedWorkMemberships = new Map<string, Set<string>>();
@@ -318,13 +396,15 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
 
   // Keep the collection tree current so the Library collection filter shows names
   // and can expand a parent to its subcollections.
-  await refreshCollectionTree(userId, settings.monitoredCollections, collectionFailures);
+  await refreshCollectionTree(userId, settings.monitoredCollections, collectionFailures, signal, cooperate);
+  assertActive();
 
   for (const collectionKey of settings.monitoredCollections) {
     // Recurse into subcollections so monitoring a parent captures everything under it.
     // A failed child is recorded and skipped, instead of being silently treated as empty.
-    const items = await collectionItemsRecursiveObserved(userId, collectionKey, collectionFailures);
+    const items = await collectionItemsRecursiveObserved(userId, collectionKey, collectionFailures, signal);
     for (const item of items) {
+      await cooperate();
       observedMemberships.set(item.key, new Set(item.collections));
       const directBefore = getWorkByZoteroKey(item.key);
       const before = directBefore
@@ -370,6 +450,7 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
             itemType: after.item_type,
           });
           recoverableText = probe.available;
+          assertActive();
           // A present-but-unextractable file (e.g. a scanned PDF with OCR off) keeps
           // probing as available while every retry ends in skipped_no_text again. Cap
           // probe-driven requeues at one per work per session so each sync doesn't
@@ -400,7 +481,8 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
   // Persist every monitored library version so group-library edits also trigger realtime sync.
   if (collectionFailures.length === 0) {
     try {
-      const endingVersions = await fetchLibraryVersions(userId, settings.monitoredCollections);
+      const endingVersions = await fetchLibraryVersions(userId, settings.monitoredCollections, signal);
+      assertActive();
       const changedDuringRead = !startingVersions
         || [...new Set([...Object.keys(startingVersions), ...Object.keys(endingVersions)])]
           .some((key) => startingVersions?.[key] !== endingVersions[key]);
@@ -411,9 +493,10 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
         // for an alias. Their traversal order is not stable, so restore the complete
         // observed union once per merged work before pruning stale in-scope edges.
         for (const [nodusId, memberships] of observedWorkMemberships) {
+          await cooperate();
           addWorkCollections(nodusId, [...memberships]);
         }
-        const unmoored = reconcileMonitoredCollectionMemberships(observedMemberships, settings.monitoredCollections, previousMonitoredScope);
+        const unmoored = await reconcileMonitoredCollectionMemberships(observedMemberships, settings.monitoredCollections, previousMonitoredScope, cooperate);
         // Also works an earlier sync already left without a monitored membership (the item was
         // trashed before this fix, or before the Trash was emptied): unseen now, and outside
         // every monitored collection. Persist the complete backlog; the worker shares one
@@ -421,7 +504,9 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
         const unseen = unobservedUnmonitoredWorks(observedMemberships, settings.monitoredCollections);
         const removed = await archiveWorksRemovedFromZotero(userId, [...new Set([...unmoored, ...unseen])], {
           monitored: settings.monitoredCollections,
+          signal,
         });
+        assertActive();
         if (removed) console.info(`[zotero-sync] archived ${removed} work(s) removed from Zotero`);
         setLibraryVersions(endingVersions);
       }
@@ -429,6 +514,7 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
       collectionFailures.push(`versions:${error instanceof Error ? error.message : 'unknown'}`);
     }
   }
+  assertActive();
 
   // Continuous document understanding is opt-in. When enabled, reconcile now so
   // newly synced or changed works do not have to wait for the periodic safety poll.
@@ -437,6 +523,7 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
       console.error('[document-index] post-sync refresh failed', error);
     });
   }
+  assertActive();
 
   for (const failure of collectionFailures) console.warn(`[zotero-sync] collection traversal failed: ${failure}`);
   const failureSummary = collectionFailures.length ? `, ${collectionFailures.length} fallos de colección` : '';
@@ -448,7 +535,7 @@ export async function fullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions 
   if ((added > 0 || changed > 0) && getActiveVault().type === 'academic') {
     // Basic preparation follows the profile's prior consent independently of
     // optional Ideas, summaries and Documentary Index automation settings.
-    void import('../ai/documentaryPreparation').then(({ notifyResearchCorpusChanged }) => notifyResearchCorpusChanged())
+    void import('../ai/documentaryPreparation').then(({ notifyResearchCorpusChanged }) => { if (!signal.aborted) notifyResearchCorpusChanged(); })
       .catch(error => console.warn('[documentary] post-sync preparation unavailable', error));
   }
   if (collectionFailures.length) {
@@ -467,10 +554,10 @@ function monitoredLibraries(collections: string[]): ZoteroLibrary[] {
   return [...out.values()];
 }
 
-async function fetchLibraryVersions(userId: string, collections: string[]): Promise<Record<string, number>> {
+async function fetchLibraryVersions(userId: string, collections: string[], signal?: AbortSignal): Promise<Record<string, number>> {
   const entries = await Promise.all(monitoredLibraries(collections).map(async (library) => [
     `${library.type}:${library.id}`,
-    await libraryVersion(userId, library),
+    await libraryVersion(userId, library, signal),
   ] as const));
   return Object.fromEntries(entries);
 }
@@ -492,6 +579,41 @@ function getLibraryVersions(): Record<string, number> {
 // ── Realtime polling ──────────────────────────────────────────────────────────
 
 let pollTimer: NodeJS.Timeout | null = null;
+let pollController: AbortController | null = null;
+
+/** Called after first paint and when opening a vault. No renderer action is involved. */
+export function startZoteroSync(): void {
+  // First-paint initialization can arrive after the user has already pressed Sync.
+  // Rearm timers without cancelling that manual pass; vault switching cancels separately.
+  if (startupTimer) clearTimeout(startupTimer);
+  stopRealtimeSync();
+  const vaultId = getActiveVault().id;
+  const previousSync = syncStatuses.get(vaultId)?.lastSync;
+  startupTimer = setTimeout(() => {
+    startupTimer = null;
+    if (getActiveVault().id !== vaultId || getActiveVault().type !== 'academic') return;
+    if (!getSettings().monitoredCollections.length) return;
+    const latestSync = syncStatuses.get(vaultId)?.lastSync;
+    if (latestSync && latestSync !== previousSync) return;
+    void fullSync('manual', { catalogOnly: true }).catch(error => {
+      if (error?.name !== 'AbortError') console.info('[zotero-sync] startup sync deferred; Zotero may be offline', error);
+    });
+  }, 5_000);
+  startupTimer.unref?.();
+  if (getSettings().syncMode === 'realtime') startRealtimeSync();
+}
+
+/** Stop old-vault work before its live database is closed, without holding up navigation. */
+export function stopZoteroSync(): void {
+  if (startupTimer) clearTimeout(startupTimer);
+  startupTimer = null;
+  stopRealtimeSync();
+  for (const [vaultId, sync] of syncs) {
+    sync.controller.abort();
+    syncs.delete(vaultId);
+    publishSyncStatus({ vaultId, running: false, lastSync: syncStatuses.get(vaultId)?.lastSync ?? null });
+  }
+}
 
 export function startRealtimeSync(): void {
   stopRealtimeSync();
@@ -500,25 +622,35 @@ export function startRealtimeSync(): void {
     if (inFlight) return;
     const settings = getSettings();
     if (settings.syncMode !== 'realtime') return;
+    if (!settings.monitoredCollections.length) return;
+    const vaultId = getActiveVault().id;
+    if (syncs.has(vaultId)) return;
     inFlight = true;
+    const controller = new AbortController();
+    pollController = controller;
     try {
-      const versions = await fetchLibraryVersions(settings.zoteroUserId, settings.monitoredCollections);
+      const versions = await fetchLibraryVersions(settings.zoteroUserId, settings.monitoredCollections, controller.signal);
+      if (controller.signal.aborted || getActiveVault().id !== vaultId) return;
       const previous = getLibraryVersions();
       if (zoteroLibraryVersionsChanged(previous, versions)) {
         await fullSync('realtime');
       } else if (hasPendingZoteroRemovalChecks()) {
-        await archiveWorksRemovedFromZotero(settings.zoteroUserId, [], { monitored: settings.monitoredCollections });
+        const database = getDb();
+        await withDatabaseContext(database, () => archiveWorksRemovedFromZotero(settings.zoteroUserId, [], { monitored: settings.monitoredCollections, signal: controller.signal }));
       }
     } catch {
       /* Zotero offline; try again next tick */
     } finally {
       inFlight = false;
+      if (pollController === controller) pollController = null;
     }
   };
   pollTimer = setInterval(tick, 25_000);
 }
 
 export function stopRealtimeSync(): void {
+  pollController?.abort();
+  pollController = null;
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;

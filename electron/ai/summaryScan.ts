@@ -70,10 +70,17 @@ export async function runSummaryScan(work: Work, model?: ModelRef | null, option
   const hash = summaryContentHash(work, model);
   const modelFingerprint = analysisModelFingerprint('summary', { ...settings, summaryModel: scanModel });
 
-  if (!options.force && work.summary_status === 'done' && work.summary_hash === hash
-    && isLocalAnalysisCurrent(work.nodus_id, 'summary', hash, modelFingerprint)) return;
-
   const db = getDb();
+  if (!options.force && work.summary_hash === hash
+    && isLocalAnalysisCurrent(work.nodus_id, 'summary', hash, modelFingerprint)
+    && db.prepare('SELECT 1 FROM work_summaries WHERE nodus_id = ? AND content_hash = ? AND length(trim(summary)) > 0').get(work.nodus_id, hash)) {
+    // The chain marks the summary pending before calling us. The work snapshot can
+    // still say done, and a retry can find an already committed summary. Reusing it
+    // must also settle that pending marker, or the UI shows an unqueueable ghost.
+    setSummaryResult(work.nodus_id, 'done', hash);
+    summaryDone({ status: 'cached' });
+    return;
+  }
   const ideas = db
     .prepare(
       `SELECT i.label, i.statement, io.development, io.role, i.type, io.confidence

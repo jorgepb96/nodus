@@ -150,7 +150,9 @@ function summaryState(work: WorkView): StepState {
     case 'done':
       return 'done';
     case 'pending':
-      return 'pending';
+      // A persisted summary marker may outlive its job. Only the live queue can
+      // disable its recovery action; an orphan must remain retryable.
+      return 'missing';
     case 'failed':
       return 'failed';
     case 'skipped_no_text':
@@ -209,6 +211,11 @@ export function deriveWorkStatus(
 
   // A live queue entry outranks whatever the row last persisted, and is the only
   // authority that may call a step `running`.
+  if (work.summary_status === 'pending' && queued.some(item => item.kind === 'deep' && (item.state === 'queued' || item.state === 'running'))) {
+    // A required summary can belong to the deep chain without its own queue row.
+    // An explicit summary row below still wins, regardless of the queue's order.
+    steps.summary = { id: 'summary', state: 'pending' };
+  }
   for (const item of queued) {
     if (item.state !== 'queued' && item.state !== 'running') continue;
     const step = QUEUE_KIND_STEP[item.kind];

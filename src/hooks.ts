@@ -48,7 +48,8 @@ export function useDataRefresh(onRefresh: () => void | Promise<void>): void {
 }
 
 /**
- * Calls `onComplete` whenever the scan queue transitions from active to idle.
+ * Calls `onComplete` when the scan queue completes a task, including a cached
+ * job that starts and finishes between two coalesced progress events.
  * Derived views (graph, gaps, reading path) are built from scan results, so they
  * must refresh once a batch of scans finishes — otherwise a completed analysis
  * (queue shows 100%) never appears in the view until the user navigates away and back.
@@ -58,13 +59,16 @@ export function useScanComplete(onComplete: () => void): void {
   cb.current = onComplete;
   useEffect(() => {
     let prevActive = false;
+    let previousFinishedAt: string | null = null;
     return window.nodus.onQueueProgress((p) => {
-      const active = p.total > 0 && p.done + p.failed < p.total;
-      if (prevActive && !active) {
+      const active = p.maintenanceRunning || p.items.some(item => item.state === 'queued' || item.state === 'running' || item.state === 'paused');
+      const newlyFinished = Boolean(p.finishedAt && p.finishedAt !== previousFinishedAt);
+      if (!active && (prevActive || newlyFinished)) {
         invalidateVaultQueryCache();
         cb.current();
       }
       prevActive = active;
+      previousFinishedAt = p.finishedAt ?? null;
     });
   }, []);
 }

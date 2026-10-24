@@ -250,6 +250,7 @@ export default defineConfig({
           documentaryMaintenanceWorker: 'electron/workers/documentaryMaintenanceWorker.ts',
           computeWorker: 'electron/workers/computeWorker.ts',
           libraryExtractionWorker: 'electron/workers/libraryExtractionWorker.ts',
+          textExtractionWorker: 'electron/workers/textExtractionWorker.ts',
           libraryOperationWorker: 'electron/workers/libraryOperationWorker.ts',
           libraryReaderWorker: 'electron/workers/libraryReaderWorker.ts',
           compassWorker: 'electron/workers/compassWorker.ts',

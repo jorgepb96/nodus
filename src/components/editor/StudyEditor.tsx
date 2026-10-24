@@ -56,6 +56,7 @@ import { editorReviewDiff, savedEditorImageModels, type EditorImageModel, type E
 import type { StudyImproveResult } from '@shared/studyImprove';
 import { AudioPanel } from '../AudioPanel';
 import { ListenButton, type ListenTarget } from '../narration/Listen';
+import { ReadAlong } from '../narration/ReadAlong';
 import { hashString } from '@shared/stats';
 import { ConfirmModal } from '../ConfirmModal';
 import { useFeatureModel } from '../../hooks/useFeatureModel';
@@ -335,6 +336,7 @@ export function StudyEditor({
   const rawRef = useRef(raw);
   useEffect(() => { rawHistory.current = { undo: [], redo: [] }; }, [raw, active?.id]);
   const canvasRef = useRef<BlockNoteCanvasHandle>(null);
+  const documentScrollRef = useRef<HTMLDivElement>(null);
   const rawTextareaRef = useRef<HTMLTextAreaElement>(null);
   const rawSelection = useRef<{ id: string; content: string; from: number; to: number } | null>(null);
   const rawDictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; document: string } | null>(null);
@@ -1191,7 +1193,8 @@ export function StudyEditor({
           <div className="editorial-improvement-feedback">
       {lastImprovement && !aiPanel && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
           </div>
-          <div className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
+          <ReadAlong rootRef={documentScrollRef} scrollRef={documentScrollRef} matches={(key) => key.startsWith(`scriptor_document:${active.id}:`) || key.startsWith(`scriptor_selection:${active.id}:`) || key === `study_document:${active.id}`} />
+          <div ref={documentScrollRef} className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
             <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={locked} />
             {raw && (improveStreamingStyleId || aiResult) && aiSource.current ? (
               <div className="scriptor-ai-raw-review" data-testid="scriptor-ai-raw-review">{aiSource.current.base.slice(0,aiSource.current.target.from)}<span data-testid="scriptor-ai-raw-target">{editorReviewDiff(aiSource.current.target.text, improvePreview, Boolean(aiResult)).map((piece,index) => <span key={index} className={piece.kind === 'same' ? undefined : `scriptor-ai-${piece.kind}`}>{piece.value}</span>)}</span>{aiSource.current.base.slice(aiSource.current.target.to)}</div>

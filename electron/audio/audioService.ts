@@ -44,10 +44,11 @@ export function getEntitySegments(kind: AudioEntityKind, id: string, request: Au
     const source = request.markdown != null ? { title: request.title ?? '', markdown: request.markdown } : studyAudioSource(kind, id);
     return studyNarrationSegments(source.markdown, { ...request, title: request.title || source.title });
   }
-  if (kind === 'chat_message' || kind === 'dictionary_entry' || kind === 'scriptor_document' || kind === 'scriptor_selection') {
+  if (kind === 'chat_message' || kind === 'dictionary_entry' || kind === 'scriptor_document' || kind === 'scriptor_selection' || kind === 'library_document') {
     // A chat answer, a dictionary entry or a Scriptor document (or selection) is narrated from
     // the text the reader is looking at, which the renderer sends: a chat message may not be
-    // persisted yet while it streams, and a Scriptor draft may not be saved yet.
+    // persisted yet while it streams, and a Scriptor draft may not be saved yet. A library
+    // document is read from where the reader is, and never saved.
     if (request.markdown == null || !request.markdown.trim()) throw new Error('TTS_EMPTY_TEXT');
     return deepResearchSegments({ title: request.title ?? '', draftMarkdown: relabelCitations(request.markdown) });
   }

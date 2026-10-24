@@ -75,6 +75,7 @@ import {
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
 import { ListenButton } from '../components/narration/Listen';
+import { ReadAlong, type ReadAlongControls } from '../components/narration/ReadAlong';
 import { FindInPage } from '../components/FindInPage';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import {
@@ -106,6 +107,16 @@ function playerSteps(session: ImmersionSession): PlayerStep[] {
     { kind: 'frontiers' },
     { kind: 'exam' },
   ];
+}
+
+/** Step that shows a narrated segment, from the label `immersionSegments` gives it
+ *  ("Panorama", "Estación 2 · …"); -1 when none does. */
+function immersionStepForNarration(steps: readonly PlayerStep[], label: string): number {
+  if (/^Panorama\b/.test(label)) return steps.findIndex((step) => step.kind === 'panorama');
+  const station = /^Estación (\d+)/.exec(label);
+  if (!station) return -1;
+  const index = Number(station[1]) - 1;
+  return steps.findIndex((step) => step.kind === 'station' && step.index === index);
 }
 
 function stepMeta(step: PlayerStep, session: ImmersionSession): { icon: string; title: string; minutes: number } {
@@ -1475,6 +1486,8 @@ function ImmersionPlayer({
   const current = Math.min(progress.currentStep, steps.length - 1);
   const [direction, setDirection] = useState(1);
   const mainRef = useRef<HTMLDivElement | null>(null);
+  const readAlongControls = useRef<ReadAlongControls | null>(null);
+  const followingNarration = useRef(false);
   const markActionsRef = useRef<ReaderSelectionActionsHandle | null>(null);
   const annotationDocumentId = immersionAnnotationDocumentId(session.id);
 
@@ -1518,6 +1531,8 @@ function ImmersionPlayer({
     (index: number, markDone = false) => {
       const clamped = Math.max(0, Math.min(steps.length - 1, index));
       if (clamped === current && !markDone) return;
+      // Moving to another step by hand stops the view from following the narration.
+      if (!followingNarration.current) readAlongControls.current?.pauseFollow();
       setDirection(clamped >= current ? 1 : -1);
       const completed = new Set(progress.completedSteps);
       if (markDone) completed.add(current);
@@ -1838,6 +1853,19 @@ function ImmersionPlayer({
           onDeleteAnnotation={deleteAnnotation}
           onAnnotationError={setAnnotationError}
           onMarkChange={setHasReaderMark}
+        />
+        <ReadAlong
+          rootRef={mainRef}
+          scrollRef={mainRef}
+          controlsRef={readAlongControls}
+          matches={(key) => key === `immersion:${session.id}`}
+          onSegment={(_segment, label) => {
+            const target = immersionStepForNarration(steps, label);
+            if (target < 0) return;
+            followingNarration.current = true;
+            goTo(target);
+            followingNarration.current = false;
+          }}
         />
       </div>
 

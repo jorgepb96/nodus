@@ -75,6 +75,7 @@ import { DraftActionBar, DraftResultMain, SupportMatrix } from './writingShared'
 import { DeepResearchQueueStrip, type QueueStripItem } from '../components/DeepResearchQueueStrip';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
 import { ListenButton } from '../components/narration/Listen';
+import { ReadAlong } from '../components/narration/ReadAlong';
 import { FindInPage } from '../components/FindInPage';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import {
@@ -2463,6 +2464,7 @@ function ReaderView({
           onAnnotationError={setAnnotationError}
           onMarkChange={setHasReaderMark}
         />
+        <ReadAlong rootRef={documentRef} scrollRef={mainRef} matches={(key) => key === `deep_research:${saved.id}`} />
         {showMatrix && (
           <aside className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 p-4 max-lg:hidden">
             {saved.draft.completeGuide ? <CompleteGuideCoveragePanel meta={saved.draft.completeGuide} /> : <SupportMatrix sourceNotices draft={saved.draft} onCitation={onCitation} />}

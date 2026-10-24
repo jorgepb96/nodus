@@ -36,6 +36,8 @@ export interface ListenTarget {
   open?: () => void;
   /** Play without saving any clip (Scriptor's selection): see `NarrationInput.ephemeral`. */
   ephemeral?: boolean;
+  /** Open-ended text (a library book): see `NarrationInput.lookahead`. */
+  lookahead?: boolean;
 }
 
 type Confirm = null | { kind: 'clip'; clip: AudioClip } | { kind: 'all' };
@@ -100,6 +102,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId, language: settings.ttsLanguage,
         labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
         ephemeral: target.ephemeral,
+        lookahead: target.lookahead,
       };
       // Nothing is saved without a clip, so an ephemeral narration always plays as it generates,
       // and the one it replaces stops generating: nobody can listen to it any more.
@@ -296,7 +299,11 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
     const input = {
       kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId: phononModel ? settings.ttsPhononVoiceId : kokoroModel ? settings.ttsKokoroVoiceId : pocketModel ? settings.ttsPocketVoiceId : settings.ttsVoiceId, language,
       labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
+      ephemeral: target.ephemeral,
+      lookahead: target.lookahead,
     };
+    // An ephemeral narration saves nothing, so it can only play as it generates.
+    if (target.ephemeral) { player.cancelGeneration(); startNarration(player, input, source); return; }
     if (settings.ttsStreaming) { startNarration(player, input, source); return; }
     // Without streaming: generate everything in the background, then play the saved clips.
     player.stop();

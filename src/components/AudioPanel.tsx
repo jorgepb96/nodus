@@ -10,6 +10,7 @@ import type {
 } from '@shared/types';
 import { refreshTtsStatus, ttsReady } from '../lib/narration/ttsClient';
 import { startNarration } from '../lib/narration/narrate';
+import { clipTracks } from '../lib/narration/clipTracks';
 import {
   audioGenerationJobKey,
   cancelAudioGeneration,
@@ -152,10 +153,8 @@ export function AudioPanel({
   }, [entityKind, entityId, segmentRequest]);
 
   const totalDuration = useMemo(() => clips.reduce((acc, c) => acc + c.durationSec, 0), [clips]);
-  const playable = useMemo<PlayerTrack[]>(
-    () => clips.filter((c) => !c.missing).map((c) => ({ id: c.id, label: c.segmentLabel })),
-    [clips]
-  );
+  const playable = useMemo<PlayerTrack[]>(() => clipTracks(clips, title || t('Narración'), segments), [clips, title, segments]);
+  const narrationSource = useMemo(() => ({ key: `${entityKind}:${entityId}`, title: title || t('Narración') }), [entityKind, entityId, title]);
 
   const generate = async () => {
     setError(null);
@@ -171,7 +170,7 @@ export function AudioPanel({
       title: title ?? '',
       segmentRequest,
       labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
-    }, { key: `${entityKind}:${entityId}`, title: title || t('Narración') });
+    }, narrationSource);
   };
 
   const cancel = () => {
@@ -180,7 +179,7 @@ export function AudioPanel({
 
   const playFrom = (clip: AudioClip) => {
     const idx = playable.findIndex((tk) => tk.id === clip.id);
-    if (idx >= 0) player.play(playable, idx);
+    if (idx >= 0) player.play(playable, idx, narrationSource);
   };
 
   const deleteClip = async (id: string) => {
@@ -221,7 +220,7 @@ export function AudioPanel({
           {study && <button data-testid="study-audio-tools" className={`btn btn-ghost h-8 px-2 text-xs ${showStudyTools ? 'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300' : ''}`} onClick={() => setShowStudyTools((value) => !value)}>{t('Pronunciación y lista')}</button>}
           {hasClips && !generating && (
             <>
-              <button className="btn btn-ghost border border-neutral-700 text-xs" onClick={() => player.play(playable, 0)} disabled={playable.length === 0}>
+              <button className="btn btn-ghost border border-neutral-700 text-xs" onClick={() => player.play(playable, 0, narrationSource)} disabled={playable.length === 0}>
                 ▶ {t('Reproducir todo')}
               </button>
               <button className="btn btn-ghost text-xs text-red-400" onClick={() => void deleteAll()}>

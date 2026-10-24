@@ -14,6 +14,27 @@ export interface PlayerTrack {
   /** Defaults to the saved clip's `nodus-audio://clip/<id>` URL. */
   url?: string;
   durationS?: number;
+  /** What the read-along highlight needs to follow this track. */
+  sync?: TrackSync;
+}
+
+/** A live fragment carries its text and silences; a saved clip is resolved by id
+ *  (`getAudioClipSync`), with the segment's text when the caller knows it (old clips). */
+export type TrackSync =
+  | { kind: 'live'; segmentIndex: number; text: string; durationS: number; pauses: Array<[number, number]> }
+  | { kind: 'clip'; clipId: string; segmentIndex: number; text?: string };
+
+export interface Playhead { trackId: string; index: number; time: number; rate: number; playing: boolean }
+
+/** Frame-accurate, render-free access to playback for the read-along highlight. Stable for the
+ *  provider's lifetime; `subscribe` fires on play, pause, seek, rate, track and source changes. */
+export interface NarrationClock {
+  playhead(): Playhead | null;
+  tracks(): readonly PlayerTrack[];
+  source(): NarrationSource | null;
+  subscribe(listener: () => void): () => void;
+  /** Play track `index` from `seconds` (a word clicked in the text). */
+  jumpTo(index: number, seconds: number): void;
 }
 
 export interface NarrationSource {
@@ -42,6 +63,8 @@ export interface NarrationTimeline { playedS: number; generatedS: number; totalS
 
 export interface LiveNarration {
   append(track: PlayerTrack): void;
+  /** Seconds generated and not heard yet: an open-ended narration waits when it is far ahead. */
+  aheadS(): number;
   progress(update: Partial<NarrationGeneration> & { estimatedTotalS?: number }): void;
   finish(): void;
   fail(message: string): void;
@@ -73,6 +96,7 @@ interface PlayerApi {
   next(): void;
   setRate(rate: number): void;
   cancelGeneration(): void;
+  clock: NarrationClock;
 }
 
 const PlayerContext = createContext<PlayerApi | null>(null);
@@ -119,6 +143,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [source, setSource] = useState<NarrationSource | null>(null);
   const [generation, setGeneration] = useState<NarrationGeneration | null>(null);
   const [estimatedTotalS, setEstimatedTotalS] = useState(0);
+  const sourceRef = useRef<NarrationSource | null>(null);
+  const listeners = useRef(new Set<() => void>());
+  const notify = useCallback(() => { for (const listener of listeners.current) listener(); }, []);
+  const changeSource = useCallback((next: NarrationSource | null) => { sourceRef.current = next; setSource(next); }, []);
 
   useEffect(() => {
     void window.nodus.getSettings().then((s) => {
@@ -167,9 +195,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     (el as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
     setDuration(el.duration || track.durationS || 0);
     playingWanted.current = true;
+    notify();
     try { await el.play(); } catch { setIsPlaying(false); }
     preloadNext();
-  }, [preloadNext]);
+  }, [preloadNext, notify]);
 
   const play = useCallback((next: PlayerTrack[], startIndex = 0, nextSource?: NarrationSource) => {
     if (!next.length) return;
@@ -178,12 +207,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setGeneration(null);
     tracksRef.current = next;
     setTracks(next);
-    setSource(nextSource ?? null);
+    changeSource(nextSource ?? null);
     setEstimatedTotalS(next.reduce((sum, track) => sum + (track.durationS ?? 0), 0));
     setVisible(true);
     for (const el of elements.current) if (el) el.dataset.trackId = '';
     void startTrack(Math.max(0, Math.min(startIndex, next.length - 1)));
-  }, [startTrack]);
+  }, [startTrack, changeSource]);
 
   const generatedS = () => tracksRef.current.reduce((sum, track) => sum + (track.durationS ?? 0), 0);
 
@@ -196,7 +225,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setIndex(0);
     setCurrentTime(0);
     setDuration(0);
-    setSource(nextSource);
+    changeSource(nextSource);
+    notify();
     setEstimatedTotalS(0);
     setVisible(true);
     playingWanted.current = options.autoplay;
@@ -218,12 +248,19 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         if (liveRef.current !== live) return;
         tracksRef.current = [...tracksRef.current, track];
         setTracks(tracksRef.current);
+        notify();
         // A fragment arriving while playback waited at the end of the queue resumes it.
         const el = current();
         const waitingAtEnd = live.started && playingWanted.current && el && (el.ended || !el.src) && indexRef.current === tracksRef.current.length - 2;
         if (waitingAtEnd) void startTrack(indexRef.current + 1);
         else if (live.started) preloadNext();
         maybeStart();
+      },
+      aheadS() {
+        if (liveRef.current !== live) return 0;
+        if (!live.started) return generatedS();
+        const before = tracksRef.current.slice(0, indexRef.current).reduce((sum, item) => sum + (item.durationS ?? 0), 0);
+        return generatedS() - before - (current()?.currentTime ?? 0);
       },
       progress(update) {
         if (liveRef.current !== live) return;
@@ -255,7 +292,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         setBuffering(false);
       },
     };
-  }, [preloadNext, startTrack]);
+  }, [preloadNext, startTrack, changeSource, notify]);
 
   const toggle = useCallback(() => {
     const el = current();
@@ -281,8 +318,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setVisible(false);
     setIsPlaying(false);
     setBuffering(false);
-    setSource(null);
-  }, [cancelGeneration]);
+    changeSource(null);
+    notify();
+  }, [cancelGeneration, changeSource, notify]);
 
   const seek = useCallback((seconds: number) => {
     const el = current();
@@ -308,8 +346,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     rateRef.current = value;
     setRateState(value);
     for (const el of elements.current) if (el) el.playbackRate = value;
+    notify();
     void window.nodus.updateSettings({ audioSpeed: value });
-  }, []);
+  }, [notify]);
 
   const onEnded = useCallback((which: number) => {
     if (which !== active.current) return;
@@ -329,6 +368,43 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentTime(el.currentTime);
   }, []);
 
+  const jumpTo = useCallback((i: number, seconds: number) => {
+    const track = tracksRef.current[i];
+    if (!track) return;
+    const live = liveRef.current;
+    if (live && !live.started) { live.autoplay = true; live.started = true; }
+    playingWanted.current = true;
+    const el = current();
+    if (i === indexRef.current && el?.dataset.trackId === track.id && el.src) {
+      el.currentTime = Math.max(0, seconds);
+      setCurrentTime(el.currentTime);
+      if (el.paused) void el.play().catch(() => undefined);
+      notify();
+      return;
+    }
+    // startTrack sets the element up synchronously before it awaits play(), so the position
+    // set right after applies to the new track (as the default start position until it loads).
+    void startTrack(i);
+    const next = current();
+    if (next) next.currentTime = Math.max(0, seconds);
+  }, [startTrack, notify]);
+
+  const clock = useMemo<NarrationClock>(() => ({
+    playhead() {
+      const el = elements.current[active.current];
+      const track = tracksRef.current[indexRef.current];
+      if (!el || !track || el.dataset.trackId !== track.id) return null;
+      return { trackId: track.id, index: indexRef.current, time: el.currentTime, rate: rateRef.current, playing: !el.paused && !el.ended };
+    },
+    tracks: () => tracksRef.current,
+    source: () => sourceRef.current,
+    subscribe(listener) {
+      listeners.current.add(listener);
+      return () => { listeners.current.delete(listener); };
+    },
+    jumpTo: (i, seconds) => jumpTo(i, seconds),
+  }), [jumpTo]);
+
   const timeline = useMemo<NarrationTimeline>(() => {
     const before = tracks.slice(0, index).reduce((sum, track) => sum + (track.durationS ?? 0), 0);
     const generated = tracks.reduce((sum, track) => sum + (track.durationS ?? 0), 0);
@@ -338,8 +414,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const api = useMemo<PlayerApi>(() => ({
     visible, isPlaying, buffering, currentTrackId: tracks[index]?.id ?? null, tracks, index, currentTime, duration, rate,
     source, generation, timeline,
-    play, startLive, toggle, stop, seek, skip, prev, next, setRate, cancelGeneration,
-  }), [visible, isPlaying, buffering, tracks, index, currentTime, duration, rate, source, generation, timeline, play, startLive, toggle, stop, seek, skip, prev, next, setRate, cancelGeneration]);
+    play, startLive, toggle, stop, seek, skip, prev, next, setRate, cancelGeneration, clock,
+  }), [visible, isPlaying, buffering, tracks, index, currentTime, duration, rate, source, generation, timeline, play, startLive, toggle, stop, seek, skip, prev, next, setRate, cancelGeneration, clock]);
 
   return (
     <PlayerContext.Provider value={api}>
@@ -354,8 +430,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
           className="hidden"
           preload="auto"
           onEnded={() => onEnded(which)}
-          onPlay={() => { if (which === active.current) { setIsPlaying(true); setBuffering(false); } }}
-          onPause={() => { if (which === active.current) setIsPlaying(false); }}
+          onPlay={() => { if (which === active.current) { setIsPlaying(true); setBuffering(false); notify(); } }}
+          onPause={() => { if (which === active.current) { setIsPlaying(false); notify(); } }}
+          onSeeked={() => { if (which === active.current) notify(); }}
           onTimeUpdate={(e) => onTime(which, e.currentTarget)}
           onLoadedMetadata={(e) => { if (which === active.current) setDuration(e.currentTarget.duration || 0); }}
         />

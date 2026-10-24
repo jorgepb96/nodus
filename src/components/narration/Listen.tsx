@@ -13,6 +13,7 @@ import {
   type AudioGenerationProgress, type AudioGenerationRequest, type AudioGenerationResult,
 } from '../../backgroundJobs';
 import { segmentNarrator, startNarration } from '../../lib/narration/narrate';
+import { clipTracks } from '../../lib/narration/clipTracks';
 import { currentTtsStatus, refreshTtsStatus, subscribeTtsEvents, subscribeTtsStatus, ttsReady } from '../../lib/narration/ttsClient';
 import { ttsErrorMessage, ttsInstallPhaseLabel } from '../../lib/narration/ttsErrors';
 import { t, tx } from '../../i18n';
@@ -86,7 +87,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
       if (!settings || !status) return;
       const modelId = settings.ttsModelId || status.models.find((model) => model.downloaded)?.id || status.models[0]?.id || '';
       const model = TTS_MODELS.find((entry) => entry.id === modelId);
-      const playable = clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+      const playable = clipTracks(clips, target.title);
       const source = { key, title: target.title, open: target.open };
       if (playable.length) { player.play(playable, 0, source); return; }
       if (!ttsReady(status, modelId)) { onUnavailable?.(); return; }
@@ -111,7 +112,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         queueMicrotask(unsubscribe);
         if (next.status === 'completed' && next.result && !next.result.cancelled) {
           void window.nodus.listAudioClips(target.kind, target.id).then((saved) => {
-            const tracks = saved.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+            const tracks = clipTracks(saved, target.title);
             if (tracks.length) player.play(tracks, 0, source);
           });
         }
@@ -283,7 +284,7 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
     finally { setBusy(''); if (name === 'install') setInstall(null); void refreshTtsStatus().catch(() => {}); }
   };
 
-  const playable = useMemo<PlayerTrack[]>(() => clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec })), [clips, target.title]);
+  const playable = useMemo<PlayerTrack[]>(() => clipTracks(clips, target.title), [clips, target.title]);
   const source = { key, title: target.title, open: target.open };
   const listening = player.source?.key === key;
   const playing = listening && player.isPlaying;
@@ -305,7 +306,7 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
       queueMicrotask(unsubscribe);
       if (next.status === 'completed' && next.result && !next.result.cancelled) {
         void window.nodus.listAudioClips(target.kind, target.id).then((saved) => {
-          const tracks = saved.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+          const tracks = clipTracks(saved, target.title);
           if (tracks.length) player.play(tracks, 0, source);
         });
       }

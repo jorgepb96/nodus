@@ -29,12 +29,15 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.15.4');
-  assert.equal(current.highlights.length, 2);
-  assert.deepEqual(current.highlights.map(h => h.category), ['fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['general','general']);
-  assert.match(current.highlights[0].en, /^The Listen panel shows voice engine installation phases and progress/);
-  assert.match(current.highlights[1].en, /^In Nodus Scriptor, the Listen button in the header only opens or closes the panel/);
+  assert.equal(current.version, '5.16.0');
+  assert.equal(current.highlights.length, 10);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','new','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['general','zotero','zotero','zotero','zotero','library','zotero','zotero','toolkit','general']);
+  assert.match(current.highlights[0].en, /^When text is read aloud, Nodus highlights the sentence and the word being spoken/);
+  assert.match(current.highlights[1].en, /^The Nodus add-on for Zotero offers three local embedding models/);
+  assert.match(current.highlights[5].en, /^The Library now calls the reading version it generates Markdown/);
+  assert.match(current.highlights[8].en, /^Nodus Sign shows the specific reason/);
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.15.4').highlights[0].en, /^The Listen panel shows voice engine installation phases and progress/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.15.3').highlights[0].en, /^Narration adds Pocket TTS/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.15.2').highlights[0].en, /^Voice filters follow the model and interface language/);
   // 5.15.0 introduced Nodus Support. Its note stays as published.
@@ -97,9 +100,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: no new features or enhancements and two fixes.
+  // Independently authored section boundaries: two new features, four enhancements and four fixes.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,0,0][i], [0,0,2][i]);
+    const entries = current.highlights.slice([0,2,6][i], [2,6,10][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

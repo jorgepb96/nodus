@@ -1,19 +1,9 @@
 name: Zotero plugin
 
+# Pull requests run these checks in CI's Zotero module lane
+# (scripts/ci-modules.mjs), so the required gate covers them. This workflow
+# stays for an on-demand plugin build.
 on:
-  pull_request:
-    paths:
-      - zotero-plugin/**
-      - scripts/test-zotero-plugin.mjs
-      - scripts/test-zotero-harrier-graph.mjs
-      - scripts/fixtures/zotero-embeddings/**
-      - scripts/prepare-zotero-harrier-onnx.py
-      - scripts/build-zotero-xpi.mjs
-      - scripts/smoke-zotero-xpi.mjs
-      - scripts/zotero-local-embedding-worker.mjs
-      - package.json
-      - package-lock.json
-      - .github/workflows/zotero-plugin.yml
   workflow_dispatch:
 
 permissions:

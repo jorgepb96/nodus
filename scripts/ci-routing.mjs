@@ -1,8 +1,10 @@
 // Select jobs, never individual files from the complete Linux test inventory.
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { changedPaths, moduleNames, ownerOf, touches } from './ci-modules.mjs';
+
+export { changedPaths };
 
 const keys = ['full', 'light', 'macos', 'windows', 'research', 'scheme', 'server', 'appimage', 'presenter'];
 const documentation = file => file === 'README.md' || file === '.github/actions-budget/README.md'
@@ -32,14 +34,23 @@ export function routeChanges(files, mode = 'pull_request') {
   assert.ok(Array.isArray(files) && files.every(file => typeof file === 'string' && file.length > 0
     && !file.startsWith('/') && !file.split('/').includes('..')), 'Invalid changed paths');
   const selected = Object.fromEntries(keys.map(key => [key, false]));
+  let selectedModules = [];
   // Manual runs exercise every lane without publishing. Release builds already
   // own native packaging; their Linux gate still includes every specialist check.
   if (mode !== 'pull_request' || files.length === 0 || files.some(policy)) {
     for (const key of keys) selected[key] = key !== 'light';
     if (mode === 'release') selected.macos = selected.windows = false;
+    selectedModules = moduleNames;
   } else {
-    selected.full = !files.every(documentation);
-    selected.light = !selected.full;
+    // Files a self-contained module owns select only that module's checks;
+    // the application lanes follow every other non-documentation file.
+    const app = files.filter(file => !documentation(file) && !ownerOf(file));
+    selectedModules = files.some(dependencies) ? moduleNames
+      : moduleNames.filter(name => files.some(file => touches(name, file)));
+    selected.full = app.length > 0;
+    selected.light = !selected.full && files.some(documentation);
+    // Specialist lanes follow application files only.
+    files = app;
     selected.macos = selected.windows = files.some(native);
     selected.research = files.some(research);
     selected.scheme = files.some(file => /^tools\/(?:scheme-scan|reaction-index)\//.test(file)
@@ -59,20 +70,10 @@ export function routeChanges(files, mode = 'pull_request') {
   // Native research runtime coverage accompanies every research change, even
   // when its only changed source is shared data or a regression fixture.
   if (selected.research) selected.macos = selected.windows = mode !== 'release';
-  return { ...selected, matrix: { include: [
+  return { ...selected, modules: selectedModules, matrix: { include: [
     ...(selected.macos ? [{ os: 'macos-latest' }] : []),
     ...(selected.windows ? [{ os: 'windows-latest' }] : []),
   ] } };
-}
-
-export function changedPaths(base, head, cwd = process.cwd()) {
-  const valid = value => typeof value === 'string' && /^[a-f\d]{40}$/i.test(value);
-  assert.ok(valid(base) && valid(head), 'CI diff requires immutable commit SHAs');
-  const ancestor = execFileSync('git', ['merge-base', base, head], { cwd, encoding: 'utf8' }).trim();
-  // --no-renames includes BOTH paths of moves, so moving platform code into a
-  // documentation directory cannot hide its deletion from the native checks.
-  return execFileSync('git', ['diff', '--name-only', '--no-renames', '-z', ancestor, head], { cwd, encoding: 'utf8' })
-    .split('\0').filter(Boolean);
 }
 
 export function assertJobResults(selection, jobs) {
@@ -86,6 +87,7 @@ export function assertJobResults(selection, jobs) {
     platform: selection.macos || selection.windows,
     scheme: selection.scheme,
     server: selection.server,
+    modules: selection.modules.length > 0,
   };
   for (const [name, required] of Object.entries(expected)) {
     assert.equal(jobs[name]?.result, required ? 'success' : 'skipped',
@@ -111,7 +113,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (process.env.GITHUB_STEP_SUMMARY) {
       fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
         `### Selected CI checks\n\nMode: ${mode}. Changed paths: ${files.length}.\n\n`
-        + keys.map(key => `- ${key}: ${selection[key] ? 'selected' : 'not needed'}\n`).join(''));
+        + keys.map(key => `- ${key}: ${selection[key] ? 'selected' : 'not needed'}\n`).join('')
+        + `- modules: ${selection.modules.join(', ') || 'not needed'}\n`);
     }
   }
 }

@@ -32,7 +32,8 @@ export interface TtsSynthRequest {
   priority?: number;
 }
 
-export interface TtsFragment { jobId: string; index: number; total: number; path: string; durationS: number; genS: number }
+/** `text` is what the engine spoke in this fragment (empty from sidecars that do not say). */
+export interface TtsFragment { jobId: string; index: number; total: number; path: string; durationS: number; genS: number; text: string }
 export interface TtsJobCallbacks {
   onStart?: (jobId: string) => void;
   onFragment?: (fragment: TtsFragment) => void;
@@ -216,6 +217,7 @@ export class TtsEngineHost {
           const fragment: TtsFragment = {
             jobId: job.jobId, index: Number(message.n), total: Number(message.total), path: String(message.path),
             durationS: Number(message.duration_s) || 0, genS: Number(message.gen_s) || 0,
+            text: typeof message.text === 'string' ? message.text : '',
           };
           if (!isInside(outDir, fragment.path)) return true;
           job.fragments.push(fragment);

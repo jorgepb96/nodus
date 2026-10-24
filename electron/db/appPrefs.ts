@@ -150,6 +150,9 @@ export const SHARED_MODEL_KEYS = [
   'ttsLanguage',
   'ttsVoiceFilters',
   'ttsStreaming',
+  'narrationHighlight',
+  'narrationHighlightStyle',
+  'narrationFollow',
   'ttsIdleUnloadMin',
   'ttsRetention',
 ] as const;

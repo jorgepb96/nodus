@@ -60,6 +60,7 @@ import { errorText, getActiveLang, pick, t as appT, tr } from "../i18n";
 import { DICTIONARY_TRANSLATIONS } from "../i18n.dictionary";
 import type { DictionarySnapshot } from "../app/viewSnapshots";
 import { ListenButton } from '../components/narration/Listen';
+import { ReadAlong } from '../components/narration/ReadAlong';
 
 export type DictionaryDetailTab =
   | "overview"
@@ -1881,6 +1882,7 @@ function DictionaryEntryView({
   onOpenLibraryWork: OpenCitationLibraryWork;
 }) {
   const [detail, setDetail] = useState<DictionaryEntryDetail | null>(null);
+  const entryScrollRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<DictionaryDetailTab>(
     () => restoredTab ?? "overview",
   );
@@ -1988,9 +1990,11 @@ function DictionaryEntryView({
     (backgroundBusy && progress?.mode === "update");
   return (
     <div
+      ref={entryScrollRef}
       className="min-h-0 flex-1 overflow-y-auto p-5"
       data-testid="dictionary-entry-detail"
     >
+      <ReadAlong rootRef={entryScrollRef} scrollRef={entryScrollRef} matches={(key) => key === `dictionary_entry:${entry.id}`} />
       <div className="mx-auto max-w-[1480px] space-y-4">
         <section className="rounded-2xl border border-indigo-100 bg-indigo-50/80 p-5 dark:border-neutral-800 dark:bg-neutral-900/35">
           <div className="flex flex-wrap items-start gap-4">

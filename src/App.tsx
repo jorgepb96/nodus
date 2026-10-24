@@ -808,6 +808,7 @@ export function App() {
     root.classList.toggle('accessible-font', settings.accessibleFont);
     root.classList.toggle('high-contrast', settings.highContrast);
     root.classList.toggle('reduce-motion', settings.reduceMotion);
+    root.classList.toggle('read-along-underline', settings.narrationHighlightStyle === 'underline');
     root.classList.toggle('reading-focus', Boolean(isEstudio && settings.readingFocusMode));
   }, [settings, isEstudio]);
 

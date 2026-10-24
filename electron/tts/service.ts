@@ -23,6 +23,8 @@ import { TtsEngineHost, type TtsVoiceRef } from './host';
 import { measurePerf } from '../perf';
 import { TtsVoiceLibrary } from './voices';
 import { concatWavFiles } from './wavConcat';
+import { clipSyncFor, pausesOfWavFile } from './fragmentSync';
+import type { Pause } from '@shared/narrationSync';
 import { liveFragmentUrl } from './audioUrls';
 import { sweepNarrationClips } from './retention';
 import {
@@ -277,11 +279,23 @@ export class TtsService {
       if (ref.text.trim().length < minimumVoiceTranscriptChars(info?.durationS ?? 3)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
     }
     const started = Date.now();
+    // Each fragment's silences are read from its WAV before it is announced, in order, so the
+    // renderer gets text and pauses together and the clip saved at the end has every one.
+    const pausesByPath = new Map<string, Pause[]>();
+    let announced: Promise<void> = Promise.resolve();
     const { jobId, done } = this.host.synth(modelId, { text, voice: ref, language, priority: request.priority ?? 0 }, {
       onStart: (id) => this.progress(id, { state: 'generating' }),
       onFragment: (fragment) => {
-        const event: TtsFragmentEvent = { jobId: fragment.jobId, index: fragment.index, total: fragment.total, url: liveFragmentUrl(fragment.jobId, fragment.path), durationS: fragment.durationS, genS: fragment.genS };
-        this.emit({ kind: 'fragment', fragment: event });
+        const pauses = pausesOfWavFile(fragment.path);
+        announced = announced.then(async () => {
+          const found = await pauses;
+          pausesByPath.set(fragment.path, found);
+          const event: TtsFragmentEvent = {
+            jobId: fragment.jobId, index: fragment.index, total: fragment.total, url: liveFragmentUrl(fragment.jobId, fragment.path),
+            durationS: fragment.durationS, genS: fragment.genS, text: fragment.text, pauses: found,
+          };
+          this.emit({ kind: 'fragment', fragment: event });
+        }).catch(() => {});
         const job = this.jobs.get(fragment.jobId);
         const finished = fragment.index + 1;
         const audioS = (job?.progress.audioS ?? 0) + fragment.durationS;
@@ -294,14 +308,17 @@ export class TtsService {
     });
     this.jobs.set(jobId, { started, progress: { jobId, done: 0, total: 0, audioS: 0, genS: 0, rtf: null, etaS: null, state: 'queued' } });
     void done.then(async (result) => {
+      await announced;
       if (result.cancelled) { this.progress(jobId, { state: 'cancelled' }); return; }
       let clip;
       if (request.save && result.fragments.length) {
-        const paths = result.fragments.sort((a, b) => a.index - b.index).map((fragment) => fragment.path);
+        const fragments = result.fragments.sort((a, b) => a.index - b.index);
+        const paths = fragments.map((fragment) => fragment.path);
         const bytes = await measurePerf('tts-concat', { nodusId: request.save.id }, () => concatWavFiles(paths), { fragments: paths.length });
+        const sync = clipSyncFor(fragments.map((fragment) => ({ durationS: fragment.durationS, text: fragment.text, pauses: pausesByPath.get(fragment.path) ?? [] })));
         clip = await measurePerf('tts-save-clip', { nodusId: request.save.id }, () => saveClipAsync(request.save!.kind, request.save!.id, {
           segmentIndex: request.save!.segmentIndex, segmentLabel: request.save!.segmentLabel,
-          provider: model.engine, voice: voiceId, language, modelId, bytes,
+          provider: model.engine, voice: voiceId, language, modelId, bytes, sync,
         }), { bytes: bytes.length });
       }
       this.progress(jobId, { state: 'done', etaS: 0 }, clip);

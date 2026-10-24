@@ -1,0 +1,95 @@
+/*
+ * Read-along highlight (src/lib/narration/readAlong.ts): the sentence a narration is reading
+ * gets a soft tint and the word (or phrase) a stronger one. Colours come from the accent the
+ * rest of the app uses: the user's palette when one is active, else the vault's accent. Both
+ * are set on <html>, which is also where light/dark, high contrast and the style class live,
+ * so every rule here hangs from the root. `::highlight` cannot animate, so reduced motion only
+ * concerns the scrolling (handled in JS).
+ */
+:root {
+  --read-along-accent: var(--vault-accent, var(--a-500, #6366f1));
+  --read-along-sentence: color-mix(in srgb, var(--read-along-accent) 16%, transparent);
+  --read-along-word: color-mix(in srgb, var(--read-along-accent) 40%, transparent);
+  --read-along-line: color-mix(in srgb, var(--read-along-accent) 70%, white);
+}
+html.theme-active { --read-along-accent: var(--a-500, #6366f1); }
+html.light {
+  --read-along-sentence: color-mix(in srgb, var(--read-along-accent) 11%, transparent);
+  --read-along-word: color-mix(in srgb, var(--read-along-accent) 26%, transparent);
+  --read-along-line: color-mix(in srgb, var(--read-along-accent) 82%, black);
+}
+
+::highlight(nodus-tts-sentence) {
+  background-color: var(--read-along-sentence);
+  color: inherit;
+}
+::highlight(nodus-tts-word) {
+  background-color: var(--read-along-word);
+  color: inherit;
+  text-decoration: underline 2px var(--read-along-line);
+  text-underline-offset: 3px;
+}
+
+/* Underline style: no tint behind the text. */
+html.read-along-underline ::highlight(nodus-tts-sentence) {
+  background-color: transparent;
+  text-decoration: underline 1px dotted var(--read-along-line);
+  text-underline-offset: 4px;
+}
+html.read-along-underline ::highlight(nodus-tts-word) {
+  background-color: transparent;
+  text-decoration: underline 3px var(--read-along-line);
+  text-underline-offset: 3px;
+}
+
+/* The app's high-contrast mode: a solid marker the eye cannot miss on black or white. */
+html.high-contrast ::highlight(nodus-tts-sentence) {
+  background-color: transparent;
+  text-decoration: underline 2px currentColor;
+  text-underline-offset: 4px;
+}
+html.high-contrast ::highlight(nodus-tts-word) {
+  background-color: #ffd400;
+  color: #000;
+  text-decoration: none;
+}
+
+/* The operating system's forced colours (Windows high contrast): its own highlight pair. */
+@media (forced-colors: active) {
+  ::highlight(nodus-tts-sentence) {
+    background-color: transparent;
+    text-decoration: underline 1px CanvasText;
+  }
+  ::highlight(nodus-tts-word) {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* ⌥/Alt held over a narrated text: clicking a word plays from it. */
+.read-along-jump,
+.read-along-jump * { cursor: pointer !important; }
+
+.read-along-resume {
+  position: fixed;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--read-along-accent) 45%, #3f3f46);
+  border-radius: 999px;
+  background: rgb(24 24 27 / 0.94);
+  padding: 6px 12px;
+  color: #f4f4f5;
+  font-size: 12px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+}
+.read-along-resume:hover { border-color: var(--read-along-accent); }
+.light .read-along-resume {
+  border-color: color-mix(in srgb, var(--read-along-accent) 40%, #d4d4d8);
+  background: rgb(255 255 255 / 0.96);
+  color: #18181b;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+}
+html.high-contrast .read-along-resume { border: 2px solid currentColor; }

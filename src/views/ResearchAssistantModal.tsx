@@ -61,6 +61,7 @@ import type {
 } from '@shared/types';
 import { Icon, sortModelRefs } from '../components/ui';
 import { ListenButton, type ListenTarget } from '../components/narration/Listen';
+import { ReadAlong } from '../components/narration/ReadAlong';
 import type { MarkdownCitation } from '../components/Markdown';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ChatTypingIndicator } from '../components/ChatTypingIndicator';
@@ -1345,6 +1346,7 @@ export function ResearchAssistantModal({
             {!adapter && !isGenealogy && <ResearchHarnessPanel mode="chat" conversationId={activeId} onResumed={() => { if (activeId) void loadConversation(activeId); }} />}
             <div className="relative flex-1 min-h-0">
               <FindInPage key={activeId ?? 'new-chat'} targetRef={scrollRef} placement="surface" />
+              {!adapter && activeId && <ReadAlong rootRef={scrollRef} scrollRef={scrollRef} matches={(key) => key.startsWith(`chat_message:${activeId}:`)} />}
               {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">
                 {conversationNotice && (

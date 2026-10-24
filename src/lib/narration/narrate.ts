@@ -7,6 +7,7 @@ import {
 } from '../../backgroundJobs';
 import type { LiveNarration, NarrationSource, PlayerTrack } from '../../components/AudioPlayer';
 import { speak } from './ttsClient';
+import { shouldWaitForListener } from '@shared/narrationSync';
 
 /**
  * Starts narrating an item: one Ming job per speakable segment, each saved as a clip of the
@@ -24,12 +25,25 @@ export interface NarrationInput {
   /** Play without saving: no clip, no database row. The fragments stay in the engine's live
    *  folder, which removes them shortly after the job ends (Scriptor's read-the-selection). */
   ephemeral?: boolean;
+  /** Open-ended text (a library book): generate only a few minutes ahead of the listener. */
+  lookahead?: boolean;
 }
 
 /** Live playback outranks generation nobody is listening to yet. */
 const LISTENING_PRIORITY = 10;
 
-export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'language' | 'ephemeral'>, live: LiveNarration | null): SegmentNarrator {
+/** Resolves once the listener is close enough to the end of what was generated (or on cancel). */
+function untilListenerCatchesUp(live: LiveNarration, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (signal.aborted || !shouldWaitForListener(live.aheadS(), 0)) { resolve(); return; }
+      window.setTimeout(check, 1000);
+    };
+    check();
+  });
+}
+
+export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'language' | 'ephemeral' | 'lookahead'>, live: LiveNarration | null): SegmentNarrator {
   // Estimated length of the whole narration, refined as fragments arrive: audio per character
   // generated so far × characters in all segments.
   let charsDone = 0;
@@ -37,6 +51,8 @@ export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'languag
   let totalChars = 0;
   return async (segment, context) => {
     if (!totalChars) totalChars = Math.max(segment.text.length, 1) * context.total;
+    if (input.lookahead && live) await untilListenerCatchesUp(live, context.signal);
+    if (context.signal.aborted) return false;
     let segmentAudio = 0;
     const handle = await speak({
       text: segment.text,
@@ -47,7 +63,10 @@ export function segmentNarrator(input: Pick<NarrationInput, 'voiceId' | 'languag
     }, {
       onFragment: (fragment) => {
         segmentAudio += fragment.durationS;
-        const track: PlayerTrack = { id: `${fragment.jobId}:${fragment.index}`, label: segment.label, url: fragment.url, durationS: fragment.durationS };
+        const track: PlayerTrack = {
+          id: `${fragment.jobId}:${fragment.index}`, label: segment.label, url: fragment.url, durationS: fragment.durationS,
+          sync: { kind: 'live', segmentIndex: segment.index, text: fragment.text ?? '', durationS: fragment.durationS, pauses: fragment.pauses ?? [] },
+        };
         live?.append(track);
         const fractionOfSegment = fragment.total ? (fragment.index + 1) / fragment.total : 1;
         const secondsPerChar = (audioDone + segmentAudio) / Math.max(1, charsDone + segment.text.length * fractionOfSegment);

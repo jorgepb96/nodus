@@ -22,6 +22,9 @@ import { ModelPicker } from '../components/ModelPicker';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import { SourceCitationModal, type CitationTarget } from '../components/SourceCitationModal';
 import { LibraryAttachmentViewer } from '../components/library/LibraryAttachmentViewer';
+import { ListenButton } from '../components/narration/Listen';
+import { ReadAlong } from '../components/narration/ReadAlong';
+import { narrationMarkdownFromView } from '../lib/narration/domNarration';
 import {
   READER_ANNOTATION_COLORS,
   ReaderHighlighterControl,
@@ -366,6 +369,7 @@ export function LibraryDocumentReader({
   const scrollRef = useRef<HTMLElement | null>(null);
   const documentRef = useRef<HTMLDivElement | null>(null);
   const markActionsRef = useRef<ReaderSelectionActionsHandle | null>(null);
+  const [listenOpen, setListenOpen] = useState(false);
   const bookmarkMenuRef = useRef<HTMLDivElement | null>(null);
   const chatMessagesRef = useRef<HTMLDivElement | null>(null);
   const pendingAnnotationsRef = useRef(new Map<string, WritingDraftAnnotation>());
@@ -938,6 +942,25 @@ export function LibraryDocumentReader({
           className={`library-reader-source-badge is-${sourceKind} hidden rounded-full border px-2 py-1 text-[10px] font-medium md:inline-flex`}
         >{sourceLabel}</span>
         <ReaderHighlighterControl value={highlighterColor} onChange={setHighlighterColor} />
+        {selectedSource === 'clean' && <span className="inline-grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-neutral-700">
+          <ListenButton
+            direct
+            testId="library-reader-listen"
+            size={15}
+            label={t('Leer en voz alta desde aquí')}
+            open={listenOpen}
+            onOpenChange={setListenOpen}
+            onUnavailable={() => setListenOpen(true)}
+            target={{
+              kind: 'library_document',
+              id: reader.storageId,
+              title: reader.title,
+              markdown: () => narrationMarkdownFromView(documentRef.current, scrollRef.current),
+              ephemeral: true,
+              lookahead: true,
+            }}
+          />
+        </span>}
         {selectedSource === 'clean' && <div ref={bookmarkMenuRef} className="relative">
           <button
             className={`btn btn-ghost h-9 w-10 gap-0.5 border p-0 ${hasReaderMark ? 'border-amber-700/60 text-amber-300' : 'border-neutral-700'}`}
@@ -1035,6 +1058,7 @@ export function LibraryDocumentReader({
           onOpenExternal={() => { void window.nodus.openGlobalLibraryAttachment(reference.id, selectedAttachment.id).catch(() => window.nodus.openLibraryReaderOriginal(reference.id)); }}
         />}
 
+        {selectedSource === 'clean' && <ReadAlong rootRef={documentRef} scrollRef={scrollRef} matches={(key) => key === `library_document:${reader.storageId}`} />}
         {selectedSource === 'clean' && <ReaderSelectionActions
           ref={markActionsRef}
           targetRef={documentRef}

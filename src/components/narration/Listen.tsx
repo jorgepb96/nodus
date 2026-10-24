@@ -13,6 +13,7 @@ import {
   type AudioGenerationProgress, type AudioGenerationRequest, type AudioGenerationResult,
 } from '../../backgroundJobs';
 import { segmentNarrator, startNarration } from '../../lib/narration/narrate';
+import { clipTracks } from '../../lib/narration/clipTracks';
 import { currentTtsStatus, refreshTtsStatus, subscribeTtsEvents, subscribeTtsStatus, ttsReady } from '../../lib/narration/ttsClient';
 import { ttsErrorMessage, ttsInstallPhaseLabel } from '../../lib/narration/ttsErrors';
 import { t, tx } from '../../i18n';
@@ -35,6 +36,8 @@ export interface ListenTarget {
   open?: () => void;
   /** Play without saving any clip (Scriptor's selection): see `NarrationInput.ephemeral`. */
   ephemeral?: boolean;
+  /** Open-ended text (a library book): see `NarrationInput.lookahead`. */
+  lookahead?: boolean;
 }
 
 type Confirm = null | { kind: 'clip'; clip: AudioClip } | { kind: 'all' };
@@ -86,7 +89,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
       if (!settings || !status) return;
       const modelId = settings.ttsModelId || status.models.find((model) => model.downloaded)?.id || status.models[0]?.id || '';
       const model = TTS_MODELS.find((entry) => entry.id === modelId);
-      const playable = clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+      const playable = clipTracks(clips, target.title);
       const source = { key, title: target.title, open: target.open };
       if (playable.length) { player.play(playable, 0, source); return; }
       if (!ttsReady(status, modelId)) { onUnavailable?.(); return; }
@@ -99,6 +102,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId, language: settings.ttsLanguage,
         labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
         ephemeral: target.ephemeral,
+        lookahead: target.lookahead,
       };
       // Nothing is saved without a clip, so an ephemeral narration always plays as it generates,
       // and the one it replaces stops generating: nobody can listen to it any more.
@@ -111,7 +115,7 @@ export function ListenButton({ target, size = 13, className = '', testId, label,
         queueMicrotask(unsubscribe);
         if (next.status === 'completed' && next.result && !next.result.cancelled) {
           void window.nodus.listAudioClips(target.kind, target.id).then((saved) => {
-            const tracks = saved.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+            const tracks = clipTracks(saved, target.title);
             if (tracks.length) player.play(tracks, 0, source);
           });
         }
@@ -283,7 +287,7 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
     finally { setBusy(''); if (name === 'install') setInstall(null); void refreshTtsStatus().catch(() => {}); }
   };
 
-  const playable = useMemo<PlayerTrack[]>(() => clips.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec })), [clips, target.title]);
+  const playable = useMemo<PlayerTrack[]>(() => clipTracks(clips, target.title), [clips, target.title]);
   const source = { key, title: target.title, open: target.open };
   const listening = player.source?.key === key;
   const playing = listening && player.isPlaying;
@@ -295,7 +299,11 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
     const input = {
       kind: target.kind, id: target.id, title: target.title, segmentRequest, voiceId: phononModel ? settings.ttsPhononVoiceId : kokoroModel ? settings.ttsKokoroVoiceId : pocketModel ? settings.ttsPocketVoiceId : settings.ttsVoiceId, language,
       labels: { preparing: t('Preparando…'), noText: t('No hay texto narrable en este contenido.') },
+      ephemeral: target.ephemeral,
+      lookahead: target.lookahead,
     };
+    // An ephemeral narration saves nothing, so it can only play as it generates.
+    if (target.ephemeral) { player.cancelGeneration(); startNarration(player, input, source); return; }
     if (settings.ttsStreaming) { startNarration(player, input, source); return; }
     // Without streaming: generate everything in the background, then play the saved clips.
     player.stop();
@@ -305,7 +313,7 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
       queueMicrotask(unsubscribe);
       if (next.status === 'completed' && next.result && !next.result.cancelled) {
         void window.nodus.listAudioClips(target.kind, target.id).then((saved) => {
-          const tracks = saved.filter((clip) => !clip.missing).map((clip) => ({ id: clip.id, label: clip.segmentLabel || target.title, durationS: clip.durationSec }));
+          const tracks = clipTracks(saved, target.title);
           if (tracks.length) player.play(tracks, 0, source);
         });
       }

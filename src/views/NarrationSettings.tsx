@@ -295,6 +295,27 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
         <input type="range" min={0.5} max={2} step={0.05} className="w-28 align-middle accent-indigo-500" value={settings.audioSpeed} onChange={(event) => void patch({ audioSpeed: Number(event.target.value) })} />
         <span className="ml-1 font-mono">{settings.audioSpeed.toFixed(2)}×</span>
       </label>
+      <label className="text-xs text-neutral-600 dark:text-neutral-400">
+        {t('Resaltar el texto mientras suena')}{' '}
+        <select data-testid="narration-highlight-mode" className="input h-7 py-0 text-xs" value={settings.narrationHighlight} onChange={(event) => void patch({ narrationHighlight: event.target.value as AppSettings['narrationHighlight'] })}>
+          <option value="word">{t('Palabra y frase')}</option>
+          <option value="sentence">{t('Solo la frase')}</option>
+          <option value="off">{t('No resaltar')}</option>
+        </select>
+        <br /><span className="text-[10px] text-neutral-500">{t('A más velocidad resalta grupos de palabras, para que se puedan seguir.')}</span>
+      </label>
+      <label className="text-xs text-neutral-600 dark:text-neutral-400">
+        {t('Estilo del resaltado')}{' '}
+        <select data-testid="narration-highlight-style" className="input h-7 py-0 text-xs" disabled={settings.narrationHighlight === 'off'} value={settings.narrationHighlightStyle} onChange={(event) => void patch({ narrationHighlightStyle: event.target.value as AppSettings['narrationHighlightStyle'] })}>
+          <option value="fill">{t('Relleno de color')}</option>
+          <option value="underline">{t('Solo subrayado')}</option>
+        </select>
+        <br /><span className="text-[10px] text-neutral-500">{t('El color sigue el tema y el modo claro u oscuro.')}</span>
+      </label>
+      <label className="flex items-start gap-2 text-xs text-neutral-600 dark:text-neutral-400 sm:col-span-2">
+        <input data-testid="narration-follow" type="checkbox" className="mt-0.5" disabled={settings.narrationHighlight === 'off'} checked={settings.narrationFollow} onChange={(event) => void patch({ narrationFollow: event.target.checked })} />
+        <span>{t('Seguir la lectura con el scroll')}<br /><span className="text-[10px] text-neutral-500">{t('Se detiene si desplazas el texto a mano. Con ⌥/Alt + clic en una palabra, el audio salta a ella.')}</span></span>
+      </label>
     </div>
 
     {/* 4 · Voices */}

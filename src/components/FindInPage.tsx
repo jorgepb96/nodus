@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './ui';
 import { t, tx } from '../i18n';
+import { highlightApi, textNodeIndex } from '../lib/readerTextIndex';
 
 // Document find (Cmd/Ctrl+F). The default mode searches one rendered DOM tree.
 // Paginated readers can instead provide text segments plus a segment activator;
 // this lets PDF pages and EPUB chapters be indexed without rendering the whole
 // publication or blocking the foreground renderer.
-
-interface HighlightRegistry {
-  set(name: string, highlight: unknown): void;
-  delete(name: string): void;
-}
 
 export interface FindTextSegment {
   id: string;
@@ -41,23 +37,10 @@ interface SearchMatch {
   localIndex: number;
 }
 
-interface TextNodeEntry {
-  node: Text;
-  start: number;
-  end: number;
-}
-
 const HIGHLIGHT_ALL = 'nodus-find';
 const HIGHLIGHT_CURRENT = 'nodus-find-current';
 const MAX_MATCHES = 2_000;
 const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
-
-function highlightApi(): { registry: HighlightRegistry; Ctor: new (...ranges: Range[]) => unknown } | null {
-  const css = (globalThis as unknown as { CSS?: { highlights?: HighlightRegistry } }).CSS;
-  const Ctor = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
-  if (css?.highlights && typeof Ctor === 'function') return { registry: css.highlights, Ctor };
-  return null;
-}
 
 function escapeExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -91,28 +74,6 @@ function findOffsets(text: string, rawQuery: string, options: SearchOptions, lim
     match = expression.exec(text);
   }
   return offsets;
-}
-
-function textNodeIndex(root: HTMLElement): { text: string; nodes: TextNodeEntry[] } {
-  const nodes: TextNodeEntry[] = [];
-  let text = '';
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (!node.nodeValue || node.parentElement?.closest('[data-reader-ignore], [hidden], [aria-hidden="true"]')) return NodeFilter.FILTER_REJECT;
-      const tag = node.parentElement?.tagName;
-      if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  let node = walker.nextNode();
-  while (node) {
-    const value = node.nodeValue ?? '';
-    const start = text.length;
-    text += value;
-    nodes.push({ node: node as Text, start, end: text.length });
-    node = walker.nextNode();
-  }
-  return { text, nodes };
 }
 
 function rangesFor(root: HTMLElement, query: string, options: SearchOptions): Range[] {

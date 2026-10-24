@@ -45,8 +45,11 @@ export function wavFromPcm(sampleRate: number, channels: number, bitsPerSample: 
   return Buffer.concat([header, data]);
 }
 
+/** Silence between the fragments of a saved clip. Clip sync maps (`ClipSync.gapS`) use it too. */
+export const CLIP_FRAGMENT_GAP_MS = 120;
+
 /** Concatenate fragment files, with `gapMs` of silence between them for a natural pause. */
-export async function concatWavFiles(paths: readonly string[], gapMs = 120): Promise<Buffer> {
+export async function concatWavFiles(paths: readonly string[], gapMs = CLIP_FRAGMENT_GAP_MS): Promise<Buffer> {
   if (!paths.length) throw new Error('TTS_NO_FRAGMENTS');
   const chunks = await Promise.all(paths.map(async (file) => pcmChunk(await fs.readFile(file))));
   const { sampleRate, channels, bitsPerSample } = chunks[0];

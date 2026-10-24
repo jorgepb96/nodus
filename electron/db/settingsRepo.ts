@@ -169,6 +169,9 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   ttsLanguage: 'auto',
   ttsVoiceFilters: {},
   ttsStreaming: true,
+  narrationHighlight: 'word',
+  narrationHighlightStyle: 'fill',
+  narrationFollow: true,
   ttsIdleUnloadMin: 5,
   ttsRetention: DEFAULT_TTS_RETENTION,
   syncMode: 'manual',
@@ -422,6 +425,9 @@ export function getSettings(): AppSettings {
   merged.ttsLanguage = merged.ttsLanguage === 'auto' || isTtsLanguage(merged.ttsLanguage) ? merged.ttsLanguage : 'auto';
   merged.ttsVoiceFilters = sanitizeTtsVoiceFilters(merged.ttsVoiceFilters);
   merged.ttsStreaming = merged.ttsStreaming !== false;
+  merged.narrationHighlight = merged.narrationHighlight === 'sentence' || merged.narrationHighlight === 'off' ? merged.narrationHighlight : 'word';
+  merged.narrationHighlightStyle = merged.narrationHighlightStyle === 'underline' ? 'underline' : 'fill';
+  merged.narrationFollow = merged.narrationFollow !== false;
   merged.ttsPhononVoiceId = typeof merged.ttsPhononVoiceId === 'string' && merged.ttsPhononVoiceId.startsWith('phonon:') ? merged.ttsPhononVoiceId : DEFAULTS.ttsPhononVoiceId;
   merged.ttsKokoroVoiceId = typeof merged.ttsKokoroVoiceId === 'string' && /^kokoro:[a-z0-9_]+$/.test(merged.ttsKokoroVoiceId) ? merged.ttsKokoroVoiceId : DEFAULTS.ttsKokoroVoiceId;
   merged.ttsPocketVoiceId = typeof merged.ttsPocketVoiceId === 'string' && /^(pocket:[a-z0-9_]+|user:[a-f0-9-]+|cc0:es-dave)$/.test(merged.ttsPocketVoiceId) ? merged.ttsPocketVoiceId : DEFAULTS.ttsPocketVoiceId;

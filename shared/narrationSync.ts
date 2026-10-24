@@ -125,7 +125,7 @@ const SENTENCE_END = /[.!?…。！？؟]|\n/u;
 const CLAUSE_BREAK = /[,;:—–()、，；：]/u;
 const VOWEL_GROUP = /[aeiouyàáâãäåæèéêëìíîïòóôõöøœùúûüýÿāēīōūăĕĭŏŭąęįųαεηιουωάέήίόύώаеёиоуыэюяіїєѣ]+/giu;
 const SYLLABIC_SCRIPT = /[぀-ヿ㐀-鿿豈-﫿가-힯]/gu;
-const FALLBACK_WORD = /[\p{L}\p{N}\p{M}]+(?:['’\-][\p{L}\p{N}\p{M}]+)*/gu;
+const FALLBACK_WORD = /[\p{L}\p{N}\p{M}]+(?:['’-][\p{L}\p{N}\p{M}]+)*/gu;
 
 interface SegmenterLike { segment(text: string): Iterable<{ segment: string; index: number; isWordLike?: boolean }> }
 const segmenters = new Map<string, SegmenterLike | null>();

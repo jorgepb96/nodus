@@ -4,8 +4,8 @@
 // a pill and the preset filters by the same word, so a reader who clicks
 // "Incompleto" must get exactly the rows whose pill says "Incompleto".
 //
-// The only transient state with no SQL predicate is `running`: it exists solely in
-// the live queue, and the renderer overlays it. Persisted `pending` markers DO have
+// Live queue activity is overlaid by the renderer; it can also expose an orphan
+// summary marker as retryable when no live job owns it. Persisted `pending` markers have
 // a predicate, so a work waiting to resume is filterable instead of leaking into
 // "Incompleto" (which is what happened while it had none).
 //

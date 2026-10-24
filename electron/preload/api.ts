@@ -323,6 +323,12 @@ export const nodusApi: NodusApi = {
   // Core: sync, backups, recovery. Regrouped here so the academic and study
   // bindings above form one range — they used to sit inside it.
   syncNow: (options) => ipcRenderer.invoke('sync:now', options),
+  getZoteroSyncStatus: () => ipcRenderer.invoke('sync:status'),
+  onZoteroSyncStatus: (cb) => {
+    const listener = (_e: unknown, status: Parameters<typeof cb>[0]) => cb(status);
+    ipcRenderer.on('sync:status', listener);
+    return () => ipcRenderer.removeListener('sync:status', listener);
+  },
   getSyncLog: () => ipcRenderer.invoke('sync:log'),
   hasSyncPassphrase: () => ipcRenderer.invoke('sync:hasPassphrase'),
   setSyncPassphrase: (passphrase: string) => ipcRenderer.invoke('sync:setPassphrase', passphrase),

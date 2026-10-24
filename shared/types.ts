@@ -5337,6 +5337,13 @@ export interface ZoteroSyncOptions {
   catalogOnly?: boolean;
 }
 
+/** Passive sync activity; it never requests navigation or a foreground window. */
+export interface ZoteroSyncStatus {
+  vaultId: string;
+  running: boolean;
+  lastSync: SyncLogEntry | null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Graph payloads (renderer consumes these directly)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -9541,6 +9548,8 @@ export interface NodusApi extends StudyFocusApi, ProsopographyApi, TestimoniesAp
   // core: sync, backups, recovery. Regrouped here so the academic and study
   // declarations above form one range — they used to sit inside it.
   syncNow(options?: ZoteroSyncOptions): Promise<SyncLogEntry>;
+  getZoteroSyncStatus(): Promise<ZoteroSyncStatus>;
+  onZoteroSyncStatus(cb: (status: ZoteroSyncStatus) => void): () => void;
   getSyncLog(): Promise<SyncLogEntry[]>;
   /** Sync packages are encrypted with a passphrase the user sets on both machines. */
   hasSyncPassphrase(): Promise<boolean>;

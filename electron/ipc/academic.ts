@@ -730,14 +730,14 @@ export function registerAcademicIpc(context: IpcContext): void {
     const work = works.getWork(nodusId);
     if (!work) return;
     works.setSummaryPending(nodusId);
-    scanQueue.enqueue(nodusId, work.title, 'summary', model);
+    scanQueue.enqueue(nodusId, work.title, 'summary', model, { refresh: work.summary_status === 'done' });
   });
   h('works:summarizeBulk', async (_e, nodusIds: string[], model?: ModelRef | null) => {
     for (const nodusId of nodusIds) {
       const work = works.getWork(nodusId);
       if (!work) continue;
       works.setSummaryPending(nodusId);
-      scanQueue.enqueue(nodusId, work.title, 'summary', model);
+      scanQueue.enqueue(nodusId, work.title, 'summary', model, { refresh: work.summary_status === 'done' });
     }
   });
   h('works:summarizeAll', async (_e, model?: ModelRef | null) => {

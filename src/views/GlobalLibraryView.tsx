@@ -2020,6 +2020,8 @@ export function GlobalLibraryView({
   onSettingsChange,
   onOpenSettings,
   onOpenCollections,
+  onSync,
+  syncing,
   onOpenGraph,
   onOpenAssistant,
   onOpenArchive,
@@ -2036,6 +2038,8 @@ export function GlobalLibraryView({
   onSettingsChange: () => Promise<AppSettings | undefined>;
   onOpenSettings: () => void;
   onOpenCollections: () => void;
+  onSync: () => Promise<void>;
+  syncing: boolean;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
   onOpenArchive?: () => void;
@@ -2177,6 +2181,8 @@ export function GlobalLibraryView({
             snapshot={snapshot?.vault}
             onSnapshotChange={(vault) => onSnapshotChange?.({ vault })}
             onOpenCollections={onOpenCollections}
+            onSync={onSync}
+            syncing={syncing}
             onOpenNodusCollections={() => void chooseScope('global')}
             onOpenTutorial={() => openTutorial('analysis')}
             onOpenGraph={onOpenGraph}

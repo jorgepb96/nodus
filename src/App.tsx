@@ -20,7 +20,7 @@ import { headerActionVisible, type HeaderActionId } from '@shared/headerActions'
 import type { AcademicInterfaceProfile } from '@shared/types';
 import { ResearchPreparationWelcome } from './components/ResearchPreparationWelcome';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { AppSettings, CorpusHealthBucketId, DatabaseSummary, NodiNotification, RecoveryStatus, ServerInboxEntry, SyncLogEntry, VaultSummary } from '@shared/types';
+import type { AppSettings, CorpusHealthBucketId, DatabaseSummary, NodiNotification, RecoveryStatus, ServerInboxEntry, SyncLogEntry, VaultSummary, ZoteroSyncStatus } from '@shared/types';
 import type { AnnouncementRefreshResult } from '@shared/announcements';
 import type { CsvImportPlanData } from './views/DatabasesView';
 import type { NotionImportReport } from '@shared/notionImport';
@@ -46,7 +46,7 @@ import { ProsopographySidebar } from './components/ProsopographySidebar';
 import { TestimonySidebar } from './components/TestimonySidebar';
 import type { DossierTab } from './components/testimonies/InterviewDossier';
 import type { TestimonyDeepLink } from '@shared/testimonyDeepLinks';
-import { FeedbackHost } from './components/feedback';
+import { FeedbackHost, toast } from './components/feedback';
 import { PrivacyRequestHost } from './privacyNotices';
 import { BrowserConnectorPairingRequestHost } from './components/BrowserConnectorPairingRequestHost';
 import { Tour } from './views/Tour';
@@ -490,6 +490,25 @@ export function App() {
   useEffect(() => { if (view !== 'studyChat') setStudyChatTarget(null); }, [view]);
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<SyncLogEntry | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    let receivedEvent = false;
+    setSyncing(false);
+    setLastSync(null);
+    const apply = (status: ZoteroSyncStatus, refresh: boolean) => {
+      if (disposed || status.vaultId !== activeVault?.id) return;
+      setSyncing(status.running);
+      setLastSync(status.lastSync);
+      if (refresh && !status.running) notifyDataChanged();
+    };
+    const off = window.nodus.onZoteroSyncStatus(status => {
+      if (status.vaultId !== activeVault?.id) return;
+      receivedEvent = true;
+      apply(status, true);
+    });
+    void window.nodus.getZoteroSyncStatus().then(status => { if (!receivedEvent) apply(status, false); }).catch(() => undefined);
+    return () => { disposed = true; off(); };
+  }, [activeVault?.id]);
   const [loadError, setLoadError] = useState<string | null>(null);
   // null while unknown; true when the DB holds any real or demo content.
   const [hasData, setHasData] = useState<boolean | null>(null);
@@ -1240,13 +1259,12 @@ export function App() {
   }, []);
 
   const onSync = async () => {
-    setSyncing(true);
+    const requestedVaultId = activeVault?.id;
     try {
-      const result = await window.nodus.syncNow({ catalogOnly: true });
-      setLastSync(result);
-      notifyDataChanged();
-    } finally {
-      setSyncing(false);
+      await window.nodus.syncNow({ catalogOnly: true });
+    } catch (cause) {
+      const current = await window.nodus.getActiveVault().catch(() => null);
+      if (current?.id === requestedVaultId) toast(errorText(cause));
     }
   };
 
@@ -1801,7 +1819,6 @@ export function App() {
               icon="refresh"
               label={syncing ? t('Actualizando…') : t('Actualizar (sincronizar Zotero)')}
               spinning={syncing}
-              showLabel={syncing}
               disabled={syncing}
               onClick={onSync}
             />

@@ -30,6 +30,7 @@ import {
 import { registerIpc } from './ipc';
 import { flushPipelineLogs } from './logging/pipelineLogHost';
 import { scanQueue } from './pipeline/scanQueue';
+import { disposeTextExtractionWorkers } from './extraction/textExtractionWorkerHost';
 import { getSettings } from './db/settingsRepo';
 import { runDueDatabaseRowTemplates } from './db/databaseTasksRepo';
 import { runDueAutomationRules } from './db/databaseAutomationsRepo';
@@ -41,7 +42,7 @@ import {
 } from './db/migrationRecoveryUtilityHost';
 import { generateDemoPortraits, hasDemoPortraitKey, demoPortraitsPending } from './ai/genealogyDemoPortraits';
 import { interruptDecorativeImageGenerations } from './ai/decorativeImages';
-import { startRealtimeSync, stopRealtimeSync } from './sync/syncService';
+import { startZoteroSync, stopZoteroSync } from './sync/syncService';
 import { startNodusServerSync, stopNodusServerSync } from './serverSync/serverSyncService';
 import { startInboxPolling, stopInboxPolling } from './serverSync/inboxPoller';
 import { startReplicaSync, stopReplicaSync } from './serverSync/replicaService';
@@ -1136,6 +1137,12 @@ app.whenReady().then(async () => {
   stopDocumentaryPreparation = closeDocumentaryPreparation;
   stopResearchZotero = (await import('./mcp/researchZotero')).closeResearchZotero;
   await initializeDocumentaryPreparation();
+  // Isolated QA normally disables all integrations. This explicit opt-in exercises
+  // only the startup sync against the sandbox's disposable Zotero endpoint.
+  if ((!process.env.NODUS_ISOLATED_ROOT && process.env.NODUS_STELLAR_PREVIEW !== '1')
+    || (process.env.NODUS_ISOLATED_ROOT && process.env.NODUS_ISOLATED_ZOTERO_STARTUP === '1')) {
+    afterFirstPaint(() => { if (!quitting) startZoteroSync(); });
+  }
   if (process.env.NODUS_ISOLATED_ROOT || process.env.NODUS_STELLAR_PREVIEW === '1') return;
   // Existing installs may have one full database copy per historical schema update.
   // Queue every registered vault after the window exists; the utility worker applies
@@ -1238,7 +1245,6 @@ app.whenReady().then(async () => {
   databaseAutomationFirstTimer = setTimeout(databaseAutomationTick, 7_000);
   databaseAutomationTimer = setInterval(databaseAutomationTick, 60_000);
 
-  if (settings.syncMode === 'realtime') startRealtimeSync();
   startNodusServerSync();
   // And the other direction, on its own timer too: an incoming mutation dirties nothing,
   // so an idle desktop that only ever published would never collect what was sent to it.
@@ -1300,7 +1306,7 @@ app.on('window-all-closed', () => {
     if (databaseAutomationFirstTimer) clearTimeout(databaseAutomationFirstTimer);
     cancelScheduledMigrationRecoveryRetention();
     void stopDatabaseFormServer();
-    stopRealtimeSync();
+    stopZoteroSync();
     stopNodusServerSync();
     stopInboxPolling();
     stopPluginUpdates();
@@ -1338,6 +1344,7 @@ app.on('before-quit', event => {
   }
   quitting = true;
   stopDocumentaryPreparation();
+  disposeTextExtractionWorkers();
   void stopResearchZotero();
   stopStudyCalendarReminders();
   stopAppleCalendarSync();
@@ -1355,7 +1362,7 @@ app.on('before-quit', event => {
   if (databaseAutomationFirstTimer) clearTimeout(databaseAutomationFirstTimer);
   cancelScheduledMigrationRecoveryRetention();
   void stopDatabaseFormServer();
-  stopRealtimeSync();
+  stopZoteroSync();
   stopNodusServerSync();
   stopInboxPolling();
   stopPluginUpdates();
@@ -1414,7 +1421,7 @@ updateAwareApp.on('before-quit-for-update', () => {
   if (databaseAutomationFirstTimer) clearTimeout(databaseAutomationFirstTimer);
   cancelScheduledMigrationRecoveryRetention();
   void stopDatabaseFormServer();
-  stopRealtimeSync();
+  stopZoteroSync();
   stopNodusServerSync();
   stopInboxPolling();
   stopPluginUpdates();

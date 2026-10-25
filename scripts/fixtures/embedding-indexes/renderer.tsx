@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { EmbeddingIndexesManager } from '../../../src/components/EmbeddingIndexesManager';
+import { LocalRerankerControl } from '../../../src/components/LocalRerankerControl';
 import { setActiveLang } from '../../../src/i18n';
 const fixture = window as any;
 fixture.actions = [];
@@ -60,7 +61,11 @@ fixture.nodus = {
 function App() {
   const [version, setVersion] = useState(0);
   fixture.rerender = () => setVersion(value => value + 1);
-  return <main className="mx-auto h-screen max-w-4xl overflow-y-auto p-6" data-version={version}><EmbeddingIndexesManager vaultId="test-vault" settings={settings as any} onChange={() => setVersion(value => value + 1)} /></main>;
+  return <main className="mx-auto h-screen max-w-4xl overflow-y-auto p-6" data-version={version}><EmbeddingIndexesManager vaultId="test-vault" settings={settings as any} view="indexes" onChange={() => setVersion(value => value + 1)} />
+    {/* Settings → AI models → Semantic search renders the reranker list beside the indexes. */}
+    <LocalRerankerControl enabled={settings.researchReranking === 'local'} selected={settings.researchRerankerModel}
+      onChange={async enabled => { await fixture.nodus.updateSettings({ researchReranking: enabled ? 'local' : 'off' }); setVersion(value => value + 1); }}
+      onSelect={async modelId => { await fixture.nodus.updateSettings({ researchRerankerModel: modelId }); setVersion(value => value + 1); }} /></main>;
 }
 setActiveLang('es');
 createRoot(document.getElementById('root')!).render(<App />);

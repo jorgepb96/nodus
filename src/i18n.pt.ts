@@ -94,6 +94,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -135,6 +136,7 @@ export const PT: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.pt,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.pt,
   ...MODEL_SETTINGS_TRANSLATIONS.pt,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.pt,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['pt'],
   ...DICTIONARY_TRANSLATIONS.pt,
   'Tamaño de Nodi': 'Tamanho do Nodi',

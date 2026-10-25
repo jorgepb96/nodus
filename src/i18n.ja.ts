@@ -88,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -190,6 +191,7 @@ export const JA: Record<string, string> = {
   ...DEEP_RESEARCH_QUALITY_TRANSLATIONS.ja,
   ...TEXT_PROVENANCE_TRANSLATIONS.ja,
   ...MODEL_SETTINGS_TRANSLATIONS.ja,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.ja,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['ja'],
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.ja,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.ja,

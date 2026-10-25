@@ -6,10 +6,10 @@ import { getNodusLocalModel } from '@shared/localAiModels';
 import { EmbeddingModelControl } from './EmbeddingModelControl';
 import { ConfirmModal } from './ConfirmModal';
 import { t, tx } from '../i18n';
+import { Icon } from './ui';
 import { defaultEmbeddingInputProfile, fixedEmbeddingInputPrefixes, type EmbeddingInputProfile } from '@shared/embeddingInputProfiles';
 import { EmbeddingRunSummary, EmbeddingRunHistory } from './EmbeddingRunSummary';
 import { EmbeddingComparison } from './EmbeddingComparison';
-import { LocalRerankerControl } from './LocalRerankerControl';
 
 type Selection = { provider: EmbeddingProvider; model: string; input?: EmbeddingInputProfile; indexId?: string; rebuild?: boolean; vaultId?: string };
 const size = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -24,7 +24,22 @@ const exclusionLabels: Record<string, string> = {
   user_excluded: 'Excluido por el usuario', pseudonymization_required: 'Requiere seudonimización',
 };
 
-export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { settings: AppSettings; vaultId?: string; onChange: () => unknown | Promise<unknown> }) {
+/**
+ * Embedding model and saved indexes for the active vault.
+ *
+ * `model` is the everyday view: which model indexes the vault and whether its index is
+ * ready. `indexes` is the maintenance view: input profiles, every saved index and the
+ * comparison between them. Both share the preview and delete confirmations, so a model
+ * picked in either place goes through the same «prepare and activate» step.
+ */
+export function EmbeddingIndexesManager({ settings, onChange, vaultId, view, onManage }: {
+  settings: AppSettings;
+  vaultId?: string;
+  onChange: () => unknown | Promise<unknown>;
+  view: 'model' | 'indexes';
+  /** Opens the maintenance view from the everyday one. */
+  onManage?: () => void;
+}) {
   const [indexes, setIndexes] = useState<EmbeddingIndexSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [preview, setPreview] = useState<{ input: Selection; value: EmbeddingIndexPreview } | null>(null);
@@ -83,8 +98,24 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
     setCode(Array.from(crypto.getRandomValues(new Uint8Array(6)), value => String(value % 10)).join(''));
   };
   const active = indexes.find(index => index.active);
-  return <div className="w-full max-w-3xl space-y-4" data-testid="embedding-index-manager" aria-busy={busy}>
-    <EmbeddingModelControl settings={settings} onEmbeddingChange={(provider, model) => { void showPreview({ provider, model, input: profileFor(provider, model) }); }} />
+  const running = indexes.find(index => index.preparation === 'running');
+  return <div className={`w-full space-y-4 ${view === 'model' ? 'max-w-3xl' : ''}`} data-testid={view === 'model' ? 'embedding-model-summary' : 'embedding-index-manager'} aria-busy={busy}>
+    {view === 'model' && <>
+      <EmbeddingModelControl settings={settings} onEmbeddingChange={(provider, model) => { void showPreview({ provider, model, input: profileFor(provider, model) }); }} />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" data-testid="embedding-active-index">
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${active && !active.pending
+          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/35 dark:text-emerald-300'
+          : 'bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300'}`}>
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
+          {!loaded ? t('Cargando…') : !active ? t('Sin índice semántico activo. La búsqueda textual sigue disponible.')
+            : active.pending ? tx('{n} pendientes', { n: active.pending }) : t('Actualizado')}
+        </span>
+        {running && <span className="text-neutral-500">{t('Preparando índice')} · {progress?.indexId === running.id ? progress.completed : running.completed}/{progress?.indexId === running.id ? progress.total : running.total}</span>}
+        {loaded && !active && <button className="btn btn-ghost h-8 border border-neutral-300 px-3 text-xs dark:border-neutral-700" disabled={busy} onClick={() => void showPreview({ provider: settings.embeddingProvider ?? 'openai', model: settings.embeddingModel })}>{t('Preparar índice de embeddings')}</button>}
+        {onManage && <button className="ml-auto inline-flex items-center gap-1 text-indigo-600 hover:underline dark:text-indigo-300" data-testid="embedding-manage-indexes" onClick={onManage}>{t('Gestionar índices')}<Icon name="chevronRight" size={12} /></button>}
+      </div>
+    </>}
+    {view === 'indexes' && <>
     <details className="rounded-lg border border-neutral-700 p-3 text-sm" data-testid="embedding-input-profile"><summary>{t('Perfil de entrada del modelo')}</summary>
       <p className="my-2 text-xs text-neutral-500">{t('Los prefijos se guardan con el índice. Los índices existentes conservan su receta hasta que prepares otro perfil.')}</p>
       <select className="input" aria-label={t('Perfil de entrada del modelo')} value={inputKind} onChange={event => setInputKind(event.target.value as typeof inputKind)}>
@@ -95,7 +126,6 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
       <button className="btn btn-ghost mt-2" disabled={busy} onClick={() => void showPreview({ provider: settings.embeddingProvider, model: settings.embeddingModel, input: profileFor(settings.embeddingProvider, settings.embeddingModel) })}>{t('Preparar con este perfil')}</button>
     </details>
     <div className="space-y-3">
-      <h3 className="font-medium">{t('Índices de embeddings de esta bóveda')}</h3>
       {!loaded && <p className="text-sm text-neutral-400">{t('Cargando…')}</p>}
       {loaded && !active && <div className="space-y-2"><p className="text-sm text-amber-200">{t('Sin índice semántico activo. La búsqueda textual sigue disponible.')}</p>
         <button className="btn btn-ghost" disabled={busy} onClick={() => void showPreview({ provider: settings.embeddingProvider ?? 'openai', model: settings.embeddingModel })}>{t('Preparar índice de embeddings')}</button></div>}
@@ -142,10 +172,8 @@ export function EmbeddingIndexesManager({ settings, onChange, vaultId }: { setti
       </div>)}
       {indexes.some(index => index.preparation === 'running') && <p className="text-xs text-neutral-400">{t('El índice actual sigue activo mientras se prepara el siguiente. Los avances se conservan si pausas o cierras Nodus.')}</p>}
     </div>
-    <LocalRerankerControl enabled={settings.researchReranking === 'local'} selected={settings.researchRerankerModel}
-      onChange={async enabled => { await window.nodus.updateSettings({ researchReranking: enabled ? 'local' : 'off' }); await onChange(); }}
-      onSelect={async modelId => { await window.nodus.updateSettings({ researchRerankerModel: modelId }); await onChange(); }} />
     <EmbeddingComparison indexes={indexes} vaultId={vaultId} />
+    </>}
     {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
     {preview && <ConfirmModal title={t(preview.input.rebuild ? 'Reconstruir índice de embeddings' : 'Preparar índice de embeddings')}
       confirmLabel={t(preview.value.pending || preview.input.rebuild ? 'Preparar y activar' : 'Activar índice')}

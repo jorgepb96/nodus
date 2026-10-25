@@ -14,6 +14,7 @@ import { t, tx } from '../i18n';
 import { Icon } from '../components/ui';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SettingsModelDot, SettingsModelList, settingsModelRowClass } from '../components/SettingsModelList';
+import { SettingsPanel } from '../components/SettingsPanel';
 import { LocalAudioRecorderPanel, useLocalAudioRecorder } from '../components/media/LocalAudioRecorder';
 import { STUDY_MEDIA_ACCENT } from '../components/media/mediaFormat';
 import { refreshTtsStatus, subscribeTtsEvents, subscribeTtsStatus, voiceUrl } from '../lib/narration/ttsClient';
@@ -98,11 +99,12 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const kokoroFraction = install?.engine === 'kokoro' ? install.fraction : 0;
   const deviceLabel = runtime?.device === 'metal' ? t('GPU de Apple (MLX)') : runtime?.device === 'cuda' ? t('GPU NVIDIA (CUDA)') : runtime?.device === 'cpu' ? t('Procesador (CPU)') : '';
 
-  return <div className="mt-5 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950/35" data-testid="narration-settings">
-    <div className="min-w-0">
-      <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-200">{t('Voz y narración')}</h4>
-      <p className="mt-1 max-w-3xl text-xs leading-5 text-neutral-500">{t('Nodus narra en tu equipo con el motor que elijas. Ming y Pocket TTS permiten clonar una voz a partir de una grabación corta. Los modelos se descargan cuando los necesitas y el audio se procesa localmente.')}</p>
-    </div>
+  return <SettingsPanel
+    data-testid="narration-settings"
+    icon="volume"
+    title={t('Voz y narración')}
+    description={t('Nodus narra en tu equipo con el motor que elijas. Ming y Pocket TTS permiten clonar una voz a partir de una grabación corta. Los modelos se descargan cuando los necesitas y el audio se procesa localmente.')}
+  >
 
     {/* 1 · Engine */}
     <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-3 text-xs dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="narration-runtime">
@@ -375,7 +377,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
       onConfirm={() => { const voice = confirm.voice; setConfirm(null); void run(async () => { await window.nodus.ttsDeleteVoice(voice.id); if (settings.ttsVoiceId === voice.id) await patch({ ttsVoiceId: 'cc0:es-dave' }); await refreshVoices(); }); }} onCancel={() => setConfirm(null)} />}
     {confirm?.kind === 'sweep' && <ConfirmModal title={t('Borrar audios caducados')} message={t('Se eliminarán ahora todos los audios no conservados que hayan superado su plazo.')} confirmLabel={t('Borrar')} danger
       onConfirm={() => { setConfirm(null); void run(async () => { const removed = await window.nodus.ttsSweepNow(); setNotice(tx('{n} audios eliminados', { n: removed })); }); }} onCancel={() => setConfirm(null)} />}
-  </div>;
+  </SettingsPanel>;
 }
 
 function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, kokoroVoiceId, pocketVoiceId, cloneEngine, onSelect, onChanged, onDelete, onError, sttModel }: {

@@ -108,6 +108,7 @@ try {
   if (!resumeRoot) {
   await page.getByRole('button', { name: 'Ajustes', exact: true }).first().click();
   await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+  await page.getByTestId('settings-tab-local').click();
   const downloadModelId = modelId.startsWith('embeddinggemma') ? 'embeddinggemma-2-text-q8-512-v1' : modelId;
   const card = page.getByTestId(`local-model-${downloadModelId}`);
   await card.getByRole('button', { name: 'Descargar', exact: true }).click();
@@ -153,6 +154,7 @@ try {
   if (modelId.startsWith('embeddinggemma') && !report.checks.uiProfileSelection) {
     await page.getByRole('button', { name: 'Ajustes', exact: true }).first().click();
     await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+    await page.getByTestId('settings-tab-essentials').click();
     const alternate = modelId.includes('-512-') ? 'embeddinggemma-2-text-q8-256-v1' : 'embeddinggemma-2-text-q8-512-v1';
     for (const selected of [alternate, modelId]) {
       await page.getByTestId('embedding-model-input').fill(selected);

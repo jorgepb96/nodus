@@ -3013,6 +3013,15 @@ html.theme-active.light .home-dashboard .study-home-icon {
   font-size: 0.875rem;
   line-height: 1.25rem;
 }
+/* Tailwind's preflight gives every input and select `font-size: 100%` with one element
+   of specificity, which still beats the zero-specificity default above: native fields
+   rendered at 16px beside the 14px model pickers in the same Settings row. Inside a
+   Settings panel this restores the default with exactly that one element of
+   specificity, declared later, so preflight loses and a `text-xs` on the field still wins. */
+:where(.settings-panel) :is(input, select, textarea):where(.input) {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
 .input {
   @apply bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500;
 }

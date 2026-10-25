@@ -11,6 +11,7 @@ import { EMBEDDING_GEMMA2_FAMILY } from '@shared/embeddingGemma2';
 import { t, tx } from '../i18n';
 import { ConfirmModal } from './ConfirmModal';
 import { SettingsModelList, settingsModelRowClass } from './SettingsModelList';
+import { SettingsPanel } from './SettingsPanel';
 import { LocalModelWarning } from './LocalModelWarning';
 import { Icon } from './ui';
 
@@ -116,7 +117,6 @@ export function LocalAiModelsSettings({
 
   const renderModelList = (kind: NodusLocalModelDefinition['kind']) => (
     <SettingsModelList
-      className="mt-3"
       data-testid={kind === 'embedding' ? 'nodus-local-embedding-list' : 'nodus-local-chat-list'}
     >
       {NODUS_LOCAL_MODELS.filter((model, index, all) => model.kind === kind && (!model.assetFamily || all.findIndex(other => other.assetFamily === model.assetFamily) === index)).map((model) => {
@@ -160,26 +160,23 @@ export function LocalAiModelsSettings({
     </SettingsModelList>
   );
 
-  return <div className="mt-5 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950/35" data-testid="nodus-local-ai-models">
-    <div className="flex flex-wrap items-start gap-3">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-200">{t('Modelos locales integrados')}</h4>
-          {/* Everything on this panel runs on the user's machine, so the caveat belongs
-              here too: downloading a model is the moment the cost becomes real. */}
-          <LocalModelWarning provider="nodus" testId="bundled-local-models-warning" />
-        </div>
-        <p className="mt-1 max-w-3xl text-xs leading-5 text-neutral-500">{t('Los modelos no vienen incluidos. Nodus los descarga bajo demanda, los ejecuta en tu equipo y no envía el contenido a terceros.')}</p>
-      </div>
-      <div className={`rounded-lg border px-3 py-2 text-xs ${status?.runtime.ready ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300' : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300'}`}>
-        <div>{status?.runtime.ready
-          ? `${t('Motor local listo')} · llama.cpp ${status.runtime.version}`
-          : <button className="inline-flex items-center gap-1" disabled={transferBusy} onClick={() => void installRuntime()}><Icon name={status?.runtime.downloading || busy === 'runtime' ? 'sync' : 'download'} className={status?.runtime.downloading || busy === 'runtime' ? 'animate-spin' : ''} size={12} />{status?.runtime.downloading || busy === 'runtime' ? t('Instalando motor…') : t('Instalar motor local')}</button>}</div>
-        <button className="mt-1 text-[10px] underline decoration-dotted underline-offset-2 opacity-80 hover:opacity-100" title={t('Abrir licencia de llama.cpp')} onClick={() => void window.nodus.openExternal('https://github.com/ggml-org/llama.cpp/blob/b10002/LICENSE')}>llama.cpp · MIT</button>
-      </div>
-    </div>
+  const runtimeBadge = <div className={`rounded-lg border px-3 py-2 text-xs ${status?.runtime.ready ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300' : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300'}`}>
+    <div>{status?.runtime.ready
+      ? `${t('Motor local listo')} · llama.cpp ${status.runtime.version}`
+      : <button className="inline-flex items-center gap-1" disabled={transferBusy} onClick={() => void installRuntime()}><Icon name={status?.runtime.downloading || busy === 'runtime' ? 'sync' : 'download'} className={status?.runtime.downloading || busy === 'runtime' ? 'animate-spin' : ''} size={12} />{status?.runtime.downloading || busy === 'runtime' ? t('Instalando motor…') : t('Instalar motor local')}</button>}</div>
+    <button className="mt-1 text-[10px] underline decoration-dotted underline-offset-2 opacity-80 hover:opacity-100" title={t('Abrir licencia de llama.cpp')} onClick={() => void window.nodus.openExternal('https://github.com/ggml-org/llama.cpp/blob/b10002/LICENSE')}>llama.cpp · MIT</button>
+  </div>;
 
-    {status?.runtime.ready && <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="nodus-local-runtime-diagnostics">
+  return <SettingsPanel
+    data-testid="nodus-local-ai-models"
+    icon="cube"
+    // Everything on this panel runs on the user's machine, so the caveat belongs
+    // here too: downloading a model is the moment the cost becomes real.
+    title={<span className="inline-flex items-center gap-2">{t('Modelos locales integrados')}<LocalModelWarning provider="nodus" testId="bundled-local-models-warning" /></span>}
+    description={t('Los modelos no vienen incluidos. Nodus los descarga bajo demanda, los ejecuta en tu equipo y no envía el contenido a terceros.')}
+    actions={runtimeBadge}
+  >
+    {status?.runtime.ready && <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-900/40" data-testid="nodus-local-runtime-diagnostics">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${status.runtime.processedOnCpu ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>
           {status.runtime.processedOnCpu ? t('Ejecutando en CPU') : t('Aceleración por GPU activa')}
@@ -200,22 +197,22 @@ export function LocalAiModelsSettings({
       <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-500">{t('Si el motor no arranca, excluye esa carpeta en tu antivirus.')}</p>
     </div>}
 
-    <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-200">
+    <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-200">
       <strong>{t('Importante sobre los embeddings:')}</strong> {t('Selecciona otro modelo para preparar un índice independiente. Los índices anteriores se conservarán.')}
     </div>
 
-    <div className="mt-5">
-      <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Embeddings locales')}</h5>
+    <div>
+      <h3 className="mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200">{t('Embeddings locales')}</h3>
       {renderModelList('embedding')}
     </div>
-    <div className="mt-5 border-t border-neutral-200 pt-5 dark:border-neutral-800">
-      <h5 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Conversación, resúmenes e ideas con entrada de imagen')}</h5>
-      <p className="mt-1 text-xs text-neutral-600">{t('Estos modelos aceptan texto e imágenes como entrada; no generan imágenes.')}</p>
+    <div className="border-t border-neutral-200 pt-4 dark:border-neutral-800">
+      <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">{t('Conversación, resúmenes e ideas con entrada de imagen')}</h3>
+      <p className="mb-2 mt-0.5 text-xs text-neutral-500">{t('Estos modelos aceptan texto e imágenes como entrada; no generan imágenes.')}</p>
       {renderModelList('chat')}
     </div>
 
-    {transferBusy && transferProgress > 0 && <div className="mt-4 h-1.5 overflow-hidden rounded bg-neutral-800" data-testid="nodus-local-download-progress"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, transferProgress * 100)}%` }} /></div>}
-    {error && <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">{error}</p>}
+    {transferBusy && transferProgress > 0 && <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" data-testid="nodus-local-download-progress"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, transferProgress * 100)}%` }} /></div>}
+    {error && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">{error}</p>}
     {deleting && <ConfirmModal
       title={t('Eliminar modelo local')}
       message={(deleting.assetFamily ? t(deleting.assetFamily === EMBEDDING_GEMMA2_FAMILY ? 'Se eliminarán los pesos compartidos de los perfiles de 256 y 512 dimensiones.' : 'Se eliminarán los pesos compartidos de los perfiles CLS y mean.') + ' ' : '') + t('Se eliminará «{model}» del almacenamiento de Nodus. Si está seleccionado, las funciones que lo usan dejarán de funcionar hasta que elijas otro modelo o vuelvas a descargarlo.').replace('{model}', deleting.assetFamilyLabel ?? deleting.label)}
@@ -224,5 +221,5 @@ export function LocalAiModelsSettings({
       onConfirm={() => void remove()}
       onCancel={() => setDeleting(null)}
     />}
-  </div>;
+  </SettingsPanel>;
 }

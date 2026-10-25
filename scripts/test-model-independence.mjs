@@ -90,16 +90,17 @@ assert.ok(onboarding.includes('synthesisModel: aiModel'), 'onboarding must initi
 assert.ok(onboarding.includes("modelSettingsMode: 'basic'"), 'onboarding must keep simplified settings active');
 for (const field of ['extractionModel', 'summaryModel', 'fusionModel']) assert.ok(!onboarding.includes(`${field}: aiModel`), `${field} must inherit after onboarding`);
 
-const settingsView = await source('src/views/Settings.tsx');
-for (const marker of ['model-settings-mode', 'common-model-overrides', 'vault-model-overrides', 'Ajustes avanzados del vault {vault}']) {
+const settingsView = await source('src/views/settings/ModelSettings.tsx');
+for (const marker of ['model-type-tabs', 'essential-models', 'common-model-overrides', 'study-model-overrides']) {
   assert.ok(settingsView.includes(marker), `settings must expose ${marker}`);
 }
-assert.ok(settingsView.includes('pendingModelSettingsMode'), 'mode changes must wait for explicit confirmation');
-assert.ok(settingsView.includes('confirm-model-settings-mode'), 'mode confirmation must have a stable test hook');
-assert.ok(settingsView.includes('setPendingModelSettingsMode(mode)'), 'mode buttons must open the confirmation instead of persisting immediately');
-assert.ok(settingsView.includes('Solo puede haber un modo de configuración activo.'), 'settings must explain that basic and advanced are mutually exclusive');
-assert.ok(!settingsView.includes('onClick={() => void patch({ modelSettingsMode: mode })}'), 'browsing another mode must never persist it immediately');
-assert.ok(!settingsView.includes('Heredar modelo general'), 'advanced model selectors must contain concrete choices, not inheritance options');
+// There is no basic/advanced switch: the mode follows the selections. A task picked apart
+// from the main model makes the vault advanced, and agreeing again returns it to basic.
+assert.ok(!settingsView.includes('model-settings-mode'), 'the basic/advanced switch is gone');
+assert.ok(settingsView.includes("modelSettingsMode: unified ? 'basic' : 'advanced'"), 'every task write also writes the mode it implies');
+assert.ok(/sameSelection\(settings\[key\], general\)/.test(settingsView), 'changing the main model carries along only the tasks that were following it');
+assert.ok(settingsView.includes('essential-models-unify'), 'tasks that drifted from the main model can be brought back in one step');
+assert.ok(!settingsView.includes('Heredar modelo general'), 'model selectors must contain concrete choices, not inheritance options');
 assert.ok(settingsView.includes('gap-x-4 gap-y-3'), 'study model dropdowns must have horizontal and vertical separation');
 
 // The general text model must be reachable from its own row.
@@ -111,8 +112,8 @@ assert.ok(settingsView.includes('gap-x-4 gap-y-3'), 'study model dropdowns must 
 // downloaded built-in model does — reached a picker whose only entry was "no model
 // selected", with the fix two sections away in Providers and nothing on screen saying
 // so. Reinstalling was a rational thing to try, and users did.
-assert.ok(settingsView.includes('<GeneralTextModelControl settings={settings} patch={patch} />'),
-  'the basic-mode general model row must carry its own catalogue, not a favourites-only picker');
+assert.ok(settingsView.includes('<GeneralTextModelControl settings={settings} patch={patchGeneral} />'),
+  'the main model row must carry its own catalogue, not a favourites-only picker');
 const generalModel = await source('src/components/GeneralTextModelControl.tsx');
 assert.ok(generalModel.includes('autoDiscoverableAiProviders'),
   'loading models must ask every provider that already answers, exactly as the wizard does');

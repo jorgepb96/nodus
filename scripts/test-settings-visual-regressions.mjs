@@ -37,10 +37,10 @@ assert.match(
 assert.equal((settings.match(/className=\{ABOUT_ACTION_BUTTON_CLASS\}/g) ?? []).length, 12, 'About actions must use the same responsive button class');
 assert.match(settings, /data-testid="open-latest-changes"[\s\S]*onClick=\{onOpenWhatsNew\}/);
 
-const nodiOverride = settings.match(/<Row label=\{t\('Asistente Nodi'\)\}[^>]*>(.*?)<\/Row>/s)?.[1] ?? '';
-// Nodi uses the same searchable model control and reasoning level as adjacent roles.
-assert.match(nodiOverride, /<ModelWithReasoning/);
-assert.equal(/\bmenu\b/.test(nodiOverride), true, 'the Nodi override must use the shared searchable picker');
+// Nodi keeps its own picker in the Nodi section (and in its chat), drawn with the shared
+// searchable control.
+const nodiPicker = settings.match(/<ModelPicker settings=\{settings\} value=\{settings\.nodiModel[\s\S]*?\/>/)?.[0] ?? '';
+assert.equal(/\bmenu\b/.test(nodiPicker), true, 'the Nodi model picker must use the shared searchable picker');
 
 // Graph health lives in the Data tab, only in academic vaults, right above the danger zone,
 // and its panel defines light and dark surfaces.

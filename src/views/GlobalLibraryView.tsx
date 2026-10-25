@@ -78,7 +78,7 @@ function preparationPhaseLabel(job: LibraryExtractionJob): string {
   if (job.phase === 'queued') return 'En espera…';
   if (job.phase === 'ocr') return 'Reconociendo texto…';
   if (job.phase === 'assets') return 'Recuperando imágenes y tablas…';
-  if (job.phase === 'write') return 'Guardando la versión limpia…';
+  if (job.phase === 'write') return 'Guardando Markdown…';
   return 'Preparando lectura…';
 }
 
@@ -87,7 +87,7 @@ function friendlyExtractionError(error?: string | null): string {
   if (/sin extensión|no compatible|unsupported/i.test(error)) return 'Nodus no reconoce el formato de este archivo. Puedes sustituirlo o añadir otro adjunto compatible.';
   if (/no tiene un original|no está disponible|missing|enoent/i.test(error)) return 'El archivo original no está disponible en este dispositivo. Añádelo de nuevo para preparar la lectura.';
   if (/texto ni contenido legible|muy poco texto|empty/i.test(error)) return 'No se encontró suficiente contenido legible. Puedes abrir el original o revisar las opciones de OCR.';
-  return 'La versión limpia no pudo prepararse. El original y la última copia legible siguen intactos.';
+  return 'No se pudo preparar el Markdown. El original y la última copia legible siguen intactos.';
 }
 
 const REUSE_COMPONENT_LABELS = {
@@ -897,7 +897,7 @@ function VaultLinkDialog({ itemIds, onClose, onLinked }: {
         dialog stretched the full height of the window on any account with more than a
         handful of vaults. */}
     <section data-testid="global-library-vault-dialog" className="card-modal flex max-h-[min(86vh,620px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl">
-      <header className="flex items-start gap-3 border-b border-neutral-800 px-5 py-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-500/15 text-indigo-300"><Icon name="vault" /></span><div className="min-w-0 flex-1"><h2 id="global-library-vault-dialog-title" className="font-semibold">{t('Añadir al vault')}</h2><p className="mt-1 text-xs leading-5 text-neutral-500">{tx('{n} documento(s) conservarán su copia global; el vault recibirá una referencia analizable al Markdown limpio.', { n: itemIds.length })}</p></div><button className="btn btn-ghost" onClick={onClose} disabled={busy} aria-label={t('Cerrar')}><Icon name="x" /></button></header>
+      <header className="flex items-start gap-3 border-b border-neutral-800 px-5 py-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-500/15 text-indigo-300"><Icon name="vault" /></span><div className="min-w-0 flex-1"><h2 id="global-library-vault-dialog-title" className="font-semibold">{t('Añadir al vault')}</h2><p className="mt-1 text-xs leading-5 text-neutral-500">{tx('{n} documento(s) conservarán su copia global; el vault recibirá una referencia analizable al Markdown.', { n: itemIds.length })}</p></div><button className="btn btn-ghost" onClick={onClose} disabled={busy} aria-label={t('Cerrar')}><Icon name="x" /></button></header>
       <div className="flex items-center gap-2 border-b border-neutral-800 px-4 py-3">
         <div className="relative min-w-0 flex-1">
           <Icon name="search" size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
@@ -989,7 +989,7 @@ function LibraryScopeControls({
           <span>{globalEnabled ? t('Global') : t('Activar Global')}</span>
         </button>
         <span id="library-scope-global-tooltip" data-testid="library-scope-global-tooltip" className="library-scope-tooltip" role="tooltip">
-          {t('Global reúne originales y Markdown limpio para todos tus vaults.')}
+          {t('Global reúne originales y Markdown para todos tus vaults.')}
           {!globalEnabled && <> {t('Activa la Biblioteca global cuando quieras; este vault no cambiará.')}</>}
         </span>
       </span>
@@ -1577,8 +1577,8 @@ function GlobalLibraryContent({
     if (plan.action === 'open-clean') { openReaderReference(item); return; }
     if (plan.action === 'queue-and-open-original') {
       toast(plan.pageCount
-        ? tx('Documento largo ({n} páginas): la versión limpia queda en segundo plano.', { n: plan.pageCount })
-        : t('Documento largo: la versión limpia queda en segundo plano.'), { tone: 'info' });
+        ? tx('Documento largo ({n} páginas): el Markdown se preparará en segundo plano.', { n: plan.pageCount })
+        : t('Documento largo: el Markdown se preparará en segundo plano.'), { tone: 'info' });
       openReaderReference(item, 'original');
       return;
     }
@@ -1641,7 +1641,7 @@ function GlobalLibraryContent({
       <div className="grid min-h-0 flex-1 place-items-center p-8"><section className="card max-w-lg p-7 text-center">
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-indigo-500/10 text-indigo-300"><Icon name="book" size={28} /></span>
         <h1 className="mt-4 text-xl font-semibold">{t('Activa la Biblioteca transversal')}</h1>
-        <p className="mt-2 text-sm leading-6 text-neutral-500">{t('Elige una carpeta de copias de seguridad. Nodus creará dentro nodus-library para guardar originales, Markdown limpio y recursos.')}</p>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">{t('Elige una carpeta de copias de seguridad. Nodus creará dentro nodus-library para guardar originales, Markdown y recursos.')}</p>
         <button className="btn btn-primary mt-5" onClick={onOpenSettings}><Icon name="settings" /> {t('Configurar copias de seguridad')}</button>
       </section></div>
     </div>
@@ -1822,7 +1822,7 @@ function GlobalLibraryContent({
               <BulkIconButton testId="bulk-resolve-library-metadata" icon="wand" label={t('Completar metadatos')} onClick={() => setMetadataBatchItems([...selected])} />
               <BulkIconButton testId="bulk-library-citations" icon="quote" label={t('Citar / exportar')} onClick={() => setCitationItems([...selected])} />
               <BulkIconButton testId="bulk-add-library-to-vault" icon="vault" label={t('Usar en un vault')} onClick={() => setVaultLinkItems([...selected])} />
-              <BulkIconButton testId="bulk-rebuild-library-clean" icon="scanText" label={t('Reconstruir versiones limpias')} hint={t('Repite extracción, OCR y estructura')} onClick={() => void rebuildSelectedCleanReading()} />
+              <BulkIconButton testId="bulk-rebuild-library-clean" icon="scanText" label={t('Reconstruir Markdown')} hint={t('Repite extracción, OCR y estructura')} onClick={() => void rebuildSelectedCleanReading()} />
               <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-neutral-700/70" />
               <BulkIconButton testId="bulk-trash-library-items" icon="trash" danger label={t('Enviar a la papelera')} onClick={() => void deleteSelected()} />
             </>}
@@ -1909,7 +1909,7 @@ function GlobalLibraryContent({
                 <div className="mb-2 flex items-center gap-2 font-medium text-neutral-300"><Icon name="settings" size={12} />{t('Detalles técnicos')}</div>
                 <dl className="space-y-1"><div className="flex justify-between gap-3"><dt>{t('Estado')}</dt><dd>{t(EXTRACTION_LABEL[detail.extraction?.status ?? 'pending'])}</dd></div><div className="flex justify-between gap-3"><dt>{t('Adjuntos')}</dt><dd>{detail.attachments.length}</dd></div><div className="flex justify-between gap-3"><dt>{t('Markdown')}</dt><dd>{detail.files?.reader ? t('Disponible') : t('No disponible')}</dd></div>{detail.extraction?.engine && <div className="flex justify-between gap-3"><dt>{t('Motor')}</dt><dd className="truncate text-right">{detail.extraction.engine}</dd></div>}</dl>
                 {detail.extraction?.error && <p className="mt-2 break-words rounded-lg bg-neutral-900 p-2 font-mono text-[9px] text-neutral-500">{detail.extraction.error}</p>}
-                {detail.attachments.length > 0 && !detailJob && <button data-testid="rebuild-clean-library-reading" className="btn btn-ghost mt-3 w-full border border-neutral-700" onClick={() => void prepareDetail(true)}><Icon name="refresh" size={12} /> {t('Reconstruir versión limpia')}</button>}
+                {detail.attachments.length > 0 && !detailJob && <button data-testid="rebuild-clean-library-reading" className="btn btn-ghost mt-3 w-full border border-neutral-700" onClick={() => void prepareDetail(true)}><Icon name="refresh" size={12} /> {t('Reconstruir Markdown')}</button>}
                 <p className="mt-2">{t('Repite extracción, OCR, limpieza y estructura. No ejecuta ideas, resúmenes, embeddings ni análisis del vault.')}</p>
               </div>
             </details>
@@ -1935,7 +1935,7 @@ function GlobalLibraryContent({
                     : detail.attachments.length === 0 ? <p className="mt-1.5 text-[10px] leading-4 text-neutral-600">{t('Añade un PDF, EPUB, documento, texto o imagen. Nodus preparará automáticamente la lectura.')}</p>
                       : detail.extraction?.status === 'failed' ? <><p role="alert" className="mt-1.5 text-[10px] leading-4 text-red-300">{t(friendlyExtractionError(detail.extraction.error))}</p>{detail.files?.reader && <button className="mt-2 text-[10px] font-medium text-indigo-300 hover:text-indigo-200" onClick={() => void openReader(detail.id)}>{t('Leer la última copia disponible')}</button>}</>
                         : detail.extraction?.status === 'needs-review' ? <p className="mt-1.5 text-[10px] leading-4 text-amber-200">{t('Puedes leerla ya. Algunos fragmentos, tablas o páginas OCR pueden necesitar revisión.')}</p>
-                          : <p className="mt-1.5 text-[10px] leading-4 text-neutral-600">{detail.files?.reader ? t('Markdown limpio, páginas e imágenes están listos.') : t('Nodus preparará el texto, la estructura, las tablas, las imágenes y la trazabilidad de páginas.')}</p>}
+                          : <p className="mt-1.5 text-[10px] leading-4 text-neutral-600">{detail.files?.reader ? t('Markdown, páginas e imágenes están listos.') : t('Nodus preparará el texto, la estructura, las tablas, las imágenes y la trazabilidad de páginas.')}</p>}
                 </div>
               </div>
             </div>}
@@ -1969,7 +1969,7 @@ function GlobalLibraryContent({
           className="library-action-menu fixed z-[71] w-64 rounded-xl border border-neutral-800 bg-neutral-950 p-1.5 shadow-2xl"
           style={{ left: itemContextMenu.x, top: itemContextMenu.y }}
         >
-          <button data-testid="context-read-library-item" role="menuitem" className="library-action-menu-item" onClick={() => { const id = itemContextMenu.itemId; setItemContextMenu(null); void openReader(id); }}><Icon name="bookOpen" /><span><b>{t('Leer')}</b><small>{t('Elegir Markdown limpio u original')}</small></span></button>
+          <button data-testid="context-read-library-item" role="menuitem" className="library-action-menu-item" onClick={() => { const id = itemContextMenu.itemId; setItemContextMenu(null); void openReader(id); }}><Icon name="bookOpen" /><span><b>{t('Leer')}</b><small>{t('Elegir Markdown u original')}</small></span></button>
           <button data-testid="context-open-original" role="menuitem" className="library-action-menu-item" onClick={() => { const id = itemContextMenu.itemId; setItemContextMenu(null); void openReader(id, 'original'); }}><Icon name="file" /><span><b>{t('Abrir original')}</b></span></button>
           <button role="menuitem" className="library-action-menu-item" onClick={() => void openContextOnlineSource()}><Icon name="globe" /><span><b>{t('Ver fuente en línea')}</b></span></button>
           <button data-testid="context-reveal-library-attachment" role="menuitem" className="library-action-menu-item" onClick={() => void revealContextOriginal()}><Icon name="folder" /><span><b>{t('Mostrar en carpeta')}</b></span></button>
@@ -2020,6 +2020,8 @@ export function GlobalLibraryView({
   onSettingsChange,
   onOpenSettings,
   onOpenCollections,
+  onSync,
+  syncing,
   onOpenGraph,
   onOpenAssistant,
   onOpenArchive,
@@ -2036,6 +2038,8 @@ export function GlobalLibraryView({
   onSettingsChange: () => Promise<AppSettings | undefined>;
   onOpenSettings: () => void;
   onOpenCollections: () => void;
+  onSync: () => Promise<void>;
+  syncing: boolean;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
   onOpenArchive?: () => void;
@@ -2177,6 +2181,8 @@ export function GlobalLibraryView({
             snapshot={snapshot?.vault}
             onSnapshotChange={(vault) => onSnapshotChange?.({ vault })}
             onOpenCollections={onOpenCollections}
+            onSync={onSync}
+            syncing={syncing}
             onOpenNodusCollections={() => void chooseScope('global')}
             onOpenTutorial={() => openTutorial('analysis')}
             onOpenGraph={onOpenGraph}

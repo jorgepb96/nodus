@@ -10,7 +10,6 @@ import type {
   GitHubCopilotSubscriptionStatus,
   ImageModelInfo,
   LocalProvider,
-  LocalProviderTestResult,
   ModelInfo,
   ModelRef,
   OpenCodeGoUsageStatus,
@@ -25,10 +24,13 @@ import {
 import { AI_PROVIDERS, PROVIDER_LABELS, Icon, isLocalAiProvider, sameModel } from '../components/ui';
 import { IMAGE_PROVIDER_LABELS } from '@shared/providers';
 import { SettingsModelDot, SettingsModelList, settingsModelRowClass } from '../components/SettingsModelList';
+import { SettingsPanel } from '../components/SettingsPanel';
 import { codexReasoningLabel } from '../components/ModelPicker';
 import { withCodexReasoning } from '@shared/codexReasoning';
 import { t, tx } from '../i18n';
 import { FavoriteModelAvailability } from '../components/FavoriteModelAvailability';
+import { ipcErrorText } from '../lib/ipcErrorText';
+import { useProviderSetup } from '../hooks/useProviderSetup';
 
 export function ProvidersSettings({
   settings,
@@ -58,14 +60,10 @@ export function ProvidersSettings({
 
   return (
     <>
-    <section className="card p-4 mb-4">
-      <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-3">{t('Proveedores de IA y modelos')}</h2>
-      <p className="mb-4 text-xs leading-5 text-neutral-500">
-        {t('Las claves de API y los modelos configurados se comparten entre todas tus bóvedas.')}
-      </p>
+    <SettingsPanel icon="key" title={t('Proveedores de IA y modelos')} description={t('Las claves de API y los modelos configurados se comparten entre todas tus bóvedas.')}>
 
       {(settings.lockedProviderKeys?.length ?? 0) > 0 && (
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-100" data-testid="locked-api-key-recovery">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-100" data-testid="locked-api-key-recovery">
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-0 flex-1">
               <b>{t('Nodus ha encontrado claves de API cifradas que todavía no puede leer.')}</b>
@@ -157,7 +155,7 @@ export function ProvidersSettings({
           )
         )}
       </div>
-    </section>
+    </SettingsPanel>
     </>
   );
 }
@@ -358,9 +356,6 @@ function ChatGptSubscriptionRow({
     </div>
   );
 }
-
-const ipcErrorText = (cause: unknown) =>
-  (cause instanceof Error ? cause.message : String(cause)).replace(/^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/, '');
 
 /** Download progress of a vendor CLI, as a percentage once its size is known. */
 function runtimePercent(runtime: AgentRuntimeStatus): number | null {
@@ -644,20 +639,17 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
   const money = (value: number | null) => value == null ? t('No disponible') : `$${value.toLocaleString(undefined, { maximumFractionDigits: 4 })} / 1M`;
 
   return (
-    <section className="card p-4 mb-4">
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">{t('Generación de imágenes')}</h2>
-          <p className="mt-1 text-xs leading-5 text-neutral-500">
-            {t('Configuración independiente para las imágenes decorativas opcionales. OpenAI usa su API oficial de imágenes y reutiliza la clave de OpenAI; Google reutiliza la clave de Gemini.')}
-          </p>
-        </div>
-        <button className="btn btn-ghost border border-neutral-700 gap-1.5" onClick={() => void load()} disabled={loading}>
-          <span className={loading ? 'animate-spin' : ''}>↻</span> {t('Actualizar modelos')}
+    <SettingsPanel
+      icon="image"
+      title={t('Generación de imágenes')}
+      description={t('Configuración independiente para las imágenes decorativas opcionales. OpenAI usa su API oficial de imágenes y reutiliza la clave de OpenAI; Google reutiliza la clave de Gemini.')}
+      actions={
+        <button className="btn btn-ghost gap-1.5 border border-neutral-300 dark:border-neutral-700" onClick={() => void load()} disabled={loading}>
+          <Icon name="refresh" size={14} className={loading ? 'animate-spin' : ''} /> {t('Actualizar modelos')}
         </button>
-      </div>
-
-      <div className="mt-4 grid grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)] gap-3 max-md:grid-cols-1">
+      }
+    >
+      <div className="grid grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)] gap-3 max-md:grid-cols-1">
         <label className="text-xs text-neutral-500">
           {t('Estilo predeterminado')}
           <select
@@ -672,13 +664,13 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
         </label>
         <div className="text-xs text-neutral-500">
           {t('Selección actual')}
-          <div className="mt-1 rounded-md border border-neutral-800 px-3 py-2 text-sm text-neutral-300">
+          <div className="mt-1 rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-800 dark:border-neutral-800 dark:text-neutral-300">
             {IMAGE_PROVIDER_LABELS[settings.imageProvider]} · {settings.imageModel}
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           className="input min-w-[16rem] flex-1"
           value={search}
@@ -693,13 +685,13 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
         </select>
       </div>
 
-      <p className="mt-2 text-[11px] leading-4 text-neutral-600">
+      <p className="text-[11px] leading-4 text-neutral-500">
         {t('Como los proveedores publican tamaños y métricas diferentes, la ordenación por precio se aplica por separado dentro de cada proveedor. Los modelos sin precio directo quedan al final; no se estiman costes.')}
       </p>
-      {error && <div className="mt-3 text-xs text-red-400">{error}</div>}
-      {loading && <div className="mt-4 text-sm text-neutral-500">{t('Consultando catálogos oficiales…')}</div>}
+      {error && <div className="text-xs text-red-400">{error}</div>}
+      {loading && <div className="text-sm text-neutral-500">{t('Consultando catálogos oficiales…')}</div>}
       {!loading && (
-        <SettingsModelList className="mt-3 max-h-[32rem] overflow-y-auto" data-testid="image-generation-model-list">
+        <SettingsModelList className="max-h-[32rem] overflow-y-auto" data-testid="image-generation-model-list">
           {shown.map((model) => {
             const selected = settings.imageProvider === model.provider && settings.imageModel === model.id;
             const favorite = settings.imageFavorites?.some(ref => ref.provider === model.provider && ref.model === model.id) ?? false;
@@ -728,11 +720,11 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
           {shown.length === 0 && <div className="p-4 text-sm text-neutral-500">{t('No hay modelos compatibles que coincidan.')}</div>}
         </SettingsModelList>
       )}
-      <div className="mt-2 flex items-center justify-between text-[10px] text-neutral-600">
+      <div className="flex items-center justify-between text-[11px] text-neutral-500">
         <span>{tx('{n} modelos compatibles con salida de imagen', { n: shown.length })}</span>
-        <button className="hover:text-indigo-300" onClick={() => window.nodus.openExternal('https://openrouter.ai/models?output_modalities=image&order=pricing-low-to-high')}>{t('Ver catálogo de OpenRouter')}</button>
+        <button className="text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => window.nodus.openExternal('https://openrouter.ai/models?output_modalities=image&order=pricing-low-to-high')}>{t('Ver catálogo de OpenRouter')}</button>
       </div>
-    </section>
+    </SettingsPanel>
   );
 }
 
@@ -757,31 +749,11 @@ function ProviderRow({
   isFav: (m: ModelRef) => boolean;
   toggleFav: (m: ModelRef) => Promise<void>;
 }) {
-  const [keyInput, setKeyInput] = useState('');
-  const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasKey = settings.providerKeys?.[provider];
-
-  const saveKey = async () => {
-    if (!keyInput.trim()) return;
-    await window.nodus.setApiKey(provider, keyInput.trim());
-    setKeyInput('');
-    await onChange();
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setModels(await window.nodus.listModels(provider));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { keyInput, setKeyInput, hasKey, models, error, busy, run } = useProviderSetup({
+    provider, savedKey: settings.providerKeys?.[provider],
+    keyRequired: provider !== 'openrouter' && provider !== 'opencode-go', onChange,
+  });
 
   const filtered = (models ?? []).filter((m) => {
     const q = search.toLowerCase();
@@ -808,13 +780,15 @@ function ProviderRow({
               className="input flex-1"
               placeholder={hasKey ? t('•••••••• (guardada)') : t('clave del proveedor')}
               value={keyInput}
+              disabled={Boolean(busy)}
               onChange={(e) => setKeyInput(e.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') void run('save'); }}
             />
-            <button className="btn btn-primary" onClick={saveKey}>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !keyInput.trim()} onClick={() => void run('save')}>
               {t('Guardar')}
             </button>
             {hasKey && (
-              <button className="btn btn-ghost text-red-600 dark:text-red-400" onClick={() => window.nodus.clearApiKey(provider).then(onChange)}>
+              <button className="btn btn-ghost text-red-600 dark:text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
@@ -851,8 +825,8 @@ function ProviderRow({
           )}
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={loadModels} disabled={loading}>
-              {loading ? t('Cargando…') : t('Cargar modelos')}
+            <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
+              {busy === 'load' ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
               <input className="input flex-1" placeholder={t('Buscar modelo…')} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -860,7 +834,7 @@ function ProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-600 dark:text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-600 dark:text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid={`provider-model-list-${provider}`}>
@@ -960,14 +934,7 @@ function CustomProviderRow({
   const manualModels = config.models ?? [];
   const [urlInput, setUrlInput] = useState(savedUrl);
   const [modelInput, setModelInput] = useState('');
-  const [keyInput, setKeyInput] = useState('');
-  const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [test, setTest] = useState<LocalProviderTestResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasKey = settings.providerKeys?.custom;
 
   // Keep the field in sync when the saved value changes elsewhere (vault switch).
   useEffect(() => setUrlInput(savedUrl), [savedUrl]);
@@ -999,39 +966,10 @@ function CustomProviderRow({
     await persist({ models: manualModels.filter((model) => model !== id) });
   };
 
-  const saveKey = async () => {
-    if (!keyInput.trim()) return;
-    await window.nodus.setApiKey('custom', keyInput.trim());
-    setKeyInput('');
-    await onChange();
-  };
-
-  const runTest = async () => {
-    setTesting(true);
-    setTest(null);
-    setError(null);
-    try {
-      await persistUrl();
-      setTest(await window.nodus.testCustomProvider());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await persistUrl();
-      setModels(await window.nodus.listModels('custom'));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { keyInput, setKeyInput, hasKey, models, test, error, busy, loading, testing, run } = useProviderSetup({
+    provider: 'custom', savedKey: settings.providerKeys?.custom,
+    keyRequired: false, onChange, beforeRequest: persistUrl, testConnection: () => window.nodus.testCustomProvider(),
+  });
 
   const filtered = (models ?? []).filter((m) => {
     const q = search.toLowerCase();
@@ -1061,12 +999,13 @@ function CustomProviderRow({
                 className="input flex-1 font-mono"
                 data-testid="custom-provider-url"
                 value={urlInput}
+                disabled={Boolean(busy)}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onBlur={() => void persistUrl()}
                 placeholder="http://localhost:8317/v1"
                 spellCheck={false}
               />
-              <button className="btn btn-ghost border border-neutral-700" onClick={() => void runTest()} disabled={testing}>
+              <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('test')} disabled={Boolean(busy)}>
                 {testing ? t('Probando…') : t('Probar conexión')}
               </button>
             </div>
@@ -1089,11 +1028,13 @@ function CustomProviderRow({
               className="input flex-1"
               placeholder={hasKey ? t('•••••••• clave guardada (opcional)') : t('clave de API (opcional)')}
               value={keyInput}
+              disabled={Boolean(busy)}
+              onKeyDown={event => { if (event.key === 'Enter') void run('save'); }}
               onChange={(e) => setKeyInput(e.target.value)}
             />
-            <button className="btn btn-primary" onClick={saveKey}>{t('Guardar')}</button>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !keyInput.trim()} onClick={() => void run('save')}>{t('Guardar')}</button>
             {hasKey && (
-              <button className="btn btn-ghost text-red-400" onClick={() => window.nodus.clearApiKey('custom').then(onChange)}>
+              <button className="btn btn-ghost text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
@@ -1136,7 +1077,7 @@ function CustomProviderRow({
           </div>
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-700" onClick={loadModels} disabled={loading}>
+            <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
               {loading ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
@@ -1145,7 +1086,7 @@ function CustomProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid="provider-model-list-custom">
@@ -1187,14 +1128,7 @@ function LocalProviderRow({
 }) {
   const savedUrl = settings.localProviders?.[provider]?.baseUrl ?? '';
   const [urlInput, setUrlInput] = useState(savedUrl);
-  const [tokenInput, setTokenInput] = useState('');
-  const [models, setModels] = useState<ModelInfo[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [test, setTest] = useState<LocalProviderTestResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const hasToken = settings.providerKeys?.[provider];
   const [diagnostics, setDiagnostics] = useState<Awaited<ReturnType<typeof window.nodus.getLocalAiDiagnostics>>>([]);
   const localConfig = settings.localProviders?.[provider] ?? { baseUrl: savedUrl, contextMode: 'auto' as const };
 
@@ -1218,39 +1152,10 @@ function LocalProviderRow({
     }
   };
 
-  const saveToken = async () => {
-    if (!tokenInput.trim()) return;
-    await window.nodus.setApiKey(provider, tokenInput.trim());
-    setTokenInput('');
-    await onChange();
-  };
-
-  const runTest = async () => {
-    setTesting(true);
-    setTest(null);
-    setError(null);
-    try {
-      await persistUrl();
-      setTest(await window.nodus.testLocalProvider(provider));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const loadModels = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await persistUrl();
-      setModels(await window.nodus.listModels(provider));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { keyInput: tokenInput, setKeyInput: setTokenInput, hasKey: hasToken, models, test, error, busy, loading, testing, run } = useProviderSetup({
+    provider: provider, savedKey: settings.providerKeys?.[provider],
+    keyRequired: false, onChange, beforeRequest: persistUrl, testConnection: () => window.nodus.testLocalProvider(provider),
+  });
 
   const filtered = (models ?? []).filter((m) => {
     const q = search.toLowerCase();
@@ -1259,7 +1164,7 @@ function LocalProviderRow({
   const shown = filtered.slice(0, 300);
 
   return (
-    <div className="border border-neutral-800 rounded-lg">
+    <div className="border border-neutral-800 rounded-lg" data-testid={`provider-${provider}`}>
       <button className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm" onClick={onToggle}>
         <span className="text-neutral-500">{expanded ? '▾' : '▸'}</span>
         <span className="font-medium">{PROVIDER_LABELS[provider]}</span>
@@ -1281,12 +1186,13 @@ function LocalProviderRow({
               <input
                 className="input flex-1 font-mono"
                 value={urlInput}
+                disabled={Boolean(busy)}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onBlur={() => void persistUrl()}
                 placeholder={DEFAULT_LOCAL_BASE_URLS[provider]}
                 spellCheck={false}
               />
-              <button className="btn btn-ghost border border-neutral-700" onClick={() => void runTest()} disabled={testing}>
+              <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('test')} disabled={Boolean(busy)}>
                 {testing ? t('Probando…') : t('Probar conexión')}
               </button>
             </div>
@@ -1354,18 +1260,20 @@ function LocalProviderRow({
               className="input flex-1"
               placeholder={hasToken ? t('•••••••• token guardado (opcional)') : t('token de acceso (opcional)')}
               value={tokenInput}
+              disabled={Boolean(busy)}
+              onKeyDown={event => { if (event.key === 'Enter') void run('save'); }}
               onChange={(e) => setTokenInput(e.target.value)}
             />
-            <button className="btn btn-primary" onClick={saveToken}>{t('Guardar')}</button>
+            <button className="btn btn-primary" disabled={Boolean(busy) || !tokenInput.trim()} onClick={() => void run('save')}>{t('Guardar')}</button>
             {hasToken && (
-              <button className="btn btn-ghost text-red-400" onClick={() => window.nodus.clearApiKey(provider).then(onChange)}>
+              <button className="btn btn-ghost text-red-400" disabled={Boolean(busy)} onClick={() => void run('delete')}>
                 {t('Borrar')}
               </button>
             )}
           </div>
 
           <div className="flex gap-2 items-center">
-            <button className="btn btn-ghost border border-neutral-700" onClick={loadModels} disabled={loading}>
+            <button className="btn btn-ghost border border-neutral-700" onClick={() => void run('load')} disabled={Boolean(busy)}>
               {loading ? t('Cargando…') : t('Cargar modelos')}
             </button>
             {models && (
@@ -1374,7 +1282,7 @@ function LocalProviderRow({
             {models && <span className="text-xs text-neutral-500">{filtered.length}</span>}
           </div>
 
-          {error && <div className="text-xs text-red-400">{error}</div>}
+          {error && <div role="alert" className="text-xs text-red-400">{error}</div>}
 
           {models && (
             <SettingsModelList className="max-h-64 overflow-y-auto" data-testid={`provider-model-list-${provider}`}>

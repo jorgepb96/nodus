@@ -81,6 +81,31 @@ export class DocumentaryStore {
       CREATE TABLE IF NOT EXISTS documentary_source_owners (
         vault_id TEXT NOT NULL, document_id TEXT NOT NULL, PRIMARY KEY(vault_id,document_id)
       );
+      CREATE TABLE IF NOT EXISTS documentary_embedding_index_owners (
+        vault_id TEXT NOT NULL,index_id TEXT NOT NULL,generation INTEGER NOT NULL,
+        index_key TEXT NOT NULL REFERENCES documentary_revisions(index_key) ON DELETE CASCADE,
+        PRIMARY KEY(vault_id,index_id,generation,index_key)
+      );
+      CREATE INDEX IF NOT EXISTS documentary_embedding_index_owners_key ON documentary_embedding_index_owners(index_key);
+      CREATE TABLE IF NOT EXISTS documentary_embedding_source_versions (vault_id TEXT PRIMARY KEY,revision INTEGER NOT NULL DEFAULT 0);
+      INSERT OR IGNORE INTO documentary_embedding_source_versions SELECT DISTINCT vault_id,0 FROM documentary_source_owners;
+      CREATE TRIGGER IF NOT EXISTS documentary_embedding_owner_added AFTER INSERT ON documentary_source_owners BEGIN
+        INSERT INTO documentary_embedding_source_versions VALUES(NEW.vault_id,1) ON CONFLICT(vault_id) DO UPDATE SET revision=revision+1;
+      END;
+      CREATE TRIGGER IF NOT EXISTS documentary_embedding_owner_removed AFTER DELETE ON documentary_source_owners BEGIN
+        INSERT INTO documentary_embedding_source_versions VALUES(OLD.vault_id,1) ON CONFLICT(vault_id) DO UPDATE SET revision=revision+1;
+      END;
+      CREATE TRIGGER IF NOT EXISTS documentary_embedding_text_revision AFTER UPDATE OF lexical_ready ON documentary_revisions
+        WHEN OLD.lexical_ready=0 AND NEW.lexical_ready=1 AND NOT EXISTS (
+          SELECT 1 FROM documentary_revisions r WHERE r.document_id=NEW.document_id AND r.index_key<>NEW.index_key AND r.lexical_ready=1
+          AND json_extract(r.identity_json,'$.revision') IS json_extract(NEW.identity_json,'$.revision')
+          AND json_extract(r.identity_json,'$.attachmentId') IS json_extract(NEW.identity_json,'$.attachmentId')
+          AND json_extract(r.identity_json,'$.attachmentRevision') IS json_extract(NEW.identity_json,'$.attachmentRevision')
+          AND json_extract(r.identity_json,'$.textFingerprint') IS json_extract(NEW.identity_json,'$.textFingerprint')
+          AND json_extract(r.identity_json,'$.chunkerVersion') IS json_extract(NEW.identity_json,'$.chunkerVersion')
+          AND json_extract(r.identity_json,'$.processingVersion') IS json_extract(NEW.identity_json,'$.processingVersion')) BEGIN
+        UPDATE documentary_embedding_source_versions SET revision=revision+1 WHERE vault_id IN (SELECT vault_id FROM documentary_source_owners WHERE document_id=NEW.document_id);
+      END;
       CREATE TABLE IF NOT EXISTS documentary_mcp_choices (
         vault_id TEXT NOT NULL, notebook_id TEXT NOT NULL, endpoint TEXT NOT NULL,
         PRIMARY KEY(vault_id,notebook_id)
@@ -203,15 +228,21 @@ export class DocumentaryStore {
       if (!row.chunks_json) throw new Error('documentary_chunks_missing');
       const chunks: DocumentaryChunk[] = JSON.parse(row.chunks_json);
       if (!chunks.length) throw new Error('documentary_text_empty');
-      this.db.prepare('DELETE FROM documentary_fts WHERE id IN (SELECT id FROM documentary_passages WHERE index_key=?)').run(job.id);
-      this.db.prepare('DELETE FROM documentary_passages WHERE index_key=?').run(job.id);
+      // FTS's id column is UNINDEXED: even an empty IN subquery scans the entire
+      // corpus. New immutable revisions have nothing to replace. On a real 372k
+      // passage store that unnecessary scan blocked Electron for 2.5 s per source.
+      if (this.db.prepare('SELECT 1 FROM documentary_passages WHERE index_key=? LIMIT 1').get(job.id)) {
+        this.db.prepare('DELETE FROM documentary_fts WHERE id IN (SELECT id FROM documentary_passages WHERE index_key=?)').run(job.id);
+        this.db.prepare('DELETE FROM documentary_passages WHERE index_key=?').run(job.id);
+      }
       const insert = this.db.prepare('INSERT INTO documentary_passages(id,index_key,document_id,ordinal,text,locator_json) VALUES (?,?,?,?,?,?)');
-      const fts = this.db.prepare('INSERT INTO documentary_fts(id,text) VALUES (?,?)');
       chunks.forEach(({ text, ...locator }, ordinal) => {
         const id = `${job.id}:${ordinal}`;
         insert.run(id, job.id, job.document_id, ordinal, text, JSON.stringify(locator));
-        fts.run(id, text);
       });
+      // One FTS statement avoids flushing/merging its pending segments between
+      // passage inserts (their generation triggers create statement savepoints).
+      this.db.prepare('INSERT INTO documentary_fts(id,text) SELECT id,text FROM documentary_passages WHERE index_key=? ORDER BY ordinal').run(job.id);
       this.db.prepare('UPDATE documentary_revisions SET lexical_ready=1 WHERE index_key=?').run(job.id);
       const identity: DocumentaryIndexIdentity = JSON.parse(job.identity_json);
       this.db.prepare(`UPDATE documentary_attachment_heads SET current_key=?

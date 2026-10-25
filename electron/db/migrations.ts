@@ -8,6 +8,9 @@ import { databaseCellStorage } from '@shared/databaseCellStorage';
 import { columnTypeDef } from '@shared/databases';
 import { normalizeDatabaseViewConfig } from '@shared/databaseViewConfig';
 import { bibliographicPlainText } from '@shared/bibliographicText';
+import { EMBEDDING_INDEX_SQL, migrateEmbeddingIndexes } from './embeddingIndexSchema';
+import { registerEmbeddingIndexFunctions } from './embeddingIndexesRepo';
+import { EMBEDDING_RUNS_SQL } from './embeddingRunsRepo';
 
 export interface Migration {
   version: number;
@@ -160,7 +163,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 201;
+export const SCHEMA_VERSION = 206;
 
 // What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
 // (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
@@ -9628,6 +9631,73 @@ export const migrations: Migration[] = [
       DELETE FROM passages_fts WHERE rowid IN (SELECT id FROM passages_fts_content WHERE c0=old.passage_id);
     END;
   ` },
+  { version: 202, up: /* sql */ `
+    CREATE TABLE IF NOT EXISTS research_harness_runs (
+      id TEXT PRIMARY KEY, mode TEXT NOT NULL, status TEXT NOT NULL,
+      conversation_id TEXT, artifact_id TEXT, summary_json TEXT NOT NULL, record_json TEXT NOT NULL, updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS research_harness_runs_conversation ON research_harness_runs(conversation_id,updated_at);
+  ` },
+  { version: 203, up: EMBEDDING_INDEX_SQL, after: migrateEmbeddingIndexes },
+  { version: 204, up: EMBEDDING_RUNS_SQL },
+  { version: 205, up: /* sql */ `
+    -- Ming narration: research-chat messages and dictionary entries can be narrated too, and
+    -- a clip can be kept (pinned) so automatic retention never removes it. SQLite cannot
+    -- widen a CHECK constraint in place, so the table is rebuilt. Existing clips keep their
+    -- provider label (piper/kokoro/hume) and stay playable: they are plain WAV files.
+    CREATE TABLE audio_clips_v205 (
+      id            TEXT PRIMARY KEY,
+      entity_kind   TEXT NOT NULL CHECK (entity_kind IN ('immersion', 'deep_research', 'chat_message', 'dictionary_entry')),
+      entity_id     TEXT NOT NULL,
+      segment_index INTEGER NOT NULL,
+      segment_label TEXT NOT NULL DEFAULT '',
+      provider      TEXT NOT NULL DEFAULT 'ming',
+      voice         TEXT NOT NULL DEFAULT '',
+      language      TEXT NOT NULL DEFAULT '',
+      file_name     TEXT NOT NULL,
+      bytes         INTEGER NOT NULL DEFAULT 0,
+      duration_sec  REAL NOT NULL DEFAULT 0,
+      sample_rate   INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT NOT NULL,
+      model_id      TEXT NOT NULL DEFAULT '',
+      pinned        INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO audio_clips_v205 (id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at)
+      SELECT id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at FROM audio_clips;
+    DROP TABLE audio_clips;
+    ALTER TABLE audio_clips_v205 RENAME TO audio_clips;
+    CREATE INDEX idx_audio_clips_entity ON audio_clips(entity_kind, entity_id, segment_index);
+    CREATE INDEX idx_audio_clips_retention ON audio_clips(entity_kind, pinned, created_at);
+  ` },
+  { version: 206, up: /* sql */ `
+    -- Nodus Scriptor narrates its documents too ('scriptor_document'). Same rebuild as v205,
+    -- copying every column so a re-run keeps model and pinned state. Columns are unchanged,
+    -- and v205 and v206 ship in the same release, so SYNC_SCHEMA_VERSION stays at 205.
+    DROP TABLE IF EXISTS audio_clips_v206;
+    CREATE TABLE audio_clips_v206 (
+      id            TEXT PRIMARY KEY,
+      entity_kind   TEXT NOT NULL CHECK (entity_kind IN ('immersion', 'deep_research', 'chat_message', 'dictionary_entry', 'scriptor_document')),
+      entity_id     TEXT NOT NULL,
+      segment_index INTEGER NOT NULL,
+      segment_label TEXT NOT NULL DEFAULT '',
+      provider      TEXT NOT NULL DEFAULT 'ming',
+      voice         TEXT NOT NULL DEFAULT '',
+      language      TEXT NOT NULL DEFAULT '',
+      file_name     TEXT NOT NULL,
+      bytes         INTEGER NOT NULL DEFAULT 0,
+      duration_sec  REAL NOT NULL DEFAULT 0,
+      sample_rate   INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT NOT NULL,
+      model_id      TEXT NOT NULL DEFAULT '',
+      pinned        INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO audio_clips_v206 (id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at, model_id, pinned)
+      SELECT id, entity_kind, entity_id, segment_index, segment_label, provider, voice, language, file_name, bytes, duration_sec, sample_rate, created_at, model_id, pinned FROM audio_clips;
+    DROP TABLE audio_clips;
+    ALTER TABLE audio_clips_v206 RENAME TO audio_clips;
+    CREATE INDEX idx_audio_clips_entity ON audio_clips(entity_kind, entity_id, segment_index);
+    CREATE INDEX idx_audio_clips_retention ON audio_clips(entity_kind, pinned, created_at);
+  ` },
 ];
 
 /**
@@ -9828,6 +9898,9 @@ function backfillMissingCreateOnly(db: Database.Database, current: number): void
 }
 
 export function runMigrations(db: Database.Database): void {
+  // A recovered schema can already contain write-through triggers even when its
+  // version marker is behind. Register their pure functions before any repair SQL.
+  registerEmbeddingIndexFunctions(db);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   const current = db.pragma('user_version', { simple: true }) as number;
@@ -9857,4 +9930,5 @@ export function runMigrations(db: Database.Database): void {
       tx();
     }
   }
+  registerEmbeddingIndexFunctions(db);
 }

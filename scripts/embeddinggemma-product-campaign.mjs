@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { createResearchTestRoot } from './research-isolation.mjs';
 
 const argument = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
-const profiles = ['multilingual-e5-small-int8', 'gte-multilingual-base-int8', 'bge-m3-q8_0', 'embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1'];
+const profiles = ['multilingual-e5-small-int8', 'gte-multilingual-base-int8', 'bge-m3-q8_0', 'embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1', 'harrier-oss-v1-0.6b-q8_0', 'gte-multilingual-base-int8-cls', 'bge-m3-q8_0-cls'];
 const campaignRoot = argument('campaign-root') ?? createResearchTestRoot(), corpusRoot = argument('corpus-root') ?? createResearchTestRoot();
 for (const root of [campaignRoot, corpusRoot]) {
   const canonical = fs.realpathSync(root), marker = JSON.parse(fs.readFileSync(path.join(canonical, 'isolation.json'), 'utf8'));

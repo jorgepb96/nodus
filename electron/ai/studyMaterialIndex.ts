@@ -37,7 +37,7 @@ export function onStudyMaterialIndexChanged(listener: IndexListener): () => void
 
 /** Stable, inspectable text contract for material embeddings. Visual descriptions are
  * deliberately placed before extracted text so image semantics survive the 8k clip. */
-export function studyMaterialEmbeddingText(material: StudyMaterialDetail): string {
+export function studyMaterialEmbeddingText(material: Pick<StudyMaterialDetail, 'title' | 'description' | 'visualDescription' | 'metadata' | 'bibliography' | 'extractedText'>): string {
   return [
     `título: ${material.title}`,
     material.description ? `descripción: ${material.description}` : '',
@@ -140,6 +140,8 @@ async function performIndex(materialId: string, force: boolean): Promise<StudyMa
       setStudyMaterialIndexFailure(materialId, 'unavailable', error); emit(materialId);
       return { materialId, status: 'unavailable', indexed: false, visualDescriptionGenerated, error };
     }
+    const current = getStudyMaterial(materialId);
+    if (current.deletedAt || current.archivedAt || studyMaterialEmbeddingText(current) !== text) throw new Error('embedding_source_changed');
     setStudyMaterialEmbedding(materialId, vector, { provider: config.provider, model: config.model, textHash });
     queueStudySearchIndexRefresh();
     queueStudyKnowledgeSources('material', [materialId]);

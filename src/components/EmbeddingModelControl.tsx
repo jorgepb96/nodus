@@ -75,7 +75,7 @@ export function EmbeddingModelControl({
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
           placeholder={DEFAULT_EMBEDDING_MODELS[provider]}
         />
-        <button className="btn btn-ghost justify-center border border-neutral-700" onClick={loadModels} disabled={loading}>
+        <button className="btn btn-ghost justify-center border border-neutral-300 dark:border-neutral-700" onClick={loadModels} disabled={loading}>
           {loading ? t('Cargando…') : t('Cargar modelos')}
         </button>
       </div>
@@ -92,11 +92,11 @@ export function EmbeddingModelControl({
         />
       )}
       {error && <div className="text-xs text-red-400">{error}</div>}
-      <p className="text-xs text-neutral-500">
-        {t('OpenRouter acepta IDs como baai/bge-m3; si escribes BAAI:bge-m3 se normaliza automáticamente.')}
-      </p>
-      <p className="rounded-lg border border-amber-900/60 bg-amber-950/20 px-3 py-2 text-xs leading-5 text-amber-200">
-        {t('Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.')}
+      {/* Changing the model never rewrites the current index: it prepares another one
+          beside it, which is why this is a note and not a warning. */}
+      <p className="text-xs leading-5 text-neutral-500">
+        {t('Selecciona otro modelo para preparar un índice independiente. Los índices anteriores se conservarán.')}
+        {provider === 'openrouter' && <> {t('OpenRouter acepta IDs como baai/bge-m3; si escribes BAAI:bge-m3 se normaliza automáticamente.')}</>}
       </p>
     </div>
   );

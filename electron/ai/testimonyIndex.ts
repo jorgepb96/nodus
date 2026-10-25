@@ -40,6 +40,7 @@ export async function buildTestimonyIndex(): Promise<TestimonyIndexReport> {
   const now = new Date();
 
   const allowed = new Set(indexableInterviews(now));
+  const external = !['nodus', 'ollama', 'lmstudio'].includes(settings.embeddingProvider);
   const all = db.prepare('SELECT id FROM testimony_interviews WHERE deleted_at IS NULL').all() as { id: string }[];
 
   // Primero se limpia: una entrevista que ha dejado de estar autorizada pierde sus
@@ -48,13 +49,17 @@ export async function buildTestimonyIndex(): Promise<TestimonyIndexReport> {
   let purged = 0;
   const withheld = new Map<string, number>();
   for (const row of all) {
-    if (allowed.has(row.id)) continue;
-    purged += dropInterviewEmbeddings(row.id);
+    const access = accessContextFor(row.id);
+    const localDecision = evaluateAccess(access, 'embeddingIndex', { now, policy: { allowExternalProviders: settings.testimonyAllowExternalProviders } });
+    const targetDecision = external ? evaluateAccess(access, 'externalAi', { now, policy: { allowExternalProviders: settings.testimonyAllowExternalProviders } }) : localDecision;
+    if (allowed.has(row.id) && targetDecision.allowed && !targetDecision.requiresPseudonymization && !localDecision.requiresPseudonymization) continue;
+    allowed.delete(row.id);
+    if (!localDecision.allowed) purged += dropInterviewEmbeddings(row.id);
     const decision = evaluateAccess(accessContextFor(row.id), 'embeddingIndex', {
       now,
       policy: { allowExternalProviders: settings.testimonyAllowExternalProviders },
     });
-    const reason = decision.reason ?? 'access_restricted';
+    const reason = targetDecision.reason ?? decision.reason ?? 'access_restricted';
     withheld.set(reason, (withheld.get(reason) ?? 0) + 1);
   }
 

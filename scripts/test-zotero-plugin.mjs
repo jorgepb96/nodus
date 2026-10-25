@@ -54,7 +54,7 @@ function makeEl(tag, doc) {
     children: [],
     attrs: {},
     classList: { add() {} },
-    appendChild(c) { this.children.push(c); return c; },
+    appendChild(c) { this.children.push(c); c.parentNode = this; return c; },
     setAttribute(k, v) { this.attrs[k] = v; },
     getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
     removeAttribute(k) { delete this.attrs[k]; },
@@ -90,6 +90,7 @@ function loadModule(file, extraGlobals = {}) {
     ...extraGlobals,
   };
   vm.createContext(sandbox);
+  vm.runInContext(readFileSync(path.join(contentDir, "embedding-models.js"), "utf8"), sandbox);
   vm.runInContext(src, sandbox, { filename: file });
   return sandbox.window;
 }
@@ -230,7 +231,7 @@ function stubEl(doc, tag) {
     className: '', id: '', value: '', textContent: '', innerHTML: '', hidden: false, disabled: false,
     style: {}, dataset: {},
     classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
-    appendChild(c) { this.children.push(c); return c; },
+    appendChild(c) { this.children.push(c); c.parentNode = this; return c; },
     insertBefore(c) { this.children.push(c); return c; },
     removeChild() {}, remove() {}, focus() {}, blur() {}, scrollIntoView() {},
     setAttribute(k, v) { attrs[k] = v; }, getAttribute: (k) => (k in attrs ? attrs[k] : null), removeAttribute(k) { delete attrs[k]; },
@@ -273,6 +274,249 @@ const FAKE_STORE = {
   evidenceCacheStats: async () => ({ documents: 0, pages: 0, bytes: 0 }), pruneEvidenceIndexes: async () => 0, clearEvidenceIndexes: async () => 0,
   newId: () => 'conv-1', compactAudit: (a) => a, compactConversations: (a) => a,
 };
+
+function conversationSidebar({ history = [], historyEnabled = true, sourceScope = 'current', providers, embeddings, evidence } = {}) {
+  const doc = stubDoc();
+  const items = new Map();
+  let selected = [], reader = null, nextID = 0, saved = null;
+  const mainWindow = {
+    Zotero_Tabs: { selectedID: 'library' },
+    ZoteroPane: { getSelectedItems: () => selected },
+  };
+  const Zotero = {
+    logError(error) { throw error; }, getMainWindow: () => mainWindow,
+    Reader: { getByTabID: () => reader },
+    Items: { get: (id) => Array.isArray(id) ? id.map((key) => items.get(key)) : items.get(id) },
+  };
+  const store = {
+    ...FAKE_STORE,
+    newId: () => `conversation-${++nextID}`,
+    getContext: () => ({ useFulltext: false }),
+    saveConversations: async (list) => { saved = JSON.parse(JSON.stringify(list)); return true; },
+  };
+  const sandbox = {
+    window: { NodusStore: store, NodusProviders: providers, NodusLocalEmbeddings: embeddings, NodusEvidence: evidence }, document: doc, console,
+    ChromeUtils: { importESModule: () => ({ Zotero }) },
+    AbortController, DOMException, setTimeout, clearTimeout,
+  };
+  vm.createContext(sandbox);
+  const run = (code) => vm.runInContext(code, sandbox);
+  const src = readSource('zotero-plugin/content/sidebar.js');
+  vm.runInContext(src.slice(0, src.lastIndexOf('\nboot().catch(')), sandbox);
+  sandbox.initialHistory = history;
+  run(`state.mode = 'standalone'; state.model = { provider: 'test', model: 'test' };
+    state.historyEnabled = ${historyEnabled}; state.sourceScope = '${sourceScope}';
+    state.conversations = initialHistory; startNewConversation(null);`);
+  return {
+    run, doc, store,
+    get saved() { return saved; },
+    item(key, libraryID = 1) {
+      const item = {
+        id: items.size + 1, key, libraryID,
+        getDisplayTitle: () => key, getField: () => '', getAttachments: () => [],
+      };
+      items.set(item.id, item); return item;
+    },
+    attachment(parent, key) {
+      const attachment = {
+        id: items.size + 1, key, libraryID: parent.libraryID, parentItem: parent,
+        isAttachment: () => true, attachmentContentType: 'application/pdf',
+      };
+      items.set(attachment.id, attachment); return attachment;
+    },
+    async library(selection) {
+      reader = null; selected = selection; mainWindow.Zotero_Tabs.selectedID = 'library';
+      await run('refreshItem(false)');
+    },
+    async reader(attachment) {
+      reader = { itemID: attachment.id }; mainWindow.Zotero_Tabs.selectedID = `reader-${attachment.id}`;
+      await run('refreshItem(false)');
+    },
+    async message(text) {
+      sandbox.testMessage = text;
+      await run(`state.conv.messages.push({role: 'user', content: testMessage}); persistConv()`);
+      return run('state.conv.id');
+    },
+  };
+}
+
+test('conversations: items keep their own active chat, history and new-chat drafts', async () => {
+  const sidebar = conversationSidebar();
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const firstA = await sidebar.message('First question about A');
+  assert.equal(sidebar.run('state.conv.zoteroItem.key'), 'A');
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  const firstB = await sidebar.message('Question about B');
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), firstA);
+  assert.deepEqual(Array.from(sidebar.run('itemHistory().map(c => c.id)')), [firstA]);
+  sidebar.run('loadConversation(' + JSON.stringify(firstB) + ')');
+  assert.equal(sidebar.run('state.conv.id'), firstA, 'another item cannot be loaded through history');
+  sidebar.run('startNewConversation()');
+  const draft = sidebar.run('state.conv.id');
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), firstB);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), draft, 'a new empty chat remains the active chat');
+  const secondA = await sidebar.message('Second question about A');
+  assert.deepEqual(new Set(Array.from(sidebar.run('itemHistory().map(c => c.id)'))), new Set([firstA, secondA]));
+  sidebar.run('loadConversation(' + JSON.stringify(firstA) + ')');
+  await sidebar.library([b]);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), firstA, 'history selection becomes the active chat');
+});
+
+test('conversations: reader tabs share a parent item; the library retains the open chat and sources', async () => {
+  const sidebar = conversationSidebar();
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  const a1 = sidebar.attachment(a, 'A1'), a2 = sidebar.attachment(a, 'A2'), b1 = sidebar.attachment(b, 'B1');
+  await sidebar.library([b]); // Library selection differs from the reader.
+  await sidebar.reader(a1);
+  const aChat = await sidebar.message('A question');
+  await sidebar.reader(a2);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  assert.equal(sidebar.run('getCurrentItem().attachment.key'), 'A2');
+  await sidebar.run('refreshItem(true)');
+  assert.equal(sidebar.run('state.conv.id'), aChat, 'later polls preserve the library chat too');
+  await sidebar.reader(b1);
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  const bChat = await sidebar.message('B question');
+  await sidebar.reader(a1);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([a]); // Explicit selection releases the retained reader sources.
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('state.conv.id'), bChat);
+});
+
+test('conversations: library-wide sources still keep separate chats for identical keys in different libraries', async () => {
+  const sidebar = conversationSidebar({ sourceScope: 'library' });
+  const personal = sidebar.item('SAME', 1), group = sidebar.item('SAME', 8);
+  await sidebar.library([personal]);
+  const personalChat = await sidebar.message('Personal library');
+  await sidebar.library([group]);
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  const groupChat = await sidebar.message('Group library');
+  assert.notEqual(personalChat, groupChat);
+  await sidebar.library([personal]);
+  assert.equal(sidebar.run('state.conv.id'), personalChat);
+  assert.equal(sidebar.run('itemHistory().length'), 1);
+});
+
+test('conversations: saved item histories restore after sidebar restart', async () => {
+  const first = conversationSidebar();
+  await first.library([first.item('A')]);
+  const id = await first.message('Persist across restart');
+  const second = conversationSidebar({ history: first.saved });
+  await second.library([second.item('A')]);
+  assert.equal(second.run('state.conv.id'), id);
+  assert.equal(second.run('state.conv.messages[0].content'), 'Persist across restart');
+  await second.library([second.item('B')]);
+  assert.equal(second.run('state.conv.messages.length'), 0);
+});
+
+test('conversations: deleting an item history leaves other items intact and does not resurrect deleted chats', async () => {
+  const sidebar = conversationSidebar();
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const aChat = await sidebar.message('A');
+  await sidebar.library([b]);
+  const bChat = await sidebar.message('B');
+  await sidebar.run('clearItemHistory()');
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  await sidebar.library([b]);
+  assert.notEqual(sidebar.run('state.conv.id'), bChat);
+  assert.equal(sidebar.run('itemHistory().length'), 0);
+  await sidebar.message('Replacement B');
+  await sidebar.run('deleteConversation(state.conv.id)');
+  await sidebar.library([a]);
+  await sidebar.library([b]);
+  assert.equal(sidebar.run('itemHistory().length'), 0);
+  assert.deepEqual(sidebar.saved.map((conversation) => conversation.id), [aChat]);
+});
+
+test('conversations: opting out keeps item chats in memory without writing them to disk', async () => {
+  const sidebar = conversationSidebar({ historyEnabled: false });
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const aChat = await sidebar.message('In memory');
+  await sidebar.library([b]);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.id'), aChat);
+  assert.equal(sidebar.saved, null);
+});
+
+test('conversations: send persists the user turn before starting the provider response', async () => {
+  const sidebar = conversationSidebar();
+  await sidebar.library([sidebar.item('A')]);
+  let generated = false;
+  sidebar.store.saveConversations = async (list) => {
+    assert.notEqual(sidebar.run('window.generated'), true);
+    assert.equal(list[0].messages[0].content, 'Save before response');
+    assert.equal(list[0].zoteroItem.key, 'A');
+    return true;
+  };
+  sidebar.run('generateAssistant = async () => { window.generated = true; }');
+  await sidebar.run('send("Save before response")');
+  generated = sidebar.run('window.generated');
+  assert.equal(generated, true);
+});
+
+test('conversations: switching items during a response keeps the sent question and rejects late replies', async () => {
+  let entered, finish;
+  const started = new Promise((resolve) => { entered = resolve; });
+  const sidebar = conversationSidebar({ providers: {
+    chatStream: async (model, options, onDelta, signal) => {
+      entered(signal);
+      await new Promise((resolve) => { finish = resolve; });
+      onDelta('Late response from A');
+    },
+  } });
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([a]);
+  const sending = sidebar.run('send("Question for A")');
+  const signal = await started;
+  assert.equal(sidebar.saved[0].messages[0].content, 'Question for A');
+  await sidebar.library([b]);
+  assert.equal(signal.aborted, true);
+  finish();
+  await sending;
+  assert.equal(sidebar.run('state.conv.messages.length'), 0);
+  await sidebar.library([a]);
+  assert.equal(sidebar.run('state.conv.messages.length'), 1);
+  assert.equal(sidebar.run('state.conv.messages[0].content'), 'Question for A');
+  assert.equal(sidebar.run('state.busy'), false);
+});
+
+test('conversations: returning to the library preserves an in-flight reader conversation', async () => {
+  let entered, finish;
+  const started = new Promise((resolve) => { entered = resolve; });
+  const sidebar = conversationSidebar({ providers: {
+    chatStream: async (model, options, onDelta, signal) => {
+      entered(signal);
+      await new Promise((resolve) => { finish = resolve; });
+      onDelta('Answer about A');
+    },
+  } });
+  const a = sidebar.item('A'), b = sidebar.item('B');
+  await sidebar.library([b]);
+  await sidebar.reader(sidebar.attachment(a, 'PDF'));
+  const sending = sidebar.run('send("Question about A")');
+  const signal = await started;
+  await sidebar.library([b]);
+  assert.equal(signal.aborted, false);
+  finish();
+  await sending;
+  assert.equal(sidebar.run('state.conv.zoteroItem.key'), 'A');
+  assert.equal(sidebar.run('state.conv.messages[1].content'), 'Answer about A');
+  assert.equal(sidebar.saved.find((conversation) => conversation.zoteroItem.key === 'A').messages.length, 2);
+});
 // A stand-in for electron/zotero-plugin/server.ts: every Zotero route,
 // including health, requires the bridge bearer token.
 const openServers = new Set();
@@ -493,6 +737,55 @@ test('store: conversation audits are compacted without persisting embeddings', (
   assert.equal(compact[0].messages[0].audit.invalidCitations[0].embedding, undefined);
   assert.equal(compact[0].messages[0].evidence[0].groupID, 42, 'history retains group provenance for PDF fallbacks');
   assert.ok(!JSON.stringify(compact).includes('embedding'));
+});
+
+test('store: local history defaults on and respects an explicit opt-out', () => {
+  const prefs = new Map();
+  const Zotero = { Prefs: { get: (key) => prefs.get(key), set: (key, value) => prefs.set(key, value) } };
+  const { NodusStore: store } = loadModule('store.js', { ChromeUtils: { importESModule: () => ({ Zotero }) } });
+  assert.equal(store.getHistoryEnabled(), true);
+  store.setHistoryEnabled(false);
+  assert.equal(store.getHistoryEnabled(), false);
+  store.setHistoryEnabled(true);
+  assert.equal(store.getHistoryEnabled(), true);
+});
+
+test('store: owner metadata survives compaction and legacy attachment histories recover their parent', () => {
+  const parent = { libraryID: 8, key: 'PARENT' };
+  const Zotero = { Items: { getByLibraryAndKey: (libraryID, key) => libraryID === 8 && key === 'ATT' ? { parentItem: parent } : null } };
+  const { NodusStore: store } = loadModule('store.js', { ChromeUtils: { importESModule: () => ({ Zotero }) } });
+  const list = store.compactConversations([
+    { id: 'new', zoteroItem: { libraryID: 1, key: 'ITEM' } },
+    { id: 'legacy', sourceScope: 'current', sourceIdentity: 'current:8:ATT' },
+    { id: 'unknown', sourceIdentity: 'library:indexed:1:hash' },
+  ]);
+  assert.deepEqual(JSON.parse(JSON.stringify(list.find((conversation) => conversation.id === 'new').zoteroItem)), { libraryID: 1, key: 'ITEM' });
+  assert.deepEqual(JSON.parse(JSON.stringify(list.find((conversation) => conversation.id === 'legacy').zoteroItem)), parent);
+  assert.equal(list.find((conversation) => conversation.id === 'unknown').zoteroItem, null);
+});
+
+test('store: concurrent history saves are serialized, reloadable, and deletion wins over pending writes', async () => {
+  const files = new Map();
+  const { NodusStore: store } = loadModule('store.js', {
+    Services: { dirsvc: { get: () => ({ path: '/profile' }) } },
+    Components: { interfaces: { nsIFile: {} } },
+    PathUtils: { join: (...parts) => parts.join('/') },
+    IOUtils: {
+      async writeUTF8(target, text) { await Promise.resolve(); files.set(target, text); },
+      async move(source, target) { assert.ok(files.has(source)); files.set(target, files.get(source)); files.delete(source); },
+      async readUTF8(target) { return files.get(target); },
+      async stat(target) { return { size: files.get(target).length }; },
+      async remove(target) { files.delete(target); },
+    },
+  });
+  const a = { id: 'a', zoteroItem: { libraryID: 1, key: 'A' }, messages: [{ role: 'user', content: 'Saved' }] };
+  const b = { id: 'b', zoteroItem: { libraryID: 8, key: 'B' }, messages: [{ role: 'user', content: 'Group' }] };
+  assert.deepEqual(await Promise.all([store.saveConversations([a]), store.saveConversations([a, b])]), [true, true]);
+  const restored = await store.loadConversations();
+  assert.equal(restored.length, 2);
+  assert.equal(restored.find((conversation) => conversation.id === 'b').zoteroItem.libraryID, 8);
+  await Promise.all([store.saveConversations([a]), store.deleteConversationHistory()]);
+  assert.equal(files.size, 0);
 });
 
 test('store: evidence cache separates compressed metadata from Float32 vectors', () => {
@@ -1251,15 +1544,15 @@ test('security: Zotero-required update feed is HTTPS while background updates st
   assert.doesNotMatch(`${html}\n${sidebar}`, /installs? the packaged XPI|instala el XPI empaquetado/i);
 });
 
-test('local retrieval: E5 is pinned, isolated in a worker and requires no embedding setting or API', () => {
+test('local retrieval: selectable Q8 models are pinned and isolated without an embedding API', () => {
   const worker = readSource('scripts/zotero-local-embedding-worker.mjs');
   const bridge = readSource('zotero-plugin/content/local-embeddings.js');
   const sidebar = readSource('zotero-plugin/content/sidebar.js');
   const html = readSource('zotero-plugin/content/sidebar.html');
-  assert.ok(worker.includes("Xenova/multilingual-e5-small"));
-  assert.match(worker, /MODEL_REVISION = '[0-9a-f]{40}'/);
+  assert.ok(readSource("zotero-plugin/content/embedding-models.js").includes("Xenova/multilingual-e5-small"));
+  assert.match(readSource("zotero-plugin/content/embedding-models.js"), /revision: '[0-9a-f]{40}'/);
   assert.ok(worker.includes("MODEL_DTYPE = 'q8'"));
-  assert.ok(worker.includes("device: 'wasm'") && worker.includes("pooling: 'mean'") && worker.includes('normalize: true'));
+  assert.ok(worker.includes("device: 'wasm'") && worker.includes("pooling: activeModel.pooling") && worker.includes('normalize: true'));
   assert.ok(worker.includes("'query'") && worker.includes("'passage'"), 'E5 query/passage prefixes are distinct');
   assert.match(worker, /env\.useBrowserCache = false/);
   assert.match(worker, /env\.useCustomCache = true/);
@@ -1269,7 +1562,7 @@ test('local retrieval: E5 is pinned, isolated in a worker and requires no embedd
   assert.match(bridge, /addEventListener\("unload", reset/);
   assert.ok(sidebar.includes('NL.embedPassages') && sidebar.includes('NL.embedQuery'));
   assert.ok(!sidebar.includes('NP.embed('), 'retrieval no longer calls a provider embedding API');
-  assert.ok(!html.includes('nd-embedding-model'), 'embedding configuration was removed');
+  assert.ok(html.includes('nd-embedding-model') && html.includes('nd-embedding-apply'));
 });
 
 test('local retrieval: completed workers terminate when idle and pending work terminates on unload', async () => {
@@ -1694,4 +1987,307 @@ test('#9: stable release blocks publication until the Zotero assets exist', () =
   assert.match(verificationJob, /- build-zotero-plugin/, 'publication waits for the plugin job');
   assert.match(verificationJob, /nodus-zotero\.xpi/, 'publication verifies the XPI asset');
   assert.match(verificationJob, /updates\.json/, 'publication verifies the update manifest asset');
+});
+
+test('local models: equal dimensions never imply compatibility and returning reuses vectors', () => {
+  const sandbox = {}; vm.createContext(sandbox);
+  vm.runInContext(readSource('zotero-plugin/content/embedding-models.js'), sandbox);
+  const catalog = sandbox.NodusEmbeddingModels;
+  const e5 = catalog.get('e5-small'), granite = catalog.get('granite-97m');
+  const vector = Array(384).fill(0); vector[0] = 1;
+  const index = { chunks: [{ embedding: vector, embeddingModel: e5.fingerprint }] };
+  catalog.useIndex(index, granite);
+  assert.equal(index.chunks[0].embedding, null);
+  catalog.useIndex(index, e5);
+  assert.equal(index.chunks[0].embedding, vector);
+  assert.equal(catalog.input(granite, 'query', '  evidencia  '), 'evidencia');
+  assert.match(catalog.input(catalog.get('harrier-270m'), 'query', 'evidencia'), /^Instruct: .*\nQuery: evidencia$/);
+  assert.equal(catalog.input(catalog.get('harrier-270m'), 'passage', 'evidencia'), 'evidencia');
+  assert.throws(() => catalog.get('unknown'));
+});
+
+test('local models: request captures staging model without changing the active model', async () => {
+  let worker;
+  class FakeWorker {
+    constructor() { this.listeners = {}; worker = this; }
+    addEventListener(k, fn) { this.listeners[k] = fn; }
+    postMessage(message) { this.message = message; }
+    terminate() { this.terminated = true; }
+  }
+  const { NodusLocalEmbeddings: embeddings } = loadModule('local-embeddings.js', {
+    ChromeWorker: FakeWorker, setTimeout: () => 1, clearTimeout() {}, DOMException,
+    window: { addEventListener() {} },
+  });
+  const granite = embeddings.MODELS.find(m => m.key === 'e5-small');
+  const pending = embeddings.embedPassages(['evidence'], { model: granite });
+  assert.equal(worker.message.modelKey, 'e5-small');
+  assert.equal(embeddings.MODEL.key, 'granite-97m');
+  const rejected = assert.rejects(pending, /local-embedding-reset/);
+  embeddings.select('harrier-270m');
+  await rejected;
+  assert.equal(worker.terminated, true);
+  assert.equal(embeddings.MODEL.dimensions, 640);
+});
+
+test('local models: binary cache round-trips independent vector families and legacy vectors', () => {
+  const src = readSource('zotero-plugin/content/store.js');
+  const context = { compactEvidenceIndex() {}, EVIDENCE_CACHE_VERSION: 1, Uint8Array, Float32Array };
+  vm.createContext(context);
+  for (const name of ['detachEmbeddings', 'attachEmbeddings']) {
+    const start = src.indexOf(`function ${name}(`);
+    const brace = src.indexOf('{', start);
+    vm.runInContext(src.slice(start, brace) + sliceBalanced(src, brace), context);
+  }
+  const index = { chunks: [{ embedding: [1, 0], embeddingModel: 'e5', embeddingVariants: { e5: [1, 0], granite: [0, 1], harrier: [0, 0, 1] } }] };
+  const packed = context.detachEmbeddings(index);
+  assert.equal(packed.bytes.length, 7 * 4, 'active vector is stored once');
+  const restored = context.attachEmbeddings(packed.index, packed.bytes).chunks[0];
+  assert.deepEqual(Array.from(restored.embedding), [1, 0]);
+  assert.deepEqual(Array.from(restored.embeddingVariants.granite), [0, 1]);
+  assert.deepEqual(Array.from(restored.embeddingVariants.harrier), [0, 0, 1]);
+  assert.equal(restored.embeddingModel, 'e5');
+  const legacy = context.detachEmbeddings({ chunks: [{ embedding: [1, 0], embeddingModel: 'e5' }] });
+  assert.deepEqual(Array.from(context.attachEmbeddings(legacy.index, legacy.bytes).chunks[0].embedding), [1, 0]);
+});
+
+test('local models: failed vector publication preserves the previous complete cache generation', async () => {
+  const source = readSource('zotero-plugin/content/store.js');
+  const files = new Map([['/cache/old.json.gz', 'metadata'], ['/cache/old.f32', 'vectors']]);
+  let row = { data_path: '/cache/old.json.gz', vector_path: '/cache/old.f32' };
+  let fail = true;
+  const db = {
+    rowQueryAsync: async () => ({ ...row }),
+    queryAsync: async (sql, args) => { row = { data_path: args[8], vector_path: args[9] }; },
+  };
+  const context = {
+    Zotero: { logError() {} }, PathUtils: { join: (...parts) => parts.join('/') },
+    evidenceDir: () => '/cache', evidenceStem: () => '1-A', evidenceDb: async () => db,
+    detachEmbeddings: index => ({ index, bytes: new Uint8Array([0]) }), gzipText: async value => value,
+    IOUtils: {
+      makeDirectory: async () => {}, write: async (p, v) => files.set(p, v),
+      move: async (from, to) => { if (fail && to.endsWith('.f32')) throw new Error('disk failure'); files.set(to, files.get(from)); files.delete(from); },
+      remove: async p => files.delete(p),
+    },
+  };
+  vm.createContext(context);
+  const start = source.indexOf('async function saveEvidenceIndex('), brace = source.indexOf('{', start);
+  vm.runInContext(source.slice(start, brace) + sliceBalanced(source, brace), context);
+  assert.equal(await context.saveEvidenceIndex({ libraryID: 1, attachmentKey: 'A' }), null);
+  assert.equal(row.data_path, '/cache/old.json.gz');
+  assert.equal(files.get('/cache/old.json.gz'), 'metadata');
+  assert.equal(files.get('/cache/old.f32'), 'vectors');
+  fail = false;
+  assert.ok(await context.saveEvidenceIndex({ libraryID: 1, attachmentKey: 'A' }));
+  assert.ok(files.has(row.data_path) && files.has(row.vector_path));
+  assert.equal(files.has('/cache/old.f32'), false);
+});
+
+function selectableEmbeddingStub(infer) {
+  const models = [{ key: 'e5-small', label: 'E5', dimensions: 384, fingerprint: 'e5-contract' }, { key: 'granite-97m', label: 'Granite', dimensions: 384, fingerprint: 'granite-contract' }];
+  let active = models[0];
+  return {
+    get MODEL() { return active; }, MODELS: models,
+    select(key) { active = models.find(m => m.key === key); },
+    reset() {}, onProgress: () => () => {}, embedQueries: infer,
+  };
+}
+
+test('local model activation: changing reading item does not cancel library model preparation', async () => {
+  let finish, signal;
+  const embeddings = selectableEmbeddingStub((values, opts) => {
+    signal = opts.signal;
+    return new Promise((resolve, reject) => {
+      finish = resolve;
+      signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    });
+  });
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.store.listEvidenceRecords = async () => [];
+  let saved;
+  sidebar.store.setEmbeddingModel = key => { saved = key; };
+  await sidebar.library([sidebar.item('A')]);
+  sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+  const pending = sidebar.run('changeEmbeddingModel()');
+  assert.ok(await waitFor(() => !!signal, 1000));
+  assert.equal(sidebar.run('state.abort'), null, 'preparation is independent of the chat request');
+  await sidebar.library([sidebar.item('B')]);
+  assert.equal(signal.aborted, false);
+  finish([]); await pending;
+  assert.equal(saved, 'granite-97m');
+  assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /now active/);
+});
+
+test('local model activation: failures stay visible in Settings and retain the target for retry', async () => {
+  const embeddings = selectableEmbeddingStub(async () => { throw new Error('download-offline'); });
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.store.listEvidenceRecords = async () => [];
+  sidebar.store.setEmbeddingModel = () => assert.fail('failed model cannot be saved');
+  sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+  await sidebar.run('changeEmbeddingModel()');
+  assert.equal(embeddings.MODEL.key, 'e5-small');
+  assert.equal(sidebar.doc.querySelector('#nd-embedding-model').value, 'granite-97m');
+  assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /download-offline/);
+  assert.match(sidebar.doc.querySelector('#nd-embedding-active').textContent, /E5/);
+  assert.equal(sidebar.doc.querySelector('#nd-embedding-apply').disabled, false);
+});
+
+test('local model default: legacy E5 cache does not override Granite, explicit selection does', async () => {
+  const embeddings = selectableEmbeddingStub(async () => []);
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.run('globalThis.NodusEmbeddingModels = { defaultKey: "granite-97m" }');
+  sidebar.store.listEvidenceRecords = async () => [{ embeddingModel: 'historical E5' }];
+  let preference = '';
+  sidebar.store.getEmbeddingModel = () => preference;
+  const source = readSource('zotero-plugin/content/sidebar.js');
+  const start = source.indexOf('  if (NL) {', source.indexOf('async function boot()'));
+  const block = source.slice(start, source.indexOf('  wire();', start));
+  await sidebar.run('(async () => {' + block + '})()');
+  assert.equal(embeddings.MODEL.key, 'granite-97m');
+  preference = 'e5-small';
+  await sidebar.run('(async () => {' + block + '})()');
+  assert.equal(embeddings.MODEL.key, 'e5-small');
+});
+
+test('local model activation: a busy chat explains why preparation cannot start', async () => {
+  const embeddings = selectableEmbeddingStub(() => assert.fail('busy operation must not start inference'));
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.run('state.busy = true');
+  await sidebar.run('changeEmbeddingModel()');
+  assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /Wait for the current operation/);
+});
+
+test('local model activation: Prepare also validates the already-active model', async () => {
+  let calls = 0, saved;
+  const embeddings = selectableEmbeddingStub(async () => { calls++; return []; });
+  const sidebar = conversationSidebar({ embeddings });
+  sidebar.store.listEvidenceRecords = async () => [];
+  sidebar.store.setEmbeddingModel = key => { saved = key; };
+  sidebar.doc.querySelector('#nd-embedding-model').value = 'e5-small';
+  await sidebar.run('changeEmbeddingModel()');
+  assert.equal(calls, 1);
+  assert.equal(saved, 'e5-small');
+});
+
+function automaticSidebar() {
+  let warmups = 0, indexed = 0, embedded = 0, saved = null;
+  const embeddings = selectableEmbeddingStub(async () => []);
+  embeddings.warmup = async () => { warmups++; };
+  embeddings.useIndex = index => index;
+  embeddings.embedPassages = async values => { embedded += values.length; return values.map(() => [1, 0]); };
+  const evidence = {
+    ensureIndex: async attachment => { indexed++; return { index: { libraryID: attachment.libraryID, attachmentKey: attachment.key, chunks: [{ id: attachment.key, text: 'Synthetic research passage' }] } }; },
+  };
+  const sidebar = conversationSidebar({ embeddings, evidence });
+  sidebar.store.getContext = () => ({ useFulltext: true });
+  sidebar.doc.querySelector("#nd-embedding-model").value = embeddings.MODEL.key;
+  sidebar.store.saveEvidenceIndex = async index => { saved = JSON.parse(JSON.stringify(index)); return true; };
+  return { ...sidebar, embeddings, evidence, counts: () => ({ warmups, indexed, embedded }), saved: () => saved,
+    async close() { sidebar.run('automaticPreparation.closed = true'); await sidebar.run('pauseAutomaticPreparation(true)'); },
+  };
+}
+
+test('automatic preparation: startup warms only the selected model without locking the chat or scanning the library', async () => {
+  const sidebar = automaticSidebar();
+  sidebar.store.listEvidenceRecords = () => assert.fail('startup must not scan the library');
+  try {
+    await sidebar.run('runAutomaticPreparation()');
+    assert.deepEqual(sidebar.counts(), { warmups: 1, indexed: 0, embedded: 0 });
+    assert.equal(sidebar.run('state.busy'), false);
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(sidebar.counts().warmups, 1, 'polling does not repeatedly reload the idle model');
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: opening a reader creates semantic vectors once without visiting Settings', async () => {
+  const sidebar = automaticSidebar();
+  try {
+    const parent = sidebar.item('AUTO-PARENT'), att = sidebar.attachment(parent, 'AUTO-PDF');
+    await sidebar.reader(att);
+    await sidebar.run('runAutomaticPreparation()');
+    assert.deepEqual(sidebar.counts(), { warmups: 1, indexed: 1, embedded: 1 });
+    assert.equal(sidebar.saved().attachmentKey, 'AUTO-PDF');
+    assert.equal(sidebar.saved().chunks[0].embeddingModel, 'e5-contract');
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(sidebar.counts().indexed, 1);
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: a foreground operation cancels document work and prevents stale vector writes', async () => {
+  const sidebar = automaticSidebar();
+  let started = false;
+  sidebar.embeddings.embedPassages = (values, opts) => new Promise((resolve, reject) => {
+    started = true;
+    opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  });
+  try {
+    await sidebar.reader(sidebar.attachment(sidebar.item('A'), 'PDF-A'));
+    const job = sidebar.run('runAutomaticPreparation()');
+    assert.ok(await waitFor(() => started, 1000));
+    sidebar.run('state.busy = true');
+    await sidebar.run('pauseAutomaticPreparation(false)'); await job;
+    assert.equal(sidebar.saved(), null);
+    assert.equal(sidebar.run('automaticPreparation.job'), null);
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: failed downloads back off and leave the chat enabled', async () => {
+  const sidebar = automaticSidebar(); let attempts = 0;
+  sidebar.embeddings.warmup = async () => { attempts++; throw new Error('offline'); };
+  try {
+    await sidebar.run('runAutomaticPreparation()');
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(attempts, 1);
+    assert.equal(sidebar.run('state.busy'), false);
+    assert.match(sidebar.doc.querySelector('#nd-embedding-status').textContent, /offline/);
+    assert.ok(sidebar.run('automaticPreparation.retryAt > Date.now()'));
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: disabling document context prevents automatic downloads', async () => {
+  const sidebar = automaticSidebar();
+  sidebar.store.getContext = () => ({ useFulltext: false });
+  try {
+    await sidebar.run('runAutomaticPreparation()');
+    assert.deepEqual(sidebar.counts(), { warmups: 0, indexed: 0, embedded: 0 });
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: refreshes share an in-flight warmup instead of loading another model', async () => {
+  const sidebar = automaticSidebar(); let finish, calls = 0;
+  sidebar.embeddings.warmup = () => { calls++; return new Promise(resolve => { finish = resolve; }); };
+  try {
+    const job = sidebar.run('runAutomaticPreparation()');
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(calls, 1);
+    assert.equal(sidebar.run('state.busy'), false);
+    finish(); await job;
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: status does not hide an error for a manually requested target', async () => {
+  const sidebar = automaticSidebar();
+  try {
+    sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+    sidebar.doc.querySelector('#nd-embedding-status').textContent = 'The requested model failed';
+    await sidebar.run('runAutomaticPreparation()');
+    assert.equal(sidebar.doc.querySelector('#nd-embedding-status').textContent, 'The requested model failed');
+  } finally { await sidebar.close(); }
+});
+
+test('automatic preparation: an explicit model switch cancels automatic warmup before loading its target', async () => {
+  const sidebar = automaticSidebar(); let started = false, saved;
+  sidebar.embeddings.warmup = opts => new Promise((resolve, reject) => {
+    started = true;
+    opts.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  });
+  sidebar.store.listEvidenceRecords = async () => [];
+  sidebar.store.setEmbeddingModel = key => { saved = key; };
+  try {
+    const warmup = sidebar.run('runAutomaticPreparation()');
+    assert.equal(started, true);
+    sidebar.doc.querySelector('#nd-embedding-model').value = 'granite-97m';
+    await sidebar.run('changeEmbeddingModel()'); await warmup;
+    assert.equal(saved, 'granite-97m');
+    assert.equal(sidebar.embeddings.MODEL.key, 'granite-97m');
+  } finally { await sidebar.close(); }
 });

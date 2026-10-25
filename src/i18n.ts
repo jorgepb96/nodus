@@ -78,6 +78,21 @@ export function t(es: string): string {
 }
 
 /**
+ * Whether this Spanish source has an entry in the active language or in English.
+ *
+ * Callers that receive prose at runtime — a caught error's `message`, not a literal beside
+ * a `t()` call — cannot be seen by `test-i18n-coverage.mjs`, so they cannot assume a
+ * translation exists. `t()` is silent about the difference: an unknown key comes back as
+ * the Spanish source, which is the leak this predicate exists to prevent.
+ */
+export function hasTranslation(es: string): boolean {
+  // Spanish uses the source text, but still needs a known catalogue key. Own entries
+  // also exclude inherited names such as "toString" from the error-message boundary.
+  const table = activeLang === 'es' ? TABLES.en : TABLES[activeLang];
+  return Object.hasOwn(table, es) || Object.hasOwn(TABLES.en, es);
+}
+
+/**
  * Translate and interpolate `{name}` placeholders. Keep dynamic values out of the
  * translation key: `tx('{n} obras', { n })` instead of embedding the number.
  */

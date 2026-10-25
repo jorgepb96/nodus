@@ -29,18 +29,18 @@ export const MODEL_DOC_TOPICS: readonly NodusDocTopic[] = [
     id: 'models-local-runtime',
     area: 'models',
     title: { es: 'Motor local integrado: instalación, modelos y calibración', en: 'Bundled local engine: install, models and calibration' },
-    keywords: ['motor local', 'llama.cpp', 'instalar motor', 'descargar modelo', 'gemma', 'qwen', 'granite', 'embeddings locales', 'bge-m3', 'e5', 'sha-256', 'calibracion', 'ranuras', 'slots', 'gpu', 'diagnostico', 'runtime'],
+    keywords: ['motor local', 'llama.cpp', 'instalar motor', 'descargar modelo', 'gemma', 'qwen', 'granite', 'embeddings locales', 'harrier', 'bge-m3', 'e5', 'sha-256', 'calibracion', 'ranuras', 'slots', 'gpu', 'diagnostico', 'runtime'],
     body: {
       es: `- El motor (llama.cpp) no viene incluido: se instala desde Ajustes > Modelos IA > «Modelos locales integrados» con «Instalar motor local». Los modelos se descargan bajo demanda y se verifica su SHA-256.
 - Modelos integrados de conversación y visión: gemma-4-e2b (el recomendado, capacidades completas), qwen3.5-0.8b (solo chat y visión), granite-4.0-micro (solo texto) y lfm2.5-vl-1.6b. Los más pequeños tienen bloqueadas por fiabilidad la extracción de ideas, la fusión, los perfiles y los resúmenes: Nodus lo dice en el propio selector y no deja usarlos para eso.
-- Modelos de embeddings: bge-m3, gte-multilingual-base y multilingual-e5-small (la opción ligera para equipos con menos memoria).
+- Modelos de embeddings: harrier-oss-v1-0.6b (la mayor calidad multilingüe; añade por sí solo la instrucción de búsqueda a las consultas y reserva unos 6,5 GB de memoria de GPU), bge-m3, gte-multilingual-base y multilingual-e5-small (la opción ligera para equipos con menos memoria). BGE-M3 y GTE tienen un perfil «CLS», el recomendado, y otro «mean» que solo se conserva para los índices preparados con él; comparten la descarga.
 - Todos los modelos integrados trabajan con 32K de contexto. La concurrencia arranca en 1 ranura segura; «Calibrar» mide cuántas peticiones simultáneas admite el equipo y no se ejecuta solo. Si la calibración falla, se mantiene una ranura.
 - El panel de diagnóstico muestra si corre en CPU o con GPU, el dispositivo, las capas descargadas a la GPU (ajustadas a la memoria libre), si se detectó una GPU NVIDIA y su controlador, la concurrencia medida con su motivo y la ruta del registro del motor.
 - Si el motor no arranca, la app sugiere excluir su carpeta en el antivirus y muestra la causa (bloqueo de seguridad del sistema, memoria insuficiente para el modelo y las capas, biblioteca del sistema ausente, dispositivo no utilizable o arranque agotado).
 - Errores frecuentes y qué hacer: «Instala primero el motor local de Nodus desde Ajustes → Modelos IA.» (falta el motor); «Descarga primero «{modelo}»…» (falta el modelo); «La verificación SHA-256 de «{modelo}» ha fallado. Bórralo y vuelve a descargarlo.» (descarga corrupta); «Espera a que termine la descarga antes de eliminar el modelo.» y «El modelo tiene solicitudes en curso…» (está ocupado).`,
       en: `- The engine (llama.cpp) is not bundled: install it from Settings > AI models > "Built-in local models" with "Install local engine". Models are downloaded on demand and their SHA-256 is verified.
 - Built-in chat and vision models: gemma-4-e2b (the recommended one, full capabilities), qwen3.5-0.8b (chat and vision only), granite-4.0-micro (text only) and lfm2.5-vl-1.6b. The smaller ones have idea extraction, merging, profiles and summaries blocked for reliability: Nodus says so in the picker and will not use them for that.
-- Embedding models: bge-m3, gte-multilingual-base and multilingual-e5-small (the light option for machines with less memory).
+- Embedding models: harrier-oss-v1-0.6b (the highest multilingual quality; it adds its search instruction to queries on its own and reserves about 6.5 GB of GPU memory), bge-m3, gte-multilingual-base and multilingual-e5-small (the light option for machines with less memory). BGE-M3 and GTE have a "CLS" profile, the recommended one, and a "mean" profile kept only for indexes prepared with it; both share the download.
 - Every built-in model works with a 32K context. Concurrency starts at 1 safe slot; "Calibrate" measures how many simultaneous requests the machine sustains and never runs on its own. If calibration fails, one slot is kept.
 - The diagnostics panel shows whether it runs on CPU or GPU, the device, the layers offloaded to the GPU (fitted to free memory), whether an NVIDIA GPU and driver were detected, the measured concurrency with its reason and the engine log path.
 - If the engine will not start, the app suggests excluding its folder in the antivirus and shows the cause (system security block, not enough memory for the model and layers, missing system library, no usable device, or startup timed out).
@@ -78,12 +78,12 @@ export const MODEL_DOC_TOPICS: readonly NodusDocTopic[] = [
     keywords: ['embeddings', 'vectores', 'semantica', 'similitud', 'reindexar', 'indexar pendientes', 'modelo de embeddings', 'cambiar embeddings', 'busqueda semantica', 'indice'],
     body: {
       es: `- Los embeddings son lo que hace posible la búsqueda semántica, las relaciones entre ideas y la recuperación de pasajes: sin un modelo de embeddings configurado, esas funciones no pueden indexar ni comparar.
-- El modelo se elige en Ajustes > Modelos IA («Modelo de embeddings (similitud semántica multilingüe)»), y puede ser local (bge-m3, gte-multilingual-base o multilingual-e5-small) o de un proveedor en la nube. El proveedor Custom no genera embeddings.
+- El modelo se elige en Ajustes > Modelos IA («Modelo de embeddings (similitud semántica multilingüe)»), y puede ser local (harrier-oss-v1-0.6b, bge-m3, gte-multilingual-base o multilingual-e5-small) o de un proveedor en la nube. El proveedor Custom no genera embeddings.
 - Si se cambia de modelo de embeddings, los vectores anteriores no sirven con el nuevo: Nodus avisa («Los embeddings creados con el modelo anterior no son compatibles con el nuevo…») y hay que reindexar.
 - «Indexar pendientes» procesa lo que falta; «Reindexar todo» vuelve a construir el índice completo. La indexación nunca publica un índice incompleto: si fallan embeddings, el trabajo avisa en lugar de dejar un índice a medias.
 - En Fuentes primarias el indexado es específico del archivo («Indexar archivo») y no aparece «Reindexar todo».`,
       en: `- Embeddings are what makes semantic search, relations between ideas and passage retrieval possible: without an embedding model those features cannot index or compare anything.
-- The model is chosen in Settings > AI models ("Embedding model (multilingual semantic similarity)") and may be local (bge-m3, gte-multilingual-base or multilingual-e5-small) or from a cloud provider. The Custom provider does not generate embeddings.
+- The model is chosen in Settings > AI models ("Embedding model (multilingual semantic similarity)") and may be local (harrier-oss-v1-0.6b, bge-m3, gte-multilingual-base or multilingual-e5-small) or from a cloud provider. The Custom provider does not generate embeddings.
 - Changing the embedding model makes previous vectors useless: Nodus warns about it and a reindex is required.
 - "Index pending" processes what is missing; "Reindex everything" rebuilds the whole index. Indexing never publishes a partial index: when embeddings fail, the job reports it instead of leaving a half-built index.
 - In Primary sources indexing is archive-specific ("Index archive") and "Reindex everything" is not offered.`,
@@ -94,15 +94,15 @@ export const MODEL_DOC_TOPICS: readonly NodusDocTopic[] = [
     id: 'models-optional-engines',
     area: 'models',
     title: { es: 'Transcripción, imagen local y voz', en: 'Transcription, local image and voice' },
-    keywords: ['transcripcion', 'stt', 'whisper', 'transformers.js', 'onnx', 'diarizacion', 'imagen local', 'stable-diffusion', 'flux', 'voz', 'piper', 'kokoro', 'hume', 'audio'],
+    keywords: ['transcripcion', 'stt', 'whisper', 'transformers.js', 'onnx', 'diarizacion', 'imagen local', 'stable-diffusion', 'flux', 'voz', 'narracion', 'ming', 'clonar voz', 'audio'],
     body: {
       es: `- Transcripción de audio (Ajustes > Modelos IA): motor local Transformers.js + ONNX (por defecto, con modelos descargables), whisper.cpp o la API de OpenAI. Con la API de OpenAI hay que tener en cuenta que no ofrece diarización.
 - Generación de imágenes local: motor stable-diffusion.cpp con FLUX.2 Klein 4B Q4 y tres calidades (Borrador 640×384, Equilibrada 896×512 y Alta 1152×640). El panel avisa de la licencia y de la memoria necesaria.
-- Audio y voz: motores locales Piper y Kokoro y Hume en la nube con clave propia; velocidad ajustable de 0.7 a 1.3 y descarga de voces con filtros por idioma.
+- Voz y narración: Ming 3.0 en local (MLX en Mac con Apple Silicon; PyTorch con GPU NVIDIA o procesador en Windows, Linux y Mac Intel). Clona una voz a partir de 6–15 s de grabación propia o subida, incluye voces integradas y una voz castellana de dominio público, habla siete idiomas, se carga solo mientras se usa y borra los audios antiguos según la retención configurada.
 - Estas funciones requieren descargar sus modelos o instalar su motor, y consumen CPU, GPU y memoria del equipo mientras trabajan.`,
       en: `- Audio transcription (Settings > AI models): local Transformers.js + ONNX engine (default, with downloadable models), whisper.cpp or the OpenAI API. Note that the OpenAI API does not offer diarisation.
 - Local image generation: stable-diffusion.cpp engine with FLUX.2 Klein 4B Q4 and three qualities (Draft 640×384, Balanced 896×512 and High 1152×640). The panel warns about the licence and the memory required.
-- Audio and voice: local Piper and Kokoro engines and cloud Hume with your own key; speed adjustable from 0.7 to 1.3 and voice downloads filtered by language.
+- Voice and narration: Ming 3.0 runs locally (MLX on Apple Silicon Macs; PyTorch with an NVIDIA GPU or the CPU on Windows, Linux and Intel Macs). It clones a voice from a 6–15 s recording or upload, includes built-in voices and a public-domain Castilian voice, speaks seven languages, loads only while in use and deletes old audio according to the retention settings.
 - These features require downloading their models or installing their engine, and they use the machine's CPU, GPU and memory while running.`,
     },
     related: ['settings-models-advanced', 'sections-study-materials-recordings'],

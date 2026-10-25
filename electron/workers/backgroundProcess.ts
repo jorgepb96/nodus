@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { fork } from 'node:child_process';
 import { utilityProcess } from 'electron';
 import path from 'node:path';
+import { responsiveTimeout } from '../util/responsiveTimeout';
 
 export interface BackgroundProcess extends EventEmitter {
   readonly pid?: number;
@@ -35,10 +36,9 @@ export function backgroundProcess(filename: string, serviceName: string, options
       for (const message of pending.splice(0)) child.postMessage(message);
     });
     Object.defineProperty(events, 'pid', { get: () => child.pid });
-    const startup = setTimeout(() => { if (!ready && !stopped) { events.emit('error', new Error(`Background process did not start: ${serviceName}`)); } }, 15000);
-    startup.unref();
-    const exited = new Promise<number>(resolve => child.once('exit', code => { clearTimeout(startup); events.emit('exit', code); resolve(code ?? 1); }));
-    child.once('spawn', () => clearTimeout(startup));
+    const cancelStartup = responsiveTimeout(() => { if (!ready && !stopped) { events.emit('error', new Error(`Background process did not start: ${serviceName}`)); } }, 15000);
+    const exited = new Promise<number>(resolve => child.once('exit', code => { cancelStartup(); events.emit('exit', code); resolve(code ?? 1); }));
+    child.once('spawn', cancelStartup);
     child.on('message', message => { if (!stopped) events.emit('message', message); });
     child.on('error', error => { if (!stopped) events.emit('error', error); });
     if (captureOutput) {
@@ -46,7 +46,7 @@ export function backgroundProcess(filename: string, serviceName: string, options
       child.stderr?.on('data', chunk => events.emit('output', { stream: 'stderr', data: String(chunk) }));
     }
     events.postMessage = message => { if (!stopped) { if (ready) child.postMessage(message); else pending.push(message); } };
-    events.terminate = () => { stopped = true; clearTimeout(startup); pending.length = 0; child.kill(); return exited; };
+    events.terminate = () => { stopped = true; cancelStartup(); pending.length = 0; child.kill(); return exited; };
     events.unref = () => { /* The bounded operation owns this utility process. */ };
     events.setIdle = () => { /* See setIdle. */ };
   } else {

@@ -68,7 +68,7 @@ export interface DriftVoiceView {
   available: boolean;
 }
 
-export type DriftMediaTab = 'browser' | 'drift';
+export type DriftMediaTab = 'browser' | 'drift' | 'narration';
 
 export interface DriftContextValue {
   catalogStatus: DriftCatalogStatus;

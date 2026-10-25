@@ -36,9 +36,15 @@ try {
     exports.currentEmbeddingConfig=()=>({provider:'openai',model:'document-scale'});
     exports.encodeEmbedding=(values)=>{const v=Float32Array.from(values);return Buffer.from(v.buffer,v.byteOffset,v.byteLength)};
   `);
+  const entry = path.join(scratch, 'scale-entry.ts');
+  writeFileSync(entry, `
+    export * from ${JSON.stringify(path.join(repoRoot, 'electron/db/documentProfilesRepo.ts'))};
+    export { runMigrations } from ${JSON.stringify(path.join(repoRoot, 'electron/db/migrations.ts'))};
+    export { ensureInitialEmbeddingIndex, embeddingProfile } from ${JSON.stringify(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'))};
+  `);
   const bundle = path.join(scratch, 'documentProfilesRepo.cjs');
   execFileSync(path.join(repoRoot, 'node_modules/.bin/esbuild'), [
-    path.join(repoRoot, 'electron/db/documentProfilesRepo.ts'), '--bundle', '--platform=node', '--format=cjs', '--target=es2022',
+    entry, '--bundle', '--platform=node', '--format=cjs', '--target=es2022',
     '--external:./database', '--external:./ideasRepo', `--outfile=${bundle}`,
   ], { cwd: repoRoot, stdio: 'pipe' });
 
@@ -55,24 +61,9 @@ try {
     }
     return norm === 0 ? 0 : dot / Math.sqrt(norm);
   });
-  db.exec(`
-    CREATE TABLE works (
-      nodus_id TEXT PRIMARY KEY, title TEXT NOT NULL, authors_json TEXT NOT NULL,
-      year INTEGER, archived INTEGER NOT NULL DEFAULT 0
-    );
-    CREATE TABLE document_profile_state (
-      nodus_id TEXT PRIMARY KEY, current_version_id TEXT, status TEXT NOT NULL,
-      source_fingerprint TEXT, stale_reason TEXT, error TEXT
-    );
-    CREATE TABLE document_vectors (
-      vector_id TEXT PRIMARY KEY, nodus_id TEXT NOT NULL, version_id TEXT NOT NULL,
-      kind TEXT NOT NULL, source_id TEXT, text TEXT NOT NULL, weight REAL NOT NULL,
-      embedding BLOB, embedding_provider TEXT, embedding_model TEXT, embedding_dim INTEGER
-    );
-    CREATE INDEX document_vectors_config ON document_vectors(embedding_provider,embedding_model,embedding_dim);
-    CREATE INDEX document_vectors_work ON document_vectors(nodus_id,version_id);
-    CREATE VIRTUAL TABLE document_profiles_fts USING fts5(nodus_id UNINDEXED,version_id UNINDEXED,title,overview,fields);
-  `);
+  const repo = require(bundle);
+  repo.runMigrations(db);
+  repo.ensureInitialEmbeddingIndex(db, repo.embeddingProfile({ embeddingProvider: 'openai', embeddingModel: 'document-scale' }));
 
   const DIM = 128;
   const WORKS = 2_000;
@@ -87,15 +78,17 @@ try {
     return Buffer.from(vector.buffer, vector.byteOffset, vector.byteLength);
   };
   const query = Array.from({ length: DIM }, (_, index) => index === 0 ? 1 : 0);
-  const insertWork = db.prepare('INSERT INTO works VALUES(?,?,?,?,0)');
-  const insertState = db.prepare("INSERT INTO document_profile_state VALUES(?,?,'current','scale-source',NULL,NULL)");
-  const insertVector = db.prepare('INSERT INTO document_vectors VALUES(?,?,?,?,?,?,?,?,?,?,?)');
+  const insertWork = db.prepare("INSERT INTO works(nodus_id,zotero_key,title,authors_json,year,archived) VALUES(?, ?, ?, ?, ?, 0)");
+  const insertState = db.prepare("INSERT INTO document_profile_state(nodus_id,current_version_id,status,source_fingerprint,updated_at) VALUES(?,?,'current','scale-source','2026-10-19')");
+  const insertVersion = db.prepare(`INSERT INTO document_profile_versions(version_id,nodus_id,state,source_fingerprint,pipeline_version,schema_version,presentation_language,overview,profile_json,prompt_hash,created_at) VALUES(?,?,'current','scale-source','scale',1,'en','Scale overview','{}','scale','2026-10-19')`);
+  const insertVector = db.prepare(`INSERT INTO document_vectors(vector_id,nodus_id,version_id,kind,source_id,text,weight,embedding,embedding_provider,embedding_model,embedding_dim,text_hash,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'2026-10-19')`);
   const insertFts = db.prepare('INSERT INTO document_profiles_fts VALUES(?,?,?,?,?)');
   db.transaction(() => {
     for (let workIndex = 0; workIndex < WORKS; workIndex += 1) {
       const workId = `work-${workIndex}`;
       const versionId = `version-${workIndex}`;
-      insertWork.run(workId, `Synthetic work ${workIndex}`, '["Scale Author"]', 2000 + (workIndex % 25));
+      insertWork.run(workId, workId, `Synthetic work ${workIndex}`, '["Scale Author"]', 2000 + (workIndex % 25));
+      insertVersion.run(versionId, workId);
       insertState.run(workId, versionId);
       insertFts.run(workId, versionId, `Synthetic work ${workIndex}`, `Overview uniqueprofile${workIndex}`, 'scale corpus');
       for (let vectorIndex = 0; vectorIndex < VECTORS_PER_WORK; vectorIndex += 1) {
@@ -106,13 +99,14 @@ try {
           `vector-${workIndex}-${vectorIndex}`, workId, versionId,
           vectorIndex === 0 ? 'overview' : 'section', `source-${vectorIndex}`,
           `Document orientation ${workIndex}/${vectorIndex}`, vectorIndex === 0 ? 1 : 0.8,
-          encode(values), 'openai', 'document-scale', DIM,
+          encode(values), 'openai', 'document-scale', DIM, `text-${workIndex}-${vectorIndex}`,
         );
       }
     }
   })();
 
-  const repo = require(bundle);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM embedding_index_values').get().n, WORKS * VECTORS_PER_WORK);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM document_vectors WHERE embedding IS NOT NULL').get().n, 0, 'vectors use the common repository');
   // Inspect the actual production statements, not a copied query. Both the
   // paged scan and winner hydration must look up profile state by its work key.
   const prepare = db.prepare.bind(db);

@@ -1,5 +1,6 @@
 import { getDb } from './database';
 import { DEFAULT_APP_SETTINGS, DEFAULT_LOCAL_PROVIDERS } from '@shared/defaultAppSettings';
+import { activeEmbeddingIndex, embeddingIndexHead, embeddingProfile, ensureInitialEmbeddingIndex } from './embeddingIndexesRepo';
 import { normalizeImageFavorites } from '@shared/editorAiReview';
 import { sanitizeLearningProgress, sanitizePracticeSession } from '@shared/academicLearning';
 import { sanitizeHeaderActionVisibility } from '@shared/headerActions';
@@ -12,16 +13,20 @@ import {
   normalizeEmbeddingProvider,
 } from '@shared/providers';
 import { isOpenAiStudySttModel } from '@shared/sttModels';
+import { TTS_MODELS, isTtsLanguage, sanitizeTtsRetention } from '@shared/ttsModels';
+import { sanitizeTtsVoiceFilters } from '@shared/ttsVoiceFilters';
 import { normalizeNodiScale } from '@shared/nodiSize';
 import { lockedApiKeyProviders, providerKeyMap } from '../secrets/secretStore';
 import { GRANULAR_MODEL_KEYS, migrateModelSettings } from '@shared/modelSettings';
 import { DEFAULT_NODUS_IMAGE_QUALITY, isNodusImageQuality } from '@shared/localImageModels';
+import { normalizeLocalRerankerId } from '@shared/localRerankers';
 import { sanitizeCustomEventTypes } from '@shared/eventTypes';
 import { sanitizeCustomThemes } from '@shared/appThemes';
 import { isPipelineLogMaxEntries, isPipelineLogRetention } from '@shared/pipelineLogs';
 import { normalizeToolkitToolPages } from '@shared/toolkitNavigation';
 import { migrateScriptorSidebar } from '../../shared/scriptorNavigation.mjs';
 import { isResearchEffort } from '@shared/researchReasoning';
+import { sanitizeResearchExploration } from '@shared/researchExploration';
 import { recoverV23SharedModelPrefs, recoverV23VaultEmbeddingSelection } from './modelPrefsRecovery';
 import {
   SHARED_APPEARANCE_KEYS,
@@ -156,6 +161,20 @@ export function getSettings(): AppSettings {
     merged.aiConcurrencyVersion = 1;
   }
   merged.concurrency = Math.max(1, Math.min(8, Math.trunc(Number(merged.concurrency) || 1)));
+  merged.ttsModelId = TTS_MODELS.some((model) => model.id === merged.ttsModelId) ? merged.ttsModelId : '';
+  merged.ttsVoiceId = typeof merged.ttsVoiceId === 'string' && /^(user|cc0|ming):.{1,120}$/.test(merged.ttsVoiceId) ? merged.ttsVoiceId : 'cc0:es-dave';
+  merged.ttsLanguage = merged.ttsLanguage === 'auto' || isTtsLanguage(merged.ttsLanguage) ? merged.ttsLanguage : 'auto';
+  merged.ttsVoiceFilters = sanitizeTtsVoiceFilters(merged.ttsVoiceFilters);
+  merged.ttsStreaming = merged.ttsStreaming !== false;
+  merged.narrationHighlight = merged.narrationHighlight === 'sentence' || merged.narrationHighlight === 'off' ? merged.narrationHighlight : 'word';
+  merged.narrationHighlightStyle = merged.narrationHighlightStyle === 'underline' ? 'underline' : 'fill';
+  merged.narrationFollow = merged.narrationFollow !== false;
+  merged.ttsPhononVoiceId = typeof merged.ttsPhononVoiceId === 'string' && merged.ttsPhononVoiceId.startsWith('phonon:') ? merged.ttsPhononVoiceId : DEFAULTS.ttsPhononVoiceId;
+  merged.ttsKokoroVoiceId = typeof merged.ttsKokoroVoiceId === 'string' && /^kokoro:[a-z0-9_]+$/.test(merged.ttsKokoroVoiceId) ? merged.ttsKokoroVoiceId : DEFAULTS.ttsKokoroVoiceId;
+  merged.ttsPocketVoiceId = typeof merged.ttsPocketVoiceId === 'string' && /^(pocket:[a-z0-9_]+|user:[a-f0-9-]+|cc0:es-dave)$/.test(merged.ttsPocketVoiceId) ? merged.ttsPocketVoiceId : DEFAULTS.ttsPocketVoiceId;
+  merged.ttsAcceptedLicenses = Array.isArray(merged.ttsAcceptedLicenses) ? merged.ttsAcceptedLicenses.filter((id): id is string => TTS_MODELS.some((model) => model.id === id && model.nonCommercial)) : [];
+  merged.ttsIdleUnloadMin = Math.max(1, Math.min(120, Math.round(Number(merged.ttsIdleUnloadMin) || 5)));
+  merged.ttsRetention = sanitizeTtsRetention(merged.ttsRetention);
   // The browser connector stores one canonical extension origin. Treat malformed or
   // hand-edited values as unpaired so they can never authorize a capability endpoint.
   const browserOrigin = typeof merged.browserConnectorOrigin === 'string'
@@ -171,7 +190,10 @@ export function getSettings(): AppSettings {
   }
   merged.codexReasoningEfforts = sanitizeCodexReasoningEfforts(parsed.codexReasoningEfforts);
   merged.researchEffortByModel = sanitizeResearchEffortByModel(parsed.researchEffortByModel);
+  merged.researchExplorationByMode = sanitizeResearchExploration(parsed.researchExplorationByMode);
   merged.researchWebSearch = parsed.researchWebSearch === 'off' ? 'off' : 'auto';
+  merged.researchHarnessVersion = parsed.researchHarnessRolloutVersion === 1 && parsed.researchHarnessVersion === 'legacy' ? 'legacy' : 'v1';
+  merged.researchHarnessRolloutVersion = 1;
   merged.researchAnswerVerification = ['legacy', 'structured'].includes(parsed.researchAnswerVerification ?? '') ? parsed.researchAnswerVerification : 'off';
   merged.mascotScale = normalizeNodiScale(parsed.mascotScale);
   merged.studyImproveToolbarStyleIds = [...new Set((Array.isArray(merged.studyImproveToolbarStyleIds) ? merged.studyImproveToolbarStyleIds : [])
@@ -206,6 +228,8 @@ export function getSettings(): AppSettings {
     }
   }
   merged.embeddingProvider = normalizeEmbeddingProvider((parsed as Partial<AppSettings>).embeddingProvider);
+  merged.researchReranking = merged.researchReranking === 'local' ? 'local' : 'off';
+  merged.researchRerankerModel = normalizeLocalRerankerId(merged.researchRerankerModel);
   if (!merged.embeddingModel?.trim()) merged.embeddingModel = DEFAULT_EMBEDDING_MODELS[merged.embeddingProvider];
   Object.assign(merged, recoverV23VaultEmbeddingSelection(merged as AppSettings));
   // v1.4.0 and older exposed one global header selector. Preserve that user's
@@ -336,7 +360,10 @@ export function getSettings(): AppSettings {
   }
   merged.codexReasoningEfforts = sanitizeCodexReasoningEfforts(merged.codexReasoningEfforts);
   merged.researchEffortByModel = sanitizeResearchEffortByModel(merged.researchEffortByModel);
+  merged.researchExplorationByMode = sanitizeResearchExploration(merged.researchExplorationByMode);
   merged.researchWebSearch = merged.researchWebSearch === 'off' ? 'off' : 'auto';
+  merged.researchHarnessVersion = merged.researchHarnessVersion === 'legacy' ? 'legacy' : 'v1';
+  merged.researchHarnessRolloutVersion = 1;
   merged.researchAnswerVerification = ['legacy', 'structured'].includes(merged.researchAnswerVerification ?? '') ? merged.researchAnswerVerification : 'off';
   if ((merged.sttProvider as string) === 'local') {
     merged.sttProvider = 'transformers';
@@ -378,6 +405,13 @@ export function getSettings(): AppSettings {
     writeRaw('app', JSON.stringify(persisted));
   }
   if (Object.keys(seed).length) writeGlobalPrefs(seed);
+  const indexHead = embeddingIndexHead(getDb());
+  if (indexHead && !indexHead.active_id && indexHead.enabled) ensureInitialEmbeddingIndex(getDb(), embeddingProfile(merged as AppSettings));
+  const activeIndex = activeEmbeddingIndex(getDb());
+  if (activeIndex) {
+    merged.embeddingProvider = activeIndex.profile.provider;
+    merged.embeddingModel = activeIndex.profile.model;
+  }
   return { ...merged, providerKeys: providerKeyMap(), lockedProviderKeys: lockedApiKeyProviders() };
 }
 
@@ -385,8 +419,14 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   if ('academicLearningProgress' in patch) patch = { ...patch, academicLearningProgress: sanitizeLearningProgress(patch.academicLearningProgress) };
   if ('academicPracticeSession' in patch) patch = { ...patch, academicPracticeSession: sanitizePracticeSession(patch.academicPracticeSession) };
   if (patch.headerActionVisibility !== undefined) patch = { ...patch, headerActionVisibility: sanitizeHeaderActionVisibility(patch.headerActionVisibility) };
+  if (patch.ttsRetention !== undefined) patch = { ...patch, ttsRetention: sanitizeTtsRetention(patch.ttsRetention) };
+  if (patch.ttsVoiceFilters !== undefined) patch = { ...patch, ttsVoiceFilters: sanitizeTtsVoiceFilters(patch.ttsVoiceFilters) };
   if (patch.academicInterfaceProfile !== undefined && !['simple', 'intermediate', 'advanced', 'custom'].includes(patch.academicInterfaceProfile)) throw new Error('Invalid academic interface profile.');
   const previous = getSettings();
+  if (patch.embeddingProvider !== undefined || patch.embeddingModel !== undefined) {
+    const next = { ...previous, ...patch };
+    ensureInitialEmbeddingIndex(getDb(), embeddingProfile(next));
+  }
   if(patch.academicLearningProgress) {
     const progress=patch.academicLearningProgress;
     progress.lessons={...previous.academicLearningProgress?.lessons,...progress.lessons};
@@ -442,6 +482,9 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   }
   if (patch.codexReasoningEfforts !== undefined) {
     patch = { ...patch, codexReasoningEfforts: sanitizeCodexReasoningEfforts(patch.codexReasoningEfforts) };
+  }
+  if (patch.researchExplorationByMode !== undefined) {
+    patch = { ...patch, researchExplorationByMode: { ...getSettings().researchExplorationByMode, ...sanitizeResearchExploration(patch.researchExplorationByMode) } };
   }
   if (patch.researchEffortByModel !== undefined) {
     patch = { ...patch, researchEffortByModel: sanitizeResearchEffortByModel(patch.researchEffortByModel) };

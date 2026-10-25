@@ -20,11 +20,23 @@ export class ResearchRetrievalBudget {
   decisionTokens = 0;
   candidates = 0;
   partial = false;
+  /** User settings are targets in the harness; legacy keeps its original bounds. */
+  roundLimit: number;
+  /** A phase can reserve later rounds without increasing the run's total allowance. */
+  phaseRoundLimit = Infinity;
   readonly visited = new Set<string>();
   /** Supervisor decisions are separate provider calls: they have their own allowance, of
    * the same size as the evidence one, instead of taking evidence the answer needs. */
   constructor(settings: RetrievalSettings, public evidenceTokenLimit = settings.evidenceTokens, public decisionTokenLimit = settings.evidenceTokens) {
     this.settings = validateRetrievalSettings(settings);
+    this.roundLimit = settings.rounds;
+  }
+  /** A bounded operating margin, granted once before work, not a reset per query.
+   * The model's context and all authorization/spend checks remain strict. */
+  allowAdaptiveTargets(windowTokens: number): void {
+    if (!this.settings.autoExpand || this.rounds || this.usedEvidenceTokens || this.decisionTokens) return;
+    this.roundLimit = Math.min(32, Math.max(this.settings.rounds + 2, this.settings.rounds * 2));
+    this.evidenceTokenLimit = Math.max(this.evidenceTokenLimit, Math.min(this.settings.evidenceTokens * 2, Math.max(0, Math.floor(windowTokens / 4))));
   }
   /** Fit evidence under the final request's byte-as-token bound. `reserved` includes
    * instructions, serialized history/metadata, output tokens and framing. Multiplying
@@ -41,7 +53,7 @@ export class ResearchRetrievalBudget {
     return true;
   }
   nextRound(explicit = false): boolean {
-    const allowed = explicit || this.settings.autoExpand ? this.settings.rounds : 1;
+    const allowed = Math.min(this.phaseRoundLimit, explicit || this.settings.autoExpand ? this.roundLimit : 1);
     if (this.rounds >= allowed || this.usedEvidenceTokens >= this.evidenceTokenLimit) { this.partial = true; return false; }
     this.rounds++;
     return true;

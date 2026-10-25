@@ -30,7 +30,7 @@ import type { DocumentLinkSuggestion, PersonLinkSuggestion } from '@shared/types
  * Background indexing has no per-item consent UI, so it may only send an open source
  * to an external embedding provider when the vault has disabled confirmation.
  */
-function archiveEmbeddingAllowed(itemId: string): boolean {
+export function archiveEmbeddingAllowed(itemId: string, provider = currentEmbeddingConfig().provider): boolean {
   if (getActiveVault().type !== 'primary_sources') return true;
   const row = getDb().prepare(
     'SELECT access_status, sensitivity, embargo_until FROM archive_item_profiles WHERE item_id=?'
@@ -40,10 +40,7 @@ function archiveEmbeddingAllowed(itemId: string): boolean {
     embargo_until: string | null;
   } | undefined;
   if (!row) return false;
-  const config = currentEmbeddingConfig();
-  const local = config.provider === 'nodus'
-    || config.provider === 'ollama'
-    || config.provider === 'lmstudio';
+  const local = provider === 'nodus' || provider === 'ollama' || provider === 'lmstudio';
   const policy = getPrimarySourcePolicySettings();
   if (!local && policy.requireExternalConfirmation) return false;
   return decidePrimarySourcePolicy({
@@ -66,6 +63,8 @@ export async function embedArchiveItem(itemId: string): Promise<boolean> {
   if (!text) return false;
   const vec = await embedDocument(text);
   if (!vec) return false;
+  const current = archiveItemForEmbedding(itemId);
+  if (!current || archiveEmbeddingText(current) !== text || !archiveEmbeddingAllowed(itemId)) return false;
   const config = currentEmbeddingConfig();
   setItemEmbedding(itemId, vec, config.provider, config.model, embeddingTextHash(text));
   return true;

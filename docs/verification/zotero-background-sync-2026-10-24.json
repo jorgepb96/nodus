@@ -1,0 +1,264 @@
+{
+  "passed": true,
+  "root": "/private/tmp/nodus-research-pUxcZp",
+  "maxMainDelayMs": 178,
+  "windowCalls": [],
+  "maxRendererDelayMs": 35,
+  "statuses": [
+    {
+      "vaultId": "default",
+      "running": true,
+      "lastSync": null
+    },
+    {
+      "vaultId": "default",
+      "running": false,
+      "lastSync": {
+        "id": 1,
+        "at": "2026-10-24T10:08:47.082Z",
+        "mode": "manual",
+        "summary": "1 altas, 0 cambios; catálogo actualizado sin iniciar análisis"
+      }
+    },
+    {
+      "vaultId": "default",
+      "running": true,
+      "lastSync": {
+        "id": 1,
+        "at": "2026-10-24T10:08:47.082Z",
+        "mode": "manual",
+        "summary": "1 altas, 0 cambios; catálogo actualizado sin iniciar análisis"
+      }
+    },
+    {
+      "vaultId": "default",
+      "running": false,
+      "lastSync": {
+        "id": 2,
+        "at": "2026-10-24T10:08:48.845Z",
+        "mode": "manual",
+        "summary": "1 altas, 0 cambios; catálogo actualizado sin iniciar análisis"
+      }
+    }
+  ],
+  "requests": [
+    {
+      "route": "/api/users/0/items",
+      "at": 1792836526933,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/groups",
+      "at": 1792836526938,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/groups",
+      "at": 1792836526940,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/collections/top",
+      "at": 1792836526942,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/collections/MONITOR1/collections",
+      "at": 1792836526944,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/collections/MONITOR1/items/top",
+      "at": 1792836526947,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/collections/MONITOR1/collections",
+      "at": 1792836527077,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/items",
+      "at": 1792836527080,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/items/WORK0001",
+      "at": 1792836528270,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/items/WORK0001/children",
+      "at": 1792836528283,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/items/FILE0001/file",
+      "at": 1792836528285,
+      "version": 1
+    },
+    {
+      "route": "/api/users/0/items",
+      "at": 1792836528830,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/groups",
+      "at": 1792836528832,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/groups",
+      "at": 1792836528833,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/collections/top",
+      "at": 1792836528835,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/collections/MONITOR1/collections",
+      "at": 1792836528837,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/collections/MONITOR1/items/top",
+      "at": 1792836528839,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/collections/MONITOR1/collections",
+      "at": 1792836528841,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/items",
+      "at": 1792836528844,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/items/WORK0002",
+      "at": 1792836530034,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/items/WORK0002/children",
+      "at": 1792836530047,
+      "version": 2
+    },
+    {
+      "route": "/api/users/0/items/FILE0002/file",
+      "at": 1792836530049,
+      "version": 2
+    }
+  ],
+  "readiness": {
+    "enabled": true,
+    "embeddingsExpected": true,
+    "embeddingSpaces": [
+      {
+        "id": "fc018b820d8421d2ebeb1d0acaa0993873ef83ea52b9452e822373dc30ee14a0",
+        "provider": "openrouter",
+        "model": "baai/bge-m3",
+        "dimensions": 1024,
+        "metric": "cosine"
+      }
+    ],
+    "documents": [
+      {
+        "id": "zotero:user:0:WORK0001",
+        "workId": "77825a28-e757-4532-ab51-905451dfc36d",
+        "libraryItemId": null,
+        "title": "Background sync 1",
+        "authors": [
+          "Researcher, A."
+        ],
+        "year": 2026,
+        "attachmentId": null,
+        "revision": "94e95b9fab924f331c4395324d972d8ed35448bbc91038b9b6111016437a6fe8",
+        "permissionRevision": "b9873f161290bd9932417b0d978a3c076f0147c76857b130170a4964d162bb1f",
+        "origin": {
+          "kind": "zotero",
+          "libraryType": "user",
+          "libraryId": "0",
+          "itemKey": "WORK0001"
+        },
+        "coverage": "metadata",
+        "indexedSource": {
+          "revision": "94e95b9fab924f331c4395324d972d8ed35448bbc91038b9b6111016437a6fe8",
+          "attachmentId": null,
+          "indexKeys": [
+            "f44ac693d1b0e2c4d4400a83556a84c731fc692a4f8558b5665efcd86d646834"
+          ]
+        },
+        "preparation": {
+          "documentId": "zotero:user:0:WORK0001",
+          "revision": "94e95b9fab924f331c4395324d972d8ed35448bbc91038b9b6111016437a6fe8",
+          "text": "available",
+          "lexical": "ready",
+          "embeddings": "ready",
+          "status": "ready",
+          "reason": null,
+          "error": null,
+          "passages": 3,
+          "embedded": 3,
+          "unpreparedAttachmentIds": []
+        }
+      },
+      {
+        "id": "zotero:user:0:WORK0002",
+        "workId": "7b22be65-bfd0-4d1e-87cd-1c5770de02b2",
+        "libraryItemId": null,
+        "title": "Background sync 2",
+        "authors": [
+          "Researcher, A."
+        ],
+        "year": 2026,
+        "attachmentId": null,
+        "revision": "a66e614db0ce48f052b30f80cea23ab49fa681c1a0c8980f1d0ce17ba1c3a1c4",
+        "permissionRevision": "8a23986e04e2e593e4fe3cf60a7476308250fd4b2737b71d62d0fc285eb99115",
+        "origin": {
+          "kind": "zotero",
+          "libraryType": "user",
+          "libraryId": "0",
+          "itemKey": "WORK0002"
+        },
+        "coverage": "metadata",
+        "indexedSource": {
+          "revision": "a66e614db0ce48f052b30f80cea23ab49fa681c1a0c8980f1d0ce17ba1c3a1c4",
+          "attachmentId": null,
+          "indexKeys": [
+            "f0260c01bac57f130d4a1e7cc46766f782f5dfea64e4f0c7ff6fc80d53a45865"
+          ]
+        },
+        "preparation": {
+          "documentId": "zotero:user:0:WORK0002",
+          "revision": "a66e614db0ce48f052b30f80cea23ab49fa681c1a0c8980f1d0ce17ba1c3a1c4",
+          "text": "available",
+          "lexical": "ready",
+          "embeddings": "ready",
+          "status": "ready",
+          "reason": null,
+          "error": null,
+          "passages": 3,
+          "embedded": 3,
+          "unpreparedAttachmentIds": []
+        }
+      }
+    ]
+  },
+  "startupSyncDelayMs": 9882,
+  "embeddingCalls": 2,
+  "isolation": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true,
+    "allowedLoopbackPorts": [
+      55817,
+      55818
+    ]
+  }
+}

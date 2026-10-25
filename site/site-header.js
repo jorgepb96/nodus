@@ -9,7 +9,7 @@ Hosts opt in with a placeholder element:
   <div data-nodus-site-header data-base="../" data-page="wiki" data-context="wiki"></div>
 
   data-base    path back to site/ from the current page ('' at the root)
-  data-page    home | wiki | blog | atlas | faq | about | contribute | demo — marks the current item
+  data-page    home | wiki | blog | atlas | faq | models | contribute | demo — marks the current item
   data-context 'wiki' adds the docs menu button
 */
 (function () {
@@ -39,8 +39,10 @@ Hosts opt in with a placeholder element:
     { id: 'blog', label: 'Blog', href: (base) => `${base}blog/` },
     { id: 'atlas', label: 'Atlas', href: (base) => `${base}research-atlas/` },
     { id: 'faq', label: 'FAQ', href: (base) => `${base}faq/` },
-    { id: 'about', label: 'About', href: (base) => `${base}about/` },
-    { id: 'contribute', label: 'Support Nodus', href: (base) => `${base}contribute/` },
+    // Use-case guides — local models, embeddings, Research Chat + Dictionary,
+    // Deep Research + Immersion. About lives only in the site footer now.
+    { id: 'models', label: 'Models', href: (base) => `${base}models/` },
+    { id: 'contribute', label: 'Support', href: (base) => `${base}contribute/` },
   ];
 
   function markup(base, page, context) {

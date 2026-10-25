@@ -16,6 +16,16 @@ import { RELEASE_5_6_0_HIGHLIGHTS } from './releaseNotes560';
 import { RELEASE_5_7_0_HIGHLIGHTS } from './releaseNotes570';
 import { RELEASE_5_7_2_HIGHLIGHTS } from './releaseNotes572';
 import { RELEASE_5_12_0_HIGHLIGHTS } from './releaseNotes5120';
+import { RELEASE_5_13_0_HIGHLIGHTS } from './releaseNotes5130';
+import { RELEASE_5_14_0_HIGHLIGHTS } from './releaseNotes5140';
+import { RELEASE_5_14_1_HIGHLIGHTS } from './releaseNotes5141';
+import { RELEASE_5_15_0_HIGHLIGHTS } from './releaseNotes5150';
+import { RELEASE_5_16_1_HIGHLIGHTS } from './releaseNotes5161';
+import { RELEASE_5_16_0_HIGHLIGHTS } from './releaseNotes5160';
+import { RELEASE_5_15_4_HIGHLIGHTS } from './releaseNotes5154';
+import { RELEASE_5_15_3_HIGHLIGHTS } from './releaseNotes5153';
+import { RELEASE_5_15_2_HIGHLIGHTS } from './releaseNotes5152';
+import { RELEASE_5_15_1_HIGHLIGHTS } from './releaseNotes5151';
 import { RELEASE_5_12_1_HIGHLIGHTS } from './releaseNotes5121';
 import { RELEASE_5_11_1_HIGHLIGHTS } from './releaseNotes5111';
 import { RELEASE_5_11_0_HIGHLIGHTS } from './releaseNotes5110';
@@ -3118,6 +3128,56 @@ const RELEASE_5_2_2_HIGHLIGHTS: RawReleaseHighlight[] = [
 ];
 
 const RAW_RELEASE_NOTES: RawReleaseNote[] = [
+  {
+    version: '5.16.1',
+    date: '2026-10-25',
+    highlights: RELEASE_5_16_1_HIGHLIGHTS,
+  },
+  {
+    version: '5.16.0',
+    date: '2026-10-24',
+    highlights: RELEASE_5_16_0_HIGHLIGHTS,
+  },
+  {
+    version: '5.15.4',
+    date: '2026-10-23',
+    highlights: RELEASE_5_15_4_HIGHLIGHTS,
+  },
+  {
+    version: '5.15.3',
+    date: '2026-10-23',
+    highlights: RELEASE_5_15_3_HIGHLIGHTS,
+  },
+  {
+    version: '5.15.2',
+    date: '2026-10-22',
+    highlights: RELEASE_5_15_2_HIGHLIGHTS,
+  },
+  {
+    version: '5.15.1',
+    date: '2026-10-21',
+    highlights: RELEASE_5_15_1_HIGHLIGHTS,
+  },
+  {
+    version: '5.15.0',
+    date: '2026-10-21',
+    highlights: RELEASE_5_15_0_HIGHLIGHTS,
+  },
+  {
+    version: '5.14.1',
+    date: '2026-10-19',
+    highlights: RELEASE_5_14_1_HIGHLIGHTS,
+  },
+  {
+    version: '5.14.0',
+    date: '2026-10-19',
+    highlights: RELEASE_5_14_0_HIGHLIGHTS,
+  },
+  {
+    version: '5.13.0',
+    date: '2026-10-18',
+    highlights: RELEASE_5_13_0_HIGHLIGHTS,
+  },
   {
     version: '5.12.1',
     date: '2026-10-17',

@@ -28,6 +28,7 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
     ['archiveView', 'src/views/PrimarySourcesArchiveView.tsx'],
     ['placePicker', 'src/components/PlacePicker.tsx'],
     ['settings', 'src/views/Settings.tsx'],
+    ['modelSettings', 'src/views/settings/ModelSettings.tsx'],
     ['app', '@shell'],
     ['toolkit', 'src/views/ToolkitView.tsx'],
   ].map(([key, relative]) => [key, readSource(relative)]));
@@ -77,19 +78,15 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
   ]) assert.ok(sources.tour.includes(step), `tour teaches: ${step}`);
   assert.match(sources.settings, /primary-sources-tour-replay/);
   assert.match(sources.settings, /primarySourcesTourComplete: false/);
-  assert.match(sources.settings, /getPrimarySourceGovernanceWorkspace/);
-  assert.match(sources.settings, /updatePrimarySourcePolicySettings/);
-  assert.match(sources.settings, /Política de IA de Fuentes primarias/);
-  assert.match(
-    sources.settings,
-    /activeVault\?\.type === 'primary_sources'[\s\S]{0,5000}window\.nodus\.indexArchive\(\)/,
-    'Primary Sources indexes its reviewed archive corpus instead of the academic library',
-  );
-  assert.match(
-    sources.settings,
-    /if \(activeVault\?\.type === 'primary_sources'\)[\s\S]{0,500}window\.nodus\.indexArchive\(\)[\s\S]{0,500}else \{[\s\S]{0,200}window\.nodus\.startEmbedding\(\)/,
-    'the academic embedding pipeline is confined to the non-Primary-Sources branch',
-  );
+  assert.match(sources.modelSettings, /getPrimarySourceGovernanceWorkspace/);
+  assert.match(sources.modelSettings, /updatePrimarySourcePolicySettings/);
+  assert.match(sources.modelSettings, /Política de IA de Fuentes primarias/);
+  assert.match(sources.modelSettings, /EmbeddingIndexesManager/,
+    'Primary Sources uses the same staged index coordinator as every vault');
+  const inventory = readSource('electron/ai/embeddingIndexInventory.ts');
+  assert.match(inventory, /case 'archive_items'/);
+  assert.match(inventory, /archiveEmbeddingAllowed/,
+    'archive inputs are governed by destination-provider policies');
   assert.match(sources.app, /!settings\.primarySourcesTourComplete/);
   assert.match(sources.tourEngine, /AcademicLearningSpotlight as GuidedPopover/);
   assert.doesNotMatch(sources.tourEngine, /aria-modal="true"/);

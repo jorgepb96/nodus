@@ -108,13 +108,13 @@ export async function checkEmbeddingProductLifecycle(harness, report, save) {
   await app.evaluate(({ ipcMain }, allowLocalRuntime) => { globalThis.qaOfflineRequests = []; globalThis.qaLocalRuntimeRequests = []; const old = globalThis.fetch; globalThis.qaOnlineFetch = old;
     globalThis.fetch = async (input, options) => {
       const address = String(input), url = new URL(address);
-      // BGE runs llama.cpp in this same isolated profile and communicates over
-      // loopback. The OS sandbox still rejects every unapproved port or host.
+      // llama.cpp embedders (BGE-M3, Harrier) run in this same isolated profile and
+      // communicate over loopback. The OS sandbox still rejects every unapproved port or host.
       if (allowLocalRuntime && url.hostname === '127.0.0.1' && url.pathname === '/v1/embeddings') {
         globalThis.qaLocalRuntimeRequests.push(address); return old(input, options);
       }
       globalThis.qaOfflineRequests.push(address); throw new Error('QA offline');
-    }; }, model === 'bge-m3-q8_0');
+    }; }, report.runtime === 'llama_cpp' || model === 'bge-m3-q8_0');
   try {
     const offline = await page.evaluate(({ id, query }) => window.nodus.searchResearchNotebook(id, query), { id: limited.id, query });
     assert(offline.evidence.some(evidence => evidence.documentId === source.id));

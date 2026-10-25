@@ -3,6 +3,8 @@ import type { AppLanguage } from '@shared/types';
 /** Multiple selection in the research chat history: select, archive, move and delete several chats. */
 export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, 'es'>, Record<string, string>> = {
   "en": {
+    "Desactivar todo el contexto": "Disable all context",
+    "Restaurar el contexto anterior": "Restore previous context",
     "Seleccionar varios chats": "Select several chats",
     "Terminar selección": "Finish selecting",
     "Chats seleccionados": "Selected chats",
@@ -15,6 +17,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "{n} conversations and all their message history and attachments will be deleted. This cannot be undone."
   },
   "fr": {
+    "Desactivar todo el contexto": "Désactiver tout le contexte",
+    "Restaurar el contexto anterior": "Rétablir le contexte précédent",
     "Seleccionar varios chats": "Sélectionner plusieurs chats",
     "Terminar selección": "Terminer la sélection",
     "Chats seleccionados": "Chats sélectionnés",
@@ -27,6 +31,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "{n} conversations et tout leur historique de messages et pièces jointes seront supprimés. Cette action est irréversible."
   },
   "de": {
+    "Desactivar todo el contexto": "Gesamten Kontext deaktivieren",
+    "Restaurar el contexto anterior": "Vorherigen Kontext wiederherstellen",
     "Seleccionar varios chats": "Mehrere Chats auswählen",
     "Terminar selección": "Auswahl beenden",
     "Chats seleccionados": "Ausgewählte Chats",
@@ -39,6 +45,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "{n} Unterhaltungen und ihr gesamter Nachrichtenverlauf samt Anhängen werden gelöscht. Dies kann nicht rückgängig gemacht werden."
   },
   "pt": {
+    "Desactivar todo el contexto": "Desativar todo o contexto",
+    "Restaurar el contexto anterior": "Restaurar o contexto anterior",
     "Seleccionar varios chats": "Selecionar vários chats",
     "Terminar selección": "Terminar seleção",
     "Chats seleccionados": "Chats selecionados",
@@ -51,6 +59,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "Serão eliminadas {n} conversas e todo o seu histórico de mensagens e anexos. Esta ação não pode ser anulada."
   },
   "pt-BR": {
+    "Desactivar todo el contexto": "Desativar todo o contexto",
+    "Restaurar el contexto anterior": "Restaurar o contexto anterior",
     "Seleccionar varios chats": "Selecionar vários chats",
     "Terminar selección": "Concluir seleção",
     "Chats seleccionados": "Chats selecionados",
@@ -63,6 +73,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "{n} conversas e todo o histórico de mensagens e anexos serão excluídos. Esta ação não pode ser desfeita."
   },
   "it": {
+    "Desactivar todo el contexto": "Disattiva tutto il contesto",
+    "Restaurar el contexto anterior": "Ripristina il contesto precedente",
     "Seleccionar varios chats": "Seleziona più chat",
     "Terminar selección": "Termina selezione",
     "Chats seleccionados": "Chat selezionate",
@@ -75,6 +87,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "Verranno eliminate {n} conversazioni con tutta la cronologia dei messaggi e gli allegati. Questa azione non può essere annullata."
   },
   "tr": {
+    "Desactivar todo el contexto": "Tüm bağlamı devre dışı bırak",
+    "Restaurar el contexto anterior": "Önceki bağlamı geri yükle",
     "Seleccionar varios chats": "Birden çok sohbet seç",
     "Terminar selección": "Seçimi bitir",
     "Chats seleccionados": "Seçili sohbetler",
@@ -87,6 +101,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "{n} sohbet ve tüm mesaj geçmişleri ile ekleri silinecek. Bu işlem geri alınamaz."
   },
   "zh-CN": {
+    "Desactivar todo el contexto": "停用所有上下文",
+    "Restaurar el contexto anterior": "恢复之前的上下文",
     "Seleccionar varios chats": "选择多个聊天",
     "Terminar selección": "完成选择",
     "Chats seleccionados": "已选聊天",
@@ -99,6 +115,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "将删除 {n} 个对话及其全部消息记录和附件。此操作无法撤销。"
   },
   "zh-TW": {
+    "Desactivar todo el contexto": "停用所有上下文",
+    "Restaurar el contexto anterior": "還原先前的上下文",
     "Seleccionar varios chats": "選擇多個聊天",
     "Terminar selección": "完成選擇",
     "Chats seleccionados": "已選聊天",
@@ -111,6 +129,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "將刪除 {n} 個對話及其全部訊息記錄和附件。此操作無法復原。"
   },
   "ja": {
+    "Desactivar todo el contexto": "すべてのコンテキストを無効にする",
+    "Restaurar el contexto anterior": "以前のコンテキストを復元する",
     "Seleccionar varios chats": "複数のチャットを選択",
     "Terminar selección": "選択を終了",
     "Chats seleccionados": "選択したチャット",
@@ -123,6 +143,8 @@ export const RESEARCH_CHAT_SELECTION_TRANSLATIONS: Record<Exclude<AppLanguage, '
     "Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.": "{n} 件の会話と、そのメッセージ履歴と添付ファイルがすべて削除されます。この操作は元に戻せません。"
   },
   "ko": {
+    "Desactivar todo el contexto": "모든 컨텍스트 비활성화",
+    "Restaurar el contexto anterior": "이전 컨텍스트 복원",
     "Seleccionar varios chats": "여러 채팅 선택",
     "Terminar selección": "선택 끝내기",
     "Chats seleccionados": "선택한 채팅",

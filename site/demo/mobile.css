@@ -11,16 +11,17 @@
   html,
   body {
     width: 100%;
-    height: 100%;
+    height: auto;
+    min-height: 100%;
     overscroll-behavior: none;
   }
 
   body.demo-page {
     display: block;
     width: 100%;
-    height: 100dvh;
+    height: auto;
     min-height: 100dvh;
-    overflow: hidden;
+    overflow-x: hidden;
     background: var(--bg);
   }
 
@@ -223,7 +224,6 @@
     padding: 18px var(--mobile-gutter) calc(32px + env(safe-area-inset-bottom));
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
   }
 

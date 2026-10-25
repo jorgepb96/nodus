@@ -1,0 +1,195 @@
+name: Independent Nodus Support release
+
+# Explicitly dispatched after publication: GITHUB_TOKEN-created release events
+# do not trigger other workflows. This run can be retried without republishing Nodus.
+# Use the dispatched commit so publisher fixes can backfill an existing release.
+# Version/channel validation still requires its package version to match the tag.
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Published Nodus channel
+        required: true
+        type: choice
+        options: [latest, beta]
+      tag:
+        description: Already published Nodus tag
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: nodus-support-release-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - name: Validate exact tag and published release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+        run: |
+          node scripts/verify-release-channel.mjs "$RELEASE_CHANNEL" "$RELEASE_TAG"
+          node --input-type=module -e 'import {execFileSync} from "node:child_process"; const r=JSON.parse(execFileSync("gh",["release","view",process.env.RELEASE_TAG,"--repo",process.env.GITHUB_REPOSITORY,"--json","isDraft,isPrerelease"],{encoding:"utf8"}));if(r.isDraft||r.isPrerelease!==(process.env.RELEASE_CHANNEL==="beta"))process.exit(1);'
+  safety:
+    needs: validate
+    uses: ./.github/workflows/nodus-support.yml
+    with:
+      ref: ${{ github.sha }}
+  build:
+    needs: [validate, safety]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, macos-15-intel, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODUS_SUPPORT_RELEASE: '1'
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      # Support has no native database or normal Nodus build dependency.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node node_modules/electron/install.js
+      - name: Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y rpm libgtk-3-0 libnss3 libasound2
+      - name: Prepare temporary macOS signing keychain
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          set -euo pipefail
+          required=(
+            MACOS_CERTIFICATE_BASE64
+            MACOS_CERTIFICATE_PASSWORD
+            APPLE_API_KEY_BASE64
+            APPLE_API_KEY_ID
+            APPLE_API_ISSUER
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Required macOS release secret is not configured: $name"
+              exit 1
+            fi
+          done
+
+          certificate_path="$RUNNER_TEMP/nodus-signing-certificate.p12"
+          api_key_path="$RUNNER_TEMP/nodus-notary-api-key.p8"
+          keychain_path="$RUNNER_TEMP/nodus-signing.keychain-db"
+          keychain_password="$(openssl rand -base64 32)"
+          echo "::add-mask::$keychain_password"
+
+          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$api_key_path"
+          chmod 600 "$certificate_path" "$api_key_path"
+          openssl pkey -in "$api_key_path" -noout
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path" >/dev/null
+
+          # codesign only resolves identities from the user's keychain search
+          # list, even when --keychain is also supplied. Preserve the runner's
+          # existing keychains while making this isolated one discoverable.
+          search_keychains=("$keychain_path")
+          while IFS= read -r existing_keychain; do
+            if [[ -n "$existing_keychain" && "$existing_keychain" != "$keychain_path" ]]; then
+              search_keychains+=("$existing_keychain")
+            fi
+          done < <(security list-keychains -d user | sed -E 's/^[[:space:]]*"([^"]+)".*/\1/')
+          security list-keychains -d user -s "${search_keychains[@]}"
+
+          signing_identities="$(security find-identity -v -p codesigning "$keychain_path")"
+          if [[ "$signing_identities" != *'"Developer ID Application:'* ]]; then
+            echo "::error::The imported .p12 does not contain a valid Developer ID Application identity and private key"
+            exit 1
+          fi
+
+          # Fail before the expensive app build if codesign cannot use the
+          # imported private key in this non-interactive runner session.
+          identity_hash="$(awk '/"Developer ID Application:/ { print $2; exit }' <<< "$signing_identities")"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          cp /usr/bin/true "$signing_probe"
+          codesign --force \
+            --sign "$identity_hash" \
+            --keychain "$keychain_path" \
+            --timestamp \
+            --options runtime \
+            "$signing_probe"
+          codesign --verify --strict "$signing_probe"
+          rm -f "$signing_probe"
+
+          {
+            echo "CSC_KEYCHAIN=$keychain_path"
+            echo "APPLE_API_KEY=$api_key_path"
+            echo "NODUS_MACOS_CERTIFICATE_PATH=$certificate_path"
+            echo "NODUS_NOTARY_KEY_PATH=$api_key_path"
+          } >> "$GITHUB_ENV"
+
+      - name: Build independent Support installers
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: true
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: npm run support:dist
+      - name: Append verified Support assets to the published release
+        env:
+          NODUS_SUPPORT_RELEASE_PRIVATE_KEY: ${{ secrets.NODUS_SUPPORT_RELEASE_PRIVATE_KEY }}
+          NODUS_SUPPORT_RELEASE_KEY_ID: ${{ secrets.NODUS_SUPPORT_RELEASE_KEY_ID }}
+        run: node scripts/support-app-release.mjs
+      - name: Check native recovery qualification
+        id: recovery
+        shell: bash
+        run: |
+          node --input-type=module -e 'import fs from "node:fs";import {requireQualified} from "./apps/nodus-support/core/qualification.mjs";import {supportSourceDigest} from "./scripts/lib/supportEvidence.mjs";const source=supportSourceDigest(process.cwd());const catalog=JSON.parse(fs.readFileSync("apps/nodus-support/qualified-repairs.json","utf8"));let qualified=true;try{for(const action of ["interactive-copy","apply-solution","restore-copy","reinstall"])requireQualified(catalog,process.platform,process.arch,action,source);}catch{qualified=false;}fs.appendFileSync(process.env.GITHUB_OUTPUT,`qualified=${qualified}\n`);'
+      - name: Prepare recovery from the published Nodus installers
+        if: steps.recovery.outputs.qualified == 'true'
+        run: node scripts/prepare-support-recovery.mjs
+      - name: Append signed recovery artifacts after qualification
+        if: steps.recovery.outputs.qualified == 'true'
+        env:
+          NODUS_SUPPORT_RELEASE_PRIVATE_KEY: ${{ secrets.NODUS_SUPPORT_RELEASE_PRIVATE_KEY }}
+          NODUS_SUPPORT_RELEASE_KEY_ID: ${{ secrets.NODUS_SUPPORT_RELEASE_KEY_ID }}
+        run: node scripts/support-release.mjs --runtime --publish
+      - name: Remove temporary macOS credentials
+        if: always() && runner.os == 'macOS'
+        shell: bash
+        run: |
+          set +e
+          keychain_path="${CSC_KEYCHAIN:-$RUNNER_TEMP/nodus-signing.keychain-db}"
+          certificate_path="${NODUS_MACOS_CERTIFICATE_PATH:-$RUNNER_TEMP/nodus-signing-certificate.p12}"
+          api_key_path="${NODUS_NOTARY_KEY_PATH:-$RUNNER_TEMP/nodus-notary-api-key.p8}"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          security lock-keychain "$keychain_path" >/dev/null 2>&1
+          security delete-keychain "$keychain_path" >/dev/null 2>&1
+          rm -f "$certificate_path" "$api_key_path" "$keychain_path" "$signing_probe"
+

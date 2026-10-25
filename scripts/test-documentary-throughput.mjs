@@ -117,14 +117,18 @@ try {
   const remote = { ...config, endpoint: `http://127.0.0.1:${server.address().port}/v1` };
   // An explicit job must describe the currently selected execution contract.
   load('electron/db/settingsRepo.ts').updateSettings({ embeddingProvider: remote.provider, embeddingModel: remote.modelId });
-  load('electron/ai/providers.ts').openAiCompatBase = provider => provider === remote.provider ? remote.endpoint : null;
+  const indexes = load('electron/db/embeddingIndexesRepo.ts');
+  const localFixture = indexes.createIndex(db, { ...indexes.activeEmbeddingIndex(db).profile, endpoint: remote.endpoint });
+  db.prepare('UPDATE embedding_index_state SET pending_id=?').run(localFixture.id);
+  indexes.commitEmbeddingIndex(db, indexes.indexContext(db, localFixture));
+  const execution = ai.effectiveEmbeddingConfig();
   try {
-    await Promise.all([0, 1, 2].map(i => ai.embedManyStrict([`Gate ${i}`], undefined, { config: remote })));
+    await Promise.all([0, 1, 2].map(i => ai.embedManyStrict([`Gate ${i}`], undefined, { config: execution })));
   } finally { server.close(); }
   assert.equal(gateMax, 2, 'remote embeddings start with two requests in flight');
   console.log('Documentary preparation overlaps documents and embedding batches, extracts text only and bounds its per-page work.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   database.closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

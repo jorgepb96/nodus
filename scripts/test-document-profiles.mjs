@@ -164,11 +164,17 @@ try {
     fields: [{ fieldId: 'field-thesis-v2', kind: 'thesis', ordinal: 0, text: 'Nueva tesis generada.', confidence: 0.91, centrality: 1 }],
     sections: [], supports: [], ideaLinks: [], vectors: [{
       vectorId: 'captured-vector', kind: 'overview', sourceId: null, text: 'Perfil estable.', weight: 1,
-      embedding: [1, 0], embeddingProvider: 'captured-provider', embeddingModel: 'captured-model',
+      embedding: [1, 0], embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small',
     }], generatorModel: null, auditorModel: null,
     promptHash: 'prompt-v2', audit: { passed: true, score: 0.9, supportCoverage: 1, structureCoverage: 1, issues: [], repaired: false },
     qualityScore: 0.9,
   });
+  assert.deepEqual(
+    sqlite.prepare("SELECT embedding_provider provider,embedding_model model FROM embedding_read_document_vectors WHERE vector_id=?")
+      .get(`${nextVersionId}:captured-vector`),
+    { provider: 'openai', model: 'text-embedding-3-small' },
+    'publication records the embedding configuration captured when the vector was generated',
+  );
   const preserved = repo.getDocumentProfile('w1');
   assert.equal(preserved.versionId, nextVersionId);
   assert.equal(preserved.fields[0].text, 'La modernización tuvo ritmos regionales desiguales.', 'manual field correction survives rescans');
@@ -386,20 +392,14 @@ try {
       itemType: 'book', doi: null, deepHash: null, resolvedTextHash: 'stable-passages',
     },
     passages: {
-      contentHash: 'stable-passages', embeddingProvider: 'captured-provider', embeddingModel: 'captured-model',
+      contentHash: 'stable-passages', embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small',
       rows: [{ text: 'Pasaje estable anterior.', pageLabel: 'p. 1', embedding: [0, 1] }],
     },
   };
   const firstReplayVersion = repo.publishDocumentProfile(replayInput);
   assert.deepEqual(
-    sqlite.prepare("SELECT embedding_provider provider,embedding_model model FROM document_vectors WHERE vector_id=?")
-      .get(`${nextVersionId}:captured-vector`),
-    { provider: 'captured-provider', model: 'captured-model' },
-    'publication records the embedding configuration captured when the vector was generated',
-  );
-  assert.deepEqual(
-    sqlite.prepare("SELECT embedding_provider provider,embedding_model model FROM passages WHERE nodus_id='w3' LIMIT 1").get(),
-    { provider: 'captured-provider', model: 'captured-model' },
+    sqlite.prepare("SELECT embedding_provider provider,embedding_model model FROM embedding_read_passages WHERE nodus_id='w3' LIMIT 1").get(),
+    { provider: 'openai', model: 'text-embedding-3-small' },
     'staged passages retain the embedding configuration that produced them',
   );
   sqlite.prepare("UPDATE document_profile_state SET status='stale',stale_reason='source_changed' WHERE nodus_id='w3'").run();

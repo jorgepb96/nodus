@@ -332,17 +332,21 @@ try {
   // ── Audio narration survives leaving the view (the progress bar reappears) ──
   // The synthesis loop runs in the store, not the panel. Leaving only unsubscribes;
   // it must not stop the loop, and a remounted panel picks progress up mid-run.
-  const fakeSynth = async () => {
+  // The narrator is what AudioPanel injects: it runs one Ming job per segment and the main
+  // process saves the clip. Here it saves through the fake bridge so the count is visible.
+  const fakeSynth = async (segment, context) => {
     synthCalls += 1;
+    context.report({ fragmentsDone: 1, fragmentsTotal: 2, rtf: 0.8, etaS: 3 });
     await synthGate;
-    return new Uint8Array([82, 73, 70, 70]);
+    await globalThis.window.nodus.saveAudioClip(context.request.entityKind, context.request.entityId, {
+      segmentIndex: segment.index, segmentLabel: segment.label, provider: 'ming', voice: 'cc0:es-dave', language: 'es', bytes: new Uint8Array([82, 73, 70, 70]),
+    });
+    return true;
   };
   const audioRequest = {
     entityKind: 'deep_research',
     entityId: 'report-1',
-    provider: 'kokoro',
-    voiceId: 'ef_dora',
-    language: 'es',
+    voiceId: 'cc0:es-dave',
     segmentRequest: { mode: 'full' },
     labels: { preparing: 'Preparando…', noText: 'No hay texto narrable en este contenido.' },
   };
@@ -354,6 +358,8 @@ try {
   assert.equal(duplicateAudio.id, audioJob.id, 'a second "Generar audio" click reuses the running job');
   await waitFor(() => jobs.getBackgroundJob(audioKey)?.progress?.label === 'Resumen', 'audio progress before unmount');
   assert.equal(jobs.getBackgroundJob(audioKey).progress.total, 3, 'progress reports the segment total');
+  await waitFor(() => jobs.getBackgroundJob(audioKey)?.progress?.fragmentsTotal === 2, 'fragment progress is forwarded');
+  assert.equal(jobs.getBackgroundJob(audioKey).progress.rtf, 0.8, 'the measured speed reaches the panel');
   assert.equal(audioCleared, 1, 'existing clips are cleared once at the start');
   unsubscribeAudio();
   assert.equal(audioBeforeUnmount?.status, 'running', 'the mounted panel saw the running state');
@@ -390,7 +396,7 @@ try {
   const stuckKey = jobs.audioGenerationJobKey('deep_research', 'report-stuck');
   let abortedSegments = 0;
   let stuckSynthCalls = 0;
-  const stuckSynth = (_provider, _voiceId, _text, signal) => {
+  const stuckSynth = (_segment, { signal }) => {
     stuckSynthCalls += 1;
     // Never resolves: only aborting can end it.
     return new Promise((_resolve, reject) => {

@@ -133,8 +133,9 @@ async function deepScanFrames({ concurrencyMode, concurrency, chunkDurations, ch
       export function isLocalAnalysisCurrent() { return false; }
       export function recordLocalAnalysisProvenance() {}
     `],
+    [/embeddingIndexesRepo$/, 'indexes', `export function activeEmbeddingIndex() { return null; } export function profileFingerprint() { return 'fixture'; } export function withEmbeddingIndexContext(_context, work) { return work(); }`],
     [/^\.\.\/db\/database$/, 'database', `export function getDb() { return { transaction: (fn) => fn }; }`],
-    [/@shared\/localAiModels$/, 'localAiModels', `export function modelRefSupportsExtraction() { return true; }`],
+    [/@shared\/localAiModels$/, 'localAiModels', `export function modelRefSupportsExtraction() { return true; } export function getNodusLocalModel() { return undefined; }`],
   ]);
   try {
     const frames = [];

@@ -550,7 +550,7 @@ const SERVER_WEB_TRANSLATIONS: Partial<
       "How would you like to read this document?",
     "Puedes cambiar de versión desde el selector del lector.":
       "You can change versions from the reader selector.",
-    "Markdown limpio": "Clean Markdown",
+    "Markdown": "Markdown",
     "Lectura adaptable con índice e imágenes extraídas.":
       "Adaptable reading with index and extracted images.",
     "Archivo original": "Original file",
@@ -1579,7 +1579,7 @@ const SERVER_WEB_TRANSLATIONS: Partial<
     "Documento sin título": "제목 없는 문서",
     "¿Cómo quieres leer este documento?": "이 문서를 어떻게 읽으시겠습니까?",
     "Puedes cambiar de versión desde el selector del lector.": "리더 선택기에서 버전을 변경할 수 있습니다.",
-    "Markdown limpio": "Markdown 정리",
+    "Markdown": "Markdown",
     "Lectura adaptable con índice e imágenes extraídas.": "색인 및 추출된 이미지를 사용한 적응형 판독.",
     "Archivo original": "원본 파일",
     "Abre directamente el archivo conservado y su diseño original.": "보존된 파일과 원본 레이아웃을 직접 엽니다.",
@@ -2199,7 +2199,7 @@ const SERVER_WEB_TRANSLATIONS: Partial<
     "Documento sin título": "無題のドキュメント",
     "¿Cómo quieres leer este documento?": "この文書をどのように読みたいですか?",
     "Puedes cambiar de versión desde el selector del lector.": "リーダーセレクターからバージョンを変更できます。",
-    "Markdown limpio": "クリーンMarkdown",
+    "Markdown": "Markdown",
     "Lectura adaptable con índice e imágenes extraídas.": "インデックスと抽出された画像を使用して柔軟に読み取ります。",
     "Archivo original": "元のファイル",
     "Abre directamente el archivo conservado y su diseño original.": "保存されたファイルとその元のレイアウトを直接開きます。",

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type Database from 'better-sqlite3';
+import { registerEmbeddingIndexFunctions } from '../db/embeddingIndexesRepo';
 import { quoteIdentifier, identityColumnsInDatabase, tableColumnsInDatabase } from '../db/rowIdentityCore';
 import { MUTABLE_TABLES } from './generatedMutableTables';
 import { withOutboxSuppressed } from './outboxSuppression';
@@ -197,6 +198,7 @@ function blobPlaceholders(db: Database.Database, table: string, provided: Set<st
 }
 
 export function applySnapshotToReplica(db: Database.Database, snapshot: { tables?: Record<string, unknown> }): SnapshotApplySummary {
+  registerEmbeddingIndexFunctions(db);
   const summary: SnapshotApplySummary = { replaced: {}, merged: {}, skipped: [] };
   const present = new Set(
     (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map((row) => row.name)

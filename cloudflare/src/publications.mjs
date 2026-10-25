@@ -7,7 +7,6 @@ import {
   assertObjectHash,
   clampInteger,
   first,
-  json,
   mimeFromBytes,
   nowIso,
   problem,
@@ -23,6 +22,7 @@ import {
 import { R2_ROW_BODY_FIELD, R2_ROW_HASH_FIELD, R2_ROW_TITLE_FIELD } from './rows.mjs';
 
 import { stageObject, queueObject } from './objectLifecycle.mjs';
+import { createEmbeddingContract, canonicalizeEmbeddingContract } from './generated/embeddingContract.mjs';
 
 const PUBLICATION_TTL_MS = 24 * 3600_000;
 const VALID_TABLE = /^[a-z][a-z0-9_]{0,127}$/;
@@ -50,6 +50,23 @@ async function publicationFor(env, spaceId, publicationId, requiredStatus = null
 
 export async function createPublication(env, auth, request) {
   const manifest = await readJson(request, 2 * 1024 * 1024);
+  if (manifest.embeddingIndex !== undefined) {
+    const index = manifest.embeddingIndex;
+    if (index !== null && (!index || typeof index.id !== 'string' || index.id.length > 128 || !Number.isSafeInteger(index.generation) || index.generation < 1)) throw new HttpError(400, 'bad_embedding_index', 'The active embedding index is invalid.');
+    if (!Array.isArray(manifest.vectors) || manifest.vectors.length > 3 || (!index && manifest.vectors.length)) throw new HttpError(400, 'bad_embedding_vectors', 'Only vectors of the declared active index may be published.');
+    const seen = new Set();
+    let commonContract = null;
+    for (const vector of manifest.vectors) {
+      let contract;
+      try { contract = createEmbeddingContract(vector.embeddingContract); } catch { throw new HttpError(400, 'bad_embedding_contract', 'A complete embedding contract is required.'); }
+      const canonical = canonicalizeEmbeddingContract(contract);
+      if (commonContract && commonContract !== canonical) throw new HttpError(400, 'embedding_index_mismatch', 'All vector families must use the same embedding contract.');
+      commonContract = canonical;
+      if (!['ideas', 'documents', 'passages'].includes(vector.kind) || seen.has(vector.kind) || vector.indexId !== index.id || vector.generation !== index.generation
+        || contract.provider !== vector.provider || contract.model !== vector.model || contract.dim !== vector.dimensions) throw new HttpError(400, 'embedding_index_mismatch', 'Vectors must belong to one active embedding index.');
+      seen.add(vector.kind);
+    }
+  }
   if (Number(manifest.protocolVersion) !== 3) throw new HttpError(400, 'unsupported_protocol', 'This Worker requires publication protocol 3.');
   const revision = String(manifest.revision || '');
   if (!/^[A-Za-z0-9_-]{20,128}$/.test(revision)) throw new HttpError(400, 'bad_revision', 'The publication revision is invalid.');
@@ -87,8 +104,6 @@ export async function createPublication(env, auth, request) {
     }
     return publicationSession(existing, counts);
   }
-  const latest = await first(env.DB, 'SELECT COALESCE(MAX(generation), 0) AS generation FROM publications WHERE space_id = ?1', auth.space_id);
-  const generation = Number(latest?.generation || 0) + 1;
   const id = randomId('pub_');
   const now = Date.now();
   const sanitized = {
@@ -102,13 +117,37 @@ export async function createPublication(env, auth, request) {
     rowObjects: sanitizedRowObjects,
     library: manifest.library && typeof manifest.library === 'object' ? manifest.library : null,
     snapshot: manifest.snapshot && typeof manifest.snapshot === 'object' ? manifest.snapshot : null,
+    embeddingIndex: manifest.embeddingIndex,
     vectors: Array.isArray(manifest.vectors) ? manifest.vectors : [],
   };
-  await run(env.DB, `INSERT INTO publications
+  const insert = env.DB.prepare(`INSERT INTO publications
     (id, space_id, generation, revision, status, manifest_json, expires_at, created_by_device, created_at)
-    VALUES (?1, ?2, ?3, ?4, 'staging', ?5, ?6, ?7, ?8)`,
-    id, auth.space_id, generation, revision, JSON.stringify(sanitized), new Date(now + PUBLICATION_TTL_MS).toISOString(), auth.device_id || null, new Date(now).toISOString());
-  return publicationSession({ id, generation }, counts);
+    SELECT ?1, ?2, COALESCE(MAX(generation), 0) + 1, ?3, 'staging', ?4, ?5, ?6, ?7
+    FROM publications WHERE space_id = ?2`).bind(
+    id, auth.space_id, revision, JSON.stringify(sanitized), new Date(now + PUBLICATION_TTL_MS).toISOString(), auth.device_id || null, new Date(now).toISOString());
+  try {
+    if (existing) {
+      // A → B → A can repeat a snapshot's revision after its old generation was
+      // superseded (and possibly collected). Keep that generation immutable and
+      // stage a fresh one. The reserved key cannot collide with a client revision.
+      // Archival and insertion share a transaction, so a failed upload setup
+      // leaves both the old revision and the currently published bundle intact.
+      await env.DB.batch([
+        env.DB.prepare("UPDATE publications SET revision = ?1 WHERE id = ?2 AND revision = ?3 AND status IN ('superseded', 'failed')")
+          .bind(`retired:${existing.id}`, existing.id, revision),
+        insert,
+      ]);
+    } else await insert.run();
+  } catch (error) {
+    // Another device may have opened this same revision while we were validating
+    // its manifest. Reuse its session rather than reporting a uniqueness error.
+    const concurrent = await first(env.DB, 'SELECT id, generation, status, expires_at FROM publications WHERE space_id = ?1 AND revision = ?2', auth.space_id, revision);
+    if (concurrent?.status === 'active') return { id: concurrent.id, generation: concurrent.generation, deduplicated: true, committed: true };
+    if (concurrent?.status === 'staging') return publicationSession(concurrent, counts);
+    throw error;
+  }
+  const created = await first(env.DB, 'SELECT id, generation, expires_at FROM publications WHERE id = ?1', id);
+  return publicationSession(created, counts);
 }
 
 function publicationSession(publication, counts) {
@@ -188,7 +227,7 @@ export async function uploadTableChunk(env, auth, publicationId, table, request)
   return { ok: true, table, received: Number(count?.count || 0), expected };
 }
 
-function objectKey(spaceId, purpose, hash, publication = null) {
+function objectKey(spaceId, purpose, hash, _publication = null) {
   if (purpose === 'asset') return `spaces/${spaceId}/assets/${hash}`;
   if (purpose === 'library') return `spaces/${spaceId}/library/${hash}.zip`;
   if (purpose === 'vector') return `spaces/${spaceId}/vectors/${hash}.bin`;

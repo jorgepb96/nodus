@@ -2,9 +2,11 @@ import { app } from 'electron';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import type { AppleCalendarDestination, AppleCalendarMutation } from '@shared/appleCalendar';
+import { assertSupportExternalActionAllowed } from '../support/externalActions';
 
 let bridge: { invoke: (json: string) => Promise<string> } | undefined;
 async function invoke<T>(request: object): Promise<T> {
+  assertSupportExternalActionAllowed();
   if (process.platform !== 'darwin') throw new Error('APPLE_CALENDAR_UNAVAILABLE');
   if (!bridge) {
     const file = app.isPackaged

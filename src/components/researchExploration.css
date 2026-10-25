@@ -1,0 +1,15 @@
+/* Inherits the active theme/vault accent; no fixed accent or portalled menu. */
+.research-exploration-control { --research-exploration-accent: var(--vault-accent, var(--a-500)); display: inline-flex; height: 36px; flex-shrink: 0; align-items: stretch; gap: 2px; max-width: 100%; padding: 2px; border: 1px solid #88888830; border-radius: 9px; background: #88888808; font-size: 12px; line-height: 16px; font-weight: 400; }
+.research-exploration-option { display: inline-flex; position: relative; align-items: center; justify-content: center; min-height: 28px; padding: 4px 9px; border: 1px solid transparent; border-radius: 6px; white-space: nowrap; color: #71717a; cursor: pointer; }
+.research-exploration-option:hover { background: #88888810; }
+.research-exploration-option:has(input:checked) { border-color: color-mix(in srgb, var(--research-exploration-accent) 45%, transparent); background: color-mix(in srgb, var(--research-exploration-accent) 13%, transparent); color: color-mix(in srgb, var(--research-exploration-accent) 78%, #18181b); }
+.dark .research-exploration-option { color: #a1a1aa; }
+.dark .research-exploration-option:has(input:checked) { background: color-mix(in srgb, var(--research-exploration-accent) 22%, transparent); color: color-mix(in srgb, var(--research-exploration-accent) 50%, white); }
+.research-exploration-option:has(input:focus-visible) { outline: 2px solid var(--research-exploration-accent); outline-offset: 1px; }
+.research-exploration-control[aria-disabled=true] { opacity: .5; }
+.research-exploration-control[aria-disabled=true] .research-exploration-option { cursor: default; }
+
+html.theme-active .research-exploration-control { --research-exploration-accent: var(--a-500); }
+
+.research-exploration-tooltip { position: fixed; z-index: 10100; width: min(300px, calc(100vw - 24px)); padding: 10px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--research-exploration-accent) 35%, transparent); background: #202126; color: #e4e4e7; box-shadow: 0 8px 28px #0004; font-size: 12px; line-height: 1.5; font-weight: 400; text-align: left; white-space: normal; }
+.research-exploration-tooltip.is-light { background: #fff; color: #27272a; box-shadow: 0 8px 28px #0002; }

@@ -5,6 +5,8 @@ import { chatAssetOwner, deleteChatAssets, reconcileChatAssets } from '../chatAs
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { v4 as uuid } from 'uuid';
 import { getDb } from './database';
+import { deleteResearchRuns } from './researchRunsRepo';
+import { reconcileChatNarration } from '../audio/audioService';
 import type {
   ChatConversation,
   ChatConversationSummary,
@@ -189,6 +191,7 @@ export function saveMessages(
   });
   tx();
   reconcileChatAssets(chatAssetOwner('assistant', id, getActiveVault().id), messages);
+  reconcileChatNarration(id, messages.map((message) => message.id).filter(Boolean));
 }
 
 export function renameConversation(id: string, title: string): void {
@@ -207,9 +210,11 @@ export function setArchived(id: string, archived: boolean): void {
 export function deleteConversation(id: string): void {
   deleteResearchAttachments({ surface: 'research', conversationId: id });
   deleteChatAssets(chatAssetOwner('assistant', id, getActiveVault().id));
+  reconcileChatNarration(id);
   const db = getDb();
   const tx = db.transaction(() => {
     db.prepare('DELETE FROM chat_messages WHERE conversation_id = ?').run(id);
+    deleteResearchRuns({ conversationId: id });
     deleteConversationPlacement(id);
     db.prepare('DELETE FROM chat_conversations WHERE id = ?').run(id);
   });

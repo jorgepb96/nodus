@@ -9,7 +9,7 @@ const root = path.resolve(import.meta.dirname ?? path.dirname(new URL(import.met
 const require = createRequire(import.meta.url);
 if (!process.argv.includes('--run')) {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'nodus-manual-'));
-  const modules = { research: 'ai/researchAssistant', workshop: 'ai/writingWorkshop', approaches: 'ai/deepResearchApproaches', argument: 'ai/argumentMap', registry: 'vaults/vaultRegistry', light: 'ai/lightScan', deep: 'ai/deepScan', summary: 'ai/summaryScan', bridges: 'ai/semanticBridges', scans: 'pipeline/scanQueue', reprocess: 'ai/reprocessConnections', fusion: 'ai/fusion', profile: 'ai/documentProfile', synthesis: 'ai/workIdeaSynthesis', db: 'db/database', settings: 'db/settingsRepo', manual: 'db/manualIdeasRepo', ideas: 'db/ideasRepo', notes: 'db/notesRepo', workspace: 'db/workspaceRepo', works: 'db/worksRepo', indexer: 'ai/manualIdeaIndex', policy: 'ai/academicMode', graph: 'graph/graphService', stellar: 'graph/stellarService' };
+  const modules = { research: 'ai/researchAssistant', workshop: 'ai/writingWorkshop', approaches: 'ai/deepResearchApproaches', argument: 'ai/argumentMap', registry: 'vaults/vaultRegistry', light: 'ai/lightScan', deep: 'ai/deepScan', summary: 'ai/summaryScan', bridges: 'ai/semanticBridges', scans: 'pipeline/scanQueue', reprocess: 'ai/reprocessConnections', fusion: 'ai/fusion', profile: 'ai/documentProfile', synthesis: 'ai/workIdeaSynthesis', db: 'db/database', indexes: 'db/embeddingIndexesRepo', settings: 'db/settingsRepo', manual: 'db/manualIdeasRepo', ideas: 'db/ideasRepo', notes: 'db/notesRepo', workspace: 'db/workspaceRepo', works: 'db/worksRepo', indexer: 'ai/manualIdeaIndex', policy: 'ai/academicMode', graph: 'graph/graphService', stellar: 'graph/stellarService' };
   const electronStub = path.join(dir, 'electron.mjs');
   writeFileSync(electronStub, `export * from ${JSON.stringify(path.join(root, 'scripts/stub-electron-safe-storage.mjs'))}; export const nativeImage = {}; export const protocol = {}; export const session = {};`);
   const entry = path.join(dir, 'entry.ts');
@@ -21,7 +21,7 @@ if (!process.argv.includes('--run')) {
     await build({ entryPoints: [entry], outfile: path.join(dir, 'bundle.cjs'), bundle: true, platform: 'node', format: 'cjs', packages: 'external', alias: { electron: electronStub, '@shared': path.join(root, 'shared') }, plugins: [{ name: 'isolated-ai', setup(b) {
       b.onResolve({ filter: /\/aiClient$/ }, () => ({ path: 'ai', namespace: 'stub' }));
       b.onResolve({ filter: /\/nodusLocalAi$/ }, () => ({ path: 'local', namespace: 'stub' }));
-      b.onLoad({ filter: /.*/, namespace: 'stub' }, args => ({ contents: args.path === 'ai' ? stub : 'export async function downloadNodusLocalModel() {} export function listNodusLocalChatModels(){return []} export function listNodusLocalEmbeddingModels(){return []} export async function llamaServerPath(){return null} export async function freePort(){return 0}', loader: 'ts' }));
+      b.onLoad({ filter: /.*/, namespace: 'stub' }, args => ({ contents: args.path === 'ai' ? stub : 'export async function downloadNodusLocalModel() {} export function listNodusLocalChatModels(){return []} export function listNodusLocalEmbeddingModels(){return []} export async function llamaServerPath(){return null} export async function freePort(){return 0} export async function downloadVerifiedNodusAsset(){} export async function installNodusLocalRuntime(){}', loader: 'ts' }));
     }}] });
     execFileSync(require('electron'), [import.meta.filename, '--run', path.join(dir, 'bundle.cjs')], { cwd: root, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', NODUS_TEST_USERDATA: path.join(dir, 'profile'), NODE_PATH: path.join(root, 'node_modules') }, stdio: 'inherit' });
   } finally { rmSync(dir, { recursive: true, force: true }); }
@@ -43,8 +43,8 @@ settings.updateSettings({ synthesisModel: { provider: 'openai', model: 'test-gen
 const vault = registry.createVault('Manual');
 db.closeDb(); registry.setActiveVault(vault.id);
 settings.updateSettings({ academicMode: 'manual' });
-assert.equal(settings.getSettings().embeddingProvider, 'nodus');
-assert.equal(settings.getSettings().embeddingModel, 'multilingual-e5-small-int8');
+assert.equal(settings.getSettings().embeddingProvider, 'openai', 'manual mode does not silently replace an active embedding index');
+assert.equal(settings.getSettings().embeddingModel, 'text-embedding-3-small');
 assert.equal(settings.getSettings().synthesisModel.model, 'test-generative-model');
 settings.updateSettings({ academicMode: 'auto' });
 assert.equal(settings.getSettings().autoBridgeAfterQueue, autoSettings.autoBridgeAfterQueue, 'returning to Auto in the wizard restores Auto defaults');
@@ -159,9 +159,11 @@ assert.equal(indexer.manualIndexStatus().state, 'error');
 assert.equal(notes.getNote(c.note.id).content, 'Offline content');
 fail = false; await indexer.runManualIndex(vault.id);
 assert.equal(indexer.manualIndexStatus().state, 'ready');
-settings.updateSettings({ embeddingProvider: 'openai', embeddingModel: 'other-model' });
+const targetIndex = api.indexes.createIndex(db.getDb(), api.indexes.embeddingProfile({ ...settings.getSettings(), embeddingProvider: 'openai', embeddingModel: 'other-model' }));
+db.getDb().prepare('UPDATE embedding_index_state SET pending_id=?').run(targetIndex.id);
+api.indexes.commitEmbeddingIndex(db.getDb(), api.indexes.indexContext(db.getDb(), targetIndex));
 await indexer.runManualIndex(vault.id);
-assert.equal(db.getDb().prepare('SELECT COUNT(*) AS n FROM ideas WHERE embedding_model=?').get('other-model').n, 3);
+assert.equal(db.getDb().prepare('SELECT COUNT(*) AS n FROM embedding_read_ideas WHERE embedding_model=?').get('other-model').n, 3);
 let releaseSwitch; held = new Promise(resolve => { releaseSwitch = resolve; });
 workspace.updateWorkspaceNote(c.note.id, { title: 'Idea independiente', contentMarkdown: 'Offline content updated across vault switch' });
 const duringSwitch = indexer.runManualIndex(vault.id);

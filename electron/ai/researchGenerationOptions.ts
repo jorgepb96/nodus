@@ -17,3 +17,16 @@ export async function researchGenerationOptions(request: { model?: ModelRef | nu
       ? maxTokens
       : withinModelOutput(maxTokens + thinkingOutputAllowance(model, researchEffort, researchModelInfo), model.provider, model.model) };
 }
+
+/** Verification needs both a bounded visible proof and room for the model's
+ * minimum reasoning level. Explicit off/none stays off; output/context caps still
+ * apply. Share this envelope across Chat, reports and lessons. */
+export async function researchVerificationOptions(request: { model?: ModelRef | null; thinkingEffort?: ResearchEffort }, visibleTokens: number, signal?: AbortSignal) {
+  const options = await researchGenerationOptions(request, visibleTokens, false, signal);
+  const model = resolveModelRef(request.model), effort = request.thinkingEffort ?? 'standard';
+  if (!['none', 'off', 'standard'].includes(effort)) {
+    const reserve = model.provider === 'deepseek' || /^deepseek\//u.test(model.model) ? 16_384 : 8192;
+    options.maxTokens = withinModelOutput(Math.max(options.maxTokens, visibleTokens + reserve), model.provider, model.model);
+  }
+  return options;
+}

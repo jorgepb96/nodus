@@ -16,6 +16,7 @@ export default defineConfig({
   define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   resolve: { alias: [{ find: '@shared', replacement: path.resolve(__dirname, 'shared') },
     { find: /^.*\/AudioPanel$/, replacement: path.resolve(__dirname, 'src/mobileWeb/MobileAudio.tsx') },
+    { find: /^.*\/narration\/Listen$/, replacement: path.resolve(__dirname, 'src/mobileWeb/MobileAudio.tsx') },
     { find: /^.*\/StudyDictation$/, replacement: path.resolve(__dirname, 'src/mobileWeb/MobileAudio.tsx') },
     { find: '../i18n', replacement: path.resolve(__dirname, 'src/serverWeb/i18nShim.ts') },
     { find: '../../i18n', replacement: path.resolve(__dirname, 'src/serverWeb/i18nShim.ts') }] },

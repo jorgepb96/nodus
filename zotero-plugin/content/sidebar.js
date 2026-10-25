@@ -30,7 +30,7 @@ const I18N = {
   en: {
     "tab.chat": "Chat", "tab.providers": "Providers", "tab.settings": "Settings",
     "composer.send": "Send", "composer.placeholder": "Ask about this document…",
-    "chat.new": "New conversation", "chat.history": "Conversations",
+    "chat.new": "New conversation", "chat.history": "Item conversations",
     "settings.mode": "Mode", "mode.connected": "Linked with Nodus", "mode.standalone": "Standalone", "mode.linkTag": "Link mode",
     "mode.hint.connected": "Uses your running Nodus app: library context, ideas, page citations.",
     "mode.hint.standalone": "Works without Nodus, using your own provider API keys. Nodus-only features are off.",
@@ -55,7 +55,17 @@ const I18N = {
     "evidence.cleared": "Evidence index cleared.", "evidence.clearConfirm": "Delete all locally indexed evidence? It can be rebuilt from Zotero attachments.",
     "evidence.vision": "Vision", "evidence.visionTitle": "Analyze and attach the current rendered PDF page",
     "evidence.auto": "Auto: full text when small, retrieval when large", "evidence.retrieval": "Semantic retrieval", "evidence.full": "Complete text",
-    "evidence.localEmbedding": "Local semantic model: multilingual E5 small (INT8). Runs on this device; no embedding API key required.",
+    "evidence.localEmbedding": "The selected model downloads automatically in the background. Open documents are prepared automatically; each model keeps its own local index.",
+    "evidence.autoModel": "Downloading and preparing {model} in the background…",
+    "evidence.modelReady": "{model} is ready on this device.",
+    "evidence.autoDocument": "Preparing the open document in the background…",
+    "evidence.autoDocumentReady": "The open document is ready for semantic search.",
+    "evidence.autoFailed": "Background preparation could not finish: {error}. It will retry automatically.",
+    "evidence.waitModel": "Wait for the current operation to finish before changing models.",
+    "evidence.activeModel": "Active model: {model}",
+    "evidence.preparingModel": "Preparing {model}… Your current model remains active until preparation completes.",
+    "evidence.activatedModel": "{model} is now active.", "evidence.cancelModel": "Cancel preparation",
+    "evidence.chooseModel": "Local semantic model", "evidence.applyModel": "Prepare and activate",
     "evidence.modelDownload": "Preparing the local semantic model · {pct}%",
     "evidence.embeddingBg": "Embedding in background · {pct}%",
     "evidence.embedding": "Embedding {done}/{total} · {source}", "evidence.completeText": "Complete text · {passages} citable passages",
@@ -80,14 +90,15 @@ const I18N = {
     "providers.secureUnavailable": "Zotero's encrypted credential store is unavailable, so the secret was not saved.",
     "providers.sub": "Subscription — sign in through the Nodus app and use it in Link mode.",
     "providers.subCodex": "Uses your ChatGPT/Codex subscription credits. Sign in through the Nodus app and use it in Link mode.",
-    "history.search": "Search conversations…", "history.clearAll": "Delete all conversations", "history.empty": "No conversations yet.",
+    "history.search": "Search conversations…", "history.clearAll": "Delete this item's conversations", "history.empty": "No conversations for this item yet.",
     "history.deleteFailed": "The local conversation file could not be deleted. Check the Zotero profile permissions.",
+    "history.saveFailed": "The conversation could not be saved. Check the Zotero profile permissions.",
     "modal.cancel": "Cancel", "modal.delete": "Delete", "modal.close": "Close",
     "modal.save": "Save", "modal.highlight": "Highlight", "modal.enable": "Enable",
     "confirm.saveNote": "Save this conversation as a note in Zotero?",
     "confirm.highlight": "Analyze the whole document and highlight its most important passages? Highlights are added to the PDF and can be undone.",
     "confirm.agentOn": "Enable Agent mode? Nodus will be able to propose actions on your Zotero library (create notes, highlight, tag). Every action still requires your approval.",
-    "modal.delOne": "Delete this conversation? This cannot be undone.", "modal.delAll": "Delete ALL conversations? This cannot be undone.",
+    "modal.delOne": "Delete this conversation? This cannot be undone.", "modal.delAll": "Delete all conversations for this item? This cannot be undone.",
     "conn.on": "Connected", "conn.off": "Not connected",
     "conn.detailOn": "Connected to Nodus on port", "conn.detailOff": "Looking for Nodus… Start the app and enable Nodus → Settings → Nodus for Zotero; the sidebar connects on its own.",
     "conn.autoOn": "Connected to Nodus.", "conn.autoOff": "Lost the connection to Nodus. Retrying automatically.",
@@ -165,7 +176,7 @@ const I18N = {
   es: {
     "tab.chat": "Chat", "tab.providers": "Proveedores", "tab.settings": "Ajustes",
     "composer.send": "Enviar", "composer.placeholder": "Pregunta sobre este documento…",
-    "chat.new": "Nueva conversación", "chat.history": "Conversaciones",
+    "chat.new": "Nueva conversación", "chat.history": "Conversaciones del ítem",
     "settings.mode": "Modo", "mode.connected": "Vinculado con Nodus", "mode.standalone": "Autónomo", "mode.linkTag": "Modo Link",
     "mode.hint.connected": "Usa tu app de Nodus en marcha: contexto de biblioteca, ideas, citas de página.",
     "mode.hint.standalone": "Funciona sin Nodus, con tus propias API keys. Las funciones exclusivas de Nodus quedan desactivadas.",
@@ -190,7 +201,17 @@ const I18N = {
     "evidence.cleared": "Índice de evidencia vaciado.", "evidence.clearConfirm": "¿Eliminar toda la evidencia indexada localmente? Se puede reconstruir desde los adjuntos de Zotero.",
     "evidence.vision": "Visión", "evidence.visionTitle": "Analizar y adjuntar la página PDF renderizada actual",
     "evidence.auto": "Auto: texto completo si es pequeño; recuperación si es grande", "evidence.retrieval": "Búsqueda semántica", "evidence.full": "Texto completo",
-    "evidence.localEmbedding": "Modelo semántico local: multilingual E5 small (INT8). Se ejecuta en este dispositivo; no requiere API key de embeddings.",
+    "evidence.localEmbedding": "El modelo elegido se descarga automáticamente en segundo plano. Los documentos se preparan al abrirlos; cada modelo conserva su propio índice local.",
+    "evidence.autoModel": "Descargando y preparando {model} en segundo plano…",
+    "evidence.modelReady": "{model} está listo en este dispositivo.",
+    "evidence.autoDocument": "Preparando el documento abierto en segundo plano…",
+    "evidence.autoDocumentReady": "El documento abierto está listo para la búsqueda semántica.",
+    "evidence.autoFailed": "No se pudo completar la preparación en segundo plano: {error}. Se reintentará automáticamente.",
+    "evidence.waitModel": "Espera a que termine la operación actual para cambiar de modelo.",
+    "evidence.activeModel": "Modelo activo: {model}",
+    "evidence.preparingModel": "Preparando {model}… El modelo actual seguirá activo hasta completar la preparación.",
+    "evidence.activatedModel": "{model} ya está activo.", "evidence.cancelModel": "Cancelar preparación",
+    "evidence.chooseModel": "Modelo semántico local", "evidence.applyModel": "Preparar y activar",
     "evidence.modelDownload": "Preparando el modelo semántico local · {pct}%",
     "evidence.embeddingBg": "Calculando embeddings en segundo plano · {pct}%",
     "evidence.embedding": "Embeddings {done}/{total} · {source}", "evidence.completeText": "Texto completo · {passages} pasajes citables",
@@ -215,14 +236,15 @@ const I18N = {
     "providers.secureUnavailable": "El almacén cifrado de credenciales de Zotero no está disponible; el secreto no se guardó.",
     "providers.sub": "Suscripción — inicia sesión en la app de Nodus y úsala en modo Link.",
     "providers.subCodex": "Usa los créditos de tu suscripción ChatGPT/Codex. Inicia sesión desde la app de Nodus y úsala en modo Link.",
-    "history.search": "Buscar conversaciones…", "history.clearAll": "Eliminar todas las conversaciones", "history.empty": "Aún no hay conversaciones.",
+    "history.search": "Buscar conversaciones…", "history.clearAll": "Eliminar las conversaciones de este ítem", "history.empty": "Aún no hay conversaciones de este ítem.",
     "history.deleteFailed": "No se pudo eliminar el archivo local de conversaciones. Revisa los permisos del perfil de Zotero.",
+    "history.saveFailed": "No se pudo guardar la conversación. Revisa los permisos del perfil de Zotero.",
     "modal.cancel": "Cancelar", "modal.delete": "Eliminar", "modal.close": "Cerrar",
     "modal.save": "Guardar", "modal.highlight": "Subrayar", "modal.enable": "Activar",
     "confirm.saveNote": "¿Guardar esta conversación como nota en Zotero?",
     "confirm.highlight": "¿Analizar todo el documento y subrayar sus pasajes más importantes? Los subrayados se añaden al PDF y se pueden deshacer.",
     "confirm.agentOn": "¿Activar el modo Agente? Nodus podrá proponer acciones sobre tu biblioteca de Zotero (crear notas, subrayar, etiquetar). Cada acción seguirá requiriendo tu aprobación.",
-    "modal.delOne": "¿Eliminar esta conversación? No se puede deshacer.", "modal.delAll": "¿Eliminar TODAS las conversaciones? No se puede deshacer.",
+    "modal.delOne": "¿Eliminar esta conversación? No se puede deshacer.", "modal.delAll": "¿Eliminar todas las conversaciones de este ítem? No se puede deshacer.",
     "conn.on": "Conectado", "conn.off": "Sin conexión",
     "conn.detailOn": "Conectado a Nodus en el puerto", "conn.detailOff": "Buscando Nodus… Abre la app y actívalo en Nodus → Ajustes → Nodus para Zotero; la barra se conecta sola.",
     "conn.autoOn": "Conectado con Nodus.", "conn.autoOff": "Se perdió la conexión con Nodus. Reintentando automáticamente.",
@@ -305,7 +327,9 @@ const state = {
   connAttempts: 0, connMisses: 0, connOkAt: 0,
   modelsConnected: [], model: null,
   item: null, attachmentKey: null, selection: "", ideaLabels: {},
-  conversations: [], conv: null, busy: false, lastItemKey: null, abort: null,
+  conversations: [], conv: null, busy: false, lastItemKey: null, abort: null, embeddingSwitch: null,
+  itemConversations: new Map(), conversationItemKey: null,
+  lastReaderContext: null, libraryContext: null,
   agentEnabled: false, selectionDraft: null,
   items: [], maxTokens: 8192, reasoning: "default", notifierID: null, pollTimer: null,
   hlColors: { high: "#ff6666", medium: "#ffd400" }, lastHighlightKeys: [],
@@ -480,7 +504,7 @@ function updateSendEnabled() {
   $("#nd-send").hidden = state.busy;
   $("#nd-stop").hidden = !state.busy;
 }
-function stopStreaming() { if (state.abort) { try { state.abort.abort(); } catch (e) {} } }
+function stopStreaming() { const controller = state.embeddingSwitch || state.abort; if (controller) { try { controller.abort(); } catch (e) {} } }
 function closeSidebar() {
   try {
     const p = window.parent; if (!p || !p.document) return;
@@ -545,10 +569,28 @@ function activeReader() {
 }
 function getCurrentItem() {
   const reader = activeReader();
-  if (reader && reader.itemID) { try { const att = Zotero.Items.get(reader.itemID); const parent = att && att.parentItem ? att.parentItem : att; return { item: parent, attachment: att, reader }; } catch (e) {} }
+  if (reader && reader.itemID) {
+    try {
+      const att = Zotero.Items.get(reader.itemID); const parent = att && att.parentItem ? att.parentItem : att;
+      if (parent) {
+        state.lastReaderContext = { item: parent, attachment: att, reader: null };
+        state.libraryContext = null;
+        return { item: parent, attachment: att, reader };
+      }
+    } catch (e) {}
+  }
   try {
     const w = Zotero.getMainWindow(); const zp = (w && w.ZoteroPane) || (Zotero.getActiveZoteroPane && Zotero.getActiveZoteroPane());
     const items = zp && zp.getSelectedItems ? zp.getSelectedItems() : [];
+    const selectionKey = (items || []).map((item) => Number(item.libraryID) + ":" + item.key).sort().join(",");
+    // The library tab keeps the last reader's chat and sources. Selecting
+    // another library item explicitly then moves to that item's conversation.
+    if (state.lastReaderContext) {
+      state.libraryContext = { ...state.lastReaderContext, selectionKey };
+      state.lastReaderContext = null;
+    }
+    if (state.libraryContext && state.libraryContext.selectionKey === selectionKey) return state.libraryContext;
+    state.libraryContext = null;
     if (items && items.length) { let it = items[0]; let att = null; if (it.isAttachment && it.isAttachment()) { att = it; if (it.parentItem) it = it.parentItem; } return { item: it, attachment: att, reader: null }; }
   } catch (e) {}
   return { item: null, attachment: null, reader: null };
@@ -624,7 +666,7 @@ function getSelectedItemInfos() {
     return infos;
   } catch (e) { return []; }
 }
-async function resetSourceContext(announce) {
+async function resetSourceContext(announce, keepConversation) {
   state.sourceGeneration += 1;
   const foreground = state.abort;
   if (foreground) { try { foreground.abort(); } catch (e) {} }
@@ -633,18 +675,27 @@ async function resetSourceContext(announce) {
   state.ideaLabels = {}; state.citationAllow = emptyCitationAllow();
   state.retrieval = null; state.visuals = []; state.indexes = [];
   showSelection();
-  if (state.conv && state.conv.messages && state.conv.messages.length) {
+  if (!keepConversation) {
     await persistConv();
     startNewConversation();
   }
   if (announce) showToast(t("source.changed"));
   updateSendEnabled();
 }
+let itemRefreshPromise = null;
 async function refreshItem(force) {
+  if (itemRefreshPromise) {
+    await itemRefreshPromise;
+    return refreshItem(force);
+  }
+  itemRefreshPromise = refreshCurrentItem(force);
+  try { await itemRefreshPromise; } finally { itemRefreshPromise = null; scheduleAutomaticPreparation(); }
+}
+async function refreshCurrentItem(force) {
   const cur = getCurrentItem();
   const key = cur.item ? cur.item.key : null;
   // Track multi-selection independently of the single focused item.
-  state.items = cur.reader ? [] : getSelectedItemInfos();
+  state.items = cur.reader || state.libraryContext ? [] : getSelectedItemInfos();
   let multiKey = state.sourceScope + ":";
   if (state.sourceScope === "library") {
     const records = NS.listEvidenceRecords ? await NS.listEvidenceRecords() : [];
@@ -666,10 +717,14 @@ async function refreshItem(force) {
     if (state.sourceScope === "current" && cur.attachment) multiKey += "#active=" + Number(cur.attachment.libraryID) + ":" + cur.attachment.key;
   }
   if (!multiKey.slice(state.sourceScope.length + 1)) multiKey += cur.item ? Number(cur.item.libraryID) + ":" + key : "none";
-  if (!force && multiKey === state.lastItemKey) return;
+  const owner = cur.item ? { libraryID: Number(cur.item.libraryID), key: String(cur.item.key) } : null;
+  const ownerKey = conversationItemKey(owner);
+  const conversationChanged = ownerKey !== state.conversationItemKey;
+  if (!force && multiKey === state.lastItemKey && !conversationChanged) return;
   const sourceChanged = state.lastItemKey != null && multiKey !== state.lastItemKey;
   state.lastItemKey = multiKey;
-  if (sourceChanged) await resetSourceContext(false);
+  if (sourceChanged || conversationChanged) await resetSourceContext(false, true);
+  if (conversationChanged) await switchItemConversation(owner);
   const box = $("#nd-item");
   if (state.items.length > 1) {
     state.item = null; state.attachmentKey = null;
@@ -862,7 +917,7 @@ async function ensureEmbeddings(indexes, signal, opts) {
     if ((signal && signal.aborted) || (opts.isCurrent && !opts.isCurrent())) throw new DOMException("Aborted", "AbortError");
   };
   if (!NL) throw new Error("local-embeddings-unavailable");
-  const model = NL.MODEL;
+  const model = opts.model || NL.MODEL;
   let embedded = 0;
   const stopProgress = NL.onProgress((progress) => {
     if (!progress || progress.status !== "progress") return;
@@ -880,13 +935,15 @@ async function ensureEmbeddings(indexes, signal, opts) {
     for (let idxPos = 0; idxPos < indexes.length; idxPos++) {
       const index = indexes[idxPos];
       const missing = missingByIndex[idxPos];
-      for (let i = 0; i < missing.length; i += 24) {
+      const batchSize = opts.background ? 2 : 24;
+      for (let i = 0; i < missing.length; i += batchSize) {
         assertCurrent();
-        const batch = missing.slice(i, i + 24);
+        const batch = missing.slice(i, i + batchSize);
         onStatus(tf("evidence.embedding", { done: Math.min(i + batch.length, missing.length), total: missing.length, source: index.title || index.attachmentKey }));
         const vectors = await NL.embedPassages(batch.map((chunk) =>
           [index.title, chunk.section, chunk.text].filter(Boolean).join("\n")
-        ), { signal });
+        ), { signal, model });
+        assertCurrent();
         batch.forEach((chunk, j) => {
           chunk.embedding = vectors[j];
           chunk.embeddingModel = model.fingerprint;
@@ -896,12 +953,12 @@ async function ensureEmbeddings(indexes, signal, opts) {
         onProgress(doneSoFar, totalMissing);
         // Checkpoint long books so closing Zotero or cancelling does not throw
         // away several minutes of completed local work.
-        if (i > 0 && i % 240 === 0) { assertCurrent(); await NS.saveEvidenceIndex(index); }
+        if (!opts.staging && i > 0 && i % 240 === 0) { assertCurrent(); await NS.saveEvidenceIndex(index); }
       }
       assertCurrent();
       index.embeddingModel = model.fingerprint;
       index.updatedAt = Date.now();
-      await NS.saveEvidenceIndex(index);
+      if (!opts.staging && !(await NS.saveEvidenceIndex(index))) throw new Error("evidence-save-failed");
     }
   } finally {
     stopProgress();
@@ -947,6 +1004,7 @@ function embedIndexesBackground(indexes) {
   state.embedController = controller;
   showEmbedProgress(0);
   return ensureEmbeddingsSerialized(indexes, controller.signal, {
+    background: true,
     isCurrent: () => generation === state.embedGeneration && state.embedController === controller,
     onStatus: () => {},
     onProgress: (done, total) => showEmbedProgress(total ? Math.round((done / total) * 100) : 100),
@@ -962,6 +1020,108 @@ function embedIndexesBackground(indexes) {
     if (generation === state.embedGeneration) showEmbedProgress(null);
   });
 }
+// Anticipate the selected encoder and only the actual open reader. This owns
+// no chat lock, performs no OCR, and never scans a collection or the library.
+const automaticPreparation = { timer: null, job: null, controller: null, phase: null,
+  readyModel: "", readyDocument: "", retryAt: 0, failures: 0, closed: false };
+function automaticReaderTarget() {
+  if (!NL || !NE || !activeReader()) return null;
+  const current = getCurrentItem();
+  if (!current.reader || !isSupportedAttachment(current.attachment)) return null;
+  const attachment = current.attachment;
+  return { attachment, key: NL.MODEL.fingerprint + ":" + Number(attachment.libraryID) + ":" + attachment.key };
+}
+function automaticPreparationStatus(text, tone) {
+  const select = $("#nd-embedding-model");
+  if (!state.embeddingSwitch && select && select.value === NL.MODEL.key) embeddingSettingsStatus(text, tone);
+}
+function automaticPreparationEnabled() {
+  return !!(NL && typeof NL.warmup === "function" && NS.getContext().useFulltext && !automaticPreparation.closed);
+}
+function scheduleAutomaticPreparation(delay = 600) {
+  if (!automaticPreparationEnabled()) return;
+  const target = automaticReaderTarget();
+  if (automaticPreparation.phase === "document" && automaticPreparation.controller
+    && (!target || target.key !== automaticPreparation.runningDocument)) automaticPreparation.controller.abort();
+  if (automaticPreparation.timer) return;
+  automaticPreparation.timer = setTimeout(() => {
+    automaticPreparation.timer = null;
+    runAutomaticPreparation().catch(error => { try { Zotero.logError(error); } catch (e) {} });
+  }, delay);
+}
+async function pauseAutomaticPreparation(stopWarmup) {
+  if (automaticPreparation.timer) clearTimeout(automaticPreparation.timer);
+  automaticPreparation.timer = null;
+  if (automaticPreparation.controller && (stopWarmup || automaticPreparation.phase === "document")) {
+    automaticPreparation.controller.abort();
+    if (automaticPreparation.job) { try { await automaticPreparation.job; } catch (e) {} }
+  }
+}
+async function runAutomaticPreparation() {
+  if (!automaticPreparationEnabled() || automaticPreparation.job || state.busy || state.embeddingSwitch
+    || Date.now() < automaticPreparation.retryAt) return;
+  const model = NL.MODEL;
+  const target = automaticReaderTarget();
+  if (automaticPreparation.readyModel === model.fingerprint && (!target || automaticPreparation.readyDocument === target.key)) return;
+  const controller = new AbortController();
+  automaticPreparation.controller = controller;
+  const assertCurrent = () => {
+    if (controller.signal.aborted || !automaticPreparationEnabled() || model.fingerprint !== NL.MODEL.fingerprint
+      || state.embeddingSwitch || state.busy) throw new DOMException("Aborted", "AbortError");
+  };
+  const onStatus = text => automaticPreparationStatus(text, "busy");
+  const stopProgress = NL.onProgress(progress => {
+    if (progress && progress.status === "progress") onStatus(tf("evidence.modelDownload", { pct: Math.round(Number(progress.progress) || 0) }));
+  });
+  const job = (async () => {
+    if (automaticPreparation.readyModel !== model.fingerprint) {
+      automaticPreparation.phase = "warmup";
+      onStatus(tf("evidence.autoModel", { model: model.label }));
+      await NL.warmup({ signal: controller.signal });
+      if (controller.signal.aborted || model.fingerprint !== NL.MODEL.fingerprint) throw new DOMException("Aborted", "AbortError");
+      automaticPreparation.readyModel = model.fingerprint;
+      automaticPreparationStatus(tf("evidence.modelReady", { model: model.label }), "ok");
+    }
+    assertCurrent();
+    const current = automaticReaderTarget();
+    if (!current || automaticPreparation.readyDocument === current.key) return;
+    automaticPreparation.phase = "document"; automaticPreparation.runningDocument = current.key;
+    const documentCurrent = () => { const next = automaticReaderTarget(); return !!next && next.key === current.key; };
+    const checkDocument = () => { assertCurrent(); if (!documentCurrent()) throw new DOMException("Aborted", "AbortError"); };
+    onStatus(t("evidence.autoDocument"));
+    const guardedStore = {
+      loadEvidenceIndex: (...args) => NS.loadEvidenceIndex(...args),
+      saveEvidenceIndex: async index => { checkDocument(); const saved = await NS.saveEvidenceIndex(index); if (!saved) throw new Error("evidence-save-failed"); return saved; },
+    };
+    const result = await NE.ensureIndex(current.attachment, guardedStore, {});
+    checkDocument(); NL.useIndex(result.index);
+    showEmbedProgress(0);
+    await ensureEmbeddingsSerialized([result.index], controller.signal, { background: true,
+      isCurrent: () => !state.busy && !state.embeddingSwitch && documentCurrent() && NL.MODEL.fingerprint === model.fingerprint,
+      onStatus,
+      onProgress: (done, total) => showEmbedProgress(total ? done / total * 100 : 100),
+    });
+    checkDocument(); automaticPreparation.readyDocument = current.key;
+    automaticPreparationStatus(t("evidence.autoDocumentReady"), "ok");
+  })();
+  automaticPreparation.job = job;
+  try {
+    await job; automaticPreparation.failures = 0; automaticPreparation.retryAt = 0;
+  } catch (error) {
+    if (!(error && error.name === "AbortError")) {
+      automaticPreparation.failures++;
+      automaticPreparation.retryAt = Date.now() + Math.min(300000, 30000 * 2 ** automaticPreparation.failures);
+      automaticPreparationStatus(tf("evidence.autoFailed", { error: friendlyErr(error.message || error) }), "warn");
+      try { Zotero.logError(error); } catch (e) {}
+    }
+  } finally {
+    stopProgress(); showEmbedProgress(null);
+    automaticPreparation.job = null; automaticPreparation.controller = null; automaticPreparation.phase = null;
+    const next = automaticReaderTarget();
+    if (automaticPreparationEnabled() && !state.busy && !state.embeddingSwitch && next && next.key !== automaticPreparation.readyDocument
+      && Date.now() >= automaticPreparation.retryAt) scheduleAutomaticPreparation();
+  }
+}
 // Query-time BOUNDED embedding. Embedding every chunk of a several-hundred-page
 // book up front is what makes the first answer hang for minutes. Instead embed
 // only the BM25 candidate chunks (+ any positional page chunks) for THIS
@@ -971,6 +1131,7 @@ function embedIndexesBackground(indexes) {
 async function embedCandidatesInline(indexes, query, extraHits, signal) {
   if (!NL || !NE || !indexes || !indexes.length) return null;
   const model = NL.MODEL;
+  indexes.forEach(index => NL.useIndex(index));
   const wanted = new Set(NE.candidateChunkIdsForQuery(indexes, query, { limit: 96 }));
   for (const h of extraHits || []) if (h && h.id) wanted.add(h.id);
   const missing = [];
@@ -1238,6 +1399,7 @@ async function buildSelectedIndexes(force, signal) {
         validated.push(result.index);
       } catch (e) { try { Zotero.logError(e); } catch (x) {} }
     }
+    validated.forEach(index => NL && NL.useIndex(index));
     state.indexes = validated;
     setIndexStatus(validated.length
       ? evidenceReadyText(validated.length, validated.reduce((n, x) => n + (x.chunks || []).length, 0))
@@ -1267,6 +1429,7 @@ async function buildSelectedIndexes(force, signal) {
     });
     indexes.push(result.index);
   }
+  indexes.forEach(index => NL && NL.useIndex(index));
   state.indexes = indexes;
   setIndexStatus(evidenceReadyText(indexes.length, indexes.reduce((n, x) => n + (x.chunks || []).length, 0)), "ok");
   return indexes;
@@ -1834,19 +1997,76 @@ async function selectInZotero(key) {
 }
 
 // ─────────────────────────────────────────── conversations
-function startNewConversation() {
+function conversationItemKey(owner) {
+  return owner ? Number(owner.libraryID) + ":" + owner.key : "";
+}
+function conversationOwner(conversation) {
+  return NS.conversationItem ? NS.conversationItem(conversation) : (conversation && conversation.zoteroItem) || null;
+}
+function itemHistory() {
+  const key = conversationItemKey(conversationOwner(state.conv));
+  return state.conversations.filter((conversation) => conversationItemKey(conversationOwner(conversation)) === key);
+}
+function conversationContextMismatch(conversation) {
+  return conversation.sourceScope !== state.sourceScope
+    || (state.sourceScope !== "current" && !!state.sourceIdentity && conversation.sourceIdentity !== state.sourceIdentity);
+}
+async function switchItemConversation(owner) {
+  const previous = state.conv;
+  if (previous) state.itemConversations.set(conversationItemKey(conversationOwner(previous)), previous);
+  state.conversationItemKey = conversationItemKey(owner);
+  const saved = state.itemConversations.get(state.conversationItemKey)
+    || state.conversations.filter((conversation) => conversationItemKey(conversationOwner(conversation)) === state.conversationItemKey)
+      .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  if (saved) {
+    state.conv = saved;
+    state.loadedContextMismatch = conversationContextMismatch(saved);
+    rerenderConversation();
+  } else startNewConversation(owner);
+  const history = $("#nd-history");
+  if (history && !history.hidden) renderHistory($("#nd-history-search").value);
+  await persistConv(previous);
+}
+function startNewConversation(owner) {
+  if (owner === undefined) {
+    owner = conversationOwner(state.conv);
+    if (!owner) {
+      const current = getCurrentItem().item;
+      owner = current ? { libraryID: Number(current.libraryID), key: String(current.key) } : null;
+    }
+  }
+  if (state.abort) { try { state.abort.abort(); } catch (e) {} }
   state.loadedContextMismatch = false;
-  state.conv = { id: NS.newId(), title: "", mode: state.mode, model: state.model, sourceScope: state.sourceScope, sourceIdentity: state.sourceIdentity, createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
+  state.conv = { id: NS.newId(), title: "", mode: state.mode, model: state.model, sourceScope: state.sourceScope, sourceIdentity: state.sourceIdentity, zoteroItem: owner, createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
+  state.itemConversations.set(conversationItemKey(owner), state.conv);
   messagesEl().innerHTML = "";
   const h = el("div", "nd-hint"); h.textContent = t("chat.hint"); messagesEl().appendChild(h);
 }
-async function persistConv() {
-  if (!state.historyEnabled || !state.conv || !state.conv.messages.length) return;
-  if (!state.conv.title) { const first = state.conv.messages.find((m) => m.role === "user"); state.conv.title = first ? first.content.slice(0, 60) : "Conversation"; }
-  state.conv.updatedAt = Date.now();
-  const i = state.conversations.findIndex((c) => c.id === state.conv.id);
-  if (i >= 0) state.conversations[i] = state.conv; else state.conversations.unshift(state.conv);
-  await NS.saveConversations(state.conversations);
+async function persistConv(conversation = state.conv) {
+  if (!conversation || !conversation.messages.length) return;
+  if (!conversation.title) { const first = conversation.messages.find((m) => m.role === "user"); conversation.title = first ? first.content.slice(0, 60) : "Conversation"; }
+  conversation.updatedAt = Date.now();
+  const i = state.conversations.findIndex((c) => c.id === conversation.id);
+  if (i >= 0) state.conversations[i] = conversation; else state.conversations.unshift(conversation);
+  if (state.historyEnabled && await NS.saveConversations(state.conversations) === false) showToast(t("history.saveFailed"));
+}
+async function deleteConversation(id) {
+  state.conversations = state.conversations.filter((conversation) => conversation.id !== id);
+  for (const [key, conversation] of state.itemConversations) {
+    if (conversation.id === id) state.itemConversations.delete(key);
+  }
+  if (state.conv && state.conv.id === id) startNewConversation();
+  if (state.historyEnabled) await NS.saveConversations(state.conversations);
+}
+async function clearItemHistory() {
+  const key = conversationItemKey(conversationOwner(state.conv));
+  state.conversations = state.conversations.filter((conversation) => conversationItemKey(conversationOwner(conversation)) !== key);
+  state.itemConversations.delete(key);
+  startNewConversation();
+  if (state.historyEnabled) {
+    if (state.conversations.length) await NS.saveConversations(state.conversations);
+    else if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed"));
+  }
 }
 // Save the current conversation as a Zotero note (child of the open item, or a
 // standalone note when nothing is open). Reuses the agent's create_note path.
@@ -1860,10 +2080,12 @@ async function saveConversationAsNote() {
   showToast(res && res.ok ? t("note.saved") : t("agent.fail"));
 }
 function loadConversation(id) {
-  const c = state.conversations.find((x) => x.id === id);
+  const c = itemHistory().find((x) => x.id === id);
   if (!c) return;
+  if (state.abort) { try { state.abort.abort(); } catch (e) {} }
   state.conv = c;
-  state.loadedContextMismatch = Boolean(state.sourceIdentity && c.sourceIdentity !== state.sourceIdentity);
+  state.itemConversations.set(conversationItemKey(conversationOwner(c)), c);
+  state.loadedContextMismatch = conversationContextMismatch(c);
   rerenderConversation();
   closeHistory();
   if (state.loadedContextMismatch) showToast(t("source.historyMismatch"));
@@ -1944,11 +2166,20 @@ async function send(text) {
   // source identity or conversation.
   await refreshItem(false);
   await syncLibraryIdentityBeforeSend();
+  if (state.busy) return;
   if (state.loadedContextMismatch) startNewConversation();
   if (!state.conv) startNewConversation();
   const uidx = state.conv.messages.push({ role: "user", content: text }) - 1;
   addMessage("user", text, uidx);
-  await generateAssistant();
+  const conversation = state.conv;
+  state.busy = true; updateSendEnabled();
+  try {
+    await persistConv(conversation);
+    if (state.conv !== conversation) return;
+    await generateAssistant();
+  } finally {
+    if (!state.abort) { state.busy = false; updateSendEnabled(); }
+  }
 }
 
 // Streams an assistant reply for the current conversation tail (which must end
@@ -1970,6 +2201,8 @@ async function generateAssistant() {
   bodyEl.innerHTML = TYPING_HTML; // animated dots until the first token streams in
   let acc = "";
   try {
+    await pauseAutomaticPreparation(false);
+    await cancelBackgroundEmbeddings(true);
     let docInfo = { text: "", hits: [], method: "off", truncated: false };
     if (NS.getContext().useFulltext) {
       const lastUser = [...conversation.messages].reverse().find((m) => m.role === "user");
@@ -2057,7 +2290,7 @@ async function generateAssistant() {
   } finally {
     cancelStreamingRich(bodyEl);
     setStreamingAccessibility(bodyEl, false);
-    if (state.abort === controller) { state.busy = false; state.abort = null; updateSendEnabled(); }
+    if (state.abort === controller) { state.busy = false; state.abort = null; updateSendEnabled(); scheduleAutomaticPreparation(); }
   }
 }
 
@@ -2257,7 +2490,8 @@ function trapDialogKey(event, dialog, close) {
     event.preventDefault(); (event.shiftKey ? last : first).focus();
   }
 }
-function openHistory() {
+async function openHistory() {
+  await refreshItem(false);
   historyPreviousFocus = document.activeElement; renderHistory("");
   const dialog = $("#nd-history"); dialog.hidden = false; dialog.onkeydown = (event) => trapDialogKey(event, dialog, closeHistory);
   $("#nd-history-search").value = ""; $("#nd-history-search").focus();
@@ -2266,7 +2500,7 @@ function closeHistory() { const dialog = $("#nd-history"); dialog.hidden = true;
 function renderHistory(filter) {
   const list = $("#nd-history-list"); list.innerHTML = "";
   const f = (filter || "").toLowerCase();
-  const items = state.conversations
+  const items = itemHistory()
     .filter((c) => !f || (c.title || "").toLowerCase().includes(f) || c.messages.some((m) => m.content.toLowerCase().includes(f)))
     .sort((a, b) => b.updatedAt - a.updatedAt);
   if (!items.length) { list.appendChild(el("div", "nd-muted", t("history.empty"))); return; }
@@ -2277,7 +2511,7 @@ function renderHistory(filter) {
     main.appendChild(el("div", "nd-conv-meta", new Date(c.updatedAt).toLocaleString() + " · " + (c.mode === "standalone" ? t("mode.standalone") : t("mode.linkTag"))));
     main.addEventListener("click", () => loadConversation(c.id));
     const del = el("button", "nd-conv-del"); del.type = "button"; del.setAttribute("aria-label", t("modal.delete")); del.innerHTML = ico("trash", 15);
-    del.addEventListener("click", async (e) => { e.stopPropagation(); if (await showConfirm(t("modal.delOne"))) { state.conversations = state.conversations.filter((x) => x.id !== c.id); await NS.saveConversations(state.conversations); if (state.conv && state.conv.id === c.id) startNewConversation(); renderHistory($("#nd-history-search").value); } });
+    del.addEventListener("click", async (e) => { e.stopPropagation(); if (await showConfirm(t("modal.delOne"))) { await deleteConversation(c.id); renderHistory($("#nd-history-search").value); } });
     row.appendChild(main); row.appendChild(del); list.appendChild(row);
   }
 }
@@ -2430,6 +2664,68 @@ function applyIcons() {
   set("#nd-send", "send", 15); set("#nd-stop", "square", 14); set("#nd-close", "x");
   set("#nd-history-close", "x"); set(".nd-think-ico", "idea", 15);
 }
+// Model preparation belongs to the local library, not the currently selected
+// reading item. Reader/selection refreshes must not cancel it as a chat request.
+function renderEmbeddingActiveModel() {
+  const active = $("#nd-embedding-active");
+  if (active && NL) active.textContent = tf("evidence.activeModel", { model: NL.MODEL.label });
+}
+function embeddingSettingsStatus(text, tone) {
+  const box = $("#nd-embedding-status");
+  if (box) { box.textContent = text; box.className = tone ? "nd-index-status nd-index-status--" + tone : "nd-muted"; }
+}
+async function changeEmbeddingModel() {
+  if (state.embeddingSwitch) return;
+  if (state.busy) { embeddingSettingsStatus(t("evidence.waitModel"), "warn"); return; }
+  const key = $("#nd-embedding-model").value;
+  const model = NL.MODELS.find(m => m.key === key);
+  if (!model) return;
+  state.busy = true; updateSendEnabled();
+  const controller = new AbortController(); state.embeddingSwitch = controller;
+  const apply = $("#nd-embedding-apply"), select = $("#nd-embedding-model"), cancel = $("#nd-embedding-cancel");
+  apply.disabled = true; select.disabled = true; cancel.hidden = false;
+  const onStatus = text => embeddingSettingsStatus(text, "busy");
+  onStatus(tf("evidence.preparingModel", { model: model.label }));
+  const stopProgress = NL.onProgress(progress => {
+    if (progress && progress.status === "progress") onStatus(tf("evidence.modelDownload", { pct: Math.round(Number(progress.progress) || 0) }));
+  });
+  try {
+    await pauseAutomaticPreparation(true);
+    await cancelBackgroundEmbeddings(true);
+    const records = await NS.listEvidenceRecords();
+    let prepared = 0;
+    for (const record of records) {
+      if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+      const original = await NS.loadEvidenceIndex(record.libraryID, record.attachmentKey);
+      if (!original) throw new Error("evidence-cache-unreadable");
+      const staged = JSON.parse(JSON.stringify(original));
+      globalThis.NodusEmbeddingModels.useIndex(staged, model);
+      await ensureEmbeddings([staged], controller.signal, { model, staging: true, onStatus });
+      if (!(await NS.saveEvidenceIndex(staged))) throw new Error("evidence-save-failed");
+      prepared++;
+    }
+    // Validate even if all cached documents already have compatible vectors.
+    if (!prepared) await NL.embedQueries(["model readiness"], { model, signal: controller.signal });
+    if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+    NL.select(key); NS.setEmbeddingModel(key);
+    automaticPreparation.retryAt = 0; automaticPreparation.failures = 0;
+    state.indexes = []; state.evidence = new Map();
+    renderEmbeddingActiveModel();
+    embeddingSettingsStatus(tf("evidence.activatedModel", { model: model.label }), "ok");
+    await refreshScopeStatus();
+  } catch (error) {
+    const aborted = error && error.name === "AbortError";
+    embeddingSettingsStatus(aborted ? t("evidence.stopped") : tf("evidence.failed", { error: friendlyErr(error.message || error) }), aborted ? "" : "warn");
+    if (!aborted) { try { Zotero.logError(error); } catch (e) {} }
+    // Keep the requested selection visible for retry; show the active model
+    // separately instead of silently snapping the dropdown back after failure.
+  } finally {
+    stopProgress(); NL.reset(); state.embeddingSwitch = null; state.busy = false; updateSendEnabled();
+    apply.disabled = false; select.disabled = false; cancel.hidden = true;
+    renderEmbeddingActiveModel();
+    scheduleAutomaticPreparation();
+  }
+}
 function applyI18n() {
   $$("[data-i18n]").forEach((n) => (n.textContent = t(n.getAttribute("data-i18n"))));
   $$("[data-i18n-ph]").forEach((n) => n.setAttribute("placeholder", t(n.getAttribute("data-i18n-ph"))));
@@ -2437,6 +2733,7 @@ function applyI18n() {
   $$("button[title]").forEach((n) => { if (!n.getAttribute("aria-label")) n.setAttribute("aria-label", n.getAttribute("title")); });
   renderPromptMenu();
   renderReasoningSelect();
+  renderEmbeddingActiveModel();
 }
 // Build the reasoning-effort dropdown (in the Thinking modal) and mirror the
 // current level onto the chat-bar button.
@@ -2598,7 +2895,7 @@ function wire() {
   $("#nd-maxtokens").addEventListener("change", (e) => { const n = parseInt(e.target.value, 10); state.maxTokens = Number.isFinite(n) && n > 0 ? n : 8192; NS.setMaxTokens(state.maxTokens); e.target.value = state.maxTokens; });
   $("#nd-reasoning-btn").addEventListener("click", (e) => { e.stopPropagation(); toggleThinkMenu(); });
   document.addEventListener("click", (e) => { const dd = $("#nd-think-dd"); if (dd && !dd.contains(e.target)) closeThinkMenu(); });
-  $("#nd-new").addEventListener("click", () => startNewConversation());
+  $("#nd-new").addEventListener("click", async () => { await refreshItem(false); startNewConversation(); });
   $("#nd-save-note").addEventListener("click", async () => {
     if (!(await showConfirm(t("confirm.saveNote"), t("modal.save"), { danger: false }))) return;
     saveConversationAsNote().catch((e) => { try { Zotero.logError(e); } catch (x) {} });
@@ -2612,7 +2909,7 @@ function wire() {
   $("#nd-history-btn").addEventListener("click", openHistory);
   $("#nd-history-close").addEventListener("click", closeHistory);
   $("#nd-history-search").addEventListener("input", (e) => renderHistory(e.target.value));
-  $("#nd-history-clear").addEventListener("click", async () => { if (await showConfirm(t("modal.delAll"))) { state.conversations = []; if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed")); startNewConversation(); renderHistory(""); } });
+  $("#nd-history-clear").addEventListener("click", async () => { if (await showConfirm(t("modal.delAll"))) { await clearItemHistory(); renderHistory(""); } });
   $("#nd-ctx-fulltext").addEventListener("change", saveContext);
   $("#nd-ctx-strategy").addEventListener("change", saveContext);
   $("#nd-ctx-ocr").addEventListener("change", saveContext);
@@ -2633,6 +2930,7 @@ function wire() {
     if (state.busy) return;
     state.busy = true; state.abort = new AbortController(); updateSendEnabled();
     try {
+      await pauseAutomaticPreparation(false);
       await refreshItem(true);
       const indexes = await buildSelectedIndexes(true, state.abort.signal);
       if (!indexes.length) return;
@@ -2653,14 +2951,16 @@ function wire() {
       const aborted = e && (e.name === "AbortError" || String(e.message || e).toLowerCase().includes("abort"));
       setIndexStatus(aborted ? t("evidence.stopped") : tf("evidence.failed", { error: friendlyErr(e.message || e) }), aborted ? "" : "warn");
     }
-    finally { state.busy = false; state.abort = null; updateSendEnabled(); }
+    finally { state.busy = false; state.abort = null; updateSendEnabled(); scheduleAutomaticPreparation(); }
   });
   $("#nd-index-prune").addEventListener("click", async () => {
+    if (state.busy) return;
     await cancelBackgroundEmbeddings(true);
     const removed = await NS.pruneEvidenceIndexes();
     showToast(tf("evidence.pruned", { count: removed })); await refreshIndexStats(); await refreshScopeStatus();
   });
   $("#nd-index-clear").addEventListener("click", async () => {
+    if (state.busy) return;
     if (!(await showConfirm(t("evidence.clearConfirm")))) return;
     await cancelBackgroundEmbeddings(true);
     await NS.clearEvidenceIndexes(); state.indexes = []; state.evidence = new Map();
@@ -2669,7 +2969,8 @@ function wire() {
   $("#nd-history-enabled").addEventListener("change", async (e) => {
     state.historyEnabled = !!e.target.checked; NS.setHistoryEnabled(state.historyEnabled);
     $("#nd-history-retention").disabled = !state.historyEnabled;
-    if (!state.historyEnabled) { state.conversations = []; if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed")); }
+    if (!state.historyEnabled) { state.conversations = []; state.itemConversations.clear(); if (!(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed")); }
+    else await persistConv();
   });
   $("#nd-history-retention").addEventListener("change", async (e) => {
     state.historyRetention = Number(e.target.value); NS.setHistoryRetention(state.historyRetention);
@@ -2717,6 +3018,8 @@ function saveContext() {
     strategy: state.contextStrategy,
     ocr: $("#nd-ctx-ocr").value,
   });
+  if (!NS.getContext().useFulltext) pauseAutomaticPreparation(true).catch(() => {});
+  else scheduleAutomaticPreparation();
 }
 function saveHlColors() { state.hlColors = { high: $("#nd-hl-high").value || "#ff6666", medium: $("#nd-hl-medium").value || "#ffd400" }; NS.setHlColors(state.hlColors); }
 
@@ -2753,6 +3056,9 @@ function registerNotifier() {
     };
     state.notifierID = Zotero.Notifier.registerObserver(observer, ["item", "tab", "collection"], "nodus-sidebar");
     window.addEventListener("unload", () => {
+      automaticPreparation.closed = true;
+      pauseAutomaticPreparation(true).catch(() => {});
+      try { if (state.embeddingSwitch) state.embeddingSwitch.abort(); } catch (e) {}
       try { if (state.abort) state.abort.abort(); } catch (e) {}
       try { if (state.notifierID) Zotero.Notifier.unregisterObserver(state.notifierID); } catch (e) {}
       try { if (state.pollTimer) clearInterval(state.pollTimer); } catch (e) {}
@@ -2781,6 +3087,20 @@ async function boot() {
   state.sourceScope = NS.getSourceScope();
   state.historyEnabled = NS.getHistoryEnabled();
   state.historyRetention = NS.getHistoryRetention();
+  if (NL) {
+    // Historical E5 vectors are cache data, not a user preference. Only a
+    // successfully saved explicit selection overrides the Granite default.
+    const savedEmbedding = NS.getEmbeddingModel();
+    NL.select(savedEmbedding || globalThis.NodusEmbeddingModels.defaultKey);
+    for (const model of NL.MODELS) {
+      const option = document.createElement("option"); option.value = model.key; option.textContent = model.label;
+      $("#nd-embedding-model").appendChild(option);
+    }
+    $("#nd-embedding-model").value = NL.MODEL.key;
+    $("#nd-embedding-apply").addEventListener("click", changeEmbeddingModel);
+    $("#nd-embedding-cancel").addEventListener("click", () => { if (state.embeddingSwitch) state.embeddingSwitch.abort(); });
+    renderEmbeddingActiveModel();
+  }
   wire();
   $("#nd-lang").value = state.lang;
   $("#nd-maxtokens").value = state.maxTokens;
@@ -2802,7 +3122,8 @@ async function boot() {
   renderMode();
   if (!state.historyEnabled && NS.deleteConversationHistory && !(await NS.deleteConversationHistory())) showToast(t("history.deleteFailed"));
   state.conversations = state.historyEnabled ? await NS.loadConversations() : [];
-  startNewConversation();
+  startNewConversation(null);
+  scheduleAutomaticPreparation();
   await connect({ quiet: true });
   await loadModelsForMode();
   // Keep looking for Nodus in the background: it may not be running yet (or may

@@ -1,0 +1,472 @@
+/*
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+
+The model guide. Built on nodus.css; every rule here is prefixed mg- so it
+never reaches another page. --accent follows the open tab.
+*/
+
+/* ============================================================ header */
+.mg-head { padding: calc(var(--nav-h) + clamp(28px, 4vw, 48px)) 0 clamp(20px, 2.6vw, 28px); }
+.mg-h1 {
+  font-family: var(--serif); font-weight: 600;
+  font-size: clamp(32px, 3.6vw, 46px); letter-spacing: -0.03em;
+}
+.mg-facts { margin: 10px 0 0; font-size: 13.5px; color: var(--ink-3); }
+.mg-facts time, .mg-facts span, .mg-facts a { color: var(--ink-2); font-weight: 600; }
+.mg-facts a:hover { color: var(--ink); }
+
+/* ============================================================ tabs */
+main > section.mg-guide { padding: 0 0 clamp(72px, 9vw, 124px); }
+
+.mg-tabbar-shell {
+  position: sticky; top: var(--nav-h); z-index: 30;
+  border-top: 1px solid var(--membrane); border-bottom: 1px solid var(--membrane);
+  background: rgba(6, 5, 11, 0.8);
+  backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+}
+.mg-tabbar {
+  position: relative;
+  display: flex; gap: 2px;
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+}
+.mg-tabbar::-webkit-scrollbar { display: none; }
+/* When the tabs do not fit, the bar scrolls sideways; a fade on the edge that
+   still hides tabs is what says so. models.js sets both attributes. */
+.mg-tabbar[data-scrollable]:not([data-at-end]) {
+  -webkit-mask-image: linear-gradient(90deg, #000 84%, transparent);
+  mask-image: linear-gradient(90deg, #000 84%, transparent);
+}
+.mg-tab {
+  position: relative; flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 58px; padding: 0 13px;
+  border: 0; background: transparent; color: var(--ink-2);
+  font: 620 14px/1 var(--sans); white-space: nowrap; cursor: pointer;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.mg-tab:hover { color: var(--ink); background: var(--skin); }
+.mg-tab:focus-visible { outline-offset: -4px; }
+.mg-tab::after {
+  content: ''; position: absolute; left: 11px; right: 11px; bottom: -1px;
+  height: 2px; border-radius: 2px; background: var(--tab-accent);
+  transform: scaleX(0); transition: transform 0.3s var(--ease);
+}
+.mg-tab[aria-selected="true"] { color: var(--ink); }
+.mg-tab[aria-selected="true"]::after { transform: scaleX(1); }
+.mg-tab-ic {
+  width: 18px; height: 18px; flex: 0 0 auto;
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  transition: color 0.2s var(--ease);
+}
+.mg-tab[aria-selected="true"] .mg-tab-ic { color: var(--tab-accent); }
+
+/* ============================================================ panel */
+.mg-panel { padding-top: clamp(30px, 4vw, 48px); }
+.mg-panel:focus { outline: none; }
+.mg-panel-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.mg-panel-copy { max-width: 820px; }
+.mg-panel-title {
+  font-family: var(--serif); font-weight: 600;
+  font-size: clamp(28px, 3.1vw, 40px); letter-spacing: -0.03em;
+}
+.mg-panel-intro { margin: 12px 0 0; font-size: clamp(15px, 1.2vw, 16.5px); line-height: 1.66; color: var(--ink-2); text-wrap: pretty; }
+.mg-panel-intro strong { color: var(--ink); font-weight: 620; }
+.mg-reviewed {
+  display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto;
+  margin: 0; padding: 7px 13px; border-radius: 999px;
+  border: 1px solid var(--membrane); background: rgba(16, 13, 28, 0.78);
+  font-size: 12.5px; font-weight: 550; color: var(--ink-3); white-space: nowrap;
+}
+.mg-reviewed time { color: var(--ink); font-weight: 620; }
+.mg-ic {
+  width: 14px; height: 14px; flex: 0 0 auto;
+  fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+}
+.mg-reviewed .mg-ic { color: var(--accent); }
+
+/* ============================================================ filters */
+/* One row of buttons; each opens a popover listing that filter's options. */
+.mg-filters {
+  position: relative; z-index: 20;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 24px;
+}
+.mg-pop { position: relative; }
+.mg-pop-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 12px 0 14px; border-radius: 999px;
+  border: 1px solid var(--membrane); background: rgba(16, 13, 28, 0.82);
+  color: var(--ink-2); font: 600 12.5px/1 var(--sans); white-space: nowrap; cursor: pointer;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.mg-pop-btn:hover, .mg-pop-btn[aria-expanded="true"] { color: var(--ink); border-color: rgba(255, 255, 255, 0.24); }
+.mg-pop-label { color: var(--ink-3); }
+.mg-pop-value { color: var(--ink); }
+.mg-pop-btn.is-active {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, rgba(16, 13, 28, 0.86));
+}
+.mg-pop-btn.is-active .mg-pop-value { color: var(--accent); }
+.mg-pop-chev {
+  width: 14px; height: 14px; color: var(--ink-3);
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform 0.25s var(--ease);
+}
+.mg-pop-btn[aria-expanded="true"] .mg-pop-chev { transform: rotate(180deg); }
+
+.mg-pop-panel {
+  position: absolute; z-index: 60; top: calc(100% + 8px); left: 0;
+  width: max-content; min-width: 220px; max-width: min(340px, calc(100vw - 32px));
+  max-height: min(440px, calc(100vh - 160px)); overflow: auto; overscroll-behavior: contain;
+  padding: 6px; border-radius: 14px;
+  border: 1px solid var(--membrane); background: rgba(10, 8, 19, 0.97);
+  backdrop-filter: blur(20px) saturate(1.25); -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  box-shadow: 0 24px 70px -22px rgba(0, 0, 0, 0.9);
+}
+/* grouped filters (hardware) lay their groups side by side */
+.mg-pop-panel--cols { display: grid; grid-template-columns: repeat(3, minmax(150px, auto)); gap: 0 6px; max-width: min(620px, calc(100vw - 32px)); }
+.mg-pop-panel--cols[hidden] { display: none; }
+.mg-pop-group {
+  margin: 8px 8px 4px; font: 700 10.5px/1.3 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.mg-pop-group:first-child { margin-top: 4px; }
+.mg-pop-group i { font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.mg-opt {
+  display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  width: 100%; min-height: 36px; padding: 6px 9px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--ink-2); font: 550 13px/1.35 var(--sans); text-align: left; cursor: pointer;
+}
+.mg-opt:hover { background: var(--skin-2); color: var(--ink); }
+.mg-opt[aria-pressed="true"] { color: var(--ink); }
+.mg-opt.is-empty { opacity: 0.45; }
+.mg-opt-label i { font-style: normal; font-size: 11.5px; color: var(--ink-3); }
+.mg-check {
+  display: grid; place-items: center; width: 16px; height: 16px; border-radius: 5px;
+  border: 1.5px solid var(--membrane-2); background: rgba(255, 255, 255, 0.03);
+}
+.mg-check-ic {
+  width: 11px; height: 11px; opacity: 0;
+  fill: none; stroke: var(--void); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round;
+}
+.mg-opt[aria-pressed="true"] .mg-check { border-color: var(--accent); background: var(--accent); }
+.mg-opt[aria-pressed="true"] .mg-check-ic { opacity: 1; }
+.mg-count { color: var(--ink-3); font: 500 11px/1 var(--mono); }
+
+.mg-clear {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid transparent; background: transparent;
+  color: var(--ink-3); font: 600 12.5px/1 var(--sans); cursor: pointer;
+}
+.mg-clear:hover:not(:disabled) { color: var(--ink); background: var(--skin); }
+.mg-clear:disabled { display: none; }
+.mg-meta { margin: 0 0 0 auto; font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.mg-meta b { color: var(--ink); font-weight: 650; }
+
+/* ============================================================ blocks */
+.mg-blocks { display: grid; gap: clamp(36px, 4.2vw, 56px); margin-top: clamp(32px, 4vw, 46px); }
+.mg-block { min-width: 0; }
+.mg-block-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.mg-block-title { font-size: clamp(19px, 1.8vw, 23px); letter-spacing: -0.02em; line-height: 1.25; }
+.mg-block-count {
+  padding: 3px 9px; border-radius: 999px;
+  border: 1px solid var(--membrane); color: var(--ink-3);
+  font: 600 11px/1.3 var(--mono);
+}
+.mg-block-count.is-filtered {
+  color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+}
+.mg-block-intro { margin: 8px 0 0; max-width: 82ch; font-size: 14.5px; line-height: 1.62; color: var(--ink-2); }
+.mg-block-intro strong { color: var(--ink); }
+
+/* collapsed tables: the summary is the heading, and it opens in place */
+.mg-collapsible > summary {
+  list-style: none; cursor: pointer;
+  padding: 14px 18px; border-radius: var(--r-m);
+  border: 1px solid var(--membrane); background: rgba(16, 13, 28, 0.78);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.mg-collapsible > summary::-webkit-details-marker { display: none; }
+.mg-collapsible > summary:hover { border-color: rgba(255, 255, 255, 0.22); background: rgba(23, 19, 40, 0.88); }
+.mg-collapsible > summary .mg-block-title { font-size: 16.5px; }
+.mg-chev {
+  width: 18px; height: 18px; margin-left: auto; color: var(--ink-3);
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform 0.3s var(--ease);
+}
+.mg-collapsible[open] > summary { margin-bottom: 4px; }
+.mg-collapsible[open] .mg-chev { transform: rotate(180deg); color: var(--accent); }
+/* the three collapsed tables sit together as one group of further detail */
+.mg-collapsible + .mg-collapsible { margin-top: calc(-1 * clamp(36px, 4.2vw, 56px) + 10px); }
+
+/* ============================================================ table */
+.mg-table-card {
+  margin-top: 16px;
+  border: 1px solid var(--membrane); border-radius: var(--r-l);
+  background: linear-gradient(180deg, rgba(21, 17, 37, 0.93), rgba(11, 9, 21, 0.91));
+  overflow: hidden;
+}
+.mg-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.mg-table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.5; }
+.mg-table th {
+  padding: 13px 14px; text-align: left; vertical-align: bottom; white-space: nowrap;
+  border-bottom: 1px solid var(--membrane); background: rgba(255, 255, 255, 0.025);
+  font: 700 10.5px/1.3 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3);
+}
+.mg-table td {
+  padding: 14px; vertical-align: top;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--ink-2);
+  transition: background 0.2s var(--ease);
+}
+.mg-table tbody tr:last-child td { border-bottom: 0; }
+.mg-table tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
+.mg-table td strong { color: var(--ink); font-weight: 620; }
+.mg-table td em { color: var(--ink); }
+.mg-table td a:not(.mg-model) { text-decoration: underline; text-decoration-color: rgba(167, 139, 250, 0.4); text-underline-offset: 3px; }
+.mg-table td.mg-first { min-width: 200px; }
+/* Words need a floor: on a tablet the table scrolls inside its card before a
+   column of prose is squeezed to three words a line. */
+.mg-table td:not(.mg-first):not(.mg-num-col) { min-width: 150px; }
+.mg-table tr.is-pick td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.mg-table tr.is-pick td.mg-first { box-shadow: inset 2px 0 0 var(--accent); }
+.mg-num-col { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mg-table td.mg-num-col { color: var(--ink); font-weight: 560; }
+
+.mg-sort {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit;
+  cursor: pointer;
+}
+.mg-sort:hover { color: var(--ink); }
+.mg-sort-ic {
+  width: 12px; height: 12px;
+  fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+  opacity: 0.55;
+}
+th[aria-sort="ascending"], th[aria-sort="descending"] { color: var(--accent); }
+th[aria-sort="ascending"] .mg-sort-ic, th[aria-sort="descending"] .mg-sort-ic { opacity: 1; }
+th[aria-sort="ascending"] .mg-down, th[aria-sort="descending"] .mg-up { opacity: 0.25; }
+
+/* name cell */
+.mg-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.mg-model { color: var(--ink); font-weight: 650; font-size: 14px; letter-spacing: -0.005em; }
+a.mg-model:hover { color: var(--violet-3); }
+.mg-reason, .mg-tag {
+  padding: 3px 7px; border-radius: 6px;
+  font: 650 10px/1.3 var(--sans); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.mg-reason { border: 1px solid var(--membrane); background: var(--skin-2); color: var(--ink-2); }
+.mg-tag { background: var(--accent-soft); color: var(--accent); font-family: var(--mono); letter-spacing: 0; }
+.mg-sub { margin-top: 3px; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+.mg-sub strong { color: var(--ink-2); }
+.mg-by { display: inline; margin: 0; }
+.mg-pick {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 8px; padding: 3px 9px 3px 7px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent); background: var(--accent-soft);
+  color: var(--accent); font: 650 11px/1.3 var(--sans);
+}
+.mg-star { width: 11px; height: 11px; fill: currentColor; }
+.mg-dash { color: var(--ink-3); }
+
+/* bars: the number, with its share of the table's best under it */
+.mg-bar {
+  display: inline-flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  min-width: 68px; color: var(--ink); font-weight: 620;
+}
+.mg-bar small { font-size: 11px; font-weight: 500; color: var(--ink-3); }
+.mg-bar::after {
+  content: ''; width: 68px; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent) calc(var(--v) * 100%), rgba(255, 255, 255, 0.08) 0);
+}
+
+/* hardware chips */
+.mg-fit { display: flex; flex-wrap: wrap; gap: 5px; }
+.mg-chip {
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--chip-line, var(--membrane)); background: var(--chip-soft, var(--skin));
+  color: var(--chip, var(--ink-2)); font: 620 11px/1.4 var(--sans);
+}
+.mg-chip--mac { --chip: #c4b5fd; --chip-soft: rgba(167, 139, 250, 0.1); --chip-line: rgba(167, 139, 250, 0.28); }
+.mg-chip--gpu { --chip: #6ee7b7; --chip-soft: rgba(52, 211, 153, 0.08); --chip-line: rgba(52, 211, 153, 0.26); }
+.mg-chip--cpu { --chip: #fcd34d; --chip-soft: rgba(251, 191, 36, 0.08); --chip-line: rgba(251, 191, 36, 0.26); }
+.mg-flag {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.32); background: rgba(251, 191, 36, 0.1);
+  color: var(--warn); font: 650 10.5px/1.5 var(--sans); white-space: nowrap;
+}
+
+/* verdicts */
+.mg-verdict {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px 3px 7px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--v-line); background: var(--v-soft); color: var(--v-ink);
+  font: 650 11.5px/1.4 var(--sans);
+}
+.mg-verdict-ic { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.mg-verdict--good { --v-ink: var(--good); --v-soft: rgba(52, 211, 153, 0.1); --v-line: rgba(52, 211, 153, 0.3); }
+.mg-verdict--bad { --v-ink: var(--bad); --v-soft: rgba(248, 113, 113, 0.1); --v-line: rgba(248, 113, 113, 0.32); }
+.mg-verdict--info { --v-ink: #93c5fd; --v-soft: rgba(147, 197, 253, 0.1); --v-line: rgba(147, 197, 253, 0.3); }
+.mg-verdict--muted { --v-ink: var(--ink-3); --v-soft: transparent; --v-line: var(--membrane); }
+
+.mg-empty { padding: 26px 20px; text-align: center; font-size: 14px; color: var(--ink-2); }
+.mg-link-btn {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--accent); font: inherit; font-weight: 620; text-decoration: underline; text-underline-offset: 3px;
+}
+
+.mg-footnote { max-width: 112ch; margin: 12px 2px 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-3); }
+.mg-footnote strong { color: var(--ink-2); font-weight: 620; }
+.mg-footnote em { color: var(--ink-2); }
+
+/* ============================================================ callouts, flows, estimator */
+.mg-callout {
+  display: flex; align-items: flex-start; gap: 13px;
+  margin-top: 16px; padding: 15px 18px; border-radius: var(--r-m);
+  border: 1px solid var(--c-line); background: var(--c-soft);
+}
+.mg-panel > .mg-callout { margin-top: 22px; }
+.mg-callout-ic {
+  width: 19px; height: 19px; flex: 0 0 auto; margin-top: 1px; color: var(--c-ink);
+  fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+}
+.mg-callout b { display: block; color: var(--ink); font-size: 14.5px; font-weight: 650; }
+.mg-callout p { margin: 4px 0 0; font-size: 14px; line-height: 1.62; color: var(--ink-2); }
+.mg-callout strong { color: var(--ink); font-weight: 620; }
+.mg-callout--info { --c-ink: var(--accent); --c-soft: color-mix(in srgb, var(--accent) 8%, rgba(16, 13, 28, 0.86)); --c-line: color-mix(in srgb, var(--accent) 30%, transparent); }
+.mg-callout--good { --c-ink: var(--good); --c-soft: rgba(17, 46, 40, 0.72); --c-line: rgba(52, 211, 153, 0.28); }
+.mg-callout--warn { --c-ink: var(--warn); --c-soft: rgba(48, 38, 14, 0.72); --c-line: rgba(251, 191, 36, 0.3); }
+.mg-callout--bad { --c-ink: var(--bad); --c-soft: rgba(52, 20, 26, 0.74); --c-line: rgba(248, 113, 113, 0.32); }
+
+.mg-flow { display: grid; gap: 10px; margin-top: 16px; }
+.mg-lane {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  padding: 13px 16px; border-radius: var(--r-m);
+  border: 1px dashed var(--l-line); background: rgba(16, 13, 28, 0.72);
+}
+.mg-lane-label {
+  min-width: 128px;
+  font: 700 10.5px/1.3 var(--sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--l-ink);
+}
+.mg-lane--good { --l-ink: var(--good); --l-line: rgba(52, 211, 153, 0.3); }
+.mg-lane--warn { --l-ink: var(--warn); --l-line: rgba(251, 191, 36, 0.32); }
+.mg-lane--accent { --l-ink: var(--accent); --l-line: color-mix(in srgb, var(--accent) 34%, transparent); }
+.mg-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.mg-steps li { display: inline-flex; align-items: center; gap: 6px; }
+.mg-steps span {
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--membrane); background: var(--skin-2);
+  color: var(--ink); font-size: 12.5px; font-weight: 550; white-space: nowrap;
+}
+.mg-steps li:not(:last-child)::after { content: '→'; color: var(--l-ink); font-size: 13px; }
+
+.mg-estimator {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: 14px 0 0; padding: 12px 16px; border-radius: var(--r-m);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, rgba(16, 13, 28, 0.86));
+  font-size: 14px; color: var(--ink-2);
+}
+.mg-num {
+  width: calc(var(--w, 6ch) + 28px); padding: 7px 10px;
+  border: 1px solid var(--membrane); border-radius: 10px;
+  background: rgba(6, 5, 11, 0.7); color: var(--ink);
+  font: 600 14px/1.2 var(--mono); text-align: right;
+  -moz-appearance: textfield; appearance: textfield;
+}
+.mg-num::-webkit-inner-spin-button, .mg-num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.mg-num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.mg-noscript {
+  margin: 32px 0 0; padding: 22px; border: 1px dashed var(--membrane); border-radius: var(--r-l);
+  color: var(--ink-2); text-align: center;
+}
+
+/* ============================================================ methodology */
+.mg-about-head { max-width: 760px; }
+.mg-method {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+  margin: clamp(28px, 3.4vw, 40px) 0 0;
+}
+.mg-method-item {
+  padding: 18px 20px; border-radius: var(--r-m);
+  border: 1px solid var(--membrane); background: rgba(16, 13, 28, 0.8);
+}
+.mg-method dt { font: 700 11px/1.3 var(--sans); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); }
+.mg-method dd { margin: 8px 0 0; font-size: 14px; line-height: 1.64; color: var(--ink-2); }
+.mg-method strong { color: var(--ink); font-weight: 620; }
+
+.mg-about-grid {
+  display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px;
+  margin-top: clamp(30px, 3.6vw, 44px);
+}
+.mg-sources {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 28px;
+  padding: 22px 24px; border-radius: var(--r-l);
+  border: 1px solid var(--membrane); background: rgba(16, 13, 28, 0.8);
+}
+.mg-sources h3, .mg-history h3 {
+  margin-bottom: 12px;
+  font: 700 11px/1.3 var(--sans); letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-3);
+}
+.mg-sources ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.mg-sources a { font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.mg-sources a:hover { color: var(--ink); }
+.mg-history {
+  padding: 22px 24px; border-radius: var(--r-l);
+  border: 1px solid var(--membrane); background: rgba(16, 13, 28, 0.8);
+}
+.mg-changelog { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.mg-changelog li { display: grid; gap: 3px; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); }
+.mg-changelog time { font: 600 11.5px/1.3 var(--mono); color: var(--accent); }
+.mg-edit {
+  margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--membrane);
+  font-size: 13.5px; line-height: 1.6; color: var(--ink-3);
+}
+.mg-disclaimer { margin: clamp(30px, 3.6vw, 44px) auto 0; max-width: 70ch; text-align: center; font-size: 13px; color: var(--ink-3); }
+
+/* ============================================================ narrower screens */
+@media (max-width: 960px) {
+  .mg-panel-head { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .mg-method, .mg-about-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .mg-tab { height: 50px; padding: 0 12px; font-size: 13px; gap: 7px; }
+  .mg-tab-ic { width: 16px; height: 16px; }
+  /* on a phone the list opens as a centred sheet, never off the edge */
+  .mg-pop-panel {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: min(360px, calc(100vw - 28px)); max-height: min(520px, calc(100vh - 80px));
+  }
+  .mg-meta { flex-basis: 100%; margin-left: 2px; }
+  .mg-pop-panel--cols { grid-template-columns: minmax(0, 1fr); }
+  .mg-sources { grid-template-columns: minmax(0, 1fr); }
+  .mg-lane-label { min-width: 0; flex: 1 0 100%; }
+
+  /* Each row becomes a card: the first cell is its title and every other cell
+     is a labelled line, so nothing scrolls sideways on a phone. */
+  .mg-table thead { display: none; }
+  .mg-table, .mg-table tbody, .mg-table tr, .mg-table td { display: block; width: 100%; }
+  .mg-table tr { padding: 14px 16px 10px; border-bottom: 1px solid var(--membrane); }
+  .mg-table tbody tr:last-child { border-bottom: 0; }
+  .mg-table td {
+    display: grid; grid-template-columns: minmax(92px, 34%) minmax(0, 1fr); gap: 12px;
+    padding: 6px 0; border: 0; text-align: left;
+  }
+  .mg-table td::before {
+    content: attr(data-label); padding-top: 2px;
+    font: 700 10px/1.45 var(--sans); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .mg-table td.mg-first { display: block; min-width: 0; padding: 0 0 8px; }
+  .mg-table td.mg-first::before { display: none; }
+  .mg-table tbody tr:hover td { background: none; }
+  .mg-table tr.is-pick { background: color-mix(in srgb, var(--accent) 6%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+  .mg-table tr.is-pick td, .mg-table tr.is-pick td.mg-first { background: none; box-shadow: none; }
+  .mg-num-col { white-space: normal; }
+  .mg-bar { align-items: flex-start; }
+}

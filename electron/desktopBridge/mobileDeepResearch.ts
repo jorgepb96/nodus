@@ -4,7 +4,7 @@ import {captureMobileAcademicResearchSource} from '../../shared/mobileAcademicRe
 import {captureGenealogyResearchSource} from '../ai/genealogyDeepResearch';
 import {captureMobileGenealogyResearchSource} from '../../shared/mobileGenealogyResearch';
 import {getMobileStudyResearchSourcePack} from '../ai/studySearch';
-import {mobileDeepResearchCorpusRevision} from './mobileResearchRevision';
+import {mobileDeepResearchCorpusRevision,mobileResearchEmbeddingConfig} from './mobileResearchRevision';
 import {prepareImageStorage} from '../imageStorage';
 import {markDecorativeImagePending,saveDecorativeImagePrompt,saveDecorativeImageReady} from '../db/decorativeImagesRepo';
 import {buildDecorativeImagePrompt} from '../../shared/imageStyles';
@@ -15,7 +15,6 @@ import {seedCompleteGuideFigures} from '../ai/completeGuide/figures';
 import {captureMobileCompleteGuide} from './mobileCompleteGuide';
 import {getDocumentaryPassageDetail} from '../citations/documentaryCitations';
 import {getScopedLegacyPassageDetail} from '../citations/scopedLegacyCitations';
-import {effectiveEmbeddingConfig} from '../ai/aiClient';
 import {resolveAcademicRunScope} from '../ai/researchCorpusRun';
 import {createHash} from 'node:crypto';
 import {getDb} from '../db/database';
@@ -32,6 +31,10 @@ import {canonicalJson} from '../../shared/canonicalJson';
 import { normalizeMobileDeepResearchRequest, type MobileDeepResearchProof, type MobileDeepResearchSource,type MobileDeepResearchReport } from '../../shared/mobileDeepResearch';
 import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief,DeepResearchProgress} from '../../shared/types';
 import type { SectionRetrievalInput } from '../ai/deepResearchCore';
+function queryEmbeddingModel():MobileDeepResearchSource['queryEmbeddingModel'] {
+ const config=mobileResearchEmbeddingConfig();
+ return config?{provider:config.provider,model:config.modelId}:undefined;
+}
 const hash=(value:unknown)=>createHash('sha256').update(canonicalJson(value)).digest('hex');
 export {mobileDeepResearchCorpusRevision} from './mobileResearchRevision';
 const STAGES = ['academicSnapshot','genealogySnapshot','studySnapshot','guideSnapshot','describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
@@ -69,7 +72,7 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
   const deps=vault.type==='academic'?companionCanonicalDeepResearchDeps(request,signal):null;
   async function stage(entry:StageInput):Promise<unknown>{
    signal?.throwIfAborted();
-   if(entry.stage==='describe')return {variant:vault.type==='academic'?'academic':request.completeGuide?'completeGuide':vault.type==='docencia'||request.unitMode?'unit':vault.type==='estudio'||request.studyMode?'study':vault.type==='genealogy'?'genealogy':'academic',context:{version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(request),sourceScope:'linked_corpus',queryEmbeddingModel:{provider:effectiveEmbeddingConfig().provider,model:effectiveEmbeddingConfig().modelId},preparedSourcesOnly:true}};
+   if(entry.stage==='describe')return {variant:vault.type==='academic'?'academic':request.completeGuide?'completeGuide':vault.type==='docencia'||request.unitMode?'unit':vault.type==='estudio'||request.studyMode?'study':vault.type==='genealogy'?'genealogy':'academic',context:{version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(request),sourceScope:'linked_corpus',queryEmbeddingModel:queryEmbeddingModel(),preparedSourcesOnly:true}};
    if(entry.stage==='variantRun'){
     if(vault.type==='academic'||request.completeGuide)throw new Error('mobile_deep_research_variant_stage_invalid');
     let sources:unknown[]=[],knowledge:unknown;
@@ -81,7 +84,7 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
     const input=entry.input as {brief:WritingWorkshopBrief};
     if(input?.brief?.kind!=='deep_research'||input.brief.objective!==request.objective)throw new Error('invalid_deep_research_snapshot');
     const snapshot=await deps.buildSnapshot(input.brief);
-    return {version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(request),snapshot,relationships:academicRelationshipContext(snapshot),sourceScope:'linked_corpus',queryEmbeddingModel:{provider:effectiveEmbeddingConfig().provider,model:effectiveEmbeddingConfig().modelId},preparedSourcesOnly:true} satisfies MobileDeepResearchSource;
+    return {version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(request),snapshot,relationships:academicRelationshipContext(snapshot),sourceScope:'linked_corpus',queryEmbeddingModel:queryEmbeddingModel(),preparedSourcesOnly:true} satisfies MobileDeepResearchSource;
    }
    if(entry.stage==='section')return deps.retrieveForSection!(entry.input as SectionRetrievalInput);
    const operation=deps[entry.stage as keyof typeof deps];

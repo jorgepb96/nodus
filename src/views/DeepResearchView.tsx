@@ -2,6 +2,8 @@ import type {MobileCompleteGuideActions,MobileResearchSourceScope} from '@shared
 import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import {researchTranslationSource} from '@shared/translationGeneration';
+import { ResearchHarnessControl, useResearchHarnessOptions, type ResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
 import { DocumentVisualScope, DocumentVisualActions } from '../components/DocumentVisualScope';
@@ -48,7 +50,7 @@ import {
 } from '@shared/deepResearchVersions';
 import { DECORATIVE_IMAGE_STYLES } from '@shared/imageStyles';
 import { toReadingCopy } from '@shared/readingCopy';
-import { stripLeadingAbstract } from '@shared/writingDocument';
+import { stripLeadingAbstract, researchDocumentProse } from '@shared/writingDocument';
 import type { DeepResearchSnapshot } from '../app/viewSnapshots';
 import { useListPlacement } from '../listPlacement';
 import { readingBlocks, topBlockIndex, useReadingPlace, type ReadingPlace } from '../readingPlace';
@@ -70,11 +72,12 @@ import { confirm } from '../components/feedback';
 import { SourceCitationModal, type CitationTarget, type OpenCitationLibraryWork } from '../components/SourceCitationModal';
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
 import { TranslationModal } from '../components/TranslationModal';
-import { Markdown } from '../components/Markdown';
+import { ResearchMarkdown as Markdown } from '../components/ResearchSourceNotice';
 import { DraftActionBar, DraftResultMain, SupportMatrix } from './writingShared';
 import { DeepResearchQueueStrip, type QueueStripItem } from '../components/DeepResearchQueueStrip';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
-import { AudioPanel } from '../components/AudioPanel';
+import { ListenButton } from '../components/narration/Listen';
+import { ReadAlong } from '../components/narration/ReadAlong';
 import { FindInPage } from '../components/FindInPage';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import {
@@ -329,6 +332,7 @@ export function DeepResearchView({
   onCompleteGuideTargetConsumed?: () => void;
 }) {
   const variant: DeepResearchVariant = isTeaching ? 'unit' : isGenealogy ? 'genealogy' : isStudy ? 'study' : 'academic';
+  const isAcademic = variant === 'academic';
   const copy = DEEP_RESEARCH_COPY[variant];
   // A report can only be the surface if there was one open; the pair is stored
   // together, and a reader with nothing in it would render the gallery anyway.
@@ -355,6 +359,7 @@ export function DeepResearchView({
   // The thinking level for that model, shared with the Research chat's memory: the level
   // last chosen for it, or its middle level.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel ?? null);
+  const harnessOptions = useResearchHarnessOptions(settings, 'deep-research');
   const [deepSectionLimit, setDeepSectionLimit] = useState<DeepResearchSectionLimit>('auto');
   const [deepSectionLength, setDeepSectionLength] = useState<DeepResearchSectionLength>('auto');
   const [sectionLengthValid, setSectionLengthValid] = useState(true);
@@ -684,6 +689,7 @@ export function DeepResearchView({
       ...(!isStudy && !isTeaching && !isGenealogy ? { notebookId } : {}),
       approach,
       deepResearchVersion: normalizeDeepResearchRequestVersion(deepResearchVersion),
+      ...(isAcademic ? { harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration, webSearch: harnessOptions.web } : {}),
       language,
       sectionLimit: deepSectionLimit,
       sectionLength: deepSectionLength,
@@ -973,7 +979,7 @@ export function DeepResearchView({
 
   const copyDraft = async () => {
     if (!openDraft) return;
-    await navigator.clipboard.writeText(appliedTranslation?.markdown ?? openDraft.draft.draftMarkdown);
+    await navigator.clipboard.writeText(researchDocumentProse(appliedTranslation?.markdown ?? openDraft.draft.draftMarkdown, Boolean(openDraft.draft.limitations?.length)));
     setMessage(t('Borrador copiado.'));
   };
 
@@ -983,8 +989,8 @@ export function DeepResearchView({
   const copyForListening = async () => {
     if (!openDraft) return;
     const text = appliedTranslation
-      ? toReadingCopy(appliedTranslation.markdown)
-      : toReadingCopy(openDraft.draft.draftMarkdown, { title: openDraft.draft.title });
+      ? toReadingCopy(researchDocumentProse(appliedTranslation.markdown, Boolean(openDraft.draft.limitations?.length)))
+      : toReadingCopy(researchDocumentProse(openDraft.draft.draftMarkdown, Boolean(openDraft.draft.limitations?.length)), { title: openDraft.draft.title });
     await navigator.clipboard.writeText(text);
     setMessage(t('Texto copiado sin citas ni referencias.'));
   };
@@ -1244,6 +1250,7 @@ export function DeepResearchView({
         }}
         onCapture={(anchorId) => report.current?.({ placement: anchorId ? { anchorId } : null })}
         header={<>
+      {isAcademic && <ResearchHarnessPanel mode="deep-research" onResumed={() => void refreshSavedDrafts()} />}
       <SectionHeader
         icon="telescope"
         title={t(copy.heading)}
@@ -1505,6 +1512,7 @@ export function DeepResearchView({
           model={selectedModel}
           thinkingEffort={thinkingEffort}
           onThinkingEffort={setThinkingEffort}
+          harnessOptions={harnessOptions}
           sectionLimit={deepSectionLimit}
           sectionLength={deepSectionLength}
           onSectionLength={setDeepSectionLength}
@@ -2492,7 +2500,9 @@ function ReaderView({
             className="btn-ghost h-9 min-h-9 border border-neutral-700"
           />
         )}
-        <AudioPanel entityKind="deep_research" entityId={saved.id} toolbar />
+        <span className="flex h-9 min-h-9 items-center rounded-lg border border-neutral-700 px-1">
+          <ListenButton testId="deep-research-audio-toggle" size={15} target={{ kind: 'deep_research', id: saved.id, title: saved.title }} />
+        </span>
         <DocumentVisualActions />
         <ReaderFontControls targetRef={documentRef} scrollerRef={mainRef} initialSize={initialReaderFontSize} />
         <ReaderHighlighterControl value={highlighterColor} onChange={setHighlighterColor} />
@@ -2569,6 +2579,7 @@ function ReaderView({
               style={{ '--deep-research-font-size': `${initialReaderFontSize}px` } as CSSProperties}
             >
               {appliedTranslation ? <Markdown content={appliedTranslation.markdown} onCitation={onCitation} onStudyDocument={onOpenStudyDocument} onStudyMaterial={onOpenStudyMaterial} onStudyRecording={onOpenStudyRecording} onGuideEvidence={onGuideEvidence} /> : <DraftResultMain
+                sourceNotices
                 draft={saved.draft}
                 exporting={exporting}
                 savingDraft={false}
@@ -2602,9 +2613,10 @@ function ReaderView({
           onAnnotationError={setAnnotationError}
           onMarkChange={setHasReaderMark}
         />
+        <ReadAlong rootRef={documentRef} scrollRef={mainRef} matches={(key) => key === `deep_research:${saved.id}`} />
         {showMatrix && (
           <aside className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 p-4 max-lg:hidden">
-            {saved.draft.completeGuide ? <CompleteGuideCoveragePanel meta={saved.draft.completeGuide} /> : <SupportMatrix draft={saved.draft} onCitation={onCitation} />}
+            {saved.draft.completeGuide ? <CompleteGuideCoveragePanel meta={saved.draft.completeGuide} /> : <SupportMatrix sourceNotices draft={saved.draft} onCitation={onCitation} />}
           </aside>
         )}
       </div>
@@ -2618,6 +2630,7 @@ function ReaderView({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ComposerModal({
+  harnessOptions,
   documentSkills,
   isAcademic = false,
   settings,
@@ -2665,6 +2678,7 @@ export function ComposerModal({
   sourcePanel,
   guideReady = false,
 }: {
+  harnessOptions?: ResearchHarnessOptions;
   documentSkills: ReturnType<typeof useDocumentSkills>;
   isAcademic?: boolean;
   settings: AppSettings;
@@ -2932,6 +2946,7 @@ export function ComposerModal({
             </div>
             <ResearchEffortControl variant="field" label className="w-full !py-2 text-sm" testId="deep-research-thinking" model={model ?? null} value={thinkingEffort} onChange={onThinkingEffort} disabled={!model} />
           </div>
+          {isAcademic && harnessOptions && <ResearchHarnessControl options={harnessOptions} web />}
           {!isAcademic && <DocumentSkillsControl value={documentSkills.policy} onChange={documentSkills.setPolicy} onValidityChange={documentSkills.setValid} />}
           <div className="flex flex-wrap items-center gap-2">
             <button

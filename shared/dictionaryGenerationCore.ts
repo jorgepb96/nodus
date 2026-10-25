@@ -923,7 +923,7 @@ export async function generateDictionaryDefinition(
   entry: DictionaryEntry,
   evidence: DictionaryEvidenceItem[],
   request: DictionaryGenerationRequest,
-  { generator, verifyCitations, authorGenerator }: ReturnType<typeof dictionaryGenerators> & { verifyCitations: DictionaryVerifyCitations },
+  { generator, verifyCitations, authorGenerator, stage = (_name, _input, body) => body() }: ReturnType<typeof dictionaryGenerators> & { verifyCitations: DictionaryVerifyCitations; stage?: <T>(name:string,input:unknown,body:()=>Promise<T>)=>Promise<T> },
 ): Promise<DictionaryDefinition> {
   const promptLanguage = dictionaryPromptLanguage(request.language);
   const copy = dictionaryRuntimeCopy(promptLanguage);
@@ -953,14 +953,14 @@ export async function generateDictionaryDefinition(
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       generationAttempts = attempt;
       try {
-        generated = await generator(
+        generated = await stage('dictionary.definition', { entryId: entry.id, attempt, correction, evidence, mode: request.mode }, () => generator(
           request.entryId,
           evidence,
           request.model ?? null,
           request.mode === "update" ? entry.contentMarkdown : "",
           correction,
           request.language,
-        );
+        ));
       } catch (error) {
         const recoverable = dictionaryOutputErrorReason(error);
         if (!recoverable) throw error;
@@ -976,13 +976,13 @@ export async function generateDictionaryDefinition(
         ].join("\n");
         continue;
       }
-        grounded = await groundGeneratedDescription(
+        grounded = await stage('dictionary.grounding', { generated, evidence }, () => groundGeneratedDescription(
         generated,
         snapshot,
           verifyCitations,
           request.model ?? null,
           promptLanguage,
-      );
+      ));
       const originalGroundingProblems = [
         ...new Set([
           ...grounded.problems,
@@ -1078,13 +1078,13 @@ export async function generateDictionaryDefinition(
       markdown = decorateIdeaTags(grounded.markdown, evidence);
       try {
         generated.authorSummaries = (
-          await authorGenerator(
+          await stage('dictionary.authors', { evidence, markdown }, () => authorGenerator(
             request.entryId,
             evidence,
             markdown,
             request.model ?? null,
             request.language,
-          )
+          ))
         ).authorSummaries;
       } catch {
         // Author cards are a secondary, separately bounded request. The verified

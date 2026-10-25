@@ -4,8 +4,9 @@ import type {ResearchCorpusRun} from '../electron/ai/researchCorpusRun';
 import type {createResearchProseAuditor,findResearchConflicts} from '../electron/ai/researchClaimAudit';
 import type {createResearchSectionCoverage} from '../electron/ai/researchSectionCoverage';
 import {describeResearchLimitation} from './researchCorpus';
-export type PreparedResearchRun=Pick<ResearchCorpusRun,'budget'|'evidence'|'limitations'|'validate'|'retrieve'|'investigate'|'snapshotFromEvidence'|'section'|'coverage'>;
+export type PreparedResearchRun=Pick<ResearchCorpusRun,'harness'|'web'|'syncWebEvidence'|'checkpoint'|'matchedDocuments'|'supervised'|'budget'|'evidence'|'limitations'|'validate'|'retrieve'|'investigate'|'snapshotFromEvidence'|'section'|'coverage'>;
 export interface PreparedResearchCorpusHost {
+ researchHarnessStage?<T>(name:string,input:unknown,body:()=>Promise<T>):Promise<T>;
  createResearchProseAuditor:typeof createResearchProseAuditor;
  createResearchSectionCoverage:typeof createResearchSectionCoverage;
  findResearchConflicts:typeof findResearchConflicts;
@@ -16,7 +17,7 @@ export interface PreparedResearchCorpusHost {
 /** Canonical scoped evidence, audit, coverage and budget binding. Repositories,
  * models and prepared-source traversal remain explicit host responsibilities. */
 export function bindPreparedResearchCorpus(deps:DeepResearchDeps,run:PreparedResearchRun,model:ModelRef|null|undefined,host:PreparedResearchCorpusHost,signal?:AbortSignal):DeepResearchDeps {
- const {createResearchProseAuditor,createResearchSectionCoverage,findResearchConflicts,withResearchValidationThinking,contextWindow,withResearchRequestBudget}=host;
+ const {createResearchProseAuditor,createResearchSectionCoverage,findResearchConflicts,withResearchValidationThinking,contextWindow,withResearchRequestBudget,researchHarnessStage=(_name,_input,body)=>body()}=host;
  const settings=run.budget.settings;
   let windowPromise: ReturnType<PreparedResearchCorpusHost['contextWindow']> | undefined;
   // One auditor per report: a proposition rejected in any part stays rejected in
@@ -47,7 +48,15 @@ export function bindPreparedResearchCorpus(deps:DeepResearchDeps,run:PreparedRes
     verifyCitations: deps.verifyCitations ? (...args) => withResearchValidationThinking(model, () => deps.verifyCitations!(...args)) : undefined,
     checkCoherence: deps.checkCoherence ? (...args) => withResearchValidationThinking(model, () => deps.checkCoherence!(...args)) : undefined,
     auditReportConsistency: statements => withResearchValidationThinking(model, () => findResearchConflicts(statements, model, signal)), buildSnapshot: async brief => {
-    await run.investigate(brief.objective, model);
+    if (run.harness) run.budget.phaseRoundLimit = Math.min(settings.rounds, run.budget.rounds + Math.max(1, Math.floor(settings.rounds / 3)));
+    try { await run.investigate(brief.objective, model); }
+    finally { run.budget.phaseRoundLimit = Infinity; }
+    if (run.web) {
+      await run.web.afterLibrary({ evidence: run.evidence.size, matched: run.matchedDocuments.size, supervised: run.supervised, titles: [] });
+      run.syncWebEvidence();
+      run.checkpoint();
+    }
+
     const snapshot = run.snapshotFromEvidence(brief);
     if (!deps.prepareScopedSnapshot) return snapshot;
     const result = await deps.prepareScopedSnapshot(snapshot, async queries => {
@@ -67,6 +76,25 @@ export function bindPreparedResearchCorpus(deps:DeepResearchDeps,run:PreparedRes
     preparePlanEvidence: undefined,
     finalize: input => deps.finalize({ ...input, supportConcerns: [...(input.supportConcerns ?? []),
       ...(run.budget.partial ? ['Documentary coverage is partial; do not infer absence from missing evidence.'] : []), ...[...run.limitations].map(describeResearchLimitation)] }) };
+  if (run.harness) {
+    bounded.continuousNarrative = true;
+    // Keep deterministic citation/source guards; let the evidence-informed
+    // writer own synthesis. Post-hoc entailment pruning removed antecedents and
+    // qualified interpretations, breaking the report's connected argument.
+    // The harness adds no mandatory model-review or automatic rewrite chain.
+    bounded.verifyCitations = undefined;
+    bounded.reviseSection = undefined;
+    bounded.auditFactualProse = undefined;
+    bounded.auditReportConsistency = undefined;
+    bounded.auditSectionClaims = undefined;
+    bounded.auditPlanCoverage = undefined;
+    bounded.auditFinalSummary = undefined;
+    bounded.judgeSectionRevision = undefined;
+    bounded.reviewReport = undefined;
+    bounded.checkCoherence = undefined;
+    bounded.repairSectionCoverage = undefined;
+    bounded.checkSectionCoverage = undefined;
+  }
   return new Proxy(bounded, { get(target, property) {
     const value = Reflect.get(target, property);
     if (typeof value !== 'function') return value;
@@ -77,7 +105,10 @@ export function bindPreparedResearchCorpus(deps:DeepResearchDeps,run:PreparedRes
       // and output; every actual completion checks its complete final envelope using
       // the same byte-as-token bound. No characters/token conversion applies here.
       run.budget.constrainToWindow(window.tokens, Math.ceil(window.tokens * 0.75));
-      const result = await withResearchRequestBudget(window.tokens, () => { run.budget.partial = true; }, () => value(...args));
+      const execute = () => withResearchRequestBudget(window.tokens, () => { run.budget.partial = true; }, () => value(...args));
+      const result = await (run.harness && !['researchTraversal', 'auditFactualProse', 'auditReportConsistency', 'finalDocumentReview'].includes(String(property))
+        ? researchHarnessStage(`deep.${String(property)}`, args, execute) : execute());
+      if (run.harness && property === 'decomposeObjective' && Array.isArray(result)) for (const question of result) if (typeof question === 'string') run.harness.agenda.addQuestion(question);
       run.validate(); return result;
     };
   } });

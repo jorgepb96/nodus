@@ -1,7 +1,11 @@
 import {researchIndexedTextsAlone,type ResearchCorpusLayers} from './researchContextLayers';
 import type {WritingWorkshopBrief,WritingWorkshopIdeaCandidate,WritingWorkshopPassageCandidate,WritingWorkshopSnapshot,ModelRef} from './types';
 import type {ResearchDocumentRead,ResearchEvidence,ResearchTraversal,ResolvedResearchScope,RetrievalSettings} from './researchCorpus';
-import {validateResearchDocumentRead} from './researchCorpus';
+import {researchTaskKey} from './researchHarness';
+import {researchExplorationRetrieval} from './researchExploration';
+import {researchExcerptHasProse} from './researchDocumentReview';
+import type {ResearchAction} from './researchActions';
+import {RESEARCH_AGENT_DECISION_BYTES,validateResearchDocumentRead} from './researchCorpus';
 import {ResearchRetrievalBudget} from './researchRetrievalBudget';
 import {RETRIEVAL_CHUNK_MAX_BYTES,textWithPageStarts} from './retrievalChunks';
 import {searchResearchCatalog,type ResearchCatalogHit,type ResearchCatalogQuery} from './researchCatalog';
@@ -13,6 +17,8 @@ import type {ResearchWebGrant} from '../electron/ai/researchWebStep';
 import type {ResearchTurnPlan} from '../electron/ai/researchTurnPlanner';
 export interface ResearchChatAgent {plan:ResearchTurnPlan;question:string;minSources:number;compact:boolean;correction?:boolean}
 export interface ResearchCorpusRunHost {
+ currentResearchHarness?:()=>import('../electron/ai/researchHarnessRuntime').ResearchHarness|undefined;
+
  recordEmbeddingTrace?:(event:Parameters<typeof import('../electron/qa/embeddingTrace').recordEmbeddingTrace>[0])=>void;
  getActiveVault:()=>Pick<ReturnType<typeof import('../electron/vaults/vaultRegistry').getActiveVault>,'id'>;
  getResearchNotebook:(id:string)=>{revision:number}|null;
@@ -52,10 +58,13 @@ export interface ResearchCorpusRunHost {
 /** Canonical evidence run. The host owns repositories and network; source data
  * cannot turn into a new permission, provider or original extraction tool. */
 export function portableResearchCorpusRun(host:ResearchCorpusRunHost) {
- const {getActiveVault,getResearchNotebook,researchCorpusInventory,assertResearchDocument,assertResearchDocumentPermission,documentsById,researchFingerprint,resolveResearchSourceScope,scopedIdeaEvidencePassages,getResearchPreparationInventory,retrieveSharedDocumentaryEvidence,retrieveHierarchical,selectPassageEvidence,embed,embedMany,insertScopedReceipts,recordScopedSourcePassage,recordScopedLegacyPassage,getSettings,readAutomaticResearchZotero,pinZoteroOriginals,getGlobalLibraryItem,globalLibraryAttachmentPath,readResearchOriginalInWorker,getDocumentaryPassageDetail,getScopedLegacyPassageDetail,extractCitationRefs,researchActivityStep,startResearchActivity,manualIdeaIds,lexicalIdeas,ideaWorkIds,graph,deepenResearch}=host;
+ const {getActiveVault,getResearchNotebook,researchCorpusInventory,assertResearchDocument,assertResearchDocumentPermission,documentsById,researchFingerprint,resolveResearchSourceScope,scopedIdeaEvidencePassages,getResearchPreparationInventory,retrieveSharedDocumentaryEvidence,retrieveHierarchical,selectPassageEvidence,embed,embedMany,insertScopedReceipts,recordScopedSourcePassage,recordScopedLegacyPassage,getSettings,readAutomaticResearchZotero,pinZoteroOriginals,getGlobalLibraryItem,globalLibraryAttachmentPath,readResearchOriginalInWorker,getDocumentaryPassageDetail,getScopedLegacyPassageDetail,extractCitationRefs,researchActivityStep,startResearchActivity,manualIdeaIds,lexicalIdeas,ideaWorkIds:sourceIdeaWorkIds,graph,deepenResearch}=host;
  const recordEmbeddingTrace=host.recordEmbeddingTrace??(()=>{});
+ const currentResearchHarness=host.currentResearchHarness??(()=>undefined);
  const documentaryCitationId=(scopeId:string,passageId:string)=>`documentary:${scopeId}:${passageId}`;
 class ResearchCorpusRun {
+  readonly harness: import('../electron/ai/researchHarnessRuntime').ResearchHarness|undefined = currentResearchHarness();
+  private readonly completedOperations = new Map<string, unknown>();
   readonly budget: ResearchRetrievalBudget;
   readonly evidence = new Map<string, WritingWorkshopPassageCandidate>();
   readonly limitations = new Set<string>();
@@ -67,7 +76,7 @@ class ResearchCorpusRun {
   private readonly contextDocuments = new Set<string>();
   readonly ideas = new Map<string, WritingWorkshopIdeaCandidate>();
   readonly traversal: Array<{ query: string; sources: string[]; candidates: number; partial: boolean }> = [];
-  /** Research Chat and Dictionary: the web step, when the user left it on. Deep Research never sets it. */
+  /** Optional web access, granted by the request and charged to the shared budget. */
   web?: ResearchWebGrant;
   /** Research Chat and Dictionary: the layers the user left on in the context balloon. Deep Research
    * reads both. A layer that is off is never consulted, not merely left out of the prompt. */
@@ -93,7 +102,15 @@ class ResearchCorpusRun {
   private pendingReceipts?: ScopedReceiptRow[];
   private readonly sourceCoverage: NonNullable<ResearchTraversal['sourceCoverage']>;
   constructor(readonly scope: ResolvedResearchScope, settings: RetrievalSettings, readonly signal?: AbortSignal, readonly pinRevisions = false) {
-    this.budget = new ResearchRetrievalBudget(settings);
+    if (this.harness) this.harness.corpus = this;
+    if (this.harness) settings = researchExplorationRetrieval(settings, this.harness.record.context.explorationMode ?? 'expanded');
+    const fast = this.harness?.record.context.explorationMode === 'fast';
+    this.budget = new ResearchRetrievalBudget(settings, settings.evidenceTokens, this.harness ? fast ? 96000 : RESEARCH_AGENT_DECISION_BYTES : settings.evidenceTokens);
+    if (this.harness) this.budget.allowAdaptiveTargets((this.harness.record.checkpoint.modelContext as { tokens?: number } | undefined)?.tokens ?? 32768);
+    if (fast) {
+      this.budget.roundLimit = Math.min(this.budget.roundLimit, settings.rounds + 2);
+      this.budget.evidenceTokenLimit = Math.min(this.budget.evidenceTokenLimit, Math.floor(settings.evidenceTokens * 1.5));
+    }
     const inventory = new Map(getResearchPreparationInventory().documents.map(document => [document.id, document.preparation]));
     this.sourceCoverage = scope.documents.map(document => {
       const state = inventory.get(document.id);
@@ -105,6 +122,73 @@ class ResearchCorpusRun {
     this.workIds = scope.documents.filter(document => !document.indexedSource || document.indexedSource.revision === document.revision).flatMap(document => document.workId ? [document.workId] : []);
     const manual = manualIdeaIds();
     this.ideaIds = [...resolveResearchSourceScope({ enabled: true, authorIds: [], workIds: this.workIds }, true)!.ideaIds].filter(id => !manual || manual.has(id));
+    const saved = this.harness?.record.checkpoint.corpus as ReturnType<ResearchCorpusRun['checkpointData']> | undefined;
+    if (saved) {
+      if (saved.scopeId !== scope.id) throw new Error('research_scope_changed');
+      for (const [target, entries] of [[this.evidence, saved.evidence], [this.ideas, saved.ideas], [this.catalogHits, saved.catalogHits], [this.completedOperations, saved.operations]] as const) {
+        for (const [key, value] of entries) (target as Map<string, unknown>).set(key, value);
+      }
+      for (const [target, entries] of [[this.matchedDocuments, saved.matched], [this.readDocuments, saved.read], [this.attemptedDocuments, saved.attempted],
+        [this.contextDocuments, saved.context], [this.namedCatalogHits, saved.named], [this.zoteroMcpReads, saved.mcpReads], [this.zoteroMcpAttempts, saved.mcpAttempts],
+        [this.limitations, saved.limitations], [this.budget.visited, saved.budget.visited]] as const) entries.forEach(entry => target.add(entry));
+      this.traversal.push(...saved.traversal); this.catalogLookups.push(...saved.lookups);
+      Object.assign(this.budget, { rounds: saved.budget.rounds, usedEvidenceTokens: saved.budget.evidence, decisionTokens: saved.budget.decisions, candidates: saved.budget.candidates, partial: saved.budget.partial });
+      this.budget.roundLimit = Math.min(this.budget.roundLimit, saved.budget.roundLimit ?? this.budget.roundLimit);
+      this.budget.evidenceTokenLimit = Math.min(this.budget.evidenceTokenLimit, saved.budget.evidenceLimit ?? Infinity);
+      this.budget.decisionTokenLimit = Math.min(this.budget.decisionTokenLimit, saved.budget.decisionLimit ?? Infinity);
+      this.priorPassages = saved.priorPassages; this.graphSnapshot = saved.graph;
+    }
+  }
+  private checkpointData() {
+    return { scopeId: this.scope.id, evidence: [...this.evidence.entries()], ideas: [...this.ideas.entries()], catalogHits: [...this.catalogHits.entries()], operations: [...this.completedOperations.entries()],
+      matched: [...this.matchedDocuments], read: [...this.readDocuments], attempted: [...this.attemptedDocuments], context: [...this.contextDocuments], named: [...this.namedCatalogHits],
+      mcpReads: [...this.zoteroMcpReads], mcpAttempts: [...this.zoteroMcpAttempts], limitations: [...this.limitations], traversal: this.traversal, lookups: this.catalogLookups,
+      priorPassages: this.priorPassages, graph: this.graphSnapshot, researchLog: this.researchLog(),
+      budget: { rounds: this.budget.rounds, evidence: this.budget.usedEvidenceTokens, decisions: this.budget.decisionTokens, candidates: this.budget.candidates, partial: this.budget.partial,
+        roundLimit: this.budget.roundLimit, evidenceLimit: this.budget.evidenceTokenLimit, decisionLimit: this.budget.decisionTokenLimit, visited: [...this.budget.visited] } };
+  }
+  checkpoint(interrupted = false): void {
+    if (!this.harness) return;
+    if (interrupted) this.harness.validateAuthorization(); else this.validate();
+    // A checkpoint must never refer to a receipt still only in process memory.
+    if (this.pendingReceipts?.length) { insertScopedReceipts(this.pendingReceipts); this.pendingReceipts = []; }
+    this.harness.record.checkpoint.corpus = this.checkpointData();
+    this.harness.record.summary.usage = { ...this.harness.record.summary.usage, rounds: this.budget.rounds, evidenceBytes: this.budget.usedEvidenceTokens, decisionBytes: this.budget.decisionTokens };
+    this.harness.persist();
+  }
+  /** Academic generators consume one evidence ledger across discovery and later sections. */
+  syncWebEvidence(): void {
+    if (!this.harness || this.harness.record.context.mode === 'chat') return;
+    for (const passage of this.web?.contextPassages() ?? []) this.evidence.set(passage.id, {
+      id: passage.id, label: passage.title, summary: passage.text, nodus_id: `web:${passage.id}`,
+      authors: [passage.site], year: null, zotero_key: '', pageLabel: passage.page ? String(passage.page) : null,
+      citation: passage.citation, score: 1, reason: 'web',
+    });
+  }
+  async perform<T>(action: Exclude<ResearchAction, { action: 'finish' | 'enqueue' | 'defer' }>, execute: () => Promise<T>): Promise<T> {
+    if (!this.harness) return execute();
+    this.validate(); this.harness.validate();
+    const key = researchTaskKey(action);
+    if (this.completedOperations.has(key)) return structuredClone(this.completedOperations.get(key)) as T;
+    const task = this.harness.agenda.enqueue(action);
+    const evidence = () => new Map<string, string>([...this.evidence.values()].map(item => [researchTaskKey({ action: 'search', query: `${item.nodus_id}\n${item.summary}` }), item.id] as [string, string])
+      .concat((this.web?.contextPassages() ?? []).map(item => [researchTaskKey({ action: 'search', query: `${item.url}\n${item.text}` }), item.id] as [string, string])));
+    const before = evidence();
+    if (task) { task.status = 'running'; this.checkpoint(); }
+    try {
+      const result = await execute();
+      this.validate(); this.harness.validate();
+      if (task) this.harness.agenda.complete(task, [...evidence()].filter(([key]) => !before.has(key)).map(([, id]) => id));
+      this.completedOperations.set(key, result ?? null); this.checkpoint(); return result;
+    } catch (error) {
+      if (task) {
+        if (this.harness.signal.aborted) { task.status = 'pending'; task.note = 'interrupted'; }
+        else { this.harness.agenda.complete(task, [], true); task.note = 'read_unavailable'; }
+      }
+      if (this.harness.signal.aborted) { try { this.checkpoint(true); } catch { /* A revoked scope cannot checkpoint old evidence. */ } }
+      else this.checkpoint();
+      throw error;
+    }
   }
   /** The corpus inventory for this step. Building it reads every work, library item and note,
    * synchronously (~150 ms on a 14,000-work library), and one chat turn asked for it ~96 times:
@@ -134,6 +218,14 @@ class ResearchCorpusRun {
   }
   /** Research Chat's agent starts from every query of its plan; other callers from one. */
   async investigate(query: string, model?: ModelRef | null): Promise<void> {
+    if (this.harness) {
+      await this.harness.stage('investigate', query, async () => { await this.investigateUncached(query, model); this.syncWebEvidence(); this.checkpoint(); });
+      this.syncWebEvidence();
+      return;
+    }
+    return this.investigateUncached(query, model);
+  }
+  private async investigateUncached(query: string, model?: ModelRef | null): Promise<void> {
     this.pendingReceipts = [];
     try { await this.investigateSteps(query, model); }
     finally { const rows = this.pendingReceipts; this.pendingReceipts = undefined; insertScopedReceipts(rows); }
@@ -149,23 +241,33 @@ class ResearchCorpusRun {
     }
     // Leave room for an actual decision and bounded original read. Otherwise a
     // successful first retrieval would consume the entire expansion allowance.
-    // Indexed-text-only turns keep main's single-query path and skip the supervisor.
-    const alone = researchIndexedTextsAlone(this.layers, !!this.web?.enabled);
-    const plannedQueries = this.agent && !alone ? this.agent.plan.queries.slice(0, 4).map(each => each.trim()).filter(Boolean) : [];
-    const allQueries = [...new Set([query, ...plannedQueries])];
+    // Legacy indexed-only turns keep one literal probe. V1 can refine index
+    // searches while its capability grants continue to forbid other layers.
+    const alone = researchIndexedTextsAlone(this.layers, !!this.web?.enabled) && !this.harness;
+    const branches = this.harness && !alone && !this.agent?.correction && this.budget.settings.autoExpand && this.budget.roundLimit - this.budget.rounds > 1
+      ? [...this.agent?.plan.exploration ?? []].sort((a, b) => b.priority - a.priority).slice(0, this.harness.record.context.explorationMode === 'fast' ? 1 : 4) : [];
+    for (const branch of branches) this.harness!.agenda.enqueue({ action: 'search', query: branch.query }, branch.question, branch.priority,
+      { purpose: branch.purpose, relation: branch.relation });
+    const plannedQueries = this.agent && !alone ? [...new Set([...this.agent.plan.queries, ...branches.map(branch => branch.query)])].slice(0, 4).map(each => each.trim()).filter(Boolean) : [];
+    const indexAgent = this.harness && researchIndexedTextsAlone(this.layers, !!this.web?.enabled);
+    const allQueries = [...new Set(indexAgent && plannedQueries.length ? [...plannedQueries, query] : [query, ...plannedQueries])];
     // Every planned facet gets a literal probe in the first round. Additional
     // semantic probes need room for an entire prepared chunk; fragmenting a small
     // opening allowance over five queries can otherwise admit no evidence at all.
     // Reserve the existing two-thirds allowance when full documents permit
     // decisions and original reads. Other mixed-layer turns retain three probes.
-    const openingBudget = Math.floor((this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens) / 3);
+    const remaining = this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens;
+    // A broad harness turn probes the goal and complementary lines separately.
+    // Keep a full chunk and a round for later reads; never enlarge the run budget.
+    const openingBudget = branches.length ? Math.max(Math.floor(remaining / 3), Math.min(remaining - RETRIEVAL_CHUNK_MAX_BYTES,
+      (1 + Math.min(2, branches.length)) * RETRIEVAL_CHUNK_MAX_BYTES)) : Math.floor(remaining / 3);
     const queryLimit = this.agent && !alone
-      ? this.layers.documents ? Math.min(Math.max(1, Math.floor(openingBudget / RETRIEVAL_CHUNK_MAX_BYTES)),
-        Math.max(1, this.budget.settings.autoExpand ? this.budget.settings.rounds - this.budget.rounds - 1 : 1)) : 3
+      ? (this.layers.documents || this.harness) ? Math.min(Math.max(1, Math.floor(openingBudget / RETRIEVAL_CHUNK_MAX_BYTES)),
+        Math.max(1, this.budget.settings.autoExpand ? this.budget.roundLimit - this.budget.rounds - 1 : 1)) : 3
       : 1;
-    const queries = allQueries.slice(0, queryLimit);
+    const queries = allQueries.slice(0, this.harness?.record.context.explorationMode === 'fast' ? Math.min(2, queryLimit) : queryLimit);
     const opening = Math.floor(openingBudget / queries.length);
-    const limit = this.layers.documents && this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
+    const limit = (this.layers.documents || !!this.harness) && this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
     // Each of the chat's opening queries widens the search, the first included; one that fails
     // (a retrieval timeout on a loaded machine) costs its own evidence, not the turn. A run with no
     // agent has only the one query, and its failure is still the run's.
@@ -183,9 +285,12 @@ class ResearchCorpusRun {
       }
     }
     // The supervisor's decisions read documents: nothing to decide with the documents off.
-    if (this.layers.documents && !this.agent?.correction) await deepenResearch(this, query, model);
+    if ((this.layers.documents || (this.harness && (this.web?.enabled || branches.length || this.layers.indexed))) && !alone && !this.agent?.correction) await deepenResearch(this, query, model);
   }
   async retrieve(query: string, expandRounds = 2, roundLimit?: number, embedded?: number[] | null, lexicalQueries?: string[]): Promise<void> {
+    return this.perform({ action: 'search', query }, () => this.retrieveUncached(query, expandRounds, roundLimit, embedded, lexicalQueries));
+  }
+  private async retrieveUncached(query: string, expandRounds = 2, roundLimit?: number, embedded?: number[] | null, lexicalQueries?: string[]): Promise<void> {
     this.validate();
     if (!this.budget.nextRound()) {
       this.traversal.push({ query, sources: this.scope.documents.map(document => document.id), candidates: 0, partial: true });
@@ -202,8 +307,23 @@ class ResearchCorpusRun {
     });
     this.validate();
     const current = this.inventory().byId;
-    const stableWorks = this.pinRevisions ? this.scope.documents.filter(document => (!document.indexedSource || document.indexedSource.revision === document.revision) && current.get(document.id)?.revision === document.revision).flatMap(document => document.workId ? [document.workId] : []) : this.workIds;
-    const stableIdeas = stableWorks.length === this.workIds.length ? this.ideaIds : [];
+    // The authorized scope already contains citation metadata. On V1's opening
+    // indexed probe, prioritize a named author's own texts without a catalogue
+    // action, profiles, originals or any widening of the user's grant.
+    const named = this.harness && !readDocuments && readIndexed && this.budget.rounds === 1
+      ? this.agent?.plan.authors.flatMap(author => searchResearchCatalog(this.scope.documents, { author }, this.scope.documents.length)) ?? [] : [];
+    const priorityIds = new Set(named.map(document => document.id));
+    const searchScope = priorityIds.size ? { ...this.scope, documents: this.scope.documents.filter(document => priorityIds.has(document.id)) } : this.scope;
+    const stableWorks = this.pinRevisions ? this.scope.documents.filter(document => (!document.indexedSource || document.indexedSource.revision === document.revision) && current.get(document.id)?.revision === document.revision).flatMap(document => document.workId ? [document.workId] : []) : searchScope.documents.flatMap(document => document.workId ? [document.workId] : []);
+    // Passage search may include older indexed revisions; graph ideas may not.
+    // Intersect with the graph's current works instead of requiring both lanes
+    // to have identical sizes. A narrowed search still needs strict provenance:
+    // a synthesized idea mentioning an excluded work cannot cross that boundary.
+    const stableWorkIds = new Set(stableWorks);
+    const ideaWorkIds = this.workIds.filter(id => stableWorkIds.has(id));
+    const narrowedIdeas = readIdeas && ideaWorkIds.length !== this.workIds.length
+      ? resolveResearchSourceScope({ enabled: true, authorIds: [], workIds: ideaWorkIds }, true)!.ideaIds : null;
+    const stableIdeas = !readIdeas ? [] : narrowedIdeas ? this.ideaIds.filter(id => narrowedIdeas.has(id)) : this.ideaIds;
     // Without full documents no profiles route the search, so the document lanes (support and
     // routed passages) stay empty too.
     const hierarchy = await retrieveHierarchical(query, { embedding: vector, nodusIds: stableWorks, ideaIds: stableIdeas,
@@ -213,8 +333,8 @@ class ResearchCorpusRun {
     const usedBeforeRound = this.budget.usedEvidenceTokens;
     const remaining = Math.min(roundLimit ?? Infinity, this.budget.evidenceTokenLimit - usedBeforeRound);
     const acceptRound = (id: string, text: string) => this.budget.usedEvidenceTokens - usedBeforeRound + new TextEncoder().encode(text).length <= remaining && this.budget.accept(id, text);
-    const expansion = settings.autoExpand && readDocuments ? Math.max(1, Math.min(expandRounds, settings.rounds - this.budget.rounds + 1)) : 1;
-    const shared = readIndexed && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(this.scope, query,
+    const expansion = settings.autoExpand && readDocuments ? Math.max(1, Math.min(expandRounds, this.budget.roundLimit - this.budget.rounds + 1)) : 1;
+    const shared = readIndexed && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(searchScope, query,
       { ...settings, rounds: expansion, evidenceTokens: remaining }, vector, this.signal, undefined,
       () => this.inventory().documents, lexicalQueries) : { evidence: [], traversal: { rounds: 1, candidates: 0, partial: true } };
     for (let round = 1; round < shared.traversal.rounds; round++) this.budget.nextRound();
@@ -232,7 +352,7 @@ class ResearchCorpusRun {
     });
     let selected = 0;
     for (let index = 0; index < Math.max(candidates.length, legacy.length); index++) for (const candidate of [candidates[index], legacy[index]]) {
-      if (!candidate) continue;
+      if (!candidate || this.harness && !researchExcerptHasProse(candidate.summary)) continue;
       const key = `passage-content:${JSON.stringify([candidate.nodus_id, candidate.summary, candidate.pageLabel])}`;
       if (this.budget.visited.has(key)) continue;
       if (selected >= settings.passagesPerRound * shared.traversal.rounds) { this.budget.partial = true; break; }
@@ -248,7 +368,7 @@ class ResearchCorpusRun {
       const statement = found.statement ?? found.label ?? '';
       const row = { ...found, statement };
       if (!statement || this.ideas.has(row.global_id) || !acceptRound(`idea:${row.global_id}`, statement)) continue;
-      const ids = ideaWorkIds(row.global_id);
+      const ids = sourceIdeaWorkIds(row.global_id);
       const documents = this.scope.documents.filter(document => ids.some(id => id.nodus_id === document.workId));
       documents.forEach(document => this.contextDocuments.add(document.id));
       this.ideas.set(row.global_id, { id: row.global_id, label: row.label, summary: row.statement, statement: row.statement,
@@ -263,7 +383,7 @@ class ResearchCorpusRun {
     }
     this.budget.candidates += hierarchy.passages.length + separable.length + shared.traversal.candidates;
     this.budget.partial ||= shared.traversal.partial;
-    this.traversal.push({ query, sources: this.scope.documents.map(document => document.id), candidates: hierarchy.passages.length + separable.length + shared.traversal.candidates, partial: this.budget.partial });
+    this.traversal.push({ query, sources: searchScope.documents.map(document => document.id), candidates: hierarchy.passages.length + separable.length + shared.traversal.candidates, partial: this.budget.partial });
     recordEmbeddingTrace({ type: 'research-evidence-selection', query, scopeId: this.scope.id,
       sharedCandidates: shared.evidence.map(item => ({ id: item.id, documentId: item.documentId, provenance: item.provenance })),
       legacyCandidates: legacy.map(item => ({ id: item.id, reason: item.reason })),
@@ -271,6 +391,9 @@ class ResearchCorpusRun {
       limitations: [...this.limitations], partial: this.budget.partial });
   }
   async readDocument(documentId: string, operation: ResearchDocumentRead): Promise<{ evidence: ResearchEvidence[]; scopeId: string; partial: boolean }> {
+    return this.perform({ action: 'read', documentId, operation }, () => this.readDocumentUncached(documentId, operation));
+  }
+  private async readDocumentUncached(documentId: string, operation: ResearchDocumentRead): Promise<{ evidence: ResearchEvidence[]; scopeId: string; partial: boolean }> {
     this.validate();
     const read = validateResearchDocumentRead(operation);
     const document = this.scope.documents.find(item => item.id === documentId);
@@ -302,6 +425,9 @@ class ResearchCorpusRun {
     return { evidence, scopeId: this.scope.id, partial: this.budget.partial };
   }
   async readOriginal(documentId: string, read: Extract<ResearchDocumentRead, { kind: 'pages' }>, counted = false): Promise<{ evidence: ResearchEvidence[]; scopeId: string; partial: boolean }> {
+    return this.perform({ action: 'original', documentId, from: read.from, to: read.to, attachmentId: read.attachmentId }, () => this.readOriginalUncached(documentId, read, counted));
+  }
+  private async readOriginalUncached(documentId: string, read: Extract<ResearchDocumentRead, { kind: 'pages' }>, counted = false): Promise<{ evidence: ResearchEvidence[]; scopeId: string; partial: boolean }> {
     this.validate(); validateResearchDocumentRead(read);
     const document = this.scope.documents.find(item => item.id === documentId);
     if (!document) throw new Error('research_source_not_authorized');
@@ -383,7 +509,10 @@ class ResearchCorpusRun {
    * handed the whole remaining allowance, its first read of a long work took all of it. */
   stepAllowance(): number {
     const remaining = this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens;
-    return this.agent ? Math.min(remaining, Math.max(1024, Math.floor(this.budget.evidenceTokenLimit / 8))) : remaining;
+    // Prepared documentary chunks can occupy 4 KB. A 2 KB per-action share
+    // silently discarded later facets even with half the global budget unused.
+    const minimum = this.harness ? RETRIEVAL_CHUNK_MAX_BYTES : 1024;
+    return this.agent ? Math.min(remaining, Math.max(minimum, Math.floor(this.budget.evidenceTokenLimit / 8))) : remaining;
   }
   /** The authorized source a passage's work belongs to. */
   documentForWork(nodusId: string): ResolvedResearchScope['documents'][number] | undefined {
@@ -460,6 +589,13 @@ class ResearchCorpusRun {
       const hits = [...this.catalogHits.values()].filter(hit => searchResearchCatalog([hit], lookup.query).length).slice(0, 8).map(hit => title(hit.id)).filter(Boolean);
       const asked = [lookup.query.author && `author ${lookup.query.author}`, lookup.query.title && `title ${lookup.query.title}`, lookup.query.keywords && `keywords ${lookup.query.keywords}`].filter(Boolean).join(', ');
       log.push(`Looked up the library catalogue (the user's Zotero and Nodus records: authors, titles, years) for ${asked}: ${lookup.hits ? `${lookup.hits} works, ${hits.join('; ')}` : 'no work matches'}.`);
+    }
+    // A retrieved subset is not a bibliography. Give the writer the actual
+    // metadata inventory for named authors, inside the authorized scope only.
+    if (this.layers.documents) for (const author of new Set(this.catalogLookups.map(lookup => lookup.query.author?.trim()).filter((name): name is string => Boolean(name)))) {
+      const matches = searchResearchCatalog(this.scope.documents, { author }, this.scope.documents.length);
+      log.push(`Complete catalogue metadata query in this authorized scope: ${JSON.stringify({ author, totalMatchingRecords: matches.length,
+        examplesTruncated: matches.length > 6, examples: matches.slice(0, 6).map(hit => ({ title: hit.title, authors: hit.authors, year: hit.year })) })}. Matching credits may include coauthors or editors. This is not a list of originals read, and the examples are not the complete catalogue when truncated.`);
     }
     const inside = [...new Set(this.traversal.filter(entry => entry.sources.length === 1 && !entry.query.startsWith('original-pages:')).map(entry => entry.sources[0]))].map(title).filter(Boolean);
     if (inside.length) log.push(`Searched inside: ${inside.join('; ')}.`);

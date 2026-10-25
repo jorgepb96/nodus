@@ -28,6 +28,7 @@ export function installRuntimeHooks(userDataPath, overrides = {}) {
   const originalLoad = Module._load;
   const originalTsLoader = require.extensions['.ts'];
   const electronStub = {
+    net: { fetch: (...args) => globalThis.fetch(...args) },
     app: {
       getPath(name) {
         if (name === 'userData' || name === 'temp' || name === 'documents') return userDataPath;

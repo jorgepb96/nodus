@@ -1,9 +1,11 @@
 import { manualIdeaVisible } from './manualIdeaVisibility';
 import { getDb } from './database';
+import { activeEmbeddingIndex, clearActiveEmbeddingFamilies } from './embeddingIndexesRepo';
+import { embeddingProvenance } from '../ai/embeddingProvenance';
 import { MANUAL_IDEA_REFS_SQL, sleepIdeasWithoutWorks, userIdeaReferencesSql } from './ideaDormancy';
 import { scanSimilar } from './vectorScan';
 import { v4 as uuid } from 'uuid';
-import { embeddingTextForIdea, embeddingTextHash } from './ideaEmbeddingText';
+import { embeddingTextForIdea, embeddingTextHash, IDEA_EMBEDDING_THEME_LABELS_SQL } from './ideaEmbeddingText';
 export { embeddingTextForIdea, embeddingTextHash };
 import type {
   Idea,
@@ -108,6 +110,11 @@ export function ideaNeedsEmbedding(row: {
 // ── Embedding (de)serialization: store float32 array as BLOB ────────────────
 
 export function encodeEmbedding(vec: number[]): Buffer {
+  const origin = embeddingProvenance(vec);
+  if (origin) {
+    const context = activeEmbeddingIndex(getDb());
+    if (!context || context.indexId !== origin.indexId || context.generation !== origin.generation || getDb().name !== origin.databasePath) throw new Error('embedding_index_configuration_changed');
+  }
   const f32 = new Float32Array(vec);
   return Buffer.from(f32.buffer, f32.byteOffset, f32.byteLength);
 }
@@ -198,6 +205,8 @@ function insertIdea(input: NewIdeaInput, global_id: string): Idea {
 
 export function updateIdeaEmbedding(globalId: string, text: string, embedding: number[]): void {
   const meta = embeddingMetaFor(text, embedding);
+  const current = getDb().prepare(`SELECT type,label,statement,${IDEA_EMBEDDING_THEME_LABELS_SQL} AS themes FROM ideas i WHERE global_id=? AND orphaned_at IS NULL`).get(globalId) as { type: string; label: string; statement: string; themes: string } | undefined;
+  if (!current || embeddingTextHash(embeddingTextForIdea({ ...current, themes: current.themes.split(',').filter(Boolean) })) !== meta.textHash) throw new Error('embedding_source_changed');
   getDb()
     .prepare(
       `UPDATE ideas
@@ -212,22 +221,12 @@ export function updateIdeaEmbedding(globalId: string, text: string, embedding: n
 }
 
 export function clearAllEmbeddings(): void {
-  getDb()
-    .prepare(
-      `UPDATE ideas
-          SET embedding = NULL,
-              embedding_provider = NULL,
-              embedding_model = NULL,
-              embedding_dim = NULL,
-              embedding_text_hash = NULL
-        WHERE embedding IS NOT NULL`
-    )
-    .run();
+  clearActiveEmbeddingFamilies(getDb(), ['ideas']);
 }
 
 export function getIdea(globalId: string): Idea | null {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM ideas WHERE global_id = ?').get(globalId) as
+  const row = db.prepare('SELECT * FROM embedding_read_ideas AS ideas WHERE global_id = ?').get(globalId) as
     | (Omit<Idea, 'type' | 'label' | 'statement' | 'embedding'> & {
         type: IdeaType | null;
         label: string | null;
@@ -305,7 +304,7 @@ export function ideasWithEmbeddings(): { global_id: string; type: IdeaType; labe
   const rows = db
     .prepare(
       `SELECT global_id, type, label, statement, embedding
-         FROM ideas
+         FROM embedding_read_ideas AS ideas
         WHERE embedding IS NOT NULL
           AND embedding_provider = ?
           AND embedding_model = ?
@@ -336,7 +335,7 @@ export function ideaVectorsForCompute(): IdeaVectorRecord[] {
   const rows = getDb()
     .prepare(
       `SELECT global_id, type, label, statement, embedding
-         FROM ideas
+         FROM embedding_read_ideas AS ideas
         WHERE embedding IS NOT NULL
           AND embedding_provider = ?
           AND embedding_model = ?
@@ -392,7 +391,7 @@ export function findSimilarIdeas(
     .prepare(
       `SELECT * FROM (
          SELECT global_id, type, label, statement, vec_cosine(embedding, ?) AS similarity
-         FROM ideas
+         FROM embedding_read_ideas AS ideas
          WHERE embedding IS NOT NULL
            AND embedding_provider = ?
            AND embedding_model = ?
@@ -441,7 +440,7 @@ export async function findSimilarIdeasPaged(
   const ranked = await scanSimilar<{ global_id: string; rid: number; similarity: number }>({
     table: 'ideas',
     sql: `SELECT global_id, rowid AS rid, vec_scan(embedding) AS similarity
-            FROM ideas
+            FROM embedding_read_ideas AS ideas
            WHERE rowid > ? AND rowid <= ?
              AND embedding IS NOT NULL
              AND embedding_provider = ?
@@ -485,7 +484,7 @@ export function ideaEmbeddingSimilarities(
   return getDb()
     .prepare(
       `SELECT global_id, type, label, statement, vec_cosine(embedding, ?) AS similarity
-         FROM ideas
+         FROM embedding_read_ideas AS ideas
         WHERE embedding IS NOT NULL
           AND embedding_provider = ?
           AND embedding_model = ?
@@ -508,7 +507,7 @@ export function embeddedIdeaCount(): number {
   const row = getDb()
     .prepare(
       `SELECT COUNT(*) AS count
-         FROM ideas
+         FROM embedding_read_ideas AS ideas
         WHERE embedding IS NOT NULL
           AND embedding_provider = ?
           AND embedding_model = ?`

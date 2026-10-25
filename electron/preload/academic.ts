@@ -19,6 +19,43 @@ const studyAssistantStreams = chatStreamRegistry();
 let activeStudySttRequestId: string | null = null;
 
 export const academicApi: AcademicApi = {
+  listEmbeddingIndexes: vaultId => ipcRenderer.invoke('embeddingIndexes:list', vaultId),
+  listEmbeddingIndexRuns: (id, vaultId) => ipcRenderer.invoke('embeddingIndexes:runs', id, vaultId),
+  compareEmbeddingIndexes: input => ipcRenderer.invoke('embeddingIndexes:compare', input),
+  cancelEmbeddingComparison: id => ipcRenderer.invoke('embeddingIndexes:cancelComparison', id),
+  getLocalRerankerStatus: () => ipcRenderer.invoke('embeddingIndexes:rerankerStatus'),
+  prepareLocalReranker: (action, modelId) => ipcRenderer.invoke('embeddingIndexes:rerankerPrepare', action, modelId),
+  deleteLocalReranker: modelId => ipcRenderer.invoke('embeddingIndexes:rerankerDelete', modelId),
+  previewEmbeddingIndex: input => ipcRenderer.invoke('embeddingIndexes:preview', input),
+  prepareEmbeddingIndex: input => ipcRenderer.invoke('embeddingIndexes:prepare', input),
+  activateEmbeddingIndex: (id, vaultId) => ipcRenderer.invoke('embeddingIndexes:activate', id, vaultId),
+  controlEmbeddingIndex: (id, action, vaultId) => ipcRenderer.invoke('embeddingIndexes:control', id, action, vaultId),
+  deleteEmbeddingIndex: (id, vaultId) => ipcRenderer.invoke('embeddingIndexes:delete', id, vaultId),
+  onActiveEmbeddingIndexChanged: callback => {
+    const listener = () => callback();
+    ipcRenderer.on('embeddingIndexes:activeChanged', listener);
+    return () => ipcRenderer.removeListener('embeddingIndexes:activeChanged', listener);
+  },
+  onEmbeddingIndexesChanged: callback => {
+    const listener = () => callback();
+    ipcRenderer.on('embeddingIndexes:changed', listener);
+    return () => ipcRenderer.removeListener('embeddingIndexes:changed', listener);
+  },
+  onEmbeddingIndexProgress: callback => {
+    const listener = (_event: unknown, progress: import('@shared/embeddingIndexes').EmbeddingIndexProgress) => callback(progress);
+    ipcRenderer.on('embeddingIndexes:progress', listener);
+    return () => ipcRenderer.removeListener('embeddingIndexes:progress', listener);
+  },
+  listResearchRuns: (conversationId, entryId) => ipcRenderer.invoke('research:run:list', conversationId, entryId),
+  getResearchRun: id => ipcRenderer.invoke('research:run:get', id),
+  pauseResearchRun: id => ipcRenderer.invoke('research:run:pause', id),
+  cancelResearchRun: id => ipcRenderer.invoke('research:run:cancel', id),
+  resumeResearchRun: id => ipcRenderer.invoke('research:run:resume', id),
+  onResearchRun: callback => {
+    const listener = (_event: unknown, run: import('@shared/researchHarness').ResearchRunSummary) => callback(run);
+    ipcRenderer.on('research:run:update', listener);
+    return () => ipcRenderer.removeListener('research:run:update', listener);
+  },
   exportAcademicDocument: input => ipcRenderer.invoke('workspace:academic:export',input),
   getResearchCorpusSources: () => ipcRenderer.invoke('research:corpus:sources'),
   setResearchZoteroAutomatic: enabled => ipcRenderer.invoke('research:zotero:automatic', enabled),
@@ -118,7 +155,7 @@ export const academicApi: AcademicApi = {
   listDuplicateIdeas: () => ipcRenderer.invoke('ideas:listDuplicates'),
   mergeIdeas: (canonicalId, duplicateIds) => ipcRenderer.invoke('ideas:merge', canonicalId, duplicateIds),
   backupDatabase: () => ipcRenderer.invoke('ideas:backup'),
-  getWorkMeta: (nodusId) => ipcRenderer.invoke('works:meta', nodusId),
+  getWorkMeta: (nodusId, options) => ipcRenderer.invoke('works:meta', nodusId, options),
   openInZotero: (zoteroKey) => ipcRenderer.invoke('works:openInZotero', zoteroKey).then(() => undefined),
   openEvidenceAtPage: (nodusId, location) => ipcRenderer.invoke('works:openAtPage', nodusId, location),
   getLibraryReaderDocument: (nodusId) => ipcRenderer.invoke('libraryReader:get', nodusId),
@@ -622,6 +659,8 @@ export const academicApi: AcademicApi = {
       if (id === requestId) handlers.onActivity?.(activity);
     };
     ipcRenderer.on('research:chatStream:activity', onActivity);
+    const onRun = (_e: unknown, id: string, run: import('@shared/researchHarness').ResearchRunSummary) => { if (id === requestId) handlers.onRun?.(run); };
+    ipcRenderer.on('research:chatStream:run', onRun);
     const onDelta = (_e: unknown, id: string, delta: string) => {
       if (id === requestId) handlers.onDelta(delta);
     };
@@ -649,6 +688,7 @@ export const academicApi: AcademicApi = {
       // Activity events and the invoke reply travel on different IPC pipes, so the reply can
       // overtake the last events of the turn. Keep listening briefly for those stragglers.
       setTimeout(() => ipcRenderer.removeListener('research:chatStream:activity', onActivity), ACTIVITY_GRACE_MS);
+      ipcRenderer.removeListener('research:chatStream:run', onRun);
       ipcRenderer.removeListener('research:chatStream:concilium', onConcilium);
       ipcRenderer.removeListener('research:chatStream:delta', onDelta);
       ipcRenderer.removeListener('research:chatStream:reasoning', onReasoning);

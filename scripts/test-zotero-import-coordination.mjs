@@ -65,7 +65,7 @@ test('legacy reconciliation removes only stale Zotero membership edges', async (
   assert.match(sync, /addWorkCollections\(nodusId, \[\.\.\.memberships\]\)/);
   assert.match(sync, /FROM work_aliases/);
   assert.match(sync, /observedMemberships\.get\(key\)\?\.has\(row\.collection_key\)/);
-  assert.match(sync, /reconcileMonitoredCollectionMemberships\(observedMemberships, settings\.monitoredCollections, previousMonitoredScope\)/);
+  assert.match(sync, /await reconcileMonitoredCollectionMemberships\(observedMemberships, settings\.monitoredCollections, previousMonitoredScope, cooperate\)/);
   assert.match(sync, /expandCollectionKeys\(\[\.\.\.new Set\(monitored/);
   assert.match(sync, /SELECT wc\.nodus_id, wc\.collection_key, w\.zotero_key/);
   assert.doesNotMatch(sync, /WHERE wc\.collection_key IN \(\$\{placeholders\}\)[\s\S]{0,80}w\.zotero_key IS NOT NULL/);

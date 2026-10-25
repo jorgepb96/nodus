@@ -1,9 +1,14 @@
 import path from 'node:path';
 import { backgroundProcess } from '../workers/backgroundProcess';
 import type { RetrievalChunk } from '@shared/retrievalChunks';
+import { withDocumentWork } from '../workers/documentWork';
 
 /** No in-process fallback: large source tokenization must not block Electron. */
 export function documentaryChunks(text: string, sourceMap: Record<string, string> = {}, signal?: AbortSignal): Promise<RetrievalChunk[]> {
+  return withDocumentWork(() => runChunks(text, sourceMap, signal), signal);
+}
+
+function runChunks(text: string, sourceMap: Record<string, string>, signal?: AbortSignal): Promise<RetrievalChunk[]> {
   signal?.throwIfAborted();
   const worker = backgroundProcess(path.join(__dirname, 'documentaryChunkWorker.js'), 'Nodus documentary chunking');
   return new Promise((resolve, reject) => {

@@ -9,6 +9,7 @@ import type {
 } from '@shared/types';
 import { confirm } from './feedback';
 import { Icon } from './ui';
+import { SettingsPanel } from './SettingsPanel';
 import { errorText, t, tx } from '../i18n';
 
 /** What each finding means, in the reader's words. Literal keys, so the i18n test sees them. */
@@ -142,20 +143,23 @@ export function GraphHealthPanel({ manualMode }: { manualMode: boolean }) {
     finally { setBusy(false); }
   };
 
-  return <section className="card p-4 mb-4" data-testid="graph-health">
-    <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-3">{t('Salud del grafo')}</h2>
-    <div className="flex flex-wrap items-start gap-3">
-      <p className="mr-auto max-w-2xl text-xs text-neutral-500">{t('Comprueba que las ideas, los temas y las relaciones del grafo son coherentes, y repara sin IA lo que se pueda arreglar.')}</p>
+  return <SettingsPanel
+    data-testid="graph-health"
+    icon="network"
+    title={t('Salud del grafo')}
+    description={t('Comprueba que las ideas, los temas y las relaciones del grafo son coherentes, y repara sin IA lo que se pueda arreglar.')}
+    actions={<>
       <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" disabled={busy} onClick={() => void check()} data-testid="graph-health-check">
         <Icon name="refresh" />{t('Comprobar')}
       </button>
       <button className="btn btn-primary" disabled={busy || running || repairable === 0} onClick={() => void repair()} data-testid="graph-health-repair">
         <Icon name="shield" />{t('Reparar')}
       </button>
-    </div>
-    {running && repairable > 0 && <p className="mt-2 text-xs text-amber-600 dark:text-amber-300">{t('Espera a que termine la cola de análisis para reparar.')}</p>}
+    </>}
+  >
+    {running && repairable > 0 && <p className="text-xs text-amber-600 dark:text-amber-300">{t('Espera a que termine la cola de análisis para reparar.')}</p>}
 
-    {report && <div className="mt-3 space-y-3 text-xs">
+    {report && <div className="space-y-3 text-xs">
       {CATEGORIES.map((category) => {
         const checks = report.checks.filter((item) => item.category === category && item.count > 0);
         return <div key={category} data-testid={`graph-health-${category}`}>
@@ -183,5 +187,5 @@ export function GraphHealthPanel({ manualMode }: { manualMode: boolean }) {
     </div>}
 
     {message && <p className="mt-3 break-all text-xs text-amber-600 dark:text-amber-300" data-testid="graph-health-message">{message}</p>}
-  </section>;
+  </SettingsPanel>;
 }

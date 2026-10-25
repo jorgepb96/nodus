@@ -15,7 +15,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-research-test-model
 process.on('exit', () => fs.rmSync(scratch, { recursive: true, force: true }));
 const outfile = path.join(scratch, 'proxy.cjs');
 await build({ entryPoints: [path.join(repo, 'electron/qa/researchProviderProxy.ts')], outfile, bundle: true, platform: 'node', format: 'cjs', logLevel: 'silent', alias: { '@shared': path.join(repo, 'shared') } });
-const { researchTestProviderModels } = createRequire(import.meta.url)(outfile);
+const { researchTestProviderModels, researchTestProviderBase, researchTestEmbeddingEndpointIdentity } = createRequire(import.meta.url)(outfile);
 const ids = (provider, kind) => researchTestProviderModels(provider, kind)?.map(model => model.id) ?? null;
 
 test('outside an isolated run every provider lists its real catalogue', () => {
@@ -36,4 +36,20 @@ test('inside an isolated run the gated providers list what the gate forwards or 
     assert.deepEqual(ids('openrouter', 'chat'), [], 'OpenRouter chat is not forwarded');
     assert.equal(ids('openai', 'chat'), null, 'other providers keep their own behaviour');
   } finally { delete process.env.NODUS_RESEARCH_PROVIDER_PROXY; }
+});
+
+
+test('the paid proxy retains the real embedding identity without bypassing transport validation', () => {
+  const isolated=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'nodus-embedding-identity-')));
+  fs.writeFileSync(path.join(isolated,'isolation.json'),JSON.stringify({format:'nodus.isolated-research-profile/1',root:isolated}));
+  try{
+    delete process.env.NODUS_RESEARCH_PROVIDER_PROXY;
+    assert.equal(researchTestEmbeddingEndpointIdentity('openrouter','https://custom.example/v1'),'https://custom.example/v1');
+    process.env.NODUS_ISOLATED_ROOT=isolated;process.env.NODUS_QA_ROOT=isolated;
+    process.env.NODUS_RESEARCH_PROVIDER_PROXY='http://127.0.0.1:12345/00000000-0000-0000-0000-000000000000';
+    const transport=researchTestProviderBase('openrouter');assert.match(transport,/127.0.0.1:12345/);
+    assert.equal(researchTestEmbeddingEndpointIdentity('openrouter',transport),'https://openrouter.ai/api/v1');
+    assert.equal(researchTestEmbeddingEndpointIdentity('openrouter','https://custom.example/v1'),'https://custom.example/v1');
+    process.env.NODUS_QA_ROOT='wrong';assert.throws(()=>researchTestEmbeddingEndpointIdentity('openrouter',transport),/Unvalidated/);
+  }finally{delete process.env.NODUS_RESEARCH_PROVIDER_PROXY;delete process.env.NODUS_ISOLATED_ROOT;delete process.env.NODUS_QA_ROOT;fs.rmSync(isolated,{recursive:true,force:true});}
 });

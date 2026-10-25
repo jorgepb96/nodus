@@ -148,7 +148,7 @@ export function LibrarySettingsDialog({ settings, onClose, onSaved }: {
           <SwitchRow
             checked={draft.autoPrepareAttachments}
             title={t('Preparar automáticamente una copia legible')}
-            description={t('Genera Markdown limpio, estructura, tablas, imágenes y OCR en segundo plano. El original nunca se modifica.')}
+            description={t('Genera Markdown, estructura, tablas, imágenes y OCR en segundo plano. El original nunca se modifica.')}
             testId="library-auto-prepare-attachments"
             onChange={(checked) => patch('autoPrepareAttachments', checked)}
           />

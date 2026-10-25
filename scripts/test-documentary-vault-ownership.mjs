@@ -79,5 +79,5 @@ try {
   assert.equal(detached, nonAcademic.id, 'detached UI callbacks do not retain an owner');
   console.log('Actual documentary queue: two owning vaults, UI switch across extraction await, text-only preparation and scoped DB isolation passed.');
 } finally {
-  preparation.closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true });
+  await preparation.closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true });
 }

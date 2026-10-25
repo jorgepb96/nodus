@@ -75,7 +75,30 @@ try {
   assert.equal((await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null)).explicitLibrary, true, 'the words of a request for Zotero are honoured when the model misses them');
   ai.completeJson = async () => { throw new Error('provider_unavailable'); };
   const literal = await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null);
-  assert.deepEqual([literal.planned, literal.goal, literal.explicitLibrary], [false, 'usa zotero mcp', true], 'a planner that fails falls back to the literal message');
+  assert.deepEqual([literal.planned, literal.explicitLibrary], [false, true]);
+  assert.match(literal.goal, /albuquerque garc[ií]a\?\nusa zotero mcp/u, 'a failed follow-up planner retains the earlier topic instead of searching a tool command');
+  assert.doesNotMatch(literal.queries[0], /zotero|mcp/u);
+  const touristTopic = 'Busca evidencias sobre la mirada turística de John Urry';
+  const reviewHistory = [
+    { role: 'user', content: touristTopic },
+    { role: 'assistant', content: 'La mirada turística se construye culturalmente.' },
+    { role: 'user', content: 'Revisa de nuevo' },
+    { role: 'assistant', content: 'La revisión aporta nuevos pasajes.' },
+  ];
+  for (const followUp of ['Revisa de nuevo', 'Compruébalo otra vez', 'Review again', 'Check again']) {
+    const fallback = await planResearchTurn([...reviewHistory, { role: 'user', content: followUp }], null);
+    assert.deepEqual(fallback.queries, [touristTopic], 'a failed planner searches the topic across repeated review turns');
+    assert.match(fallback.goal, /John Urry/u);
+  }
+  for (const code of ['rate_limit', 'schema_mismatch']) {
+    ai.completeJson = async () => { throw new ai.AiError('Planner fixture failure', code === 'rate_limit', false, code); };
+    const fallback = await planResearchTurn([...reviewHistory, { role: 'user', content: 'Revisa de nuevo' }], null);
+    assert.deepEqual(fallback.queries, [touristTopic], `${code} keeps the original objective`);
+    assert.equal(fallback.explicitLibrary, false, 'a review does not create a new library grant');
+  }
+  assert.deepEqual(literalResearchTurnPlan('Revisa de nuevo').queries, [], 'an objectless review cannot launch an unrelated corpus search');
+  assert.deepEqual(literalResearchTurnPlan('Revisa de nuevo la cronología de Roma', reviewHistory).queries,
+    ['Revisa de nuevo la cronología de Roma'], 'an explicit new subject replaces the earlier topic');
   assert.equal(literalResearchTurnPlan('define libro de viaje vs relato de viaje').kind, 'comparison');
   // The plan says whether the message needs sources at all. Only an explicit «no» skips the
   // search: a model that says nothing, a planner that fails and a request for the library search.
@@ -89,7 +112,7 @@ try {
   assert.equal((await planResearchTurn([...history, { role: 'user', content: 'gracias, perfecto' }], null)).needsSources, false);
   assert.equal((await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null)).needsSources, true, 'a request for the library is never answered without it');
   ai.completeJson = async (options, guard) => { const reply = { needsSources: 'no', goal: 'x y z', queries: ['x y'], kind: 'other' }; if (!guard(reply)) throw new Error('invalid'); return reply; };
-  assert.equal((await planResearchTurn([...history, { role: 'user', content: 'vale' }], null)).needsSources, true, 'an invalid answer falls back to searching');
+  assert.equal((await planResearchTurn([...history, { role: 'user', content: '¿Qué otras posiciones hay?' }], null)).needsSources, true, 'an ambiguous documentary request with an invalid plan still searches');
 
   // Every one of the planner's four facets reaches the real retrieval binding.
   // Small windows must not be divided into five slices smaller than one chunk.
@@ -171,6 +194,11 @@ try {
   assert.match(log, /Goal of this turn.*Alburquerque García/);
   assert.match(log, /catalogue \(the user's Zotero and Nodus records.*author albuquerque garcía: 5 works/);
   assert.match(log, /Sources whose own text reached this answer: .*\(Albuquerque García, 2018\)/);
+  const completeHits = [...run.catalogHits];
+  run.catalogHits.clear(); run.catalogHits.set(completeHits[0][0], completeHits[0][1]);
+  assert.match(run.researchLog().join('\n'), /"author":"albuquerque garcía","totalMatchingRecords":5/, 'A single retrieved work must not become a complete author bibliography');
+  for (const [id, hit] of completeHits) run.catalogHits.set(id, hit);
+
 
   // 2b. One work is searched inside twice at most; a third search is refused with a note.
   const repeatedRun = new ResearchCorpusRun(scope, RESEARCH_CHAT_AGENT_SETTINGS);
@@ -249,9 +277,10 @@ try {
     assert.equal(full.sourceCoverage.length, full.sourceCount, 'compaction leaves the live run intact');
     const chats = load('electron/db/chatRepo.ts');
     const conversation = chats.createConversation({ title: 'Coverage round trip' });
-    const stats = { sections: [], works: 0, documents: 0, summaries: 0, passages: 0, contextChars: 0, truncated: full.partial, researchTraversal: compact };
+    const stats = { sections: [], works: 0, documents: 0, summaries: 0, passages: 0, contextChars: 0, truncated: full.partial, researchTraversal: compact, sourceNotices: ['Optional source-coverage note.'] };
     chats.saveMessages(conversation.id, [{ id: 'coverage-message', role: 'assistant', content: 'No evidence', stats }]);
     assert.deepEqual(chats.getConversation(conversation.id).messages[0].stats.researchTraversal, compact, 'coverage detail, attempts and counts survive the actual chat repository');
+    assert.deepEqual(chats.getConversation(conversation.id).messages[0].stats.sourceNotices, stats.sourceNotices, 'optional source notes survive the actual history store independently of prose');
     db.prepare("INSERT INTO ideas(global_id,type,label,statement) VALUES ('coverage-idea','claim','Coverage idea','coverage marker')").run();
     db.prepare("INSERT INTO idea_occurrences(global_id,nodus_id,role,confidence) VALUES ('coverage-idea','coverage-4','principal',1)").run();
     db.prepare("INSERT INTO gaps(id,nodus_id,kind,statement,confidence) VALUES ('coverage-gap','coverage-5','open_question','coverage missing comparison',0.9)").run();
@@ -281,7 +310,7 @@ try {
   } finally { preparation.retrieveSharedDocumentaryEvidence = emptyRetrieval; }
   console.log('Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

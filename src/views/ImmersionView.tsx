@@ -1,4 +1,6 @@
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
+import { ResearchHarnessControl, useResearchHarnessOptions, type ResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
 import { DocumentVisualScope, DocumentVisualActions, DocumentVisualFigures } from '../components/DocumentVisualScope';
@@ -48,7 +50,9 @@ import { WorkspaceTabStrip } from '../components/library/LibraryWorkspaceTabs';
 import { SectionHeader } from '../components/SectionHeader';
 import { GalleryFilterMenu, GalleryFilterReset, GallerySortMenu, passesFilter, type GalleryFilterOption } from '../components/GalleryFilters';
 import { ModelPicker } from '../components/ModelPicker';
-import { Markdown, type MarkdownCitation } from '../components/Markdown';
+import type { MarkdownCitation } from '../components/Markdown';
+import { ResearchMarkdown as Markdown } from '../components/ResearchSourceNotice';
+import { researchSourcePresentation } from '@shared/researchSourceNotices';
 import { StudyMarkdown, StudyMarkdownInline } from '../components/StudyMarkdown';
 import { SourceCitationModal, type CitationTarget, type OpenCitationLibraryWork } from '../components/SourceCitationModal';
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
@@ -72,7 +76,8 @@ import {
 } from '../backgroundJobs';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
-import { AudioPanel } from '../components/AudioPanel';
+import { ListenButton } from '../components/narration/Listen';
+import { ReadAlong, type ReadAlongControls } from '../components/narration/ReadAlong';
 import { FindInPage } from '../components/FindInPage';
 import { NodiViewContextSource } from '../components/NodiViewContextSource';
 import {
@@ -104,6 +109,16 @@ function playerSteps(session: ImmersionSession): PlayerStep[] {
     { kind: 'frontiers' },
     { kind: 'exam' },
   ];
+}
+
+/** Step that shows a narrated segment, from the label `immersionSegments` gives it
+ *  ("Panorama", "Estación 2 · …"); -1 when none does. */
+function immersionStepForNarration(steps: readonly PlayerStep[], label: string): number {
+  if (/^Panorama\b/.test(label)) return steps.findIndex((step) => step.kind === 'panorama');
+  const station = /^Estación (\d+)/.exec(label);
+  if (!station) return -1;
+  const index = Number(station[1]) - 1;
+  return steps.findIndex((step) => step.kind === 'station' && step.index === index);
 }
 
 function stepMeta(step: PlayerStep, session: ImmersionSession): { icon: string; title: string; minutes: number } {
@@ -200,6 +215,7 @@ export function ImmersionView({
   const [model, setModel] = useFeatureModel(settings, 'immersionModel');
   // The thinking level for that model, shared with the Research chat's memory.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, model ?? null);
+  const harnessOptions = useResearchHarnessOptions(settings, 'immersion');
 
   const [scope, setScope] = useState<ImmersionScope | null>(null);
   const [scoping, setScoping] = useState(false);
@@ -319,6 +335,8 @@ export function ImmersionView({
       scope,
       request: {
         topic: scope.topic,
+        harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration,
+        webSearch: harnessOptions.web,
         documentSkills: documentSkills.policy,
         language,
         minutes,
@@ -439,6 +457,7 @@ export function ImmersionView({
 
   return (
     <div className="theme-workspace-surface h-full flex flex-col min-h-0">
+      <ResearchHarnessPanel mode="immersion" onResumed={() => void refreshSessions()} />
       {mode !== 'scope' && <WorkspaceTabStrip
         homeLabel={t('Inmersión')}
         homeIcon="target"
@@ -484,6 +503,7 @@ export function ImmersionView({
               model={model}
               thinkingEffort={thinkingEffort}
               onThinkingEffort={setThinkingEffort}
+              harnessOptions={harnessOptions}
               hasModel={hasModel}
               scoping={scoping}
               error={error}
@@ -1016,6 +1036,7 @@ function SessionListRow({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ImmersionComposerModal({
+  harnessOptions,
   documentSkills,
   settings,
   topic,
@@ -1040,6 +1061,7 @@ export function ImmersionComposerModal({
   onExplore,
   onClose,
 }: {
+  harnessOptions?: ResearchHarnessOptions;
   documentSkills: ReturnType<typeof useDocumentSkills>;
   settings: AppSettings;
   topic: string;
@@ -1165,6 +1187,7 @@ export function ImmersionComposerModal({
             </div>
           </div>
 
+          {harnessOptions && <ResearchHarnessControl options={harnessOptions} web disabled={scoping} />}
           <DocumentSkillsControl value={documentSkills.policy} onChange={documentSkills.setPolicy} onValidityChange={documentSkills.setValid} />
 
           {error && (
@@ -1468,6 +1491,8 @@ function ImmersionPlayer({
   const current = Math.min(progress.currentStep, steps.length - 1);
   const [direction, setDirection] = useState(1);
   const mainRef = useRef<HTMLDivElement | null>(null);
+  const readAlongControls = useRef<ReadAlongControls | null>(null);
+  const followingNarration = useRef(false);
   const markActionsRef = useRef<ReaderSelectionActionsHandle | null>(null);
   const annotationDocumentId = immersionAnnotationDocumentId(session.id);
 
@@ -1511,6 +1536,8 @@ function ImmersionPlayer({
     (index: number, markDone = false) => {
       const clamped = Math.max(0, Math.min(steps.length - 1, index));
       if (clamped === current && !markDone) return;
+      // Moving to another step by hand stops the view from following the narration.
+      if (!followingNarration.current) readAlongControls.current?.pauseFollow();
       setDirection(clamped >= current ? 1 : -1);
       const completed = new Set(progress.completedSteps);
       if (markDone) completed.add(current);
@@ -1653,8 +1680,9 @@ function ImmersionPlayer({
                 onChange={(image) => onSession({ ...session, image })}
               />
             </div>
-            <div className="mt-5">
-              <AudioPanel entityKind="immersion" entityId={session.id} />
+            <div className="mt-5 flex items-center justify-center gap-2 text-xs text-neutral-500">
+              <span className="rounded-lg border border-neutral-700 p-1"><ListenButton testId="immersion-listen-cover" size={15} target={{ kind: 'immersion', id: session.id, title: session.plan.title }} /></span>
+              {t('Escuchar la inmersión')}
             </div>
             <div className="mt-7 flex flex-col items-center">
               <button
@@ -1696,6 +1724,9 @@ function ImmersionPlayer({
           </div>
         </div>
         <div className="flex-1" />
+        <span className="flex h-9 items-center rounded-lg border border-neutral-700 px-1">
+          <ListenButton testId="immersion-listen" size={15} target={{ kind: 'immersion', id: session.id, title: appliedTranslation?.title ?? session.plan.title }} />
+        </span>
         <DocumentVisualActions />
         <button className="btn btn-ghost gap-1.5 border border-neutral-700 text-xs" disabled={exportingPdf} onClick={() => void exportPdf()}>
           <Icon name={exportingPdf ? 'sync' : 'download'} size={13} className={exportingPdf ? 'animate-spin' : ''} />
@@ -1827,6 +1858,19 @@ function ImmersionPlayer({
           onDeleteAnnotation={deleteAnnotation}
           onAnnotationError={setAnnotationError}
           onMarkChange={setHasReaderMark}
+        />
+        <ReadAlong
+          rootRef={mainRef}
+          scrollRef={mainRef}
+          controlsRef={readAlongControls}
+          matches={(key) => key === `immersion:${session.id}`}
+          onSegment={(_segment, label) => {
+            const target = immersionStepForNarration(steps, label);
+            if (target < 0) return;
+            followingNarration.current = true;
+            goTo(target);
+            followingNarration.current = false;
+          }}
         />
       </div>
 
@@ -2681,5 +2725,5 @@ function sessionMarkdown(session: ImmersionSession): string {
     lines.push('');
   }
   lines.push(`## ${t('Cierre Feynman')}`, '', plan.exam.feynman, '');
-  return lines.join('\n');
+  return researchSourcePresentation(lines.join('\n')).content;
 }

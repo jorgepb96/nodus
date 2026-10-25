@@ -213,13 +213,13 @@ function mapCollection(raw: any, library: ZoteroLibrary): ZoteroCollection {
   };
 }
 
-export async function topCollections(userId: string, requestedLibrary?: ZoteroLibrary): Promise<ZoteroCollection[]> {
+export async function topCollections(userId: string, requestedLibrary?: ZoteroLibrary, signal?: AbortSignal): Promise<ZoteroCollection[]> {
   const library = requestedLibrary ?? { ...PERSONAL_LIBRARY, id: userId };
   const out: ZoteroCollection[] = [];
   let start = 0;
   const limit = 100;
   for (;;) {
-    const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(library)}/collections/top?limit=${limit}&start=${start}`);
+    const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(library)}/collections/top?limit=${limit}&start=${start}`, signal);
     if (!res.ok) throw endpointError('Colecciones de Zotero', res);
     const data = (await res.json()) as any[];
     out.push(...data.map((raw) => mapCollection(raw, library)));
@@ -231,13 +231,13 @@ export async function topCollections(userId: string, requestedLibrary?: ZoteroLi
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function childCollections(userId: string, parentKey: string, requestedLibrary?: ZoteroLibrary): Promise<ZoteroCollection[]> {
+export async function childCollections(userId: string, parentKey: string, requestedLibrary?: ZoteroLibrary, signal?: AbortSignal): Promise<ZoteroCollection[]> {
   const parsed = parseCanonicalKey(parentKey, requestedLibrary ?? { ...PERSONAL_LIBRARY, id: userId });
   const out: ZoteroCollection[] = [];
   let start = 0;
   const limit = 100;
   for (;;) {
-    const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/collections/${encodeURIComponent(parsed.rawKey)}/collections?limit=${limit}&start=${start}`);
+    const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/collections/${encodeURIComponent(parsed.rawKey)}/collections?limit=${limit}&start=${start}`, signal);
     if (!res.ok) throw endpointError('Subcolecciones de Zotero', res);
     const data = (await res.json()) as any[];
     out.push(...data.map((raw) => mapCollection(raw, parsed.library)));
@@ -454,7 +454,7 @@ export async function allCollections(library: ZoteroLibrary, signal?: AbortSigna
 export async function collectionItems(
   userId: string,
   collectionKey: string,
-  opts: { query?: string; onProgress?: (loaded: number) => void; library?: ZoteroLibrary } = {}
+  opts: { query?: string; onProgress?: (loaded: number) => void; library?: ZoteroLibrary; signal?: AbortSignal } = {}
 ): Promise<ZoteroItem[]> {
   const parsed = parseCanonicalKey(collectionKey, opts.library ?? { ...PERSONAL_LIBRARY, id: userId });
   const out: ZoteroItem[] = [];
@@ -463,7 +463,7 @@ export async function collectionItems(
   for (;;) {
     const q = opts.query ? `&q=${encodeURIComponent(opts.query)}&qmode=titleCreatorYear` : '';
     const url = `${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/collections/${encodeURIComponent(parsed.rawKey)}/items/top?limit=${limit}&start=${start}${q}`;
-    const res = await zfetch(url);
+    const res = await zfetch(url, opts.signal);
     if (!res.ok) throw new Error(`Zotero items HTTP ${res.status}`);
     const data = (await res.json()) as any[];
     for (const it of data) out.push(mapItem(it, parsed.library));
@@ -592,9 +592,9 @@ function creatorName(c: any): string {
 }
 
 /** Full bibliographic metadata for one item — used by the graph detail panel. */
-export async function getItemMeta(userId: string, itemKey: string): Promise<WorkMeta | null> {
+export async function getItemMeta(userId: string, itemKey: string, signal?: AbortSignal): Promise<WorkMeta | null> {
   const parsed = parseCanonicalKey(itemKey, { ...PERSONAL_LIBRARY, id: userId });
-  const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/items/${encodeURIComponent(parsed.rawKey)}`);
+  const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/items/${encodeURIComponent(parsed.rawKey)}`, signal);
   if (!res.ok) return null;
   const d = ((await res.json()) as any).data ?? {};
   const authors = (d.creators ?? [])

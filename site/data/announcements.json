@@ -2,6 +2,74 @@
   "version": 1,
   "notices": [
     {
+      "id": "2026-10-19-model-guide",
+      "date": "2026-10-19",
+      "severity": "info",
+      "url": "https://nodusresearch.com/models/",
+      "copy": {
+        "es": {
+          "title": "Nueva guía de modelos recomendados",
+          "body": "Hemos publicado nodusresearch.com/models, una guía con los modelos recomendados para cada tarea de Nodus Research: modelos locales según tu equipo, embeddings, Research Chat, extracción de ideas y Deep Research. La iremos actualizando a medida que salgan modelos nuevos.",
+          "linkLabel": "Ver la guía de modelos"
+        },
+        "en": {
+          "title": "New guide to recommended models",
+          "body": "We've published nodusresearch.com/models, a guide to the recommended models for each task in Nodus Research: local models for your hardware, embeddings, Research Chat, idea extraction and Deep Research. We'll keep updating it as new models come out.",
+          "linkLabel": "Open the model guide"
+        },
+        "fr": {
+          "title": "Nouveau guide des modèles recommandés",
+          "body": "Nous avons publié nodusresearch.com/models, un guide des modèles recommandés pour chaque tâche de Nodus Research : modèles locaux selon votre matériel, embeddings, Research Chat, extraction d’idées et Deep Research. Nous le mettrons à jour au fil des nouveaux modèles.",
+          "linkLabel": "Voir le guide des modèles"
+        },
+        "de": {
+          "title": "Neuer Leitfaden zu empfohlenen Modellen",
+          "body": "Unter nodusresearch.com/models findest du jetzt einen Leitfaden mit den empfohlenen Modellen für jede Aufgabe in Nodus Research: lokale Modelle passend zu deiner Hardware, Embeddings, Research Chat, Ideenextraktion und Deep Research. Wir aktualisieren ihn, sobald neue Modelle erscheinen.",
+          "linkLabel": "Modell-Leitfaden öffnen"
+        },
+        "pt": {
+          "title": "Novo guia de modelos recomendados",
+          "body": "Publicámos nodusresearch.com/models, um guia com os modelos recomendados para cada tarefa do Nodus Research: modelos locais de acordo com o teu equipamento, embeddings, Research Chat, extração de ideias e Deep Research. Vamos atualizá-lo à medida que forem saindo novos modelos.",
+          "linkLabel": "Ver o guia de modelos"
+        },
+        "pt-BR": {
+          "title": "Novo guia de modelos recomendados",
+          "body": "Publicamos nodusresearch.com/models, um guia com os modelos recomendados para cada tarefa do Nodus Research: modelos locais de acordo com o seu computador, embeddings, Research Chat, extração de ideias e Deep Research. Vamos atualizá-lo conforme novos modelos forem lançados.",
+          "linkLabel": "Ver o guia de modelos"
+        },
+        "it": {
+          "title": "Nuova guida ai modelli consigliati",
+          "body": "Abbiamo pubblicato nodusresearch.com/models, una guida ai modelli consigliati per ogni attività di Nodus Research: modelli locali in base al tuo hardware, embedding, Research Chat, estrazione di idee e Deep Research. La aggiorneremo man mano che usciranno nuovi modelli.",
+          "linkLabel": "Apri la guida ai modelli"
+        },
+        "tr": {
+          "title": "Önerilen modeller için yeni rehber",
+          "body": "nodusresearch.com/models adresinde Nodus Research’teki her görev için önerilen modelleri gösteren bir rehber yayımladık: donanımınıza uygun yerel modeller, embedding modelleri, Research Chat, fikir çıkarma ve Deep Research. Yeni modeller çıktıkça rehberi güncelleyeceğiz.",
+          "linkLabel": "Model rehberini açın"
+        },
+        "zh-CN": {
+          "title": "推荐模型指南上线",
+          "body": "我们发布了 nodusresearch.com/models，为 Nodus Research 的每项任务列出推荐模型：适合你设备的本地模型、嵌入模型、Research Chat、观点提取和 Deep Research。新模型发布后，我们会持续更新这份指南。",
+          "linkLabel": "查看模型指南"
+        },
+        "zh-TW": {
+          "title": "推薦模型指南上線",
+          "body": "我們發布了 nodusresearch.com/models，為 Nodus Research 的每項任務列出推薦模型：適合你裝置的本機模型、嵌入模型、Research Chat、觀點擷取和 Deep Research。新模型推出後，我們會持續更新這份指南。",
+          "linkLabel": "查看模型指南"
+        },
+        "ja": {
+          "title": "推奨モデルのガイドを公開しました",
+          "body": "nodusresearch.com/models で、Nodus Research の各タスクに推奨するモデルをまとめたガイドを公開しました。お使いのハードウェアに合ったローカルモデル、埋め込みモデル、Research Chat、アイデア抽出、Deep Research を扱っています。新しいモデルが出るたびに更新していきます。",
+          "linkLabel": "モデルガイドを見る"
+        },
+        "ko": {
+          "title": "추천 모델 가이드를 공개했습니다",
+          "body": "nodusresearch.com/models에서 Nodus Research의 작업별 추천 모델을 정리한 가이드를 공개했습니다. 사용 중인 하드웨어에 맞는 로컬 모델, 임베딩 모델, Research Chat, 아이디어 추출, Deep Research를 다룹니다. 새 모델이 나올 때마다 계속 업데이트하겠습니다.",
+          "linkLabel": "모델 가이드 보기"
+        }
+      }
+    },
+    {
       "id": "2026-10-14-github-star",
       "date": "2026-10-14",
       "severity": "info",

@@ -141,7 +141,7 @@ function toFragmentLink(row: Row): StudyMaterialFragmentLink {
 }
 
 function materialRow(id: string): Row {
-  const row = getDb().prepare('SELECT *, length(extracted_text) AS extracted_chars FROM study_materials WHERE id = ?').get(id) as Row | undefined;
+  const row = getDb().prepare('SELECT *, length(extracted_text) AS extracted_chars FROM embedding_read_study_materials AS study_materials WHERE id = ?').get(id) as Row | undefined;
   if (!row) throw new Error('Material no encontrado.');
   return row;
 }
@@ -384,7 +384,7 @@ export function listStudyMaterials(options: StudyMaterialListOptions = {}): Stud
   }
   const scope = [['course_id', options.courseId], ['subject_id', options.subjectId], ['topic_id', options.topicId], ['document_id', options.documentId]] as const;
   for (const [column, value] of scope) if (value) { clauses.push(`EXISTS (SELECT 1 FROM study_material_placements p WHERE p.material_id = m.id AND p.${column} = ? AND p.deleted_at IS NULL)`); values.push(value); }
-  const rows = getDb().prepare(`SELECT m.*, length(m.extracted_text) AS extracted_chars FROM study_materials m
+  const rows = getDb().prepare(`SELECT m.*, length(m.extracted_text) AS extracted_chars FROM embedding_read_study_materials m
     ${clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''} ORDER BY m.pinned DESC, m.favorite DESC, m.position, m.updated_at DESC`).all(...values) as Row[];
   const materialIds = rows.map((row) => String(row.id));
   const placementsByMaterial = new Map<string, StudyMaterialPlacement[]>();

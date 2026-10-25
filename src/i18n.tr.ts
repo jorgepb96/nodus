@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -84,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -95,6 +100,7 @@ export const TR: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["tr"],
   'No se pudieron cargar los documentos guardados.': 'Kaydedilen belgeler yüklenemedi.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Kaydedilen belge kataloğunun biçimi geçersiz.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["tr"],
   ...BACKUPS_TRANSLATIONS.tr,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.tr,
@@ -118,9 +124,11 @@ export const TR: Record<string, string> = {
   "Elige al menos una base de datos.": "En az bir veritabanı seçin.",
   ...RESEARCH_PROMPT_TRANSLATIONS["tr"],
   ...RESEARCH_SOURCE_TRANSLATIONS["tr"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["tr"],
   ...RESEARCH_REASONING_TRANSLATIONS["tr"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["tr"],
   ...CHAT_SKILLS_TRANSLATIONS['tr'],
+  ...NARRATION_TRANSLATIONS['tr'],
   ...CAPABILITIES_TRANSLATIONS['tr'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['tr'],
   ...STELLAR_GRAPH_TRANSLATIONS["tr"],
@@ -128,6 +136,7 @@ export const TR: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.tr,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.tr,
   ...MODEL_SETTINGS_TRANSLATIONS.tr,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.tr,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['tr'],
   ...DICTIONARY_TRANSLATIONS.tr,
   'Tamaño de Nodi': 'Nodi boyutu',
@@ -3117,8 +3126,8 @@ export const TR: Record<string, string> = {
   "Buscar dentro del documento": "Belgede ara",
   "Preparando el índice de búsqueda…": "Arama dizini hazırlanıyor…",
   "Este archivo no contiene una capa de texto que Nodus pueda buscar.": "Bu dosyada Nodus'un arayabileceği bir metin katmanı yok.",
-  "Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.": "Bu PDF aranabilir metin içermiyor. OCR metnini incelemek için temiz Markdown'u açın.",
-  "Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.": "Görseller metin katmanı içermez. OCR metninde arama yapmak için temiz Markdown'u kullanın.",
+  "Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.": "Bu PDF aranabilir metin içermiyor. OCR metnini incelemek için Markdown'u açın.",
+  "Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.": "Görseller metin katmanı içermez. OCR metninde arama yapmak için Markdown'u kullanın.",
   "Coincidencia {current} de {total}": "{total} eşleşmeden {current}.",
   "No se encontró ese texto": "Bu metin bulunamadı",
   "Ir a la coincidencia anterior": "Önceki eşleşmeye git",
@@ -3822,7 +3831,7 @@ export const TR: Record<string, string> = {
   "Jerarquía legible, ideal para entregar a una IA.": "Okunabilir hiyerarşi, yapay zekaya aktarım için idealdir.",
   "JSON": "JSON",
   "Mantener": "Bakım",
-  "Markdown": "indirim",
+  "Markdown": "Markdown",
   "Mover": "Taşı",
   "Notas reordenadas por IA.": "Notlar AI tarafından yeniden sıralandı.",
   "Ordenar notas": "Notları sırala",
@@ -5734,6 +5743,7 @@ export const TR: Record<string, string> = {
   "Cambiar modelo": "Modeli değiştir",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "Gömme modelini değiştirirseniz önceki vektörler yeni modelde çalışmaz ve yeniden indekslemeniz gerekir.",
   "Embeddings multilingües de alta calidad para corpus amplios.": "Büyük derlemler için yüksek kaliteli çok dilli yerleştirmeler.",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "Microsoft’un arama talimatı kullanan çok dilli yerleştirmeleri. Yerel modeller arasında en yüksek çok dilli MTEB puanına sahiptir. Yaklaşık 6,5 GB GPU belleği ayırdığı için 16 GB veya daha fazla belleğe sahip bir bilgisayar önerilir.",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "Uzun bağlamlı ve hassasiyet ile hafıza arasında iyi bir denge sağlayan çok dilli yerleştirmeler.",
   "Opción ligera y rápida para equipos con menos memoria.": "Daha az belleğe sahip bilgisayarlar için hafif ve hızlı seçenek.",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "Konuşma, özetler ve fikirler için çok hafif görsel model.",
@@ -8001,7 +8011,7 @@ export const TR: Record<string, string> = {
   "Activar Global": "Global'i etkinleştir",
   "Configura las copias de seguridad para activar Global.": "Global kapsamını etkinleştirmek için yedeklemeleri yapılandırın.",
   "Biblioteca global activada.": "Global Kütüphane etkinleştirildi.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "Global kapsamı, tüm kasalarınız için orijinalleri ve temiz Markdown'ı bir araya getirir.",
+  "Global reúne originales y Markdown para todos tus vaults.": "Global kapsamı, tüm kasalarınız için orijinalleri ve Markdown'ı bir araya getirir.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "Bu kasa mevcut koleksiyonları, taramaları, özetleri, embedding'leri ve analizleri korur.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "Global Kütüphaneyi istediğiniz zaman etkinleştirin; bu kasa değişmez.",
   "{n} documento(s) añadidos; {reused} componente(s) reutilizados con huellas exactas.": "{n} belge eklendi; {reused} bileşen tam parmak izleriyle yeniden kullanıldı.",
@@ -8761,3 +8771,5 @@ export const TR: Record<string, string> = {
 };
 
 Object.assign(TR, SIGN_TRANSLATIONS['tr']);
+
+Object.assign(TR, RESEARCH_QUEUE_TRANSLATIONS['tr']);

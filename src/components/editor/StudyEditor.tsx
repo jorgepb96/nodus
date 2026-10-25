@@ -1,6 +1,6 @@
 import {assertAcademicSupplement} from '@shared/academicProjection';
 import {openEvidenceAtPage} from '../../evidenceJump';
-import { AcademicTools, AcademicPanel, desktopAcademicSources, type AcademicToolsHandle } from './AcademicTools';
+import { AcademicTools, AcademicPanel, desktopAcademicSources, desktopAcademicSourceDetails, type AcademicToolsHandle } from './AcademicTools';
 import { normalizeAcademicMetadata, type AcademicMetadata } from '@shared/academicDocument';
 import { readEditorialDraft, retainEditorialDraft, clearEditorialDraft, downloadEditorialDraft } from '../workspace/editorialDrafts';
 import { flushEditorialDraft } from '../workspace/flushEditorialDraft';
@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom';
 import { documentReferences, parseEditorReference } from '@shared/editorReferences';
 import { EditorialReferences } from './EditorReferences';
 import { BlockNoteCanvas, type BlockNoteCanvasHandle } from './BlockNoteCanvas';
+import { storeEditorImage } from './editorAttachments';
 import { markdownToBlockNote, nativeBlockMarkdown, type BlockNoteDocument } from '@shared/blockNoteDocument';
 import TurndownService from 'turndown';
 import { diffWordsWithSpace } from 'diff';
@@ -42,6 +43,7 @@ import type { StudySentenceContext, StudySynonymAlternative } from '@shared/stud
 import { studySentenceContext } from '@shared/studySynonyms';
 import type { AppSettings } from '@shared/types';
 import { Markdown } from '../Markdown';
+import { renderEditorAssetImage } from './EditorAssetImage';
 import { parseTestimonyLink, type TestimonyDeepLink } from '@shared/testimonyDeepLinks';
 import { ModelPicker } from '../ModelPicker';
 import { Icon, Spinner } from '../ui';
@@ -55,6 +57,9 @@ import { ScriptorAiPanel, type AiChoice } from './ScriptorAiPanel';
 import { editorReviewDiff, savedEditorImageModels, type EditorImageModel, type EditorImageResult } from '@shared/editorAiReview';
 import type { StudyImproveResult } from '@shared/studyImprove';
 import { AudioPanel } from '../AudioPanel';
+import { ListenButton, type ListenTarget } from '../narration/Listen';
+import { ReadAlong } from '../narration/ReadAlong';
+import { hashString } from '@shared/stats';
 import { ConfirmModal } from '../ConfirmModal';
 import { useFeatureModel } from '../../hooks/useFeatureModel';
 
@@ -272,13 +277,18 @@ export function StudyEditor({
   const [dictationActive, setDictationActive] = useState(false);
   const dictationRef = useRef<StudyDictationHandle>(null);
   useEffect(() => { setShowDictation(false); setDictationActive(false); }, [active?.id]);
+  // Reading aloud: the header balloon narrates the document as it was when the balloon opened.
+  const [listenOpen, setListenOpen] = useState(false);
+  const [listenVersion, setListenVersion] = useState('');
+  // Study documents keep their study narration panel (modes, pronunciations, bookmarks).
   const [showAudio, setShowAudio] = useState(false);
+  const [audioSelection, setAudioSelection] = useState('');
+  const [audioCursor, setAudioCursor] = useState(0);
+  useEffect(() => { setListenOpen(false); }, [active?.id]);
   const [pendingCloseId, setPendingCloseId] = useState<string | null>(null);
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [tableRows, setTableRows] = useState(3);
   const [tableColumns, setTableColumns] = useState(3);
-  const [audioSelection, setAudioSelection] = useState('');
-  const [audioCursor, setAudioCursor] = useState(0);
   const [search, setSearch] = useState('');
   const [replacement, setReplacement] = useState('');
   const [dictionaryWord, setDictionaryWord] = useState('');
@@ -331,6 +341,7 @@ export function StudyEditor({
   const rawRef = useRef(raw);
   useEffect(() => { rawHistory.current = { undo: [], redo: [] }; }, [raw, active?.id]);
   const canvasRef = useRef<BlockNoteCanvasHandle>(null);
+  const documentScrollRef = useRef<HTMLDivElement>(null);
   const rawTextareaRef = useRef<HTMLTextAreaElement>(null);
   const rawSelection = useRef<{ id: string; content: string; from: number; to: number } | null>(null);
   const rawDictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; document: string } | null>(null);
@@ -609,22 +620,32 @@ export function StudyEditor({
       setImageChoices(choices);
     }).catch(cause => { if (generation === aiGeneration.current) setImproveStreamError(aiErrorMessage(cause)); });
   };
+  const imageAsset = useRef<{dataUrl:string;url:string}|null>(null);
   const runImage = async () => {
     if (!imagePrompt.trim() || imageBusy || !imageSource.current || !imageChoices.some(choice => choice.id === `${imageModel.provider}:${imageModel.model}` && !choice.disabled)) return;
     const generation = ++aiGeneration.current, requestId = crypto.randomUUID(); imageRequest.current = requestId;
-    setImageBusy(true); setImageResult(null); setImproveStreamError('');
-    try { const result = await window.nodus.generateEditorImage({ requestId, prompt: imagePrompt, model: imageModel }); if (generation === aiGeneration.current && imageSource.current?.id === activeIdRef.current) setImageResult(result); }
+    setImageBusy(true); setImageResult(null); imageAsset.current = null; setImproveStreamError('');
+    try {
+      const result = await window.nodus.generateEditorImage({ requestId, prompt: imagePrompt, model: imageModel });
+      if (generation !== aiGeneration.current || imageSource.current?.id !== activeIdRef.current) return;
+      const url = await storeEditorImage(result.dataUrl);
+      if (generation === aiGeneration.current && imageSource.current?.id === activeIdRef.current) {
+        imageAsset.current = { dataUrl: result.dataUrl, url };
+        setImageResult(result);
+      }
+    }
     catch (cause) { if (generation === aiGeneration.current) setImproveStreamError(aiErrorMessage(cause)); }
     finally { if (generation === aiGeneration.current) { setImageBusy(false); imageRequest.current = null; } }
   };
   const insertImage = () => {
     const source = imageSource.current; if (!source || !imageResult || source.id !== activeIdRef.current) return;
+    const imageUrl = imageAsset.current?.dataUrl === imageResult.dataUrl ? imageAsset.current.url : imageResult.dataUrl;
     let rawCursor: number | undefined;
     if (imageNeedsCursor.current) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); return; }
     if (raw && source.raw) {
       if (source.raw.base !== draft) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
-      const at = source.raw.at, snippet = `\n\n![${imagePrompt.replace(/[\]\n[]/g, ' ')}](${imageResult.dataUrl})\n\n`; setDraft(`${draft.slice(0, at)}${snippet}${draft.slice(at)}`); rawCursor = at + snippet.length;
-    } else if (!source.anchor || !canvasRef.current?.insertGeneratedImage(source.anchor, imageResult.dataUrl, imagePrompt)) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
+      const at = source.raw.at, snippet = `\n\n![${imagePrompt.replace(/[\]\n[]/g, ' ')}](${imageUrl})\n\n`; setDraft(`${draft.slice(0, at)}${snippet}${draft.slice(at)}`); rawCursor = at + snippet.length;
+    } else if (!source.anchor || !canvasRef.current?.insertGeneratedImage(source.anchor, imageUrl, imagePrompt)) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
     setSaveState('dirty'); closeAiPanel();
     if (rawCursor !== undefined) focusRawAt(source.id, rawCursor);
   };
@@ -1049,6 +1070,15 @@ export function StudyEditor({
   };
 
   const locked = Boolean(improveStreamingStyleId || aiResult);
+  // Each version of the text is its own narration, so an edited document is never read from
+  // stale audio; the version is fixed when the balloon opens, not on every keystroke.
+  const studyNarration = port.referenceKind !== 'note';
+  const setListen = (open: boolean) => { if (open) setListenVersion(hashString(draft)); setListenOpen(open); };
+  const documentTitle = title.trim() || t('Documento');
+  const listenTarget: ListenTarget = { kind: 'scriptor_document', id: `${active.id}:${listenVersion}`, title: documentTitle, markdown: () => draft };
+  // The selection is read once and never saved: see NarrationInput.ephemeral.
+  const selectionListenTarget = (text: string): ListenTarget => ({ kind: 'scriptor_selection', id: `${active.id}:${hashString(text)}`, title: documentTitle, markdown: () => text, ephemeral: true });
+  const selectionListen = (text: string, className: string) => <ListenButton bare direct testId="study-selection-listen" size={16} className={className} label={t('Leer la selección en voz alta')} onUnavailable={() => setListen(true)} target={selectionListenTarget(text)} />;
   const actions: EditorialAction[] = [
     { id: 'undo', label: t('Deshacer'), icon: 'undo', group: t('Edición'), essential: true, testId: 'study-editor-undo', disabled: locked || (!raw && !historyState.canUndo), shortcut: 'Ctrl/⌘+Z', keyShortcuts: 'Control+Z Meta+Z', onSelect: () => runEditorHistory('undo') },
     { id: 'redo', label: t('Rehacer'), icon: 'redo', group: t('Edición'), essential: true, testId: 'study-editor-redo', disabled: locked || (!raw && !historyState.canRedo), shortcut: 'Ctrl+Y / Ctrl/⌘+Shift+Z', keyShortcuts: 'Control+Y Control+Shift+Z Meta+Shift+Z', onSelect: () => runEditorHistory('redo') },
@@ -1066,7 +1096,10 @@ export function StudyEditor({
     { id: 'manuscript', label: t('Manuscrito y citas'), icon: 'settings', group: t('Escritura académica'), onSelect: () => academicTools.current?.open('settings') },
     { id: 'delivery', label: t('Preparar entrega'), icon: 'external', group: t('Escritura académica'), testId: 'academic-delivery', onSelect: () => academicTools.current?.open('delivery') },
     { id: 'dictation', label: t(dictationActive ? 'Detener dictado' : 'Dictado por voz'), icon: 'microphone', group: t('Voz'), essential: true, testId: 'study-dictation-toggle', disabled: locked && !dictationActive, pressed: dictationActive, onSelect: () => { if (dictationActive) void dictationRef.current?.stop(); else if (showDictation) void dictationRef.current?.start(); else setShowDictation(true); } },
-    { id: 'read', label: t('Lectura por voz'), icon: 'play', group: t('Voz'), testId: 'study-audio-toggle', pressed: showAudio, onSelect: () => { const target = resolveImproveSelection(false); setAudioSelection(target?.text ?? ''); setAudioCursor(rawTextareaRef.current?.selectionStart ?? target?.from ?? 0); setShowAudio(value => !value); } },
+    { id: 'read', label: t('Lectura por voz'), icon: 'play', group: t('Voz'), testId: 'study-audio-toggle', pressed: studyNarration ? showAudio : listenOpen, onSelect: () => {
+      if (!studyNarration) { setListen(!listenOpen); return; }
+      const target = resolveImproveSelection(false); setAudioSelection(target?.text ?? ''); setAudioCursor(rawTextareaRef.current?.selectionStart ?? target?.from ?? 0); setShowAudio(value => !value);
+    } },
     { id: 'markdown', label: t('Markdown crudo'), icon: 'code', group: t('Vistas'), pressed: raw, onSelect: () => void (async () => { closeAiPanel(); await dictationRef.current?.stop(); if (raw) setEditorRevision(value => value + 1); setRaw(!raw); })() },
     { id: 'split', label: t('Dividir vista'), icon: 'columns', group: t('Vistas'), pressed: split, onSelect: () => setSplit(!split) },
     { id: 'style', label: t('Apariencia y metadatos'), icon: 'palette', group: t('Vistas'), testId: 'study-doc-style', pressed: showStyle, onSelect: () => { setShowStyle(!showStyle); setContextOpen(true); setContextTab('details'); } },
@@ -1088,7 +1121,7 @@ export function StudyEditor({
 
   return (
     <div style={styleVars} className={`study-editor-shell editorial-editor flex h-full min-h-0 flex-col bg-stone-100 text-stone-900 dark:bg-neutral-950 dark:text-neutral-100 ${focusMode ? 'editorial-focus' : ''} study-theme-${style.theme}`}>
-{nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
+{nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,resolveSource:desktopAcademicSourceDetails,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
       {showTabs ? (
         <WorkspaceTabStrip
           className="study-editor-tabs"
@@ -1110,7 +1143,7 @@ export function StudyEditor({
           }}
         />
       ) : null}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} onPreserveSelection={preserveSelection} options={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} trailing={<ListenButton bare testId="scriptor-header-listen" size={14} className="editorial-header-action editorial-header-icon" open={listenOpen} onOpenChange={setListen} target={listenTarget} />} onPreserveSelection={preserveSelection} options={<>
         <EditorialActionMenu actions={actions} pins={pinnedActionIds} onPinsChange={setPinnedActionIds} beforeAction={restoreSelection} />
         <div className="study-insert-toolbar" data-testid="study-insert-toolbar">
           <label htmlFor="study-heading-level">{t('Nivel de título')}</label>
@@ -1235,7 +1268,7 @@ export function StudyEditor({
           if (final) rawDictation.current = null;
         }}
       />}
-      {showAudio && <div className="border-b border-neutral-800 bg-neutral-900/30 p-3" data-testid="study-audio-panel"><AudioPanel
+      {studyNarration && showAudio && <div className="border-b border-neutral-800 bg-neutral-900/30 p-3" data-testid="study-audio-panel"><AudioPanel
         entityKind="study_document"
         entityId={active.id}
         sourceMarkdown={draft}
@@ -1256,7 +1289,8 @@ export function StudyEditor({
           <div className="editorial-improvement-feedback">
       {lastImprovement && !aiPanel && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" aria-label={t('Deshacer mejora')} onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
           </div>
-          <div className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
+          <ReadAlong rootRef={documentScrollRef} scrollRef={documentScrollRef} matches={(key) => key.startsWith(`scriptor_document:${active.id}:`) || key.startsWith(`scriptor_selection:${active.id}:`) || key === `study_document:${active.id}`} />
+          <div ref={documentScrollRef} className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
             <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={locked} />
             {raw && (improveStreamingStyleId || aiResult) && aiSource.current ? (
               <div className="scriptor-ai-raw-review" data-testid="scriptor-ai-raw-review">{aiSource.current.base.slice(0,aiSource.current.target.from)}<span data-testid="scriptor-ai-raw-target">{editorReviewDiff(aiSource.current.target.text, improvePreview, Boolean(aiResult)).map((piece,index) => <span key={index} className={piece.kind === 'same' ? undefined : `scriptor-ai-${piece.kind}`}>{piece.value}</span>)}</span>{aiSource.current.base.slice(aiSource.current.target.to)}</div>
@@ -1281,7 +1315,7 @@ export function StudyEditor({
                 spellcheck language={data.spellcheckLanguage} onChange={(value, native) => { if (!rawRef.current) { setDraftState(value); nativeRef.current = native; setNativeDocument(native); } }} onHistoryChange={setHistoryState} onOpenRecording={onOpenRecording} listReferences={port.listReferences} onNavigateLink={href => void navigateReference(href)} onWikiLink={reference => void port.listLinkTargets().then(targets => { const target=targets.find(item=>item.id===reference || item.title===reference); if(target) void openLinkedDocument(target.id); })} onToolbarElement={setSelectionToolbar} />
             )}
           </div>
-          {split && <div className="min-h-full overflow-y-auto bg-stone-50 p-8 text-stone-900 dark:bg-neutral-900/20 dark:text-neutral-100"><Markdown content={draft} verify={false} onStudyDocument={(documentId) => void openLinkedDocument(documentId)} onStudyRecording={onOpenRecording} onTestimonyLink={onTestimonyLink} /></div>}
+          {split && <div className="min-h-full overflow-y-auto bg-stone-50 p-8 text-stone-900 dark:bg-neutral-900/20 dark:text-neutral-100"><Markdown content={draft} verify={false} allowDataImages renderLocalImage={renderEditorAssetImage} onStudyDocument={(documentId) => void openLinkedDocument(documentId)} onStudyRecording={onOpenRecording} onTestimonyLink={onTestimonyLink} /></div>}
           {aiPanel && <ScriptorAiPanel mode={aiPanel} settings={settings} model={aiModel} onModelChange={setAiModel} styles={allImproveStyles} quickStyles={quickImproveStyles} styleId={aiStyleId} onStyleChange={chooseAiStyle} instructions={aiInstructions} onInstructionsChange={setAiInstructions} imagePrompt={imagePrompt} onImagePromptChange={setImagePrompt} imageModel={imageModel} imageChoices={imageChoices} onImageModelChange={setImageModel} status={improveStreamingStyleId ? 'streaming' : aiResult ? 'review' : imageBusy ? 'generating' : imageResult ? 'image-ready' : 'compose'} error={improveStreamError} warnings={aiResult?.warnings ?? []} image={imageResult} onSubmit={() => void (aiPanel === 'image' ? runImage() : runPolish())} onCancel={cancelAi} onAccept={acceptProposal} onReject={() => { discardProposal(); setImproveStreamError(''); }} onImage={openImagePanel} onPolish={() => openPolish(resolveImproveSelection(false))} onInsert={insertImage} onClose={closeAiPanel} onLayout={() => { if (aiPanel !== 'polish') return; const range = aiSource.current?.target.range; if (range && !raw) canvasRef.current?.revealAiSelection(range); else if (raw) document.querySelector('[data-testid="scriptor-ai-raw-target"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }} />}
 
         </div>
@@ -1371,9 +1405,9 @@ export function StudyEditor({
             )}
           </EditorialInspector>
         )}
-        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool study-selection-polish" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
+        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool study-selection-polish" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}{selectionListen(selectionImprove.target.text, 'toolbar-item study-selection-tool study-selection-listen')}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
       </div>
-      {raw && selectionImprove && !locked && createPortal(<button type="button" className="scriptor-raw-polish" data-testid="study-selection-improve" onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }} style={{ position:'fixed',left:selectionImprove.x,top:selectionImprove.y,zIndex:40 }}><Icon name="aiPolish" size={15} />{t('Pulir')}</button>, document.body)}
+      {raw && selectionImprove && !locked && createPortal(<div className="scriptor-raw-selection" style={{ position:'fixed',left:selectionImprove.x,top:selectionImprove.y,zIndex:40 }}><button type="button" className="scriptor-raw-polish" data-testid="study-selection-improve" onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={15} />{t('Pulir')}</button>{selectionListen(selectionImprove.target.text, 'scriptor-raw-polish scriptor-raw-listen')}</div>, document.body)}
       {synonymPanel && createPortal(
         <div ref={synonymPanelRef} data-testid="study-synonyms-panel" role="dialog" aria-label={t('Alternativas de sinónimos')} className="study-synonyms-panel" style={{ left: synonymPanel.x, top: synonymPanel.y }}>
           <div className="study-synonyms-header">

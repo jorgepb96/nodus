@@ -26,4 +26,3 @@ export function buildStudyChatPrompt(request: StudyAssistantRequest, citations: 
   const user = JSON.stringify({ fuentes_seleccionadas: sources, conversacion: history.map(({ role, content }) => ({ role, content: role === 'assistant' ? chatProseForHistory(content) : content })) }, null, 2);
   return { system, user };
 }
-

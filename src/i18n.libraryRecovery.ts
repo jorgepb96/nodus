@@ -21,7 +21,7 @@ const en = {
   '{n} elemento(s) recuperable(s)': '{n} recoverable item(s)', 'Volver a la Biblioteca': 'Back to the Library', 'Revisar y vaciar': 'Review and empty',
   'La papelera está vacía.': 'The trash is empty.', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': 'Items sent here can be restored before the trash is emptied manually.',
   'conflict': 'Conflict', 'invalid-record': 'Invalid record', 'missing-attachment': 'Missing attachment', 'corrupt-attachment': 'Damaged attachment',
-  'missing-reader': 'Missing clean version', 'orphan-folder': 'Orphan folder', 'invalid-saved-search': 'Invalid saved search', 'invalid-vault-link': 'Invalid vault link',
+  'missing-reader': 'Missing Markdown', 'orphan-folder': 'Orphan folder', 'invalid-saved-search': 'Invalid saved search', 'invalid-vault-link': 'Invalid vault link',
 };
 
 const fr = {
@@ -44,7 +44,7 @@ const fr = {
   '{n} elemento(s) recuperable(s)': '{n} élément(s) récupérable(s)', 'Volver a la Biblioteca': 'Retour à la Bibliothèque', 'Revisar y vaciar': 'Vérifier et vider',
   'La papelera está vacía.': 'La corbeille est vide.', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': 'Les éléments envoyés ici peuvent être restaurés avant le vidage manuel.',
   'conflict': 'Conflit', 'invalid-record': 'Enregistrement invalide', 'missing-attachment': 'Pièce jointe manquante', 'corrupt-attachment': 'Pièce jointe endommagée',
-  'missing-reader': 'Version propre manquante', 'orphan-folder': 'Dossier orphelin', 'invalid-saved-search': 'Recherche enregistrée invalide', 'invalid-vault-link': 'Lien de vault invalide',
+  'missing-reader': 'Markdown manquant', 'orphan-folder': 'Dossier orphelin', 'invalid-saved-search': 'Recherche enregistrée invalide', 'invalid-vault-link': 'Lien de vault invalide',
 };
 
 const de = {
@@ -67,7 +67,7 @@ const de = {
   '{n} elemento(s) recuperable(s)': '{n} wiederherstellbare(s) Element(e)', 'Volver a la Biblioteca': 'Zurück zur Bibliothek', 'Revisar y vaciar': 'Prüfen und leeren',
   'La papelera está vacía.': 'Der Papierkorb ist leer.', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': 'Hierher verschobene Elemente können vor dem manuellen Leeren wiederhergestellt werden.',
   'conflict': 'Konflikt', 'invalid-record': 'Ungültiger Datensatz', 'missing-attachment': 'Fehlender Anhang', 'corrupt-attachment': 'Beschädigter Anhang',
-  'missing-reader': 'Fehlende saubere Version', 'orphan-folder': 'Verwaister Ordner', 'invalid-saved-search': 'Ungültige gespeicherte Suche', 'invalid-vault-link': 'Ungültige Vault-Verknüpfung',
+  'missing-reader': 'Fehlendes Markdown', 'orphan-folder': 'Verwaister Ordner', 'invalid-saved-search': 'Ungültige gespeicherte Suche', 'invalid-vault-link': 'Ungültige Vault-Verknüpfung',
 };
 
 const pt = {
@@ -90,7 +90,7 @@ const pt = {
   '{n} elemento(s) recuperable(s)': '{n} elemento(s) recuperável(eis)', 'Volver a la Biblioteca': 'Voltar à Biblioteca', 'Revisar y vaciar': 'Rever e esvaziar',
   'La papelera está vacía.': 'O lixo está vazio.', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': 'Os elementos enviados para aqui podem ser restaurados antes do esvaziamento manual.',
   'conflict': 'Conflito', 'invalid-record': 'Registo inválido', 'missing-attachment': 'Anexo em falta', 'corrupt-attachment': 'Anexo danificado',
-  'missing-reader': 'Versão limpa em falta', 'orphan-folder': 'Pasta órfã', 'invalid-saved-search': 'Pesquisa guardada inválida', 'invalid-vault-link': 'Ligação de vault inválida',
+  'missing-reader': 'Markdown em falta', 'orphan-folder': 'Pasta órfã', 'invalid-saved-search': 'Pesquisa guardada inválida', 'invalid-vault-link': 'Ligação de vault inválida',
 };
 
 const ptBR = {
@@ -123,7 +123,7 @@ const it = {
   '{n} elemento(s) recuperable(s)': '{n} elemento/i recuperabile/i', 'Volver a la Biblioteca': 'Torna alla Biblioteca', 'Revisar y vaciar': 'Verifica e svuota',
   'La papelera está vacía.': 'Il cestino è vuoto.', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': 'Gli elementi inviati qui possono essere ripristinati prima dello svuotamento manuale.',
   'conflict': 'Conflitto', 'invalid-record': 'Record non valido', 'missing-attachment': 'Allegato mancante', 'corrupt-attachment': 'Allegato danneggiato',
-  'missing-reader': 'Versione pulita mancante', 'orphan-folder': 'Cartella orfana', 'invalid-saved-search': 'Ricerca salvata non valida', 'invalid-vault-link': 'Collegamento vault non valido',
+  'missing-reader': 'Markdown mancante', 'orphan-folder': 'Cartella orfana', 'invalid-saved-search': 'Ricerca salvata non valida', 'invalid-vault-link': 'Collegamento vault non valido',
 };
 
 const tr = {
@@ -146,7 +146,7 @@ const tr = {
   '{n} elemento(s) recuperable(s)': '{n} kurtarılabilir öğe', 'Volver a la Biblioteca': 'Kütüphaneye dön', 'Revisar y vaciar': 'İncele ve boşalt',
   'La papelera está vacía.': 'Çöp kutusu boş.', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': 'Buraya gönderilen öğeler elle boşaltmadan önce geri yüklenebilir.',
   'conflict': 'Çakışma', 'invalid-record': 'Geçersiz kayıt', 'missing-attachment': 'Eksik ek', 'corrupt-attachment': 'Bozuk ek',
-  'missing-reader': 'Eksik temiz sürüm', 'orphan-folder': 'Sahipsiz klasör', 'invalid-saved-search': 'Geçersiz kayıtlı arama', 'invalid-vault-link': 'Geçersiz kasa bağlantısı',
+  'missing-reader': 'Eksik Markdown', 'orphan-folder': 'Sahipsiz klasör', 'invalid-saved-search': 'Geçersiz kayıtlı arama', 'invalid-vault-link': 'Geçersiz kasa bağlantısı',
 };
 
 const zhCN = {
@@ -169,7 +169,7 @@ const zhCN = {
   '{n} elemento(s) recuperable(s)': '{n} 个可恢复条目', 'Volver a la Biblioteca': '返回文献库', 'Revisar y vaciar': '审查并清空',
   'La papelera está vacía.': '回收站为空。', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': '发送到这里的条目可在手动清空回收站之前恢复。',
   'conflict': '冲突', 'invalid-record': '无效记录', 'missing-attachment': '附件缺失', 'corrupt-attachment': '附件损坏',
-  'missing-reader': '缺少干净版本', 'orphan-folder': '孤立文件夹', 'invalid-saved-search': '无效的已保存搜索', 'invalid-vault-link': '无效的 vault 链接',
+  'missing-reader': '缺少 Markdown', 'orphan-folder': '孤立文件夹', 'invalid-saved-search': '无效的已保存搜索', 'invalid-vault-link': '无效的 vault 链接',
 };
 
 const zhTW = {
@@ -192,7 +192,7 @@ const zhTW = {
   '{n} elemento(s) recuperable(s)': '{n} 個可恢復條目', 'Volver a la Biblioteca': '返回文獻庫', 'Revisar y vaciar': '審查並清空',
   'La papelera está vacía.': '回收站為空。', 'Los elementos enviados aquí podrán restaurarse antes del vaciado manual.': '傳送到這裡的條目可在手動清空回收站之前恢復。',
   'conflict': '衝突', 'invalid-record': '無效記錄', 'missing-attachment': '附件缺失', 'corrupt-attachment': '附件損壞',
-  'missing-reader': '缺少乾淨版本', 'orphan-folder': '孤立資料夾', 'invalid-saved-search': '無效的已儲存搜尋', 'invalid-vault-link': '無效的 vault 連結',
+  'missing-reader': '缺少 Markdown', 'orphan-folder': '孤立資料夾', 'invalid-saved-search': '無效的已儲存搜尋', 'invalid-vault-link': '無效的 vault 連結',
 };
 
 export const LIBRARY_RECOVERY_TRANSLATIONS = { en, fr, de, pt, 'pt-BR': ptBR, it, tr, 'zh-CN': zhCN ,
@@ -242,7 +242,7 @@ export const LIBRARY_RECOVERY_TRANSLATIONS = { en, fr, de, pt, 'pt-BR': ptBR, it
     "invalid-record": "잘못된 기록",
     "missing-attachment": "첨부파일 누락",
     "corrupt-attachment": "손상된 부착물",
-    "missing-reader": "클린 버전 누락",
+    "missing-reader": "Markdown 누락",
     "orphan-folder": "고아 폴더",
     "invalid-saved-search": "잘못된 저장된 검색결과",
     "invalid-vault-link": "잘못된 Vault 링크",
@@ -292,7 +292,7 @@ export const LIBRARY_RECOVERY_TRANSLATIONS = { en, fr, de, pt, 'pt-BR': ptBR, it
     "invalid-record": "無効なレコード",
     "missing-attachment": "添付ファイルがありません",
     "corrupt-attachment": "アタッチメントの破損",
-    "missing-reader": "クリーンバージョンがありません",
+    "missing-reader": "Markdown がありません",
     "orphan-folder": "孤立したフォルダー",
     "invalid-saved-search": "無効な保存済み検索",
     "invalid-vault-link": "無効なVaultリンク",

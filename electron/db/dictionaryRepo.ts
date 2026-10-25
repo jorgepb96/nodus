@@ -2,6 +2,7 @@ import { parseJson, toEntry, toVersion, buildAuthors, buildWorks, type EntryRow,
 import { createHash } from 'node:crypto';
 import { v4 as uuid } from 'uuid';
 import { normalizeDictionaryTerm } from '@shared/dictionary';
+import { deleteResearchRuns } from './researchRunsRepo';
 import type {
   DictionaryAuthorView,
   DictionaryCitationRecord,
@@ -33,6 +34,7 @@ import { getDb } from './database';
 import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { getScopedLegacyPassageDetail } from '../citations/scopedLegacyCitations';
 import { getWebPassageDetail } from './researchWebRepo';
+import { deleteEntityClips } from '../audio/audioService';
 
 export interface DictionaryEvidenceUpsert {
   kind: DictionaryEvidenceRef['kind'];
@@ -260,7 +262,9 @@ export function updateDictionaryEntry(id: string, patch: DictionaryEntryPatch, e
 export function deleteDictionaryEntries(ids: string[]): number {
   const clean = [...new Set(ids.filter(Boolean))]; if (!clean.length) return 0;
   const db = getDb(); const placeholders = clean.map(() => '?').join(',');
+  for (const entryId of clean) deleteEntityClips('dictionary_entry', entryId);
   return db.transaction(() => {
+    for (const entryId of clean) deleteResearchRuns({ entryId });
     db.prepare(`DELETE FROM dictionary_relations WHERE from_entry_id IN (${placeholders}) OR to_entry_id IN (${placeholders})`).run(...clean, ...clean);
     db.prepare(`DELETE FROM dictionary_versions WHERE entry_id IN (${placeholders})`).run(...clean);
     db.prepare(`DELETE FROM dictionary_evidence WHERE entry_id IN (${placeholders})`).run(...clean);

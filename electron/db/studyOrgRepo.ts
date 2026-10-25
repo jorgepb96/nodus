@@ -39,6 +39,7 @@ import type {
 import { createStudyShortId, normalizeStudyName, studyPlacementKey } from '@shared/studyOrg';
 import { getDb } from './database';
 import { toAcademicYear, toCourse, toSubject, toTopic, toFolder, toDocument, toPlacement, toTag, toDocumentTag, toTemplate } from '@shared/studyOrgProjection';
+import { embeddingReadTable } from './embeddingIndexSchema';
 
 type Row = Record<string, unknown>;
 
@@ -74,7 +75,7 @@ function lifecycleWhere(options: StudyWorkspaceOptions): string {
 export function getStudyWorkspace(options: StudyWorkspaceOptions = {}): StudyWorkspace {
   const db = getDb();
   const where = lifecycleWhere(options);
-  const list = (table: string) => db.prepare(`SELECT * FROM ${table}${where} ORDER BY position, created_at`).all() as Row[];
+  const list = (table: string) => db.prepare(`SELECT * FROM ${embeddingReadTable(table)}${where} ORDER BY position, created_at`).all() as Row[];
   const documents = list('study_docs').map(toDocument);
   const documentIds = new Set(documents.map((document) => document.id));
   const tags = list('study_tags').map(toTag);
@@ -315,7 +316,7 @@ export function createStudyDocumentWithIdentity(input: CreateStudyDocumentInput,
         input.description ?? null, input.color ?? null, input.icon ?? null, input.emoji ?? null, input.imageData ?? null,
         input.year ?? null, nextPosition('study_docs'), timestamp, timestamp);
     if (input.placement) addStudyPlacement(key.id, input.placement);
-    return toDocument(db.prepare('SELECT * FROM study_docs WHERE id = ?').get(key.id) as Row);
+    return toDocument(db.prepare('SELECT * FROM embedding_read_study_docs AS study_docs WHERE id = ?').get(key.id) as Row);
   });
   return create();
 }
@@ -479,7 +480,7 @@ export function updateStudyEntity(kind: StudyEntityKind, id: string, patch: Reco
 }
 
 export function getStudyEntity(kind: StudyEntityKind, id: string): StudyCourse | StudySubject | StudyTopic | StudyFolder | StudyDocument | null {
-  const row = getDb().prepare(`SELECT * FROM ${TABLES[kind]} WHERE id = ?`).get(id) as Row | undefined;
+  const row = getDb().prepare(`SELECT * FROM ${embeddingReadTable(TABLES[kind])} WHERE id = ?`).get(id) as Row | undefined;
   if (!row) return null;
   if (kind === 'course') return toCourse(row);
   if (kind === 'subject') return toSubject(row);

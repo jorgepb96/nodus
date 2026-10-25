@@ -88,6 +88,7 @@ function consolidatedSignatures(db: Database.Database): Map<string, EmbeddingSig
  * settings migration version is the one-shot guard: after v3, later deliberate
  * changes are never reverted even while older vectors still exist. */
 export function recoverV23VaultEmbeddingSelection(settings: AppSettings): Partial<AppSettings> {
+  if (getDb().prepare("SELECT 1 FROM sqlite_master WHERE name='embedding_index_state'").get()) return {};
   if (settings.modelSettingsVersion >= 3) return {};
   const signatures = consolidatedSignatures(getDb());
   if (signatures.size !== 1) return {};

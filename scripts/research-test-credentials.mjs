@@ -1,4 +1,4 @@
-/** Explicitly authorized, read-only import of exactly two encrypted provider files.
+/** Explicitly authorized, read-only import of explicitly selected encrypted provider files.
  * Never imports Nodus modules, preferences, registries or migration helpers. */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,7 +18,7 @@ export function importResearchTestCredentials(root, isolatedSource, providers = 
   fs.mkdirSync(target, { recursive: true, mode: 0o700 });
   if (fs.realpathSync(target) !== target) throw new Error('Credential destination contains a symlink');
   const imported = [];
-  if (!Array.isArray(providers) || providers.some(provider => !['deepseek', 'openrouter'].includes(provider))) throw new Error('Invalid QA credential provider');
+  if (!Array.isArray(providers) || providers.some(provider => !['deepseek', 'openrouter', 'gemini'].includes(provider))) throw new Error('Invalid QA credential provider');
   for (const provider of providers) {
     const filename = `ai_key_${provider}.bin`;
     // These are the only production files this helper may read. A missing file

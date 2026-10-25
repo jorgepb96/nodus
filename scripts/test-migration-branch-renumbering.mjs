@@ -39,7 +39,7 @@ try {
     const db = new Database(path.join(scratch, `old-${oldVersion}.sqlite`));
     runMigrations(db);
     // Take the current schema back to what that build had.
-    db.exec('DROP TABLE teaching_attendance; DROP TABLE teaching_attendance_holidays;');
+    db.exec('DROP TABLE teaching_attendance; DROP TABLE teaching_attendance_holidays; DROP TABLE research_harness_runs;');
     if (!has.includes('skills')) db.exec('ALTER TABLE chat_messages DROP COLUMN skills_json');
     if (!has.includes('icon')) db.exec('ALTER TABLE research_notebooks DROP COLUMN icon');
     if (!has.includes('color')) db.exec('ALTER TABLE research_notebooks DROP COLUMN color');
@@ -56,6 +56,7 @@ try {
     assert.ok(columns(db, 'chat_messages').has('skills_json'));
     assert.ok(['icon', 'color'].every(column => columns(db, 'research_notebooks').has(column)));
     assert.ok(hasTable(db, 'research_web_passages'));
+    assert.ok(hasTable(db, 'research_harness_runs'), `${label} gets the durable research execution table`);
     assert.ok(columns(db, 'research_chat_project_folders').has('updated_at') && columns(db, 'research_chat_placements').has('updated_at'));
     for (const prefix of ['database', 'world']) {
       assert.ok(hasTable(db, `${prefix}_chat_placements`) && hasTable(db, `${prefix}_chat_notebooks`), `${label} has the ${prefix} chat history tables`);

@@ -62,7 +62,9 @@ try {
   // The supervisor's model decisions are independent calls. This fixture uses
   // one real lexical retrieval round so it can examine the final evidence budget.
   ResearchCorpusRun.prototype.investigate = async function(query) { selectedRun = this; await this.retrieve(query, 1); };
-  let systemSize = 12000;
+  // Leave room for one complete escaped passage plus the source/citation contract.
+  // Four passages must still overflow this conservative model window.
+  let systemSize = 10000;
   load('electron/ai/researchSystemPrompt.ts').withResearchSystemPrompt = () => 's'.repeat(systemSize);
   const research = load('electron/ai/researchAssistant.ts');
   const service = load('electron/ai/researchNotebookService.ts');

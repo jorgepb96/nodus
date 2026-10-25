@@ -29,6 +29,7 @@ function workerFile(): string {
 }
 
 export interface CompressedServerSnapshot {
+  embeddingIndex: { id: string; generation: number; valueRevision: number } | null;
   compressed: Buffer;
   rawBytes: number;
   revision: string;

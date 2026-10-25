@@ -19,6 +19,8 @@ const previousLoad = Module._load;
 const previousResolve = Module._resolveFilename;
 const context = new AsyncLocalStorage();
 let db;
+let activeVault = { id: 'review', type: 'research' };
+let corpusChanges = 0;
 const settings = { zoteroUserId: '0', monitoredCollections: ['MONITOR1'], readTag: 'read',
   embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small', academicMode: 'manual',
   autoLightScan: false, autoDeepScanOnReadTag: false, documentIndexingEnabled: false, syncMode: 'realtime' };
@@ -29,7 +31,8 @@ const stubs = new Map(Object.entries({
   'electron/ai/academicMode.ts': { isManualAcademic: () => true },
   'electron/pipeline/scanQueue.ts': { scanQueue: { enqueue() { throw Error('Unexpected AI queue'); } } },
   'electron/extraction/textExtractor.ts': { probeWorkTextAvailability() { throw Error('Unexpected text probe'); } },
-  'electron/vaults/vaultRegistry.ts': { getActiveVault: () => ({ id: 'review', type: 'research' }) },
+  'electron/vaults/vaultRegistry.ts': { getActiveVault: () => activeVault },
+  'electron/ai/documentaryPreparation.ts': { notifyResearchCorpusChanged: () => { corpusChanges++; } },
   'electron/pipeline/documentIndexQueue.ts': { documentIndexQueue: { refreshVault() { throw Error('Unexpected index queue'); } } },
 }).map(([file, value]) => [path.join(repoRoot, file), value]));
 Module._load = function(request, parent, isMain) {
@@ -45,10 +48,13 @@ const { lexicalPassageSearch } = require(path.join(repoRoot, 'electron/db/passag
 let version, observed, presences, requests, probes, failCollection, missingGroups, groupVersions, onFetch;
 const originalFetch = globalThis.fetch;
 function reset() {
+  sync.stopZoteroSync();
   db?.close(); db = new Database(':memory:'); runMigrations(db);
   version = 42; observed = []; presences = new Map(); requests = []; probes = [];
   failCollection = false; missingGroups = new Set(); groupVersions = new Map([['42', 17]]); onFetch = () => {};
   settings.monitoredCollections = ['MONITOR1'];
+  settings.syncMode = 'realtime';
+  activeVault = { id: 'review', type: 'research' }; corpusChanges = 0;
 }
 function work(id, key, collection = null, archived = 0, doi = null) {
   db.prepare("INSERT INTO works(nodus_id,zotero_key,title,authors_json,item_type,archived,doi) VALUES(?,?,?,'[]','book',?,?)")
@@ -317,6 +323,98 @@ try {
     reset(); work('throttled', 'RETRY001'); presences.set('RETRY001', 'retry');
     await drain(['throttled'], { requestLimit: 2 }); assert.equal(requests.length, 2); assert.equal(state('throttled'), 0); assert.equal(pending(), true);
   });
+  await test('startup and manual sync share one pass and still notify automatic source indexing', async () => {
+    reset(); activeVault.type = 'academic'; observed = [item('NEW00001')];
+    const statuses = []; const off = sync.onZoteroSyncStatus(status => statuses.push(status));
+    try {
+      const first = pass();
+      assert.equal(pass(), first, 'a second control joins the existing pass');
+      assert.equal(sync.fullSync('realtime'), first, 'a polling tick cannot start a second writer');
+      const result = await first;
+      await new Promise(resolve => setImmediate(resolve));
+      assert.match(result.summary, /1 altas/);
+      assert.equal(db.prepare('SELECT COUNT(*) n FROM works').get().n, 1);
+      assert.equal(requests.filter(url => url.includes('/collections/MONITOR1/items/top')).length, 1);
+      assert.deepEqual(statuses.map(status => status.running), [true, false]);
+      assert.deepEqual(statuses[1].lastSync, result);
+      assert.equal(corpusChanges, 1, 'catalog-only sync still discovers new sources for the existing embedding policy');
+    } finally { off(); }
+  });
+  await test('large collection ingestion yields to UI events while metadata is only partly written', async () => {
+    reset(); observed = Array.from({ length: 1200 }, (_, index) => item(`K${String(index).padStart(7, '0')}`));
+    let done = false; const counts = [];
+    const observe = () => { counts.push(db.prepare('SELECT COUNT(*) n FROM works').get().n); if (!done) setImmediate(observe); };
+    setImmediate(observe);
+    try { await pass(); } finally { done = true; }
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(counts.some(count => count > 0 && count < observed.length), `UI ran between writes: ${counts.join(',')}`);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM works').get().n, observed.length);
+  });
+  await test('a vault switch cancels in-flight sync without writing its records to either vault', async () => {
+    reset(); observed = [item('OLD00001')];
+    const originating = db; const other = new Database(':memory:'); runMigrations(other);
+    let release, entered; const waiting = new Promise(resolve => { entered = resolve; });
+    const gate = new Promise(resolve => { release = resolve; });
+    onFetch = async url => { if (url.pathname.includes('/collections/MONITOR1/items/top')) { entered(); await gate; } };
+    const running = pass();
+    try {
+      await waiting; sync.stopZoteroSync(); activeVault = { id: 'other', type: 'academic' }; db = other;
+      release(); await assert.rejects(running, { name: 'AbortError' });
+      assert.equal(originating.prepare('SELECT COUNT(*) n FROM works').get().n, 0);
+      assert.equal(other.prepare('SELECT COUNT(*) n FROM works').get().n, 0);
+      assert.equal(sync.getZoteroSyncStatus().running, false);
+    } finally { release(); await running.catch(() => {}); db = originating; other.close(); }
+  });
+  await test('startup runs in manual mode only for an already linked academic collection', async () => {
+    reset(); activeVault.type = 'academic'; settings.syncMode = 'manual'; observed = [item('START001')];
+    const originalSet = globalThis.setTimeout; let startup;
+    globalThis.setTimeout = (callback, delay, ...args) => delay === 5000 ? (startup = callback, { unref() {} }) : originalSet(callback, delay, ...args);
+    try {
+      sync.startZoteroSync(); assert.equal(requests.length, 0, 'starting the app does not run sync synchronously');
+      const finished = new Promise(resolve => { const off = sync.onZoteroSyncStatus(status => { if (!status.running) { off(); resolve(); } }); });
+      startup(); await finished;
+      assert.equal(db.prepare('SELECT COUNT(*) n FROM works').get().n, 1);
+      assert.equal(settings.syncMode, 'manual', 'startup does not enable realtime polling');
+      requests = []; settings.monitoredCollections = []; sync.startZoteroSync(); startup();
+      await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(requests, []);
+      settings.monitoredCollections = ['MONITOR1']; activeVault.type = 'study'; sync.startZoteroSync(); startup();
+      await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(requests, []);
+    } finally { globalThis.setTimeout = originalSet; sync.stopZoteroSync(); }
+  });
+  await test('unavailable Zotero leaves sync idle and a later manual retry can succeed', async () => {
+    reset(); observed = [item('RETRY001')];
+    const healthy = globalThis.fetch;
+    globalThis.fetch = async () => new Response('', { status: 403 });
+    try {
+      await assert.rejects(pass(), /incompleta/);
+      assert.equal(sync.getZoteroSyncStatus().running, false);
+      assert.equal(db.prepare("SELECT value FROM settings WHERE key='library_versions'").get(), undefined);
+      assert.equal(db.prepare('SELECT COUNT(*) n FROM works').get().n, 0);
+    } finally { globalThis.fetch = healthy; }
+    const result = await pass();
+    assert.match(result.summary, /1 altas/);
+    assert.equal(sync.getZoteroSyncStatus().running, false);
+  });
+  await test('deferred startup does not cancel a manual sync already requested after first paint', async () => {
+    reset(); activeVault.type = 'academic'; settings.syncMode = 'manual'; observed = [item('FIRST001')];
+    let entered, release, startup;
+    const waiting = new Promise(resolve => { entered = resolve; });
+    const gate = new Promise(resolve => { release = resolve; });
+    onFetch = async url => { if (url.pathname.includes('/collections/MONITOR1/items/top')) { entered(); await gate; } };
+    const originalSet = globalThis.setTimeout;
+    globalThis.setTimeout = (callback, delay, ...args) => delay === 5000 ? (startup = callback, { unref() {} }) : originalSet(callback, delay, ...args);
+    const running = pass();
+    try {
+      await waiting;
+      sync.startZoteroSync();
+      assert.equal(pass(), running, 'first-paint startup preserves the user’s in-flight sync');
+      release(); await running;
+      requests = []; startup(); await new Promise(resolve => setImmediate(resolve));
+      assert.deepEqual(requests, [], 'a successful manual sync satisfies the deferred startup request');
+      assert.equal(db.prepare('SELECT COUNT(*) n FROM works').get().n, 1);
+    } finally { release(); await running.catch(() => {}); globalThis.setTimeout = originalSet; sync.stopZoteroSync(); }
+  });
 } finally {
+  sync.stopZoteroSync();
   globalThis.fetch = originalFetch; db?.close(); fs.rmSync(scratch, { recursive: true, force: true });
 }

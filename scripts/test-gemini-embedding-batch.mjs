@@ -30,6 +30,11 @@ test('Gemini native embedding batches preserve model, inputs and request order',
     assert.deepEqual(module.parseGeminiBatchEmbeddingResponse({ embeddings: [
       { values: [1, 2] }, { values: [3, 4] },
     ] }), [[1, 2], [3, 4]]);
+    for (const taskType of ['RETRIEVAL_QUERY', 'RETRIEVAL_DOCUMENT']) {
+      const task = module.geminiBatchEmbeddingRequest('gemini-embedding-001', ['pregunta o fuente'], taskType);
+      assert.equal(task.requests[0].taskType, taskType);
+      assert.equal(task.requests[0].content.parts[0].text, 'pregunta o fuente');
+    }
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 

@@ -6,6 +6,7 @@ import { StudyChatView } from '../src/views/StudyChatView';
 import { WorldChatView } from '../src/views/WorldChatView';
 import ReactDOM from 'react-dom/client';
 import { ResearchAssistantModal } from '../src/views/ResearchAssistantModal';
+import { AcademicLearningContext } from '../src/learning/AcademicLearningContext';
 import { AcademicInterfaceContext } from '../src/components/AcademicInterfaceContext';
 import { setActiveLang } from '../src/i18n';
 import { normalizeUiLanguage } from '../shared/uiLanguage';
@@ -35,6 +36,7 @@ const settings = { synthesisModel: { provider: 'openai', model: 'gpt-5.4' }, uiL
   // captured and inspected here rather than only asserted.
   { provider: 'deepseek', model: 'deepseek-flash' }, { provider: 'opencode-go', model: 'deepseek-flash' },
 ], sttProvider: 'transformers', sttTransformersModel: 'whisper-tiny', researchEffortByModel: storedEffort() } as AppSettings;
+if (params.get('harness') === 'v1') settings.researchHarnessVersion = 'v1';
 if (params.get('concilium')) {
   settings.uiLanguage = 'en';
   settings.chatModel = { provider: 'deepseek', model: 'deepseek-flash' };
@@ -169,5 +171,6 @@ window.nodus = new Proxy({
 setActiveLang(params.get('concilium') ? 'en' : language);
 document.documentElement.className = `${params.get('theme') === 'dark' ? 'dark' : 'light'} ${vaultType} ${params.get('device') === 'phone' ? 'nodus-phone' : ''}`;
 if (params.get('fallback') === 'chat') delete (settings as any).synthesisModel;
+const draftContext = params.get('draft') === '1' ? { vaultId: 'test', epoch: 0, session: null, observe: () => {}, requestExtraction: () => false, requireModels: () => true, prepareAddition: async () => true } : null;
 const onEvidence = (id: string) => { win.openedEvidence = id; };
-ReactDOM.createRoot(document.getElementById('root')!).render(<div className={params.get('device') === 'phone' ? 'mobile-surface' : undefined} style={{ height: '100vh', '--vault-accent': params.get('accent') || vaultTypeColor(vaultType) } as React.CSSProperties}>{view === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId="database-1" /> : view === 'study' || view === 'teaching' ? <StudyChatView settings={settings} variant={view === 'teaching' ? 'teaching' : 'study'} onOpenDocument={onEvidence} onOpenMaterial={onEvidence} onOpenRecording={onEvidence} /> : view === 'world' ? <WorldChatView settings={settings} onNavigate={onEvidence} /> : <AcademicInterfaceContext.Provider value={params.get('profile') as AcademicInterfaceProfile | null}><ResearchAssistantModal settings={settings} embedded={view === 'embedded'} isGenealogy={params.get('genealogy') === '1'} isAcademic={vaultType === 'academic'} onClose={() => {}} /></AcademicInterfaceContext.Provider>}</div>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<div className={params.get('device') === 'phone' ? 'mobile-surface' : undefined} style={{ height: '100vh', '--vault-accent': params.get('accent') || vaultTypeColor(vaultType) } as React.CSSProperties}><AcademicLearningContext.Provider value={draftContext}>{view === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId="database-1" /> : view === 'study' || view === 'teaching' ? <StudyChatView settings={settings} variant={view === 'teaching' ? 'teaching' : 'study'} onOpenDocument={onEvidence} onOpenMaterial={onEvidence} onOpenRecording={onEvidence} /> : view === 'world' ? <WorldChatView settings={settings} onNavigate={onEvidence} /> : <AcademicInterfaceContext.Provider value={params.get('profile') as AcademicInterfaceProfile | null}><ResearchAssistantModal settings={settings} embedded={view === 'embedded'} isGenealogy={params.get('genealogy') === '1'} isAcademic={vaultType === 'academic'} onClose={() => {}} /></AcademicInterfaceContext.Provider>}</AcademicLearningContext.Provider></div>);

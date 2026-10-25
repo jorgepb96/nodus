@@ -53,3 +53,7 @@ export function AudioPanel({entityKind, entityId, localOnly = false}: {
   </section>;
 }
 export function StudyDictation(_props: unknown) { return <p className="mobile-unavailable-audio" role="status">Dictado · Próximamente</p>; }
+
+/** The Desktop narration controls are retained in their original module. Mobile
+ * consults existing recordings through AudioPanel while generation is deferred. */
+export function ListenButton(_props: unknown) { return null; }

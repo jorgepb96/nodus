@@ -1,3 +1,4 @@
+import { researchFailureRequiresStop } from '@shared/researchFailures';
 import type {
   GraphData,
   ImmersionAuthorPosition,
@@ -242,6 +243,9 @@ export interface ExamResult {
 }
 
 export interface ImmersionDeps {
+  haltOnProviderFailure?: boolean;
+  prepareStation?(station: CurriculumStation, material: ImmersionMaterial): Promise<void>;
+  verifyPlan?(plan: ImmersionPlan): Promise<ImmersionPlan>;
   buildMaterial(topic: string): Promise<ImmersionMaterial>;
   planCurriculum(input: CurriculumInput): Promise<CurriculumResult>;
   writePanorama(input: PanoramaInput): Promise<PanoramaResult>;
@@ -267,7 +271,8 @@ type ProgressFn = (p: ImmersionBuildProgress) => void;
 async function generateWithRecovery<T>(generate: () => Promise<T>): Promise<T> {
   try {
     return await generate();
-  } catch {
+  } catch (error) {
+    if (researchFailureRequiresStop(error)) throw error;
     return generate();
   }
 }
@@ -322,15 +327,16 @@ export async function orchestrateImmersion(
       stationCount,
       request.topic
     );
-  } catch {
+  } catch (error) {
+    if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
     degradations.push(msg.degradedCurriculum);
     curriculum = fallbackCurriculum(request.topic, material, stationCount);
   }
 
   // ── Panorama ───────────────────────────────────────────────────────────────
   emit({ phase: 'panorama', message: msg.panorama });
-  const catalog = buildCitationCatalog(material);
-  const citationLabels = buildCitationLabels(material);
+  let catalog = buildCitationCatalog(material);
+  let citationLabels = buildCitationLabels(material);
   let panorama: PanoramaResult;
   try {
     panorama = await generateWithRecovery(() => deps.writePanorama(panoramaInput(request.topic, language, curriculum, material)));
@@ -340,7 +346,8 @@ export async function orchestrateImmersion(
         fallbackOverview(request.topic, material, msg),
       keyTerms: normalizeKeyTerms(panorama.keyTerms),
     };
-  } catch {
+  } catch (error) {
+    if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
     degradations.push(msg.degradedPanorama);
     panorama = { overview: fallbackOverview(request.topic, material, msg), keyTerms: fallbackKeyTerms(material) };
   }
@@ -349,6 +356,10 @@ export async function orchestrateImmersion(
   const stations: ImmersionStation[] = [];
   for (let i = 0; i < curriculum.stations.length; i++) {
     const spec = curriculum.stations[i];
+    if (deps.prepareStation) {
+      await deps.prepareStation(spec, material);
+      catalog = buildCitationCatalog(material); citationLabels = buildCitationLabels(material);
+    }
     emit({
       phase: 'station',
       message: msg.station,
@@ -360,7 +371,8 @@ export async function orchestrateImmersion(
     let result: StationResult;
     try {
       result = await generateWithRecovery(() => deps.writeStation(input));
-    } catch {
+    } catch (error) {
+      if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
       degradations.push(`${msg.degradedStation} «${spec.title}»`);
       result = fallbackStation(input);
     }
@@ -376,7 +388,8 @@ export async function orchestrateImmersion(
       stations,
       material
     );
-  } catch {
+  } catch (error) {
+    if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
     degradations.push(msg.degradedContrasts);
     contrasts = fallbackContrasts(stations, material);
   }
@@ -397,7 +410,8 @@ export async function orchestrateImmersion(
         questions: normalizeQuiz(result.questions, material, 'exam', IMMERSION_LIMITS.examQuestions),
         feynman: cleanStr(result.feynman, msg.feynman(request.topic)),
       };
-    } catch {
+    } catch (error) {
+      if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
       degradations.push(msg.degradedExam);
       exam = fallbackExam(stations, request.topic, msg);
     }
@@ -446,8 +460,9 @@ export async function orchestrateImmersion(
     stoppedReason: degradations.length ? degradations.join(' · ') : null,
   };
 
+  const verified = deps.verifyPlan ? await deps.verifyPlan(plan) : plan;
   emit({ phase: 'done', message: msg.done });
-  return plan;
+  return verified;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

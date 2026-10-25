@@ -30,6 +30,25 @@ try {
   await bounded(8192, () => {}, async () => { assert.equal(current().window, 8192); release(); });
   await pending;
   const { ResearchRetrievalBudget } = load('shared/researchRetrievalBudget.ts');
+  {
+    const settings = { ...load('shared/researchCorpus.ts').RETRIEVAL_PRESETS.fast, evidenceTokens: 1000 };
+    const adaptive = new ResearchRetrievalBudget(settings);
+    adaptive.allowAdaptiveTargets(32768);
+    assert.equal(adaptive.settings.rounds, 1, 'The requested target stays visible to the agent');
+    assert.equal(adaptive.nextRound(), true);
+    assert.equal(adaptive.accept('first', 'a'.repeat(900)), true);
+    assert.equal(adaptive.nextRound(), true, 'Useful follow-up may cross a user round target');
+    assert.equal(adaptive.accept('second', 'a'.repeat(900)), true, 'A user evidence target is advisory');
+    const limit = adaptive.evidenceTokenLimit;
+    adaptive.allowAdaptiveTargets(1000000);
+    assert.equal(adaptive.evidenceTokenLimit, limit, 'New phases cannot repeatedly replenish the allowance');
+    assert.equal(adaptive.accept('third', 'a'.repeat(900)), false, 'The bounded operating allowance remains finite');
+    adaptive.constrainToWindow(2000, 1900);
+    assert.equal(adaptive.evidenceTokenLimit, 100, 'Technical context capacity overrides advisory targets');
+    const manual = new ResearchRetrievalBudget({ ...settings, autoExpand: false });
+    manual.allowAdaptiveTargets(32768);
+    assert.equal(manual.roundLimit, 1, 'Disabling autonomous expansion remains an active option');
+  }
   const budget = new ResearchRetrievalBudget(load('shared/researchCorpus.ts').RETRIEVAL_PRESETS.deep);
   // Selection and dispatch both use UTF-8 bytes as an upper bound on tokens.
   budget.constrainToWindow(4096, 3500);

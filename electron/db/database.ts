@@ -17,6 +17,7 @@ import { scheduleMigrationRecoveryRetention } from './migrationRecoveryUtilityHo
 import { ensureBackupRevisionTriggers } from '../export/backupVaultRevision';
 import { ensureVectorScanGenerationTriggers } from './vectorScanGenerations';
 import { embeddingTextForIdea, embeddingTextHash } from './ideaEmbeddingText';
+import { activeEmbeddingIndex, registerEmbeddingIndexFunctions, withEmbeddingIndexContext, withoutEmbeddingIndexContext } from './embeddingIndexesRepo';
 
 let db: Database.Database | null = null;
 const jobDatabase = new AsyncLocalStorage<Database.Database>();
@@ -118,23 +119,19 @@ export function ensureWorkspaceDevice(database: Database.Database): void {
 }
 
 function openDatabase(file: string): Database.Database {
+  auditQaDatabaseOpen(file, 'read-write');
   let next = new Database(file);
   protectReplicaImportWait(next);
-  try {
-    auditQaDatabaseOpen(file, 'read-write');
-  } catch (error) {
-    next.close();
-    throw error;
-  }
   const migrationPending = Number(next.pragma('user_version', { simple: true })) < SCHEMA_VERSION;
   next = migrateDatabaseSafely(next, file, SCHEMA_VERSION, runMigrations);
-  if (migrationPending) scheduleMigrationRecoveryRetention(file);
+  if (migrationPending && process.env.NODUS_SUPPORT_INTERACTIVE !== '1') scheduleMigrationRecoveryRetention(file);
+  registerEmbeddingIndexFunctions(next);
   ensureWorkspaceDevice(next);
   // Deletion tombstones are written by triggers, which are regenerated here rather than
   // created by a migration: the set of synced tables is decided in code, so a migration
   // could only ever capture the shape it had on the day it was written.
   ensureTombstoneTriggers(next);
-  pruneTombstones(next);
+  if (process.env.NODUS_SUPPORT_INTERACTIVE !== '1') pruneTombstones(next);
   // Same reasoning for the outgoing queue of a connected vault — and this is the gate that
   // stops a reader from queueing anything: without triggers, nothing can write to
   // server_outbox no matter what the rest of the app believes.
@@ -230,7 +227,7 @@ export function withDatabaseContext<T>(database: Database.Database, work: () => 
  * even after withVaultDatabase has closed that dedicated connection.
  */
 export function withoutDatabaseContext<T>(work: () => T): T {
-  return jobDatabase.exit(work);
+  return jobDatabase.exit(() => withoutEmbeddingIndexContext(work));
 }
 
 /**
@@ -246,7 +243,10 @@ export async function withVaultDatabase<T>(vaultId: string, work: () => Promise<
 
   const scoped = openDatabase(vault.path);
   try {
-    return await jobDatabase.run(scoped, work);
+    return await jobDatabase.run(scoped, () => {
+      const context = withoutEmbeddingIndexContext(() => activeEmbeddingIndex(scoped));
+      return withEmbeddingIndexContext(context, work);
+    });
   } finally {
     if (scoped.open) scoped.close();
   }

@@ -214,7 +214,7 @@ test('search folds accents and case; unavailable sounds are not operative cards'
 
 test('the media button shows with Browser sessions OR a Drift selection, and opens Drift through real navigation', () => {
   const app = read('src/App.tsx');
-  assert.match(app, /if \(!hasBrowser && !hasDrift\) return null;/);
+  assert.match(app, /if \(!hasBrowser && !hasDrift && !hasNarration\) return null;/, 'and with narration playing or generating');
   assert.match(app, /const hasDrift = drift\.selection\.length > 0;/, 'a paused mix keeps its button');
   assert.match(app, /data-testid="browser-media-header-action"/, 'the existing test id is kept');
   assert.match(app, /onOpenDrift=\{\(\) => \{[\s\S]*?setToolkitPage\('drift'\);\s*setView\('toolkit'\);\s*\}\}/, 'the same state the Tools button uses');
@@ -245,8 +245,9 @@ test('the popover keeps its two-effect lifecycle: only opening or closing it res
   const chooser = popover.slice(popover.indexOf('const chooseTab'), popover.indexOf('return createPortal('));
   assert.doesNotMatch(chooser, /nodus\.|playAll|pauseAll|browserMediaCommand/);
   assert.match(popover, /role="tablist"[\s\S]*?role="tab"[\s\S]*?aria-selected=\{tab === id\}/);
-  assert.match(popover, /role=\{drift \? 'tabpanel' : undefined\}/);
-  assert.match(popover, /event\.key === 'ArrowRight' \|\| event\.key === 'End'/, 'arrow keys move between the tabs');
+  assert.match(popover, /role=\{tabs\.length > 1 \? 'tabpanel' : undefined\}/);
+  assert.match(popover, /event\.key === 'End' \? tabs\[tabs\.length - 1\]/, 'End jumps to the last tab');
+  assert.match(popover, /event\.key === 'ArrowRight' \? 1 : -1/, 'arrow keys move between the tabs');
 });
 
 test('the Drift volume moves the Drift bus and nothing else', () => {
@@ -272,6 +273,12 @@ test('which tab a popover opens on', () => {
   assert.equal(defaultMediaTab(true, true, null), 'browser', 'both, nothing chosen yet');
   assert.equal(defaultMediaTab(true, true, 'drift'), 'drift', 'both: the last one chosen');
   assert.equal(defaultMediaTab(true, true, 'browser'), 'browser');
+  assert.equal(defaultMediaTab(true, true, 'narration'), 'browser', 'a stale narration choice falls back to Browser');
+  // Narration (Ming) joins as the first tab while it plays or generates.
+  assert.equal(defaultMediaTab(false, false, null, true), 'narration', 'only narration');
+  assert.equal(defaultMediaTab(true, true, null, true), 'narration', 'narration wins when nothing was chosen');
+  assert.equal(defaultMediaTab(true, true, 'drift', true), 'drift', 'the last chosen source still wins');
+  assert.equal(defaultMediaTab(false, true, 'browser', true), 'narration', 'a choice whose source is gone does not win');
 });
 
 // ── navigation ─────────────────────────────────────────────────────────────

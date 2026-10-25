@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -84,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -100,6 +105,7 @@ export const KO: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["ko"],
   'No se pudieron cargar los documentos guardados.': '저장된 문서를 불러올 수 없습니다.',
   'El catálogo de documentos guardados tiene un formato inválido.': '저장된 문서 목록의 형식이 잘못되었습니다.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["ko"],
   ...BACKUPS_TRANSLATIONS.ko,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ko,
@@ -121,9 +127,11 @@ export const KO: Record<string, string> = {
   ...DOCUMENT_SKILLS_TRANSLATIONS.ko,
   ...RESEARCH_PROMPT_TRANSLATIONS.ko,
   ...RESEARCH_SOURCE_TRANSLATIONS.ko,
+  ...RESEARCH_HARNESS_TRANSLATIONS["ko"],
   ...RESEARCH_REASONING_TRANSLATIONS.ko,
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["ko"],
   ...CHAT_SKILLS_TRANSLATIONS.ko,
+  ...NARRATION_TRANSLATIONS['ko'],
   ...CAPABILITIES_TRANSLATIONS.ko,
   ...STELLAR_GRAPH_TRANSLATIONS.ko,
   ...PROTECT_TRANSLATIONS.ko,
@@ -188,6 +196,7 @@ export const KO: Record<string, string> = {
   ...DEEP_RESEARCH_QUALITY_TRANSLATIONS.ko,
   ...TEXT_PROVENANCE_TRANSLATIONS.ko,
   ...MODEL_SETTINGS_TRANSLATIONS.ko,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.ko,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['ko'],
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.ko,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.ko,
@@ -2748,8 +2757,8 @@ export const KO: Record<string, string> = {
   "Buscar dentro del documento": "이 문서 내에서 검색",
   "Preparando el índice de búsqueda…": "검색 색인 작성 중…",
   "Este archivo no contiene una capa de texto que Nodus pueda buscar.": "이 파일에는 Nodus가 검색할 수 있는 텍스트 레이어가 없습니다.",
-  "Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.": "이 PDF에는 검색 가능한 텍스트가 없습니다. 깨끗한 Markdown을 열어 OCR 텍스트를 참조하세요.",
-  "Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.": "이미지에는 텍스트 레이어가 없습니다. OCR 텍스트를 검색하려면 클린 Markdown을 사용하세요.",
+  "Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.": "이 PDF에는 검색 가능한 텍스트가 없습니다. Markdown을 열어 OCR 텍스트를 참조하세요.",
+  "Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.": "이미지에는 텍스트 레이어가 없습니다. OCR 텍스트를 검색하려면 Markdown을 사용하세요.",
   "Coincidencia {current} de {total}": "{total} 중 {current} 일치",
   "No se encontró ese texto": "일치하는 항목이 없습니다.",
   "Ir a la coincidencia anterior": "이전 경기로 이동",
@@ -3457,7 +3466,7 @@ export const KO: Record<string, string> = {
   "Jerarquía legible, ideal para entregar a una IA.": "AI에 전달하는 데 이상적인 읽기 가능한 계층 구조입니다.",
   "JSON": "JSON",
   "Mantener": "유지하다",
-  "Markdown": "가격 인하",
+  "Markdown": "Markdown",
   "Mover": "이동하다",
   "Notas reordenadas por IA.": "AI가 메모를 재정렬했습니다.",
   "Ordenar notas": "메모 정렬",
@@ -5376,6 +5385,7 @@ export const KO: Record<string, string> = {
   "Cambiar modelo": "모델 변경",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "임베딩 모델을 변경하면 기존 벡터가 새 모델에서 작동하지 않으므로 다시 색인을 생성해야 합니다.",
   "Embeddings multilingües de alta calidad para corpus amplios.": "대규모 말뭉치를 위한 고품질 다국어 임베딩입니다.",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "검색 지시문을 사용하는 Microsoft의 다국어 임베딩입니다. 로컬 모델 중 다국어 MTEB 점수가 가장 높으며 약 6.5GB의 GPU 메모리를 예약하므로 16GB 이상의 메모리를 갖춘 컴퓨터를 권장합니다.",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "정확성과 메모리 사용의 균형이 잘 잡힌 긴 상황의 다국어 임베딩입니다.",
   "Opción ligera y rápida para equipos con menos memoria.": "메모리가 적은 컴퓨터를 위한 가볍고 빠른 옵션입니다.",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "대화, 요약 및 아이디어를 위한 매우 가벼운 비전 모델입니다.",
@@ -7628,7 +7638,7 @@ export const KO: Record<string, string> = {
   "Activar Global": "글로벌 활성화",
   "Configura las copias de seguridad para activar Global.": "글로벌을 활성화하도록 백업을 구성합니다.",
   "Biblioteca global activada.": "전역 라이브러리가 활성화되었습니다.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "Global은 모든 저장소에 원본과 깨끗한 Markdown을 함께 제공합니다.",
+  "Global reúne originales y Markdown para todos tus vaults.": "Global은 모든 저장소에 원본과 Markdown을 함께 제공합니다.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "이 저장소는 기존 컬렉션, 스캔, 요약, 임베딩 및 분석을 보존합니다.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "원할 때마다 글로벌 라이브러리를 활성화하세요. 이 저장소는 변경되지 않습니다.",
   "Light": "빛",
@@ -8372,3 +8382,5 @@ export const KO: Record<string, string> = {
 };
 
 Object.assign(KO, SIGN_TRANSLATIONS['ko']);
+
+Object.assign(KO, RESEARCH_QUEUE_TRANSLATIONS['ko']);

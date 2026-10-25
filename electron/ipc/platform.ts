@@ -26,8 +26,7 @@ import { generateEditorImage } from '../ai/editorImages';
 import type { EditorImageRequest } from '@shared/editorAiReview';
 import { deleteDecorativeImage, queueDecorativeImageGeneration, revertDecorativeImage, saveCustomDecorativeImage, streamDecorativeImageContext } from '../ai/decorativeImages';
 import { getDecorativeImage, getDecorativeImageData } from '../db/decorativeImagesRepo';
-import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, readClipBytes, saveClip, setStudyPronunciations } from '../audio/audioService';
-import { clearHumeKey, humeHasKey, listHumeVoices, setHumeKey, synthesizeHume } from '../audio/hume';
+import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getClipSync, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, saveClip, setStudyPronunciations } from '../audio/audioService';
 import { disconnectNodusServerVault, getNodusServerOverview, pairNodusServer, setNodusServerLanguage, syncNodusServerVaultNow } from '../serverSync/serverSyncService';
 import { clearServerInbox, clearServerInboxEntry, listServerInbox, markServerInboxRead } from '../db/serverInboxRepo';
 import { localServerStatusAsync, restartLocalServer, startLocalServer, stopLocalServer } from '../localServer/process';
@@ -54,6 +53,8 @@ import * as zotero from '../zotero/zoteroClient';
 import { getSyncLog } from '../db/syncRepo';
 import { scanQueue } from '../pipeline/scanQueue';
 import { getCorpusHealth } from '../db/corpusHealthRepo';
+import { installedSupportSelection,supportDistributionState,checkSupportDownload,installSupportDownload,saveSupportInstaller,cancelSupportDownload,revealSupportInstallation } from '../supportDistribution';
+import { openNodusSupport,registerSupportSelection } from '../supportLauncher';
 import * as translationsRepo from '../db/translationsRepo';
 import { completeCloudflareDirectDeployment, getCloudflareDeployState, prepareCloudflareDirectDeployment, previewCloudflareDeployment } from '../cloudflare/deployment';
 import { createDesktopBridgeOffer, desktopBridgeStatus, revokeDesktopBridgePairing } from '../desktopBridge/server';
@@ -83,6 +84,14 @@ function originalImageFileName(label: string | null | undefined, mime: string): 
 }
 
 export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
+  registerSupportSelection(installedSupportSelection);
+  h('support:open', () => openNodusSupport(getSettings().uiLanguage));
+  h('support:distributionState',()=>supportDistributionState());
+  h('support:checkDownload',()=>checkSupportDownload());
+  h('support:installDownload',()=>installSupportDownload(getSettings().uiLanguage));
+  h('support:saveInstaller',()=>saveSupportInstaller(getSettings().uiLanguage));
+  h('support:cancelDownload',()=>cancelSupportDownload());
+  h('support:revealInstallation',()=>revealSupportInstallation());
   const editorImages = new Map<string, AbortController>();
   h('ai:editorImage:generate', async (event, request: EditorImageRequest) => {
     const key = `${event.sender.id}:${request?.requestId}`;
@@ -358,10 +367,6 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     entityId: string,
     input: { segmentIndex: number; segmentLabel: string; provider: AudioProvider; voice: string; language: string; bytes: Uint8Array }
   ) => saveClip(entityKind, entityId, { ...input, bytes: input.bytes }));
-  h('audio:clipData', async (_e, clipId: string) => {
-    const data = readClipBytes(clipId);
-    return data ? `data:${data.mime};base64,${data.bytes.toString('base64')}` : null;
-  });
   h('audio:deleteClip', async (_e, clipId: string) => {
     deleteAudioClip(clipId);
   });
@@ -373,6 +378,7 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     const picked = await dialog.showSaveDialog(getWindow() ?? undefined!, { title: dialogTitle('saveAudio', getSettings().uiLanguage), defaultPath: path.basename(source), filters: [{ name: 'Audio WAV', extensions: ['wav'] }] });
     if (picked.canceled || !picked.filePath) return null; fs.copyFileSync(source, picked.filePath); return { path: picked.filePath };
   });
+  h('audio:clipSync', async (_e, clipId: string) => getClipSync(clipId));
   h('audio:study:bookmarks', async (_e, kind: AudioEntityKind, id: string) => listStudyAudioBookmarks(kind, id));
   h('audio:study:bookmark:create', async (_e, kind: AudioEntityKind, id: string, segmentIndex: number, label: string) => createStudyAudioBookmark(kind, id, segmentIndex, label));
   h('audio:study:bookmark:delete', async (_e, id: string) => deleteStudyAudioBookmark(id));
@@ -380,22 +386,6 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
   h('audio:study:pronunciations:set', async (_e, subjectId: string, entries: StudyPronunciationEntry[]) => setStudyPronunciations(subjectId, entries));
   h('audio:study:playlist', async (_e, subjectId: string) => listStudyAudioPlaylist(subjectId));
 
-  // Hume (cloud TTS): key stays in the main process; the renderer only sees
-  // whether a key exists, the voice list, and the resulting audio bytes.
-  h('audio:humeStatus', async () => ({ hasKey: humeHasKey() }));
-  h('audio:humeSetKey', async (_e, key: string) => {
-    setHumeKey(key);
-    return { hasKey: humeHasKey() };
-  });
-  h('audio:humeClearKey', async () => {
-    clearHumeKey();
-    return { hasKey: humeHasKey() };
-  });
-  h('audio:humeVoices', async (_e, language?: string) => listHumeVoices(language));
-  h('audio:humeSynthesize', async (_e, voiceId: string, provider: 'HUME_AI' | 'CUSTOM_VOICE', text: string) => {
-    const bytes = await synthesizeHume(voiceId, provider, text);
-    return new Uint8Array(bytes);
-  });
 
   // AI translations. The renderer assembles an entity's Markdown and passes it in;
   // the main process translates it (chunked, preserving citations) and stores one

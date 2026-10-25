@@ -29,13 +29,48 @@ const Database = require('better-sqlite3');
 const { migrations, runMigrations, SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
 const { buildServerSnapshot } = require(path.join(repoRoot, 'electron/serverSync/serverSnapshot.ts'));
 const { ensureOutboxTriggers } = require(path.join(repoRoot, 'electron/serverSync/outboxTriggers.ts'));
+const { syncedTableNames, describeSyncCoverage } = require(path.join(repoRoot, 'electron/db/syncTables.ts'));
+const { getDb, closeDb } = require(path.join(repoRoot, 'electron/db/database.ts'));
 
-test.after(async () => { await rm(userData, { recursive: true, force: true }); });
+test.after(async () => { closeDb(); await rm(userData, { recursive: true, force: true }); });
 
 function shape(db) {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all();
-  return JSON.stringify(tables.map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
+  // V202 adds only a machine-bound execution checkpoint. The test below verifies
+  // every transport boundary; its columns cannot affect a receiver's wire shape.
+  return JSON.stringify(tables.filter(({ name }) => name !== 'research_harness_runs' && !name.startsWith('embedding_index')).map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
 }
+
+test('research execution checkpoints remain local across every sync transport', () => {
+  const db = getDb();
+  assert.ok(db.prepare("SELECT 1 FROM sqlite_master WHERE name='research_harness_runs'").get());
+  assert.equal(syncedTableNames(db).includes('research_harness_runs'), false);
+  assert.ok(describeSyncCoverage().excluded.includes('research_harness_runs'));
+  ensureOutboxTriggers(db, true);
+  db.prepare("INSERT INTO research_harness_runs(id,mode,status,summary_json,record_json,updated_at) VALUES('local-fixture','chat','paused','{}',?, '2026-10-18')").run(JSON.stringify({ privateFixture: 'local-checkpoint-fixture' }));
+  const snapshot = buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true, nodusServerIncludePassages: true }, db);
+  const payload = JSON.parse(snapshot.buffer.toString('utf8'));
+  assert.equal(Object.hasOwn(payload.tables, 'research_harness_runs'), false);
+  assert.equal(snapshot.buffer.includes('local-checkpoint-fixture'), false, 'Private checkpoint contents never enter the publication');
+  const triggers = db.prepare("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='research_harness_runs' AND instr(sql, 'server_outbox') > 0").all();
+  assert.deepEqual(triggers, [], 'Checkpoints must never create outgoing mutations');
+  db.prepare("DELETE FROM research_harness_runs WHERE id='local-fixture'").run();
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM server_outbox WHERE table_name='research_harness_runs'").get().n, 0, 'Saving and deleting a checkpoint do not enqueue a mutation');
+});
+
+test('saved embedding indexes are local while their active projection may be published', () => {
+  const db = getDb();
+  const names = ['embedding_indexes', 'embedding_index_state', 'embedding_index_values', 'embedding_index_documentary_refs', 'embedding_index_generations'];
+  const sync = syncedTableNames(db);
+  const excluded = describeSyncCoverage().excluded;
+  for (const name of names) { assert.equal(sync.includes(name), false); assert.ok(excluded.includes(name)); }
+  ensureOutboxTriggers(db, true);
+  const snapshot = JSON.parse(buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true }, db).buffer.toString());
+  for (const name of names) {
+    assert.equal(Object.hasOwn(snapshot.tables, name), false);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='trigger' AND tbl_name=? AND instr(sql,'server_outbox')>0").get(name).n, 0);
+  }
+});
 
 function lastShapeChange() {
   const db = new Database(':memory:');
@@ -83,14 +118,17 @@ test('senders stamp the last migration that changed a table, not every migration
     `migration v${expected} is the last that changed a table: set SYNC_SCHEMA_VERSION to ${expected}`);
 });
 
-test('migration 201 publications remain importable by a schema-200 peer', () => {
-  const sender = new Database(path.join(userData, 'sender-201.sqlite'));
-  const receiverFile = path.join(userData, 'receiver-200.sqlite');
+// Migrations after the last shape change (index- or trigger-only ones, like v201) must not
+// raise the wire version: a peer still at that last shape change keeps importing.
+test('publications stay importable by a peer at the last shape change', () => {
+  const { SYNC_SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/syncSchemaVersion.ts'));
+  const sender = new Database(path.join(userData, 'sender-latest.sqlite'));
+  const receiverFile = path.join(userData, `receiver-${SYNC_SCHEMA_VERSION}.sqlite`);
   const receiver = new Database(receiverFile);
   try {
     runMigrations(sender);
-    assert.ok(sender.pragma('user_version', { simple: true }) >= 201);
-    for (const migration of migrations.filter(entry => entry.version <= 200)) {
+    assert.equal(sender.pragma('user_version', { simple: true }), SCHEMA_VERSION);
+    for (const migration of migrations.filter(entry => entry.version <= SYNC_SCHEMA_VERSION)) {
       receiver.transaction(() => {
         receiver.exec(migration.up);
         migration.after?.(receiver);
@@ -98,14 +136,14 @@ test('migration 201 publications remain importable by a schema-200 peer', () => 
       })();
     }
     sender.prepare('INSERT INTO notes (id, folder_id, title, kind, content, source_json, order_idx, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, NULL, 0, ?, ?)')
-      .run('wire-note', 'Compatible', 'markdown', 'from a newer index', '2026-10-01', '2026-10-01');
+      .run('wire-note', 'Compatible', 'markdown', 'from a newer build', '2026-10-01', '2026-10-01');
     const snapshot = buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true, nodusServerIncludePassages: false }, sender);
-    assert.equal(snapshot.schemaVersion, 200);
+    assert.equal(snapshot.schemaVersion, SYNC_SCHEMA_VERSION);
     const file = path.join(userData, 'compatible-snapshot.json');
     fs.writeFileSync(file, snapshot.buffer);
     const { importReplicaSnapshot } = require(path.join(repoRoot, 'electron/serverSync/serverReplicaWorker.ts'));
-    importReplicaSnapshot({ file, database: receiverFile, schemaVersion: 200 });
-    assert.equal(receiver.pragma('user_version', { simple: true }), 200);
-    assert.equal(receiver.prepare('SELECT content FROM notes WHERE id = ?').get('wire-note')?.content, 'from a newer index');
+    importReplicaSnapshot({ file, database: receiverFile, schemaVersion: SYNC_SCHEMA_VERSION });
+    assert.equal(receiver.pragma('user_version', { simple: true }), SYNC_SCHEMA_VERSION);
+    assert.equal(receiver.prepare('SELECT content FROM notes WHERE id = ?').get('wire-note')?.content, 'from a newer build');
   } finally { sender.close(); receiver.close(); }
 });

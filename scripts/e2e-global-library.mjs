@@ -740,7 +740,7 @@ try {
   await vaultIdeasModal.getByRole('button', { name: 'Cerrar' }).click();
   await vaultIdeasModal.waitFor({ state: 'detached' });
   const vaultWorkRow = page.getByTestId(`vault-library-item-${itemId}`);
-  await vaultWorkRow.getByRole('button', { name: 'Abrir lector limpio' }).click();
+  await vaultWorkRow.getByRole('button', { name: 'Abrir Markdown' }).click();
   await page.locator('[data-testid^="library-workspace-tab-document-"]').first().waitFor({ state: 'visible' });
   assert.equal(await page.getByTestId('work-ideas-modal').count(), 0, 'the reader action does not reopen the analysis modal');
   const readerFormatDialog = page.getByTestId('library-reader-format-dialog');

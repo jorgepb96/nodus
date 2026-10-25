@@ -4,8 +4,8 @@
 // a pill and the preset filters by the same word, so a reader who clicks
 // "Incompleto" must get exactly the rows whose pill says "Incompleto".
 //
-// The only transient state with no SQL predicate is `running`: it exists solely in
-// the live queue, and the renderer overlays it. Persisted `pending` markers DO have
+// Live queue activity is overlaid by the renderer; it can also expose an orphan
+// summary marker as retryable when no live job owns it. Persisted `pending` markers have
 // a predicate, so a work waiting to resume is filterable instead of leaking into
 // "Incompleto" (which is what happened while it had none).
 //
@@ -63,7 +63,7 @@ const IDEA_EMBEDDING_CURRENT = `(
 const SEMANTIC_COMPLETE = `(
   NOT EXISTS (
     SELECT 1 FROM idea_occurrences io
-    JOIN ideas i ON i.global_id = io.global_id
+    JOIN embedding_read_ideas i ON i.global_id = io.global_id
     WHERE io.nodus_id = w.nodus_id
       AND NOT ${IDEA_EMBEDDING_CURRENT}
   )
@@ -88,10 +88,20 @@ const PASSAGE_IS_CURRENT = `(
   )
 )`;
 
+/**
+ * Read the vectors where they live, through `embedding_read_passages`.
+ *
+ * Passage embeddings moved out of the source row into `embedding_index_values`, and that view
+ * is the compatibility projection presenting them under the old column names (see
+ * embeddingIndexSchema.ts); `worksRepo`'s passages/!passages filters and `passagesRepo`'s
+ * status reads already go through it. Reading the base table instead finds `embedding IS NULL`
+ * on every row of an indexed vault, so PASSAGE_IS_CURRENT was false for every passage: "Listo"
+ * returned nothing at all and "Incompleto" returned the entire analysable corpus.
+ */
 const PASSAGES_COMPLETE = `(
-  EXISTS (SELECT 1 FROM passages p WHERE p.nodus_id = w.nodus_id)
+  EXISTS (SELECT 1 FROM embedding_read_passages p WHERE p.nodus_id = w.nodus_id)
   AND NOT EXISTS (
-    SELECT 1 FROM passages p
+    SELECT 1 FROM embedding_read_passages p
      WHERE p.nodus_id = w.nodus_id
        AND NOT ${PASSAGE_IS_CURRENT}
   )

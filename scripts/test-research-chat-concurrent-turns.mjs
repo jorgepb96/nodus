@@ -112,6 +112,48 @@ async function type(act, container, text) {
   await act(async () => { textarea.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await sleep(20); });
 }
 
+test('academic follow-ups keep the conversation when corpus layers change', async () => {
+  const { ResearchAssistantModal } = await bundle;
+  const React = require('react'), { act } = React;
+  const { createRoot } = require('react-dom/client');
+  const selection = { ideas: false, passages: true, layers: { ideas: false, documents: false, indexed: true, web: false } };
+  const topic = 'Busca evidencias sobre la mirada turística de John Urry';
+  const prior = [
+    { id: 'topic-u', role: 'user', content: topic },
+    { id: 'topic-a', role: 'assistant', content: 'La mirada turística se construye culturalmente.' },
+    { id: 'review-u', role: 'user', content: 'Revisa de nuevo' },
+    { id: 'review-a', role: 'assistant', content: 'La revisión aporta nuevos pasajes.' },
+  ].map(message => ({ ...message, selectionKey: JSON.stringify(selection) }));
+  const savedOverrides = { ...overrides };
+  let request;
+  Object.assign(overrides, {
+    getConversation: async () => ({ id: 'context-history', model, selection, messages: prior }),
+    getActiveVault: async () => ({ id: 'fixture', type: 'academic' }),
+    saveConversationMessages: async () => {},
+    researchChatStream: async input => { request = input; return { answer: 'Revisión del tema original.' }; },
+  });
+  const container = document.getElementById('root'), rootNode = createRoot(container);
+  try {
+    await act(async () => {
+      rootNode.render(React.createElement(ResearchAssistantModal, { settings, isAcademic: true, embedded: true,
+        initialConversationTarget: { surface: 'research', conversationId: 'context-history', nonce: 1 } }));
+      await sleep(20);
+    });
+    await act(async () => { container.querySelector('[data-testid="research-context-trigger"]').click(); });
+    const ideas = document.querySelector('[data-testid="research-context-layer-ideas"]');
+    assert.equal(ideas.getAttribute('aria-checked'), 'false');
+    await act(async () => { ideas.click(); });
+    assert.equal(ideas.getAttribute('aria-checked'), 'true');
+    await type(act, container, 'Revisa de nuevo');
+    assert.equal(request.selection.layers.ideas, true);
+    assert.deepEqual(request.messages.map(message => message.content), [...prior.map(message => message.content), 'Revisa de nuevo']);
+  } finally {
+    await act(async () => rootNode.unmount());
+    for (const key of Object.keys(overrides)) delete overrides[key];
+    Object.assign(overrides, savedOverrides);
+  }
+});
+
 test('another chat opens, starts and answers while one is still answering', async () => {
   const { ResearchAssistantModal } = await bundle;
   const React = require('react');
@@ -203,4 +245,30 @@ test('a view mounted while a chat answers locks only that chat', async () => {
   assert.match(view.messages(), /Final one/, 'the settled answer replaces the streamed one');
   assert.ok(view.send() && !view.stop(), 'the chat unlocks when its turn ends');
   await act(async () => { rootNode.unmount(); });
+});
+
+test('native queue stays disabled when its vault is unavailable or fails to load', async () => {
+  const { ResearchAssistantModal } = await bundle;
+  const React = require('react'), { act } = React;
+  const { createRoot } = require('react-dom/client');
+  const container = document.getElementById('root');
+  const original = overrides.getActiveVault;
+  try {
+    for (const lookup of [async () => null, async () => { throw new Error('Vault unavailable'); }]) {
+      overrides.getActiveVault = lookup;
+      const rootNode = createRoot(container);
+      try {
+        // Genealogy uses the native queue without starting the notebook's separate vault lookup.
+        await act(async () => { rootNode.render(React.createElement(ResearchAssistantModal, { settings, embedded: true, isGenealogy: true })); await sleep(20); });
+        const textarea = container.querySelector('textarea');
+        const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value').set;
+        await act(async () => { setValue.call(textarea, 'Pending question'); textarea.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
+        assert.equal(container.querySelector('[data-testid="research-enqueue"]').disabled, true);
+        assert.equal(textarea.value, 'Pending question', 'the composer remains usable without a queue scope');
+      } finally { await act(async () => rootNode.unmount()); }
+    }
+  } finally {
+    if (original === undefined) delete overrides.getActiveVault;
+    else overrides.getActiveVault = original;
+  }
 });

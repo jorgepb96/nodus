@@ -19,6 +19,9 @@ const server = createServer((req, res) => {
   req.on('data', chunk => raw += chunk);
   req.on('end', () => {
     const body = JSON.parse(raw || '{}'); seen.push({ url: req.url, body });
+    if (body.model === 'gateway/non-reasoning' && body.reasoning) {
+      res.writeHead(404, { 'content-type': 'application/json' }).end(JSON.stringify({ error: { message: 'No endpoints found that support all requested parameters' } })); return;
+    }
     const disabled = body.thinking?.type === 'disabled' || body.reasoning?.enabled === false || body.reasoning?.effort === 'none' || body.reasoning_effort === 'none';
     if (body.model.includes('native-future') && disabled) {
       res.writeHead(400, { 'content-type': 'application/json' }).end(JSON.stringify({ type: 'error', error: { type: 'invalid_request_error', message: sonnetMessage } })); return;
@@ -45,6 +48,7 @@ globalThis.fetch = (input, options) => {
   if (url.href === 'https://openrouter.ai/api/v1/models') return Promise.resolve(new Response(JSON.stringify({data:[
     {id:'gateway/required-catalogue',reasoning:{mandatory:true,supported_efforts:['high','medium']},supported_parameters:['reasoning']},
     {id:'gateway/accepts-disabled',reasoning:{mandatory:false,supported_efforts:['high','low','none']},supported_parameters:['reasoning']},
+    {id:'gateway/non-reasoning',supported_parameters:['response_format']},
   ]}), {headers:{'content-type':'application/json'}}));
   assert.equal(url.origin,new URL(base).origin,'External inference forbidden');
   return originalFetch(input,options);
@@ -62,6 +66,10 @@ try {
   for (const streaming of [false,true]) {
     const ask = (ref, opts) => streaming ? ai.completeTextStreamNeutral(opts,()=>{},ref) : ai.completeTextNeutral(opts,ref);
     const opts = {system:'Test',user:'Question',maxTokens:4096,reasoning:'off',researchEffort:'standard'};
+    const plainBefore=seen.length;
+    assert.equal(await ask({provider:'openrouter',model:'gateway/non-reasoning'},{system:'Test',user:'Question',maxTokens:4096,reasoning:'off',noRetry:true}),'Answer');
+    assert.equal(seen.length-plainBefore,1,'strict routing accepts a non-reasoning model without a retry');
+    assert.equal(seen.at(-1).body.reasoning,undefined,'do not send an unsupported opt-out');cases++;
     const rows = [
       ['anthropic','claude-sonnet-5-5',b=>assert.deepEqual(b.thinking,{type:'between_tools'})],
       ['anthropic','claude-opus-5-5',b=>assert.deepEqual(b.thinking,{type:'adaptive'})],
@@ -108,6 +116,10 @@ try {
     assert.equal(seen.length-single,1);cases++;
   }
   assert.deepEqual(await ai.completeJson({system:'Test',user:'Question',maxTokens:4096,researchEffort:'standard'},value=>value?.ok===true,{provider:'deepseek',model:'deepseek-flash-required-json'}),{ok:true});cases++;
+  const jsonBefore=seen.length;
+  assert.deepEqual(await ai.completeJson({system:'Test',user:'Question',maxTokens:4096,noRetry:true},value=>value?.ok===true,{provider:'openrouter',model:'gateway/non-reasoning'}),{ok:true});
+  assert.equal(seen.length-jsonBefore,1,'planner/coordinator JSON calls also omit the unsupported field');
+  assert.equal(seen.at(-1).body.reasoning,undefined);cases++;
   const go=load('electron/ai/openCodeGoCompletion.ts');
   for(const streaming of [false,true]) {
     for(const model of [`qwen-required-${streaming}`,`gpt-5.6-required-${streaming}`]) {

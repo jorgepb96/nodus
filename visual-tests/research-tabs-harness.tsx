@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DeepResearchView } from '../src/views/DeepResearchView';
+import { DictionaryView } from '../src/views/DictionaryView';
+import { normalizeUiLanguage } from '../shared/uiLanguage';
 import { ImmersionView } from '../src/views/ImmersionView';
 import { AudioPlayerProvider } from '../src/components/AudioPlayer';
 import { setActiveLang } from '../src/i18n';
 import '../src/index.css';
 
 // Deterministic local fixtures: the production views render unchanged; only IPC is replaced.
+const params = new URLSearchParams(location.search);
+const language = normalizeUiLanguage(params.get('lang') ?? 'es');
 const date = '2026-09-05T09:00:00Z';
-const settings = { uiLanguage: 'es', imageStyle: 'antique_book', synthesisModel: null } as any;
+const settings = { uiLanguage: language, imageStyle: 'antique_book', synthesisModel: null, ...(params.get('harness') === 'v1' ? { researchHarnessVersion: 'v1' } : {}) } as any;
 const titles = ['Memoria colectiva y archivos digitales', 'Patrimonio, territorio e identidad', 'La historia oral como fuente'];
 const sections = ['Introducción', 'El archivo como espacio de memoria', 'Comunidades y participación', 'Conclusiones'];
 const paragraphs = [
@@ -40,6 +44,11 @@ let sessions = titles.map((title, index) => ({
 const listeners = new Set<() => void>();
 const api = {
   getSettings: async () => settings,
+  getActiveVault: async () => ({ id: 'visual-academic', type: 'academic', name: 'Visual fixture' }),
+  scanChangedDictionaryEntries: async () => [],
+  updateSettings: async (patch: any) => { Object.assign(settings, { ...patch, researchExplorationByMode: { ...settings.researchExplorationByMode, ...patch.researchExplorationByMode } }); return settings; },
+  listDictionaryEntries: async () => ({ items: [], total: 0, hasMore: false }),
+  listDictionaryFacets: async () => ({ letters: [], tags: [], authors: [], works: [] }),
   getAudioSegments: async () => [],
   listWritingWorkshopDrafts: async () => drafts,
   listDeepResearchJobs: async () => [],
@@ -65,11 +74,11 @@ function Harness() {
   });
   const section = immersion ? 'immersion' : 'research';
   return <AudioPlayerProvider><main className="h-full min-h-0 flex flex-col bg-neutral-950 text-neutral-100" key={revision}>
-    {immersion
+    {params.get('section') === 'dictionary' ? <DictionaryView settings={settings} onOpenIdea={() => {}} onOpenAuthor={() => {}} onOpenLibraryWork={() => {}} /> : immersion
       ? <ImmersionView settings={settings} snapshot={(window as any).snapshots[section]} onSnapshotChange={(patch) => { (window as any).snapshots[section] = { ...(window as any).snapshots[section], ...patch }; }} />
       : <DeepResearchView settings={settings} snapshot={(window as any).snapshots[section]} onSnapshotChange={(patch) => { (window as any).snapshots[section] = { ...(window as any).snapshots[section], ...patch }; }} />}
   </main></AudioPlayerProvider>;
 }
-setActiveLang('es');
-document.documentElement.classList.add('dark');
+setActiveLang(language);
+document.documentElement.classList.add(params.get('theme') === 'light' ? 'light' : 'dark');
 createRoot(document.getElementById('root')!).render(<Harness />);

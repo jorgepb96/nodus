@@ -6,7 +6,7 @@
 // disposable profile, enables foreign-extension scanning only in that profile,
 // and proves that the built XPI is registered, active and actually reaches its
 // bootstrap startup, opens its evidence database, persists encrypted credentials
-// across a restart, and exits normally. The user's
+// and item conversation history across a restart, and exits normally. The user's
 // Zotero profile and library are never opened.
 import { spawn } from 'node:child_process';
 import {
@@ -29,6 +29,12 @@ const argValue = (name) => {
   if (exact >= 0) return process.argv[exact + 1];
   return process.argv.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
 };
+const automaticPreparationSmoke = process.argv.includes('--automatic-preparation-smoke');
+const embeddingContextSwitchSmoke = process.argv.includes('--embedding-context-switch-smoke');
+const embeddingSwitchSmoke = process.argv.includes('--embedding-switch-smoke');
+const embeddingBenchmark = process.argv.includes('--embedding-benchmark');
+const benchmarkOutput = path.resolve(argValue('--benchmark-output') || path.join(repoRoot, 'audit/zotero-embeddings/native-results.json'));
+const benchmarkFixture = JSON.parse(readFileSync(path.join(repoRoot, 'scripts/fixtures/zotero-embeddings/retrieval.json'), 'utf8'));
 const keepProfile = process.argv.includes('--keep-profile');
 const timeoutMs = Number(argValue('--timeout-ms') || process.env.ZOTERO_SMOKE_TIMEOUT_MS || 90_000);
 const xpiPath = path.resolve(argValue('--xpi') || path.join(repoRoot, 'dist-zotero', 'nodus-zotero.xpi'));
@@ -58,6 +64,17 @@ const installedXpi = path.join(extensionsDir, `${addon.id}.xpi`);
 mkdirSync(dataDir, { recursive: true });
 mkdirSync(extensionsDir, { recursive: true });
 cpSync(xpiPath, installedXpi);
+// A minimal authored PDF exercises the actual Zotero reader/text extractor.
+const automaticPdfPath = path.join(profileDir, 'synthetic-automatic.pdf');
+if (automaticPreparationSmoke) {
+  const stream = 'BT /F1 12 Tf 50 750 Td (Randomization balances confounders between treatment groups.) Tj 0 -20 Td (Allocation concealment prevents prediction of treatment assignment.) Tj ET';
+  const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>', '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>', '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream'];
+  let pdf = '%PDF-1.4\n'; const offsets = [0];
+  for (let i = 0; i < objects.length; i++) { offsets.push(Buffer.byteLength(pdf)); pdf += (i + 1) + ' 0 obj\n' + objects[i] + '\nendobj\n'; }
+  const xref = Buffer.byteLength(pdf);
+  pdf += 'xref\n0 6\n0000000000 65535 f \n' + offsets.slice(1).map(n => String(n).padStart(10, '0') + ' 00000 n \n').join('') + 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+  writeFileSync(automaticPdfPath, pdf);
+}
 // A separate diagnostic add-on requests a normal quit only after the host has
 // verified startup. It never closes Nodus resources itself: that is the test.
 const quitRequestPath = path.join(profileDir, 'request-normal-quit');
@@ -81,6 +98,7 @@ function startup() {
   async function check() {
     try {
       if (await IOUtils.exists(${JSON.stringify(quitRequestPath)})) {
+        await Zotero.uiReadyPromise;
         const win = Zotero.getMainWindow();
         const store = win?.document.getElementById('nodus-sidebar-frame')?.contentWindow?.NodusStore;
         // Bootstrap finishes before the sidebar's content scripts necessarily do.
@@ -92,7 +110,113 @@ function startup() {
         if (!(await IOUtils.exists(stats.database))) throw new Error('Evidence database missing');
         const phase = await IOUtils.readUTF8(${JSON.stringify(quitRequestPath)});
         function expect(value, message) { if (!value) throw new Error(message); }
+        if (phase === 'save-credentials' && ${automaticPreparationSmoke}) {
+          const frame = win.document.getElementById('nodus-sidebar-frame').contentWindow;
+          const waitUntil = async fn => { const deadline = Date.now() + 90000; while (!(await fn())) { if (Date.now() > deadline) throw new Error('Automatic preparation timeout'); await new Promise(resolve => setTimeout(resolve, 100)); } };
+          // Do not call warmup/embed or click Prepare: startup must do this.
+          await waitUntil(() => frame.document.getElementById('nd-embedding-status').textContent.includes('is ready on this device'));
+          expect(frame.NodusLocalEmbeddings.MODEL.key === 'granite-97m', 'Automatic default encoder');
+          const parent = new Zotero.Item('journalArticle'); parent.setField('title', 'Synthetic automatic preparation'); await parent.saveTx();
+          const attachment = await Zotero.Attachments.importFromFile({ file: ${JSON.stringify(automaticPdfPath)}, parentItemID: parent.id });
+          await Zotero.Reader.open(attachment.id);
+          await waitUntil(async () => {
+            const index = await store.loadEvidenceIndex(attachment.libraryID, attachment.key);
+            return index && index.chunks.length > 0 && index.chunks.every(chunk => chunk.embeddingModel === frame.NodusLocalEmbeddings.MODEL.fingerprint && chunk.embedding?.length === 384);
+          });
+          win.document.getElementById('nodus-sidebar').hidden = false;
+          const splitter = win.document.getElementById('nodus-splitter'); splitter.hidden = false;
+          await new Promise(resolve => setTimeout(resolve, 200));
+          expect(splitter.getBoundingClientRect().width >= 6, 'Six-pixel sidebar drag target');
+          expect(win.getComputedStyle(splitter).cursor === 'col-resize', 'Resize cursor');
+          Zotero.debug('[Nodus smoke] automatic model download, reader vectors and six-pixel divider passed');
+        }
+        if (phase === 'save-credentials' && ${embeddingSwitchSmoke}) {
+          const frame = win.document.getElementById('nodus-sidebar-frame').contentWindow;
+          const embeddings = frame.NodusLocalEmbeddings;
+          const catalog = frame.NodusEmbeddingModels;
+          const waitUntil = async (fn) => { const deadline = Date.now() + 90000; while (!fn()) { if (Date.now() > deadline) throw new Error('Model switch timeout'); await new Promise(r => setTimeout(r, 100)); } };
+          embeddings.select('e5-small'); store.setEmbeddingModel('e5-small');
+          const vector = (await embeddings.embedPassages(['Allocation concealment prevents prediction of treatment assignment.']))[0];
+          const index = { libraryID: Zotero.Libraries.userLibraryID, attachmentKey: 'EMBEDQA1', itemKey: 'ITEMQA01', signature: 'qa-v1', version: 1, title: 'QA controlled passage', totalPages: 1, totalChars: 75, pages: [], chunks: [{ id: 'qa', text: 'Allocation concealment prevents prediction of treatment assignment.', embedding: vector, embeddingModel: embeddings.MODEL.fingerprint }] };
+          expect(await store.saveEvidenceIndex(index), 'Initial vector save');
+          const select = frame.document.getElementById('nd-embedding-model');
+          const apply = frame.document.getElementById('nd-embedding-apply');
+          select.value = 'granite-97m'; apply.click();
+          if (${embeddingContextSwitchSmoke}) {
+            const nextItem = new Zotero.Item('book');
+            nextItem.setField('title', 'Synthetic embedding preparation context switch');
+            await nextItem.saveTx();
+            await win.ZoteroPane.selectItem(nextItem.id);
+            // Source polling and the item notifier must be allowed to execute
+            // while the destination model is loading in its worker.
+            await new Promise(resolve => setTimeout(resolve, 2500));
+          }
+          await waitUntil(() => !apply.disabled);
+          expect(store.getEmbeddingModel() === 'granite-97m', 'Granite activation');
+          const saved = await store.loadEvidenceIndex(index.libraryID, index.attachmentKey);
+          catalog.useIndex(saved, catalog.get('e5-small'));
+          expect(saved.chunks[0].embedding.every((v,i) => Math.abs(v-vector[i]) < 0.000001), 'Old vectors preserved');
+          select.value = 'e5-small'; apply.click();
+          await waitUntil(() => !apply.disabled);
+          expect(store.getEmbeddingModel() === 'e5-small', 'Return to saved model');
+          select.value = 'harrier-270m'; apply.click();
+          frame.document.getElementById('nd-stop').click();
+          await waitUntil(() => !apply.disabled);
+          expect(store.getEmbeddingModel() === 'e5-small', 'Cancellation preserves active model');
+          await store.deleteEvidenceIndex(index.libraryID, index.attachmentKey);
+          embeddings.reset();
+          Zotero.debug('[Nodus smoke] embedding activation, binary reuse and cancellation passed');
+        }
+        if (phase === 'save-credentials' && ${embeddingBenchmark}) {
+          const embeddings = win.document.getElementById('nodus-sidebar-frame').contentWindow.NodusLocalEmbeddings;
+          const fixture = ${JSON.stringify(benchmarkFixture)};
+          const report = { runtime: 'Zotero ' + Zotero.version, backend: 'wasm', fixture: fixture.description, models: [] };
+          for (const model of embeddings.MODELS) {
+            embeddings.select(model.key);
+            const row = { key: model.key, contract: model.fingerprint };
+            try {
+              let peak = null;
+              const sample = () => { try { const manager = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager); peak = Math.max(peak || 0, manager.resident); } catch (e) {} };
+              sample();
+              const start = Date.now();
+              await embeddings.embedQuery(fixture.queries[0].text);
+              row.coldQueryMs = Date.now() - start;
+              sample();
+              const docStart = Date.now();
+              const vectors = [];
+              for (const p of fixture.passages) { vectors.push((await embeddings.embedPassages([p.text]))[0]); sample(); }
+              row.indexMs = Date.now() - docStart;
+              const ranks = [], latencies = [];
+              for (const q of fixture.queries) {
+                const qStart = Date.now();
+                const vector = await embeddings.embedQuery(q.text); latencies.push(Date.now() - qStart); sample();
+                const scored = vectors.map((v, i) => ({ id: fixture.passages[i].id, score: v.reduce((n, x, j) => n + x * vector[j], 0) })).sort((a,b) => b.score - a.score);
+                ranks.push(scored.findIndex(p => q.relevant.includes(p.id)) + 1);
+              }
+              row.recall1 = ranks.filter(r => r <= 1).length / ranks.length;
+              row.recall5 = ranks.filter(r => r <= 5).length / ranks.length;
+              row.recall10 = ranks.filter(r => r <= 10).length / ranks.length;
+              row.mrr = ranks.reduce((n,r) => n + 1/r, 0) / ranks.length;
+              latencies.sort((a,b) => a-b);
+              row.warmQueryMedianMs = latencies[Math.floor(latencies.length/2)];
+              row.warmQueryP95Ms = latencies[Math.ceil(latencies.length*.95)-1];
+              row.sampledZoteroResidentBytes = peak;
+              row.ranks = ranks;
+            } catch (error) { row.error = String(error) + '\\n' + String(error.stack || ''); }
+            finally { embeddings.reset(); }
+            report.models.push(row);
+            await IOUtils.writeUTF8(${JSON.stringify(benchmarkOutput)}, JSON.stringify(report, null, 2));
+            Zotero.debug('[Nodus benchmark] ' + JSON.stringify(row));
+          }
+        }
         if (phase === 'save-credentials') {
+          expect(store.getHistoryEnabled(), 'Local conversation history should default on');
+          expect(await store.saveConversations([{
+            id: 'nodus-smoke-conversation', title: 'Item history',
+            zoteroItem: { libraryID: Zotero.Libraries.userLibraryID, key: 'SMOKEKEY' },
+            messages: [{ role: 'user', content: 'Remember this item conversation' }],
+          }]), 'Conversation save failed');
+          expect((await store.loadConversations()).length === 1, 'Saved conversation is not readable');
           expect(typeof Services.logins.addLoginAsync === 'function', 'Async Login Manager API missing');
           expect(await store.setKey('openai', 'nodus-smoke-first-key'), 'First API key save failed');
           expect(await store.setKey('openai', 'nodus-smoke-updated-key'), 'API key update failed');
@@ -108,6 +232,12 @@ function startup() {
           expect(Zotero.Prefs.get('nodus.key.openai') === '' && Zotero.Prefs.get('nodus.token') === '', 'Plaintext credentials remain in prefs');
           Zotero.debug('[Nodus smoke] encrypted credential saves, updates and migrations passed on Zotero ' + Zotero.version);
         } else if (phase === 'verify-credentials') {
+          const history = await store.loadConversations();
+          expect(history.length === 1 && history[0].id === 'nodus-smoke-conversation', 'Conversation lost after restart');
+          expect(history[0].zoteroItem.key === 'SMOKEKEY'
+            && history[0].zoteroItem.libraryID === Zotero.Libraries.userLibraryID
+            && history[0].messages[0].content === 'Remember this item conversation', 'Conversation owner or messages lost after restart');
+          expect(await store.deleteConversationHistory(), 'Conversation deletion failed');
           expect(await store.getKey('openai') === 'nodus-smoke-updated-key', 'API key lost after restart');
           expect(await store.getKey('gemini') === 'nodus-smoke-legacy-key', 'Migrated key lost after restart');
           const manual = await store.getManual();
@@ -132,6 +262,9 @@ writeFileSync(path.join(profileDir, 'prefs.js'), [
   'user_pref("extensions.autoDisableScopes", 0);',
   'user_pref("extensions.update.enabled", false);',
   'user_pref("extensions.zotero.httpServer.enabled", false);',
+  'user_pref("extensions.zotero.sync.autoSync", false);',
+  'user_pref("extensions.zoteroMacWordIntegration.skipInstallation", true);',
+  'user_pref("extensions.zoteroOpenOfficeIntegration.skipInstallation", true);',
   'user_pref("extensions.zotero.nodus.mode", "standalone");',
   'user_pref("extensions.zotero.useDataDir", true);',
   `user_pref("extensions.zotero.dataDir", ${JSON.stringify(dataDir)});`,
@@ -158,7 +291,7 @@ const startZotero = () => {
     env: { ...globalThis.process.env, MOZ_NO_REMOTE: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  const append = (chunk) => { output = (output + chunk.toString()).slice(-2_000_000); };
+  const append = (chunk) => { output = (output + chunk.toString()).slice(-2_000_000); if (embeddingBenchmark || embeddingSwitchSmoke || automaticPreparationSmoke) writeFileSync(path.join(profileDir, 'live.log'), output); };
   process.stdout.on('data', append);
   process.stderr.on('data', append);
   return process;
@@ -172,6 +305,7 @@ const stopZotero = async () => {
     await Promise.race([new Promise((resolve) => child.once('exit', resolve)), wait(2_000)]);
   }
 };
+if (embeddingBenchmark) mkdirSync(path.dirname(benchmarkOutput), { recursive: true });
 const diagnostic = () => output.split('\n')
   .filter((line) => /nodus|extension is invalid|update_url|bootstrap|error/i.test(line))
   .slice(-80)
@@ -229,7 +363,7 @@ try {
     throw new Error(`Zotero did not start the registered add-on within ${timeoutMs} ms\nstate=${JSON.stringify(readState())}\n${diagnostic()}`);
   }
   writeFileSync(quitRequestPath, 'save-credentials');
-  const shutdownDeadline = Date.now() + 20_000;
+  const shutdownDeadline = Date.now() + ((embeddingBenchmark || embeddingSwitchSmoke || automaticPreparationSmoke) ? 1_800_000 : 20_000);
   while (child.exitCode === null && child.signalCode === null && Date.now() < shutdownDeadline) {
     if (output.includes('[Nodus smoke] FAILED:')) throw new Error(diagnostic());
     await wait(100);
@@ -239,6 +373,8 @@ try {
     || !output.includes('[Nodus smoke] encrypted credential saves, updates and migrations passed')) {
     throw new Error(`Zotero did not exit normally after opening the evidence database\n${diagnostic()}`);
   }
+  if (automaticPreparationSmoke && !output.includes('[Nodus smoke] automatic model download, reader vectors and six-pixel divider passed')) throw new Error('Missing automatic preparation proof');
+  if (embeddingSwitchSmoke && !output.includes('[Nodus smoke] embedding activation, binary reuse and cancellation passed')) throw new Error('Missing model-switch proof');
   const encryptedLogins = JSON.parse(readFileSync(path.join(profileDir, 'logins.json'), 'utf8'));
   const providerLogins = encryptedLogins.logins.filter((login) => login.hostname === 'chrome://nodus');
   if (providerLogins.length !== 3 || providerLogins.some((login) => !login.encryptedUsername || !login.encryptedPassword)
@@ -259,9 +395,13 @@ try {
     || !output.includes('[Nodus smoke] encrypted credential restart and deletion passed')) {
     throw new Error(`Credential verification after restart failed\n${diagnostic()}`);
   }
+  if (embeddingBenchmark) {
+    const report = JSON.parse(readFileSync(benchmarkOutput, 'utf8'));
+    if (report.models.length !== 3 || report.models.some(model => model.error)) throw new Error('Local embedding benchmark incomplete: inspect ' + benchmarkOutput);
+  }
   succeeded = true;
   console.log(`Zotero live smoke passed: ${addon.id} v${manifest.version}`);
-  console.log('registered=true active=true appDisabled=false userDisabled=false backgroundUpdates=disabled startup=true ui=true evidence=true normalShutdown=true credentials=encrypted migration=true credentialRestart=true credentialDeletion=true');
+  console.log('registered=true active=true appDisabled=false userDisabled=false backgroundUpdates=disabled startup=true ui=true evidence=true normalShutdown=true credentials=encrypted migration=true credentialRestart=true credentialDeletion=true itemHistory=true historyRestart=true historyDeletion=true');
 } finally {
   await stopZotero();
   writeFileSync(path.join(profileDir, 'smoke.log'), output);

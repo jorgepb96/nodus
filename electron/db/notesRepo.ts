@@ -16,6 +16,7 @@ import { getDb } from './database';
 import { currentEmbeddingConfig, encodeEmbedding, embeddingTextHash } from './ideasRepo';
 import { synchronizeNotePage, getPageDocumentForNote } from './pagesRepo';
 import { deleteStudyNoteLinksFor } from './studyNoteLinksRepo';
+import { deleteScriptorNarration } from '../audio/audioService';
 import { notifyAuthoredResearchSourceChanged } from '../ai/researchCorpusEvents';
 
 interface NoteFolderRow {
@@ -111,7 +112,7 @@ export function getNotesTree(includeTrashed = false): NotesTree {
     .prepare('SELECT * FROM note_folders ORDER BY order_idx ASC, name COLLATE NOCASE ASC')
     .all() as NoteFolderRow[];
   const noteRows = getDb()
-    .prepare(`SELECT * FROM notes${includeTrashed ? '' : ' WHERE trashed_at IS NULL'} ORDER BY order_idx ASC, updated_at DESC`)
+    .prepare(`SELECT * FROM embedding_read_notes AS notes${includeTrashed ? '' : ' WHERE trashed_at IS NULL'} ORDER BY order_idx ASC, updated_at DESC`)
     .all() as NoteRow[];
   return {
     folders: folderRows.map(toFolder),
@@ -240,7 +241,7 @@ export function trashNoteFolder(id: string): string[] {
 }
 
 export function getNote(id: string): Note | null {
-  const row = getDb().prepare('SELECT * FROM notes WHERE id = ?').get(id) as NoteRow | undefined;
+  const row = getDb().prepare('SELECT * FROM embedding_read_notes AS notes WHERE id = ?').get(id) as NoteRow | undefined;
   return row ? toNote(row) : null;
 }
 
@@ -308,10 +309,14 @@ export function moveNote(id: string, folderId: string | null): Note | null {
 export function deleteNote(id: string): boolean {
   // The note's links to study places go with it: they have no foreign key (see
   // studyNoteLinksSchema.ts), so this is the one place a permanent delete clears them.
-  return getDb().transaction(() => {
+  const deleted = getDb().transaction(() => {
     deleteStudyNoteLinksFor('note_id', id);
     return getDb().prepare('DELETE FROM notes WHERE id = ?').run(id).changes > 0;
   })();
+  // Its read-aloud audio has no foreign key either; notes removed with a collection are
+  // caught by the narration sweep (pruneOrphanScriptorNarration).
+  if (deleted) deleteScriptorNarration(id);
+  return deleted;
 }
 
 export function patchNoteTags(ids: string[], patch: NoteTagPatch): Note[] {
@@ -389,7 +394,7 @@ export function notesNeedingEmbedding(): { id: string; title: string; content: s
   const rows = getDb()
     .prepare(
       `SELECT id, title, content, embedding, embedding_provider, embedding_model, embedding_text_hash
-         FROM notes
+         FROM embedding_read_notes AS notes
         WHERE trashed_at IS NULL AND (content <> '' OR title <> '')`
     )
     .all() as {
@@ -416,6 +421,8 @@ export function notesNeedingEmbedding(): { id: string; title: string; content: s
 
 export function updateNoteEmbedding(id: string, text: string, embedding: number[]): void {
   const config = currentEmbeddingConfig();
+  const source = getDb().prepare('SELECT title,content FROM notes WHERE id=? AND trashed_at IS NULL').get(id) as { title: string; content: string } | undefined;
+  if (!source || noteEmbeddingText(source) !== text) return;
   getDb()
     .prepare(
       `UPDATE notes
@@ -440,7 +447,7 @@ export function findSimilarNotes(queryEmbedding: number[], threshold: number, li
     .prepare(
       `SELECT * FROM (
          SELECT id, title, content, vec_cosine(embedding, ?) AS similarity
-           FROM notes
+           FROM embedding_read_notes AS notes
           WHERE embedding IS NOT NULL
             AND trashed_at IS NULL
             AND embedding_provider = ?

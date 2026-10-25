@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { routeChanges, changedPaths, assertJobResults } from './ci-routing.mjs';
+import { moduleNames, moduleTests, ownerOf } from './ci-modules.mjs';
 
 test('only a bounded documentation/site allowlist avoids the complete Linux suite', () => {
   for (const files of [['README.md'], ['docs/guide.md', 'site/app/index.html'], ['.github/actions-budget/README.md']]) {
@@ -77,7 +79,8 @@ test('the final gate rejects failed, cancelled, missing and unexpected skipped j
   const route = routeChanges(['src/views/Editor.tsx']);
   const jobs = { changes: { result: 'success' }, quality: { result: 'success' }, linux: { result: 'success' },
     unit: { result: 'success' }, e2e: { result: 'success' },
-    light: { result: 'skipped' }, platform: { result: 'skipped' }, scheme: { result: 'skipped' }, server: { result: 'skipped' } };
+    light: { result: 'skipped' }, platform: { result: 'skipped' }, scheme: { result: 'skipped' }, server: { result: 'skipped' },
+    modules: { result: 'skipped' } };
   assertJobResults(route, jobs);
   for (const lane of ['quality', 'linux', 'unit', 'e2e']) for (const value of ['failure', 'cancelled', 'skipped', undefined]) {
     assert.throws(() => assertJobResults(route, { ...jobs, [lane]: { result: value } }));
@@ -88,6 +91,99 @@ test('the final gate rejects failed, cancelled, missing and unexpected skipped j
   const skipped = { result: 'skipped' };
   assertJobResults(docs, { ...jobs, quality: skipped, linux: skipped, unit: skipped, e2e: skipped, light: { result: 'success' } });
   assert.throws(() => assertJobResults(docs, { ...jobs, linux: { result: 'skipped' } }));
+  const zotero = routeChanges(['zotero-plugin/content/sidebar.js']);
+  const moduleOnly = { ...jobs, quality: skipped, linux: skipped, unit: skipped, e2e: skipped, modules: { result: 'success' } };
+  assertJobResults(zotero, moduleOnly);
+  for (const value of ['failure', 'cancelled', 'skipped', undefined]) {
+    assert.throws(() => assertJobResults(zotero, { ...moduleOnly, modules: { result: value } }));
+  }
+  assert.throws(() => assertJobResults(zotero, { ...moduleOnly, unit: { result: 'success' } }));
+  assert.throws(() => assertJobResults(route, { ...jobs, modules: { result: 'success' } }));
+});
+
+test('a change confined to one module runs only that module, never the application suite', () => {
+  const cases = {
+    zotero: ['zotero-plugin/content/sidebar.js', 'zotero-plugin/manifest.json', 'scripts/build-zotero-xpi.mjs',
+      'scripts/test-zotero-plugin.mjs', 'scripts/fixtures/zotero-embeddings/retrieval.json', '.github/workflows/zotero-plugin.yml'],
+    office: ['word-addin/taskpane.js', 'word-addin/manifest.xml', 'scripts/nodus_copilot.py', 'scripts/test-libreoffice-copilot.mjs'],
+    support: ['apps/nodus-support/ui/App.tsx', 'apps/nodus-support/main.mjs', 'scripts/support-release.mjs',
+      'scripts/verify-nodus-support-ui.mjs', 'scripts/lib/supportFixtures.mjs', '.github/workflows/release-support.yml'],
+    extension: ['browser-extension/popup.js', 'browser-extension/manifest.json', 'scripts/build-browser-extension.mjs'],
+  };
+  for (const [name, files] of Object.entries(cases)) for (const file of [...files.map(file => [file]), files]) {
+    const route = routeChanges(file);
+    assert.deepEqual(route.modules, [name], `${name}: ${file}`);
+    assert.equal(route.full || route.light, false, `${name}: ${file}`);
+    for (const lane of ['macos', 'windows', 'research', 'scheme', 'server', 'appimage', 'presenter']) {
+      assert.equal(route[lane], false, `${name}: ${file} selected ${lane}`);
+    }
+  }
+  const several = routeChanges(['zotero-plugin/bootstrap.js', 'word-addin/chat.js', 'README.md']);
+  assert.deepEqual(several.modules, ['zotero', 'office']);
+  assert.equal(several.full, false);
+  assert.equal(several.light, true, 'documentation beside a module keeps its own lane');
+});
+
+test('application code beside a module, and module code the app imports, keep complete coverage', () => {
+  for (const file of ['electron/zotero-plugin/server.ts', 'scripts/lib/supportEvidence.mjs', 'electron/copilot/server.ts', 'electron/browser/captureJobs.ts',
+    'electron/skillPlugins.ts', 'skill-capabilities/builtins/maps/index.ts', 'packages/capability-api/src/index.ts',
+    'scripts/test-zotero-library-import.mjs', 'cloudflare/src/index.ts']) {
+    const route = routeChanges([file]);
+    assert.equal(route.full, true, file);
+    assert.deepEqual(route.modules, [], file);
+  }
+  for (const [file, name] of [['apps/nodus-support/core/policies.mjs', 'support'],
+    ['browser-extension/lib/capture-jobs.js', 'extension'], ['browser-extension/icons/icon.svg', 'extension']]) {
+    const route = routeChanges([file]);
+    assert.ok(route.full, file);
+    assert.deepEqual(route.modules, [name], `${file} still packages its module`);
+  }
+  const mixed = routeChanges(['zotero-plugin/content/sidebar.js', 'src/views/Settings.tsx']);
+  assert.ok(mixed.full);
+  assert.deepEqual(mixed.modules, ['zotero'], 'the module still builds its own package');
+  for (const file of ['package.json', 'package-lock.json']) assert.deepEqual(routeChanges([file]).modules, moduleNames, file);
+  for (const [files, mode] of [[[], 'manual'], [[], 'merge_group'], [[], 'release'], [['scripts/ci-modules.mjs'], 'pull_request']]) {
+    const route = routeChanges(files, mode);
+    assert.deepEqual(route.modules, moduleNames, `${mode}: ${files}`);
+    assert.ok(route.full);
+  }
+});
+
+test('no application source imports a file that a module claims as its own', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const sources = ['electron', 'src', 'shared', 'server', 'cloudflare/src', 'build']
+    .flatMap(dir => fs.readdirSync(path.join(root, dir), { recursive: true }).map(file => path.join(dir, String(file))))
+    .filter(file => /\.(?:[cm]?[jt]sx?)$/.test(file) && !file.split(path.sep).includes('node_modules'));
+  const specifier = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)(['"])(\.{1,2}\/[^'"]+)\1/gm;
+  const claimed = [];
+  for (const file of sources) {
+    for (const [, , target] of fs.readFileSync(path.join(root, file), 'utf8').matchAll(specifier)) {
+      const resolved = path.relative(root, path.resolve(root, path.dirname(file), target)).split(path.sep).join('/');
+      if (ownerOf(resolved)) claimed.push(`${file} -> ${resolved} (${ownerOf(resolved)})`);
+    }
+  }
+  assert.ok(sources.length > 500, 'the application sources were not found');
+  assert.deepEqual(claimed, [], 'these imports must stay application changes; narrow the module\'s owns');
+});
+
+test('a module runs its own suites, every test naming it, and tests that import a changed helper', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-modules-'));
+  try {
+    fs.mkdirSync(path.join(root, 'scripts'));
+    const files = {
+      'test-zotero-plugin.mjs': '',
+      'test-site-pages.mjs': "read('zotero-plugin/manifest.json')",
+      'test-release-tooling.mjs': "import { sign } from './build-zotero-xpi.mjs';",
+      'test-unrelated.mjs': "read('electron/main.ts')",
+    };
+    for (const [file, source] of Object.entries(files)) fs.writeFileSync(path.join(root, 'scripts', file), source);
+    assert.deepEqual(moduleTests('zotero', root), ['scripts/test-site-pages.mjs', 'scripts/test-zotero-plugin.mjs']);
+    assert.deepEqual(moduleTests('zotero', root, ['scripts/build-zotero-xpi.mjs', 'electron/main.ts']),
+      ['scripts/test-release-tooling.mjs', 'scripts/test-site-pages.mjs', 'scripts/test-zotero-plugin.mjs']);
+    assert.throws(() => moduleTests('typo', root), /Unknown module/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+  const repo = fileURLToPath(new URL('..', import.meta.url));
+  for (const name of moduleNames) assert.ok(moduleTests(name, repo).length > 0, `${name} selects no tests`);
 });
 
 test('a real Git diff includes renamed/deleted paths and more than 300 files', () => {
@@ -119,7 +215,9 @@ test('CI uses an unconditional aggregate, exact refs, read-only PR permissions a
   assert.doesNotMatch(source.split('permissions:')[0], /paths(?:-ignore)?:/);
   assert.match(source, /contents: read/);
   assert.doesNotMatch(source, /(?:contents|packages|pull-requests): write/);
-  assert.match(source, /test:\n\s+needs: \[changes, quality, linux, unit, e2e, light, platform, scheme, server\]\n\s+if: always\(\)/);
+  assert.match(source, /test:\n\s+needs: \[changes, quality, linux, unit, e2e, light, platform, scheme, server, modules\]\n\s+if: always\(\)/);
+  assert.match(source, /run: xvfb-run --auto-servernum node scripts\/ci-modules\.mjs \$\{\{ matrix\.module \}\}/);
+  assert.match(source, /module: \$\{\{ fromJSON\(needs\.changes\.outputs\.modules\) \}\}/);
   assert.match(source, /CI_JOB_RESULTS: \$\{\{ toJSON\(needs\) \}\}/);
   assert.match(source, /ref: \$\{\{ inputs\.ref \|\| github\.ref \}\}/);
   assert.match(source, /node scripts\/ci-native-checks\.mjs platform/);

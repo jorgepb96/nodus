@@ -20,7 +20,7 @@ import { headerActionVisible, type HeaderActionId } from '@shared/headerActions'
 import type { AcademicInterfaceProfile } from '@shared/types';
 import { ResearchPreparationWelcome } from './components/ResearchPreparationWelcome';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { AppSettings, CorpusHealthBucketId, DatabaseSummary, NodiNotification, RecoveryStatus, ServerInboxEntry, SyncLogEntry, VaultSummary } from '@shared/types';
+import type { AppSettings, CorpusHealthBucketId, DatabaseSummary, NodiNotification, RecoveryStatus, ServerInboxEntry, SyncLogEntry, VaultSummary, ZoteroSyncStatus } from '@shared/types';
 import type { AnnouncementRefreshResult } from '@shared/announcements';
 import type { CsvImportPlanData } from './views/DatabasesView';
 import type { NotionImportReport } from '@shared/notionImport';
@@ -33,6 +33,8 @@ import { unreadServerInboxGroupCount } from './serverInboxGrouping';
 import { NotificationsPanel, useAnnouncements } from './components/NotificationsPanel';
 import { BrowserMediaPopover, useBrowserMedia } from './components/browser/BrowserMedia';
 import { DriftMiniPlayer } from './components/drift/DriftMiniPlayer';
+import { NarrationMiniPlayer } from './components/narration/NarrationMiniPlayer';
+import { useAudioPlayer } from './components/AudioPlayer';
 import { useDrift } from './components/drift/DriftProvider';
 import { DatabasesSidebarExplore } from './components/DatabasesSidebarExplore';
 import { StudySidebar, type StudyNavigationTarget } from './components/StudySidebar';
@@ -44,7 +46,7 @@ import { ProsopographySidebar } from './components/ProsopographySidebar';
 import { TestimonySidebar } from './components/TestimonySidebar';
 import type { DossierTab } from './components/testimonies/InterviewDossier';
 import type { TestimonyDeepLink } from '@shared/testimonyDeepLinks';
-import { FeedbackHost } from './components/feedback';
+import { FeedbackHost, toast } from './components/feedback';
 import { PrivacyRequestHost } from './privacyNotices';
 import { BrowserConnectorPairingRequestHost } from './components/BrowserConnectorPairingRequestHost';
 import { Tour } from './views/Tour';
@@ -63,7 +65,7 @@ import { useUpdateProgress } from './useUpdateProgress';
 import { pendingUpdateVersion, updateInstallBusy } from './updateStatus';
 import { UpdateReadyNotice } from './components/UpdateReadyNotice';
 import { AiModelRequiredModal } from './components/AiModelRequiredModal';
-import { recoveryHealthAdvice, recoveryHealthHeadline } from './recoveryHealth';
+import { recoveryHealthAdvice, recoveryHealthHeadline, recoverySetupRequest } from './recoveryHealth';
 import { NodiMascot } from './components/nodi/NodiMascot';
 import { NodiStyleModal } from './components/NodiStyleModal';
 import { Icon } from './components/ui';
@@ -488,6 +490,25 @@ export function App() {
   useEffect(() => { if (view !== 'studyChat') setStudyChatTarget(null); }, [view]);
   const [syncing, setSyncing] = useState(false);
   const [lastSync, setLastSync] = useState<SyncLogEntry | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    let receivedEvent = false;
+    setSyncing(false);
+    setLastSync(null);
+    const apply = (status: ZoteroSyncStatus, refresh: boolean) => {
+      if (disposed || status.vaultId !== activeVault?.id) return;
+      setSyncing(status.running);
+      setLastSync(status.lastSync);
+      if (refresh && !status.running) notifyDataChanged();
+    };
+    const off = window.nodus.onZoteroSyncStatus(status => {
+      if (status.vaultId !== activeVault?.id) return;
+      receivedEvent = true;
+      apply(status, true);
+    });
+    void window.nodus.getZoteroSyncStatus().then(status => { if (!receivedEvent) apply(status, false); }).catch(() => undefined);
+    return () => { disposed = true; off(); };
+  }, [activeVault?.id]);
   const [loadError, setLoadError] = useState<string | null>(null);
   // null while unknown; true when the DB holds any real or demo content.
   const [hasData, setHasData] = useState<boolean | null>(null);
@@ -787,6 +808,7 @@ export function App() {
     root.classList.toggle('accessible-font', settings.accessibleFont);
     root.classList.toggle('high-contrast', settings.highContrast);
     root.classList.toggle('reduce-motion', settings.reduceMotion);
+    root.classList.toggle('read-along-underline', settings.narrationHighlightStyle === 'underline');
     root.classList.toggle('reading-focus', Boolean(isEstudio && settings.readingFocusMode));
   }, [settings, isEstudio]);
 
@@ -955,6 +977,7 @@ export function App() {
   // Settings may also change outside this React tree (notably from the floating
   // Nodi window). Keep visibility, theme and every settings-backed control in sync.
   useEffect(() => window.nodus?.onSettingsChanged(() => { void reloadSettings(); }), [reloadSettings]);
+  useEffect(() => window.nodus?.onActiveEmbeddingIndexChanged(() => { void reloadSettings(); }), [reloadSettings]);
   // A vault switch changes which settings apply, and the palette is per vault by
   // default. The switcher reloads them itself, but it is not the only caller — the
   // Server inbox and vault creation both switch directly — so re-read here as well
@@ -1007,7 +1030,7 @@ export function App() {
   useEffect(() => {
     if (!settings || settings.basicsTutorialVersion === 0) return;
     void reloadRecoveryStatus();
-  }, [reloadRecoveryStatus, settings?.basicsTutorialVersion, settings?.recoverySetupVersion, vaults.length]);
+  }, [reloadRecoveryStatus, settings?.basicsTutorialVersion, settings?.recoverySetupVersion, settings?.uiLanguage, vaults.length]);
 
   const refreshHasData = useCallback(async () => {
     if (!window.nodus) return;
@@ -1237,13 +1260,12 @@ export function App() {
   }, []);
 
   const onSync = async () => {
-    setSyncing(true);
+    const requestedVaultId = activeVault?.id;
     try {
-      const result = await window.nodus.syncNow({ catalogOnly: true });
-      setLastSync(result);
-      notifyDataChanged();
-    } finally {
-      setSyncing(false);
+      await window.nodus.syncNow({ catalogOnly: true });
+    } catch (cause) {
+      const current = await window.nodus.getActiveVault().catch(() => null);
+      if (current?.id === requestedVaultId) toast(errorText(cause));
     }
   };
 
@@ -1479,6 +1501,18 @@ export function App() {
     const open = () => { setVaultAnchor(null); setInterfacePickerOpen(true); };
     window.addEventListener('nodus:interface-tab', open);
     return () => window.removeEventListener('nodus:interface-tab', open);
+  }, []);
+  useEffect(() => {
+    // The listen balloon's links open Settings on the narration panel: the voice library for
+    // «Grabar o subir una voz…», the model list when a gated model has to be downloaded there.
+    const open = (event: Event) => {
+      const models = (event as CustomEvent<string>).detail === 'models';
+      localStorage.setItem('nodus.settingsTarget', models ? 'narration-models' : 'narration');
+      setView('settings');
+      window.dispatchEvent(new Event('nodus:settings-target'));
+    };
+    window.addEventListener('nodus:open-narration-settings', open);
+    return () => window.removeEventListener('nodus:open-narration-settings', open);
   }, []);
   useEffect(() => {
     if (!isAcademic || !settings?.academicLearningProgress?.invitationsEligible) return;
@@ -1786,7 +1820,6 @@ export function App() {
               icon="refresh"
               label={syncing ? t('Actualizando…') : t('Actualizar (sincronizar Zotero)')}
               spinning={syncing}
-              showLabel={syncing}
               disabled={syncing}
               onClick={onSync}
             />
@@ -1940,7 +1973,7 @@ export function App() {
         update={updateProgress}
         onUpdate={setUpdateProgress}
         onLater={() => setDeferredUpdate(updateNoticeKey)}
-        onRecovery={() => { void window.nodus.updateSettings({ recoverySetupVersion: 0 }).then(setSettings); }}
+        onRecovery={() => { void window.nodus.updateSettings(recoverySetupRequest(settings)).then(setSettings); }}
       />}
 
       {settings.demoMode && (
@@ -2511,18 +2544,23 @@ export function App() {
 function BrowserMediaHeaderAction({ onOpenTab, onOpenDrift, focusKeep = true }: { onOpenTab: (tabId: string) => void; onOpenDrift: () => void; focusKeep?: boolean }) {
   const states = useBrowserMedia();
   const drift = useDrift();
+  const narration = useAudioPlayer();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const hasBrowser = states.length > 0;
   const hasDrift = drift.selection.length > 0;
-  if (!hasBrowser && !hasDrift) return null;
+  const narrationGenerating = narration.generation != null && ['queued', 'loading', 'generating'].includes(narration.generation.state);
+  const hasNarration = narration.visible || narrationGenerating;
+  if (!hasBrowser && !hasDrift && !hasNarration) return null;
   const browserPlaying = states.some((state) => state.playing);
-  const title = browserPlaying && drift.playing ? t('Reproduciéndose en Nodus Browser y Nodus Drift')
+  const title = narration.isPlaying ? t('Narración en curso')
+    : narrationGenerating ? t('Generando la narración')
+    : browserPlaying && drift.playing ? t('Reproduciéndose en Nodus Browser y Nodus Drift')
     : browserPlaying ? t('Reproduciéndose en Nodus Browser')
       : drift.playing ? t('Reproduciéndose en Nodus Drift')
         : hasBrowser && hasDrift ? t('Medios en pausa en Nodus Browser y Nodus Drift')
           : hasBrowser ? t('Medios en pausa en Nodus Browser')
-            : t('Nodus Drift en pausa');
-  const sources = states.length + (hasDrift ? 1 : 0);
+            : hasDrift ? t('Nodus Drift en pausa') : t('Narración en pausa');
+  const sources = states.length + (hasDrift ? 1 : 0) + (hasNarration ? 1 : 0);
   return (
     <span data-testid="browser-media-header-action" className="relative inline-flex">
       <HeaderAction
@@ -2535,7 +2573,7 @@ function BrowserMediaHeaderAction({ onOpenTab, onOpenDrift, focusKeep = true }: 
           setAnchor((current) => (current ? null : button));
         }}
       />
-      {sources > 1 && <span className="header-action-badge">{sources}</span>}
+      {(sources > 1 || narration.isPlaying) && <span className="header-action-badge" data-testid="media-playback-badge">{sources}</span>}
       <BrowserMediaPopover
         anchorEl={anchor}
         onClose={() => setAnchor(null)}
@@ -2546,6 +2584,7 @@ function BrowserMediaHeaderAction({ onOpenTab, onOpenDrift, focusKeep = true }: 
           onTab: drift.setMediaTab,
           panel: <DriftMiniPlayer onOpenDrift={() => { setAnchor(null); onOpenDrift(); }} />,
         }}
+        narration={{ active: hasNarration, panel: <NarrationMiniPlayer /> }}
       />
     </span>
   );

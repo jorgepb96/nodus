@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -84,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -101,6 +106,7 @@ export const ZH_CN: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["zh-CN"],
   'No se pudieron cargar los documentos guardados.': '无法加载已保存的文档。',
   'El catálogo de documentos guardados tiene un formato inválido.': '已保存文档目录的格式无效。',
+  ...EMBEDDING_INDEX_TRANSLATIONS["zh-CN"],
   ...BACKUPS_TRANSLATIONS['zh-CN'],
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['zh-CN'],
@@ -122,9 +128,11 @@ export const ZH_CN: Record<string, string> = {
   ...VAULT_FILE_DROP_TRANSLATIONS['zh-CN'],
   ...RESEARCH_PROMPT_TRANSLATIONS['zh-CN'],
   ...RESEARCH_SOURCE_TRANSLATIONS["zh-CN"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["zh-CN"],
   ...RESEARCH_REASONING_TRANSLATIONS["zh-CN"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["zh-CN"],
   ...CHAT_SKILLS_TRANSLATIONS['zh-CN'],
+  ...NARRATION_TRANSLATIONS['zh-CN'],
   ...CAPABILITIES_TRANSLATIONS['zh-CN'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['zh-CN'],
   ...STELLAR_GRAPH_TRANSLATIONS["zh-CN"],
@@ -132,6 +140,7 @@ export const ZH_CN: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS['zh-CN'],
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS['zh-CN'],
   ...MODEL_SETTINGS_TRANSLATIONS['zh-CN'],
+  ...SETTINGS_LAYOUT_TRANSLATIONS['zh-CN'],
   ...EMBEDDING_GEMMA2_TRANSLATIONS['zh-CN'],
   ...DICTIONARY_TRANSLATIONS['zh-CN'],
   ...PAGE_TRANSLATIONS['zh-CN'],
@@ -2605,8 +2614,8 @@ export const ZH_CN: Record<string, string> = {
   "Buscar dentro del documento": "在文档内搜索",
   "Preparando el índice de búsqueda…": "正在准备搜索索引…",
   "Este archivo no contiene una capa de texto que Nodus pueda buscar.": "此文件不含 Nodus 可搜索的文本层。",
-  "Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.": "此 PDF 不含可搜索文本。打开干净的 Markdown 以查看 OCR 文本。",
-  "Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.": "图像不含文本层。使用干净的 Markdown 搜索 OCR 文本。",
+  "Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.": "此 PDF 不含可搜索文本。打开 Markdown 以查看 OCR 文本。",
+  "Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.": "图像不含文本层。使用 Markdown 搜索 OCR 文本。",
   "Coincidencia {current} de {total}": "第 {current} 个，共 {total} 个",
   "No se encontró ese texto": "未找到该文本",
   "Ir a la coincidencia anterior": "转到上一个匹配项",
@@ -5059,6 +5068,7 @@ export const ZH_CN: Record<string, string> = {
   "Cambiar modelo": "更改模型",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "如果更换嵌入模型，原有向量将无法与新模型配合使用，你必须重新建立索引。",
   "Embeddings multilingües de alta calidad para corpus amplios.": "面向大型语料库的高质量多语言嵌入。",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "微软的多语言嵌入，带检索指令。在本地模型中多语言 MTEB 得分最高；会占用约 6.5 GB 显存，建议使用 16 GB 或以上内存的电脑。",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "长上下文多语言嵌入，在精度与内存占用之间取得良好平衡。",
   "Opción ligera y rápida para equipos con menos memoria.": "适合内存较少电脑的轻量快速选项。",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "非常轻量的视觉模型，适用于对话、摘要和观点。",
@@ -7277,7 +7287,7 @@ export const ZH_CN: Record<string, string> = {
   "Activar Global": "启用全局",
   "Configura las copias de seguridad para activar Global.": "配置备份以启用全局。",
   "Biblioteca global activada.": "全局文献库已启用。",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "全局汇集所有资料库的原始文件与干净的 Markdown。",
+  "Global reúne originales y Markdown para todos tus vaults.": "全局汇集所有资料库的原始文件与 Markdown。",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "此资料库保留现有的合集、扫描件、摘要、嵌入和分析。",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "你可以随时启用全局文献库；此资料库不会改变。",
   "Light": "浅色",
@@ -8017,3 +8027,5 @@ export const ZH_CN: Record<string, string> = {
 };
 
 Object.assign(ZH_CN, SIGN_TRANSLATIONS['zh-CN']);
+
+Object.assign(ZH_CN, RESEARCH_QUEUE_TRANSLATIONS['zh-CN']);

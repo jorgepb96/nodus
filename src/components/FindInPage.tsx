@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from './ui';
 import { t, tx } from '../i18n';
+import { highlightApi, textNodeIndex } from '../lib/readerTextIndex';
 
 // Document find (Cmd/Ctrl+F). The default mode searches one rendered DOM tree.
 // Paginated readers can instead provide text segments plus a segment activator;
 // this lets PDF pages and EPUB chapters be indexed without rendering the whole
 // publication or blocking the foreground renderer.
-
-interface HighlightRegistry {
-  set(name: string, highlight: unknown): void;
-  delete(name: string): void;
-}
 
 export interface FindTextSegment {
   id: string;
@@ -41,23 +37,10 @@ interface SearchMatch {
   localIndex: number;
 }
 
-interface TextNodeEntry {
-  node: Text;
-  start: number;
-  end: number;
-}
-
 const HIGHLIGHT_ALL = 'nodus-find';
 const HIGHLIGHT_CURRENT = 'nodus-find-current';
 const MAX_MATCHES = 2_000;
 const WORD_CHARACTER = /[\p{L}\p{N}_]/u;
-
-function highlightApi(): { registry: HighlightRegistry; Ctor: new (...ranges: Range[]) => unknown } | null {
-  const css = (globalThis as unknown as { CSS?: { highlights?: HighlightRegistry } }).CSS;
-  const Ctor = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
-  if (css?.highlights && typeof Ctor === 'function') return { registry: css.highlights, Ctor };
-  return null;
-}
 
 function escapeExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -91,28 +74,6 @@ function findOffsets(text: string, rawQuery: string, options: SearchOptions, lim
     match = expression.exec(text);
   }
   return offsets;
-}
-
-function textNodeIndex(root: HTMLElement): { text: string; nodes: TextNodeEntry[] } {
-  const nodes: TextNodeEntry[] = [];
-  let text = '';
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (!node.nodeValue || node.parentElement?.closest('[data-reader-ignore]')) return NodeFilter.FILTER_REJECT;
-      const tag = node.parentElement?.tagName;
-      if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  let node = walker.nextNode();
-  while (node) {
-    const value = node.nodeValue ?? '';
-    const start = text.length;
-    text += value;
-    nodes.push({ node: node as Text, start, end: text.length });
-    node = walker.nextNode();
-  }
-  return { text, nodes };
 }
 
 function rangesFor(root: HTMLElement, query: string, options: SearchOptions): Range[] {
@@ -156,10 +117,20 @@ export function FindInPage({
   const [wholeWord, setWholeWord] = useState(false);
   const [busy, setBusy] = useState(false);
   const [emptySource, setEmptySource] = useState(false);
+  const [domRevision, setDomRevision] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const requestRef = useRef(0);
   const api = useRef(highlightApi());
   const segmented = segments !== undefined || loadSegments !== undefined;
+
+  // Source panels can finish loading or change tabs while the find bar is open.
+  useEffect(() => {
+    const root = targetRef.current;
+    if (!open || segmented || !root) return;
+    const observer = new MutationObserver(() => setDomRevision((value) => value + 1));
+    observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
+    return () => observer.disconnect();
+  }, [open, segmented, targetRef]);
 
   const clearHighlights = useCallback(() => {
     api.current?.registry.delete(HIGHLIGHT_ALL);
@@ -235,7 +206,7 @@ export function FindInPage({
       })();
     }, 90);
     return () => window.clearTimeout(handle);
-  }, [caseSensitive, clearHighlights, loadSegments, open, query, segmented, segments, targetRef, unavailableMessage, wholeWord]);
+  }, [caseSensitive, clearHighlights, domRevision, loadSegments, open, query, segmented, segments, targetRef, unavailableMessage, wholeWord]);
 
   // Paint only the currently rendered page/chapter. The full result count comes
   // from the segment index; activating a result renders its segment and this
@@ -278,22 +249,35 @@ export function FindInPage({
   // and F3 follow platform conventions for moving through matches.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      const root = targetRef.current;
+      if (!root || root.closest('[hidden]')) return;
+      const dialogs = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"]'))
+        .filter((dialog) => dialog.getClientRects().length > 0);
+      const topDialog = dialogs[dialogs.length - 1];
+      if (topDialog && !topDialog.contains(root)) {
+        if (open) close();
+        return;
+      }
       const command = event.metaKey || event.ctrlKey;
       if (command && !event.altKey && event.key.toLowerCase() === 'f') {
         event.preventDefault();
+        event.stopImmediatePropagation();
         setOpen(true);
         requestAnimationFrame(() => { inputRef.current?.focus(); inputRef.current?.select(); });
       } else if (open && ((command && !event.altKey && event.key.toLowerCase() === 'g') || event.key === 'F3')) {
         event.preventDefault();
+        event.stopImmediatePropagation();
         move(event.shiftKey ? -1 : 1);
       } else if (open && event.key === 'Escape') {
         event.preventDefault();
+        event.stopImmediatePropagation();
         close();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [close, move, open]);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [close, move, open, targetRef]);
 
   useEffect(() => clearHighlights, [clearHighlights]);
 

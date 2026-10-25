@@ -1,3 +1,4 @@
+import { researchSourcePresentation } from './researchSourceNotices';
 // Shared shaping rules for an assembled writing/Deep Research document.
 //
 // `draftMarkdown` is a self-contained document: it opens with the abstract and
@@ -81,4 +82,10 @@ export function stripSection(markdown: string, kind: 'abstract' | 'limitations')
  */
 export function documentBodyForPanels(markdown: string, abstract: string): string {
   return stripInlineLimitations(stripSection(stripLeadingAbstract(markdown, abstract), 'limitations'));
+}
+
+/** A research copy/export mirrors the reader's prose. Structured source notes
+ * remain in the artifact and its alert control, outside the copied document. */
+export function researchDocumentProse(markdown: string, hasSourceNotes = false): string {
+  return researchSourcePresentation(hasSourceNotes ? stripInlineLimitations(stripSection(markdown, 'limitations')) : markdown).content;
 }

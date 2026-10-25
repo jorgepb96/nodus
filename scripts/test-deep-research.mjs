@@ -1633,6 +1633,61 @@ try {
     assert.equal(promoted.meta.generationSelection?.baseline, 0);
   }
 
+  // Continuous reports without an added audit publish the connected writer text,
+  // not a duplicated unlinked abstract or an appended operational limitations list.
+  {
+    const text = 'La continuidad del personal sugiere una interpretación, sin demostrar identidad de políticas [Autor0, N. (2000)](nodus://idea/g-0).';
+    const report = await orchestrateDeepResearch({ objective: 'Explica las fuentes.', harnessVersion: 'v1', sectionLimit: 'single', sectionLength: 500 }, {
+      ...baseDeps(makeSnapshot(4)), continuousNarrative: true, strictDocumentaryGrounding: true,
+      writeSection: async () => text,
+      finalize: async () => ({ title: 'Report', abstract: 'Unlinked duplicated summary.', limitations: ['Operational scope note.'], nextSteps: [] }),
+    });
+    assert.equal(report.draft.draftMarkdown, text);
+    assert.ok(report.draft.limitations.includes('Operational scope note.'), 'Notes remain available separately');
+    assert.equal(report.meta.words, countWords(text));
+  }
+  // Historical final-review hook contracts remain independently testable.
+  {
+    const snapshot = makeSnapshot(4);
+    let writes = 0, planned = 0;
+    const accepted = 'El corpus permite una interpretación acotada [Autor0, 2000](nodus://idea/g-0).';
+    const run = async verified => orchestrateDeepResearch({ objective: 'Explica las fuentes.', harnessVersion: 'v1', sectionLimit: 'single', sectionLength: 500 }, {
+      ...baseDeps(snapshot), continuousNarrative: true, strictDocumentaryGrounding: true,
+      planReport: async input => { planned = input.sectionCount; return fakePlan(input); },
+      writeSection: async input => { writes++; return fakeWriteSection(input); },
+      finalDocumentReview: async parts => {
+        assert.equal(parts.length, 1, 'A short continuous report is one coherent writing unit');
+        return { status: verified ? 'verified' : 'limited', parts: parts.map(part => ({ id: part.id,
+          text: verified ? accepted : '', status: verified ? 'verified' : 'limited', issues: verified ? [] : ['unverified'],
+          claims: [{ sentence: accepted, kind: 'attributed', status: verified ? 'supported' : 'unverified', evidence: [], reason: 'fixture proof' }] })) };
+      },
+    });
+    const report = await run(true);
+    assert.equal(planned, 1); assert.equal(writes, 1);
+    assert.equal(report.draft.draftMarkdown, accepted, 'No later deletion, unchecked abstract, headings or transition is added');
+    assert.equal(report.meta.words, countWords(accepted)); assert.equal(report.meta.worksCited, 1);
+    assert.equal(report.draft.bibliography.length, 1);
+    await assert.rejects(() => run(false), /comprobación|verification/iu, 'A wholly unchecked report is not published as an empty completed artifact');
+
+    let fallbackWrites = 0;
+    const fallbackReport = await orchestrateDeepResearch({ objective: 'Explica las fuentes.', harnessVersion: 'v1', sectionLimit: 'single', sectionLength: 500 }, {
+      ...baseDeps(snapshot), continuousNarrative: true, strictDocumentaryGrounding: true,
+      planReport: async () => { throw new Error('Planner format unavailable'); },
+      writeSection: async input => { fallbackWrites++; assert.equal(input.section.role, 'body'); return fakeWriteSection(input); },
+      finalDocumentReview: async parts => {
+        assert.equal(parts.length, 1, 'A planner fallback does not turn a 500-word narrative into three full report units');
+        return { status: 'verified', parts: parts.map(part => ({ id: part.id, text: accepted, status: 'verified', issues: [], claims: [{ sentence: accepted, kind: 'attributed', status: 'supported', evidence: [], reason: 'fixture proof' }] })) };
+      },
+    });
+    assert.equal(fallbackWrites, 1); assert.equal(fallbackReport.draft.draftMarkdown, accepted);
+    let terminalCalls = 0;
+    await assert.rejects(() => orchestrateDeepResearch({ objective: 'Explica las fuentes.', sectionLimit: 'single' }, {
+      ...baseDeps(snapshot), finalDocumentReview: async () => { throw new Error('must not reach verification'); },
+      writeSection: async () => { terminalCalls++; throw Object.assign(new Error('budget exhausted'), { code: 'budget_exhausted' }); },
+    }), error => error.code === 'budget_exhausted');
+    assert.equal(terminalCalls, 1, 'A terminal allowance failure never pays for an unchanged second writer request');
+  }
+
   console.log('deep research orchestration test passed');
 } finally {
   await rm(tmp, { recursive: true, force: true });

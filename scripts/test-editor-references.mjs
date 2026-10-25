@@ -45,6 +45,13 @@ try {
   assert.ok(!results.some(item=>item.id==='automatic-hidden'),'respect Manual visibility');
   assert.ok(results.some(item=>item.id==='author-test'));
   assert.ok(results.some(item=>item.id==='work-test'));
+  db.prepare('INSERT INTO works(nodus_id,title,year,authors_json,creators_json) VALUES(?,?,?,?,?)').run('citation-work','Fuente específica',2025,JSON.stringify(['Jane Smith']),JSON.stringify([{role:'editor',firstName:'Jane',lastName:'Smith'}]));
+  db.prepare('INSERT INTO works(nodus_id,title,archived) VALUES(?,?,?)').run('citation-archived','Fuente específica',1);
+  const citationResults=repo.listEditorReferences({onlyWorks:true,search:'Smith 2025',limit:1});
+  assert.deepEqual(citationResults.map(item=>item.id),['citation-work'],'citation picker searches creators and year without loading unrelated references');
+  assert.deepEqual(citationResults[0].bibliography.creators,[{creatorType:'editor',firstName:'Jane',lastName:'Smith',name:undefined}]);
+  assert.ok(repo.listEditorReferences({onlyWorks:true,limit:1}).length<=1);
+  assert.equal(repo.listEditorReferences({onlyWorks:true,search:'%'}).length,0,'search wildcard characters are literal');
   assert.ok(results.every(item=>Object.keys(item).every(key=>['id','kind','title','subtitle','href','bibliography','pageLabel','physicalPage'].includes(key))),'metadata-only IPC');
   database.closeDb();
   console.log('Editor references passed: full catalogue, privacy/visibility, search, native/Markdown round-trip, nested/table context and safe routes.');

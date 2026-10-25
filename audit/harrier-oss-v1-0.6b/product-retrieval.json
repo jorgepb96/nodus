@@ -1,0 +1,264 @@
+{
+  "format": "nodus.embedding-product-summary/1",
+  "measuredAt": "2026-10-20",
+  "profile": "harrier-oss-v1-0.6b-q8_0",
+  "runtime": "llama_cpp",
+  "harness": "node scripts/e2e-embeddinggemma.mjs --profile=harrier-oss-v1-0.6b-q8_0 --no-chat --corpus-root=<replayed audit/embeddinggemma-2 corpus>",
+  "completed": true,
+  "checksPassed": [
+    "downloadCancelResume",
+    "downloadScreenshot",
+    "importedFormats",
+    "libraryScreenshot",
+    "prepared",
+    "semanticRecovery",
+    "productRetrieval",
+    "incrementalSource",
+    "titleTextInvalidation",
+    "deleteRestore",
+    "originalReplacement",
+    "semanticOnlySource",
+    "manualVaultAndCitationIsolation",
+    "localOffline",
+    "localRuntimeTransport",
+    "manualIdeaIndex",
+    "exclusionRevocation",
+    "restartPersistence",
+    "databaseIsolation"
+  ],
+  "pending": [
+    "Live academic light/deep/summary/profile analysis",
+    "Live Research Chat and factual grounding",
+    "Manual factual-grounding review",
+    "Packaged/native Windows, Linux and Intel Mac"
+  ],
+  "importedFormats": {
+    "pdf": 12,
+    "pdf-scanned": 6,
+    "docx": 6,
+    "epub": 4,
+    "md": 4,
+    "txt": 4,
+    "csv": 2,
+    "xlsx": 2
+  },
+  "indexedChunks": 787,
+  "queries": 120,
+  "p50Ms": 168,
+  "p95Ms": 207,
+  "lanes": {
+    "semantic": {
+      "metrics": {
+        "queries": 70,
+        "recall5": 0.9738,
+        "recall10": 1,
+        "mrr10": 1,
+        "ndcg10": 0.9998
+      },
+      "byDifficulty": {
+        "monolingual": {
+          "queries": 30,
+          "recall5": 1,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 1
+        },
+        "cross-language": {
+          "queries": 30,
+          "recall5": 1,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 1
+        },
+        "hard-negative": {
+          "queries": 10,
+          "recall5": 0.8167,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 0.9984
+        },
+        "no-evidence": {
+          "queries": 0,
+          "recall5": null,
+          "recall10": null,
+          "mrr10": null,
+          "ndcg10": null
+        }
+      }
+    },
+    "lexical": {
+      "metrics": {
+        "queries": 70,
+        "recall5": 0.95,
+        "recall10": 0.969,
+        "mrr10": 1,
+        "ndcg10": 0.9743
+      },
+      "byDifficulty": {
+        "monolingual": {
+          "queries": 30,
+          "recall5": 1,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 1
+        },
+        "cross-language": {
+          "queries": 30,
+          "recall5": 1,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 1
+        },
+        "hard-negative": {
+          "queries": 10,
+          "recall5": 0.65,
+          "recall10": 0.7833,
+          "mrr10": 1,
+          "ndcg10": 0.8201
+        },
+        "no-evidence": {
+          "queries": 0,
+          "recall5": null,
+          "recall10": null,
+          "mrr10": null,
+          "ndcg10": null
+        }
+      }
+    },
+    "hybrid": {
+      "metrics": {
+        "queries": 70,
+        "recall5": 0.9619,
+        "recall10": 0.9857,
+        "mrr10": 1,
+        "ndcg10": 0.9871
+      },
+      "byDifficulty": {
+        "monolingual": {
+          "queries": 30,
+          "recall5": 1,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 1
+        },
+        "cross-language": {
+          "queries": 30,
+          "recall5": 1,
+          "recall10": 1,
+          "mrr10": 1,
+          "ndcg10": 1
+        },
+        "hard-negative": {
+          "queries": 10,
+          "recall5": 0.7333,
+          "recall10": 0.9,
+          "mrr10": 1,
+          "ndcg10": 0.9095
+        },
+        "no-evidence": {
+          "queries": 0,
+          "recall5": null,
+          "recall10": null,
+          "mrr10": null,
+          "ndcg10": null
+        }
+      }
+    }
+  },
+  "archivedComparison": {
+    "source": "audit/embeddinggemma-2/*-product.json (2026-10-06, same corpus and harness)",
+    "profiles": {
+      "multilingual-e5-small-int8": {
+        "semantic": {
+          "queries": 70,
+          "recall5": 0.9524,
+          "recall10": 0.9714,
+          "mrr10": 1,
+          "ndcg10": 0.9765
+        },
+        "hybrid": {
+          "queries": 70,
+          "recall5": 0.9476,
+          "recall10": 0.9905,
+          "mrr10": 1,
+          "ndcg10": 0.9856
+        },
+        "p50Ms": 164,
+        "p95Ms": 179
+      },
+      "gte-multilingual-base-int8": {
+        "semantic": {
+          "queries": 70,
+          "recall5": 0.9595,
+          "recall10": 0.981,
+          "mrr10": 0.9648,
+          "ndcg10": 0.9586
+        },
+        "hybrid": {
+          "queries": 70,
+          "recall5": 0.9595,
+          "recall10": 0.9929,
+          "mrr10": 0.9929,
+          "ndcg10": 0.9852
+        },
+        "p50Ms": 474,
+        "p95Ms": 633
+      },
+      "bge-m3-q8_0": {
+        "semantic": {
+          "queries": 70,
+          "recall5": 0.9762,
+          "recall10": 0.9952,
+          "mrr10": 0.9619,
+          "ndcg10": 0.9686
+        },
+        "hybrid": {
+          "queries": 70,
+          "recall5": 0.9667,
+          "recall10": 0.9952,
+          "mrr10": 1,
+          "ndcg10": 0.9935
+        },
+        "p50Ms": 480,
+        "p95Ms": 880
+      },
+      "embeddinggemma-2-text-q8-512-v1": {
+        "semantic": {
+          "queries": 70,
+          "recall5": 0.9714,
+          "recall10": 0.9976,
+          "mrr10": 1,
+          "ndcg10": 0.9968
+        },
+        "hybrid": {
+          "queries": 70,
+          "recall5": 0.9595,
+          "recall10": 0.9881,
+          "mrr10": 1,
+          "ndcg10": 0.9875
+        },
+        "p50Ms": 321,
+        "p95Ms": 468
+      },
+      "embeddinggemma-2-text-q8-256-v1": {
+        "semantic": {
+          "queries": 70,
+          "recall5": 0.9667,
+          "recall10": 0.9929,
+          "mrr10": 1,
+          "ndcg10": 0.9932
+        },
+        "hybrid": {
+          "queries": 70,
+          "recall5": 0.9595,
+          "recall10": 0.9881,
+          "mrr10": 1,
+          "ndcg10": 0.9873
+        },
+        "p50Ms": 609,
+        "p95Ms": 736
+      }
+    }
+  },
+  "note": "The first run failed only because the offline check allowed loopback llama.cpp traffic for bge-m3-q8_0 alone; the harness now allows it for every llama.cpp embedder and the run was resumed from the same profile."
+}

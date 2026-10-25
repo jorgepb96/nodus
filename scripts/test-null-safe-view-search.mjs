@@ -21,7 +21,7 @@ const SEARCH_VIEWS = [
   'src/views/MapView.tsx',
   'src/components/PersonLinkPicker.tsx',
   'src/views/ManualIdeaEditor.tsx',
-  'src/views/AudioGenerationSettings.tsx',
+  'src/views/NarrationSettings.tsx',
   'src/views/DatabasesView.tsx',
   'src/views/ProvidersSettings.tsx',
 ];

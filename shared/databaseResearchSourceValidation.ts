@@ -73,4 +73,3 @@ export function validateDatabaseResearchSources(input: DatabaseDeepResearchJobIn
       break;
   }
 }
-

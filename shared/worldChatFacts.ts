@@ -215,4 +215,3 @@ export function calculateWorldChatFacts(request: WorldChatRequest,source: WorldC
     worldDay: at,
   };
 }
-

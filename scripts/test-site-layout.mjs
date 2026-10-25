@@ -20,6 +20,7 @@ test('the public website is isolated from repository documentation', () => {
     'nodi-widget.js',
     'site-header.css',
     'site-header.js',
+    'site-footer.js',
     'tutorials.json',
     'assets/nodus-logo.svg',
     'data/github-release-downloads.json',
@@ -105,6 +106,13 @@ test('the dedicated Pages worker owns the website and its scheduled cache refres
   assert.match(pagesWorkflow, /actions\/deploy-pages@v5/);
   assert.match(pagesWorkflow, /node scripts\/github-release-downloads\.mjs/);
   assert.match(pagesWorkflow, /schedule:\s*\n(?:\s*#.*\n)*\s*- cron: '[^']+'/, 'the download counters refresh daily');
+  const push = pagesWorkflow.match(/\n  push:\n    branches: \[main\]\n    paths:\n((?:\s+(?:#.*|- '[^']+')\n)+)/);
+  assert.ok(push, 'a merge into main that changes the site deploys it without a manual run');
+  for (const file of ['site/**', 'scripts/build-blog-pages.mjs', 'scripts/build-blog-feed.mjs',
+    'scripts/build-site-metadata.mjs', 'scripts/build-sitemap.mjs', 'scripts/build-pages-artifact.mjs',
+    'scripts/github-release-downloads.mjs', 'scripts/lib/site-metadata.mjs', 'package.json', 'CITATION.cff']) {
+    assert.ok(push[1].includes(`- '${file}'`), `${file} feeds the deployed site, so changing it must redeploy`);
+  }
   assert.doesNotMatch(pagesWorkflow, /git push|git commit/, 'generated data must not bypass the CLA gate on main');
   assert.doesNotMatch(pagesWorkflow, /repos\/\$\{GITHUB_REPOSITORY\}\/pages/);
   assert.doesNotMatch(releaseWorkflow, /pages\/builds|github-release-downloads|docs\/data\//);

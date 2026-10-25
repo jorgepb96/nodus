@@ -138,11 +138,12 @@ async function uploadLibrary(base: string, spaceId: string, publicationId: strin
   return missing.size;
 }
 
-async function vectorizeDimensions(base: string): Promise<Set<number>> {
+async function vectorizeDimensions(base: string, requireIdentity: boolean): Promise<Set<number>> {
   const response = await publicationFetch(`${base}/api/v3/capabilities`, { headers: { accept: 'application/json' } });
   if (!response.ok) throw new ServerHttpError(response.status, `Nodus Cloud respondió con HTTP ${response.status}.`);
   const value = await response.json().catch(() => ({})) as Partial<CloudflareCapabilityDocument>;
   assertCloudflareSafetyCapabilities(value);
+  if (requireIdentity && !value.features?.embeddingIndexIdentity) throw new ServerHttpError(426, 'Actualiza Nodus Cloud antes de publicar el índice de embeddings. La publicación anterior se ha conservado.');
   return new Set((value.storage?.vectorizeDimensions || []).filter((dimension) => Number.isSafeInteger(dimension) && dimension > 0 && dimension <= 1536));
 }
 
@@ -183,10 +184,11 @@ export async function publishVaultToCloudflare(
 async function publishVault(config: VaultServerConfig, token: string, vault: VaultSummary,
   db: Database.Database, preparedLibrary: BuiltServerLibraryPublication | null): Promise<CloudflarePublishResult> {
   const base = normalizeServerUrl(config.url); const spaceId = config.spaceId;
-  const availableVectorizeDimensions = await vectorizeDimensions(base);
+  const availableVectorizeDimensions = await vectorizeDimensions(base, !!config.includeVectors);
   const library = preparedLibrary;
   const snapshot = buildServerSnapshot(vault, {
     nodusServerIncludeUserContent: config.includeUserContent,
+    nodusServerIncludeVectors: config.includeVectors,
     nodusServerIncludePassages: config.includePassages,
     nodusServerIncludePrimarySources: config.includePrimarySources,
     nodusServerIncludeTestimonies: config.includeTestimonies,
@@ -208,6 +210,7 @@ async function publishVault(config: VaultServerConfig, token: string, vault: Vau
     if (!count) return [];
     const effective = exact?.summary || { ...summary, count };
     return [{ kind, provider: effective.provider, model: effective.model, dimensions: effective.dim, count,
+      indexId: summary.indexId, generation: summary.generation, embeddingContract: summary.embeddingContract,
       sha256: exact ? hash(exact.buffer) : hash(`${kind}:${snapshot.revision}:${effective.provider}:${effective.model}:${effective.dim}:${count}`),
       bytes: exact?.buffer.length || count * effective.dim * 4, mode: availableVectorizeDimensions.has(effective.dim) ? 'vectorize' as const : 'r2-exact' as const }];
   });
@@ -217,7 +220,7 @@ async function publishVault(config: VaultServerConfig, token: string, vault: Vau
     assets: payload.assets,
     rowObjects: preparedRows.rowObjects.map(({ hash: objectHash, bytes, table, key }) => ({ hash: objectHash, bytes, table, key })),
     library: library ? { ...library.manifest, packages: library.packages.map((entry) => ({ hash: entry.hash, bytes: entry.bytes, documentId: entry.documentId })) } : null,
-    snapshot: { bytes: compressed.length, sha256: snapshotHash, contentEncoding: 'gzip' }, vectors,
+    snapshot: { bytes: compressed.length, sha256: snapshotHash, contentEncoding: 'gzip' }, embeddingIndex: snapshot.embeddingIndex, vectors,
   };
   const publication = await jsonRequest<CloudflarePublicationSession>(`${base}/api/v3/spaces/${encodeURIComponent(spaceId)}/publications`, token, { method: 'POST', body: JSON.stringify(manifest) });
   if (publication.committed) return { revision: snapshot.revision, updatedAt: new Date().toISOString(), bytes: compressed.length, assetsSent: 0, libraryPackagesSent: 0 };

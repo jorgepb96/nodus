@@ -348,7 +348,8 @@ try {
     'a denied documentary target receives no title from a fallback database lookup');
   assert.equal(research.sanitizeResearchCitations('Unverified [](nodus://passage/documentary%3Adenied%230).', context),
     'Unverified.', 'the unresolved empty link is removed through the normal authorization path');
-  const request = { model, messages: [{ role: 'user', content: question }], selection: { ideas: false, themes: false, contradictions: false, gaps: false,
+  // The structured-chain unit fixture supplies a legacy context directly; V1 has its own corpus integration fixtures.
+  const request = { model, harnessVersion: 'legacy', messages: [{ role: 'user', content: question }], selection: { ideas: false, themes: false, contradictions: false, gaps: false,
     readingPath: false, authors: false, documents: true, passages: true, graph: false, graphParts: {} } };
   install();
   const observed = [];

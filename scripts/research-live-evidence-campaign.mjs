@@ -479,6 +479,7 @@ try {
       setObserverStage('settings-profile-selection');
       await page.getByRole('button', { name: 'Ajustes', exact: true }).first().click();
       await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+      await page.getByTestId('settings-tab-essentials').click();
       await page.getByTestId('embedding-model-input').fill(profileId);
       await page.getByTestId('embedding-model-input').press('Tab');
       await page.getByRole('button', { name: 'Cambiar modelo', exact: true }).click();

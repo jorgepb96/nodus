@@ -165,6 +165,8 @@ export function blockNoteToPageBlocks(document: BlockNoteDocument): PageBlockDra
     if (block.type === 'checkListItem') content.checked = Boolean(block.props.checked);
     if (block.type === 'codeBlock') content.language = block.props.language ?? '';
     if (['image', 'audio', 'video', 'file'].includes(block.type)) Object.assign(content, { url: block.props.url, caption: block.props.caption, name: block.props.name });
+    const blob = typeof block.props.url === 'string' && /^nodus-blob:\/\/([a-f0-9]{64})$/.exec(block.props.url);
+    if (['image', 'audio', 'video', 'file'].includes(block.type) && blob) content.blobHash = blob[1];
     if (block.type === 'table') {
       const rows = (block.content as { rows?: Array<{ cells: unknown[] }> })?.rows ?? [];
       content.rows = rows.map(row => row.cells.map(cell => nativeInlineMarkdown(Array.isArray(cell) ? cell : (cell as { content?: unknown })?.content)));

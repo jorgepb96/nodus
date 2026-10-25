@@ -483,7 +483,7 @@ async function bundleModules() {
     'export function getDb() { return globalThis.__backupTestDb; }\nexport const SCHEMA_VERSION = 28;\n' +
       'export function closeDb() {}\nexport function replaceDbFile() {}\n' +
       // Armed by the paged similarity scan before each statement; no-op here.
-      'export function setVectorScanQuery() {}\n'
+      'export function setVectorScanQuery() {}\nexport function withVaultDatabase(_id, work) { return work(); }\nexport function withoutDatabaseContext(work) { return work(); }\nexport function onBeforeDatabaseClose() {}\n'
   );
   const secretsStub = path.join(root, 'stub-secrets.js');
   await writeFile(
@@ -520,6 +520,7 @@ async function bundleModules() {
     bundle: true,
     format: 'cjs',
     platform: 'node',
+    packages: 'external',
     external: ['better-sqlite3'],
     alias: { '@shared': path.join(repoRoot, 'shared'), electron: path.join(repoRoot, 'scripts/stub-electron.mjs') },
     plugins: [

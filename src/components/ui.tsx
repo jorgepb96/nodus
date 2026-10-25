@@ -84,6 +84,7 @@ const ICON_PATHS: Record<string, string> = {
   chartBar: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/><line x1="3" y1="20" x2="21" y2="20"/>',
   bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>',
   layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  layersOff: '<path d="m3 3 18 18"/><path d="m8.5 3.8 3.5-1.8L22 7l-6.5 3.3M11 11.5 2 7l2.7-1.4"/><path d="m2 12 10 5 2.7-1.4M18.1 13.9 22 12"/><path d="m2 17 10 5 6.7-3.4"/>',
   // A field seen in section: three uneven strata stand for what the corpus
   // covers, where its positions diverge and what remains open.
   strata: '<polyline points="4 5 9 5 11 4 14 6 20 5"/><polyline points="2 12 7 12 10 10 14 11 17 12 22 12"/><polyline points="5 19 9 19 11 18 14 19 17 17 20 18"/>',
@@ -166,6 +167,8 @@ const ICON_PATHS: Record<string, string> = {
   play: '<polygon points="6 4 20 12 6 20 6 4"/>',
   stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
   microphone: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M8 22h8"/>',
+  headphones: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2" y="14" width="4" height="7" rx="1.6"/><rect x="18" y="14" width="4" height="7" rx="1.6"/>',
+  userVoice: '<circle cx="9" cy="6" r="3"/><path d="M2 21v-1a7 7 0 0 1 14 0v1"/><path d="M17 8c1.2 1.2 1.2 3.8 0 5"/><path d="M20 5c2.5 2.5 2.5 8.5 0 11"/>',
   audio: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   video: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3Z"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',

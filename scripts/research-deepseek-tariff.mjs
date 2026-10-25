@@ -1,11 +1,11 @@
-// Official USD cache-miss/peak rates verified on 2026-10-07:
+// Official USD cache-miss/peak rates verified on 2026-10-18:
 // https://api-docs.deepseek.com/quick_start/pricing/
 // The release notice dates these rates to 2026-09-10 04:00 UTC.
 // https://api-docs.deepseek.com/news/news260910/
 export const DEEPSEEK_QA_TARIFF = Object.freeze({
-  version: 'deepseek-flash-usd-2026-10-07',
+  version: 'deepseek-flash-usd-2026-10-18',
   effectiveFrom: '2026-09-10T04:00:00.000Z',
-  verifiedUntil: '2026-10-08T00:00:00.000Z',
+  verifiedUntil: '2026-10-19T00:00:00.000Z',
   peakInputPerMillion: .3, peakOutputPerMillion: 1.2,
   source: 'https://api-docs.deepseek.com/quick_start/pricing/',
 });

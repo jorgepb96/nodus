@@ -479,6 +479,8 @@ function blockNoteToPageBlocks(document) {
     if (block2.type === "checkListItem") content.checked = Boolean(block2.props.checked);
     if (block2.type === "codeBlock") content.language = block2.props.language ?? "";
     if (["image", "audio", "video", "file"].includes(block2.type)) Object.assign(content, { url: block2.props.url, caption: block2.props.caption, name: block2.props.name });
+    const blob = typeof block2.props.url === "string" && /^nodus-blob:\/\/([a-f0-9]{64})$/.exec(block2.props.url);
+    if (["image", "audio", "video", "file"].includes(block2.type) && blob) content.blobHash = blob[1];
     if (block2.type === "table") {
       const rows = block2.content?.rows ?? [];
       content.rows = rows.map((row) => row.cells.map((cell) => nativeInlineMarkdown(Array.isArray(cell) ? cell : cell?.content)));

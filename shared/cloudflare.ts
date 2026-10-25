@@ -53,6 +53,7 @@ export interface CloudflareCapabilityDocument {
     assets: true;
     library: true;
     vectors: true;
+    embeddingIndexIdentity?: true;
     mutations: true;
     binarySync?: true;
     mutationRelay?: true;
@@ -260,6 +261,7 @@ export interface CloudflarePublicationManifest {
   rowObjects?: Array<{ hash: string; bytes: number; table: string; key: string }>;
   library: unknown | null;
   snapshot?: { bytes: number; sha256: string; contentEncoding: 'gzip' | 'identity' };
+  embeddingIndex?: { id: string; generation: number } | null;
   vectors?: Array<{
     kind: 'ideas' | 'documents' | 'passages';
     provider: string;
@@ -269,6 +271,9 @@ export interface CloudflarePublicationManifest {
     sha256: string;
     bytes: number;
     mode: CloudflareVectorMode;
+    indexId?: string;
+    generation?: number;
+    embeddingContract?: import('./embeddingContract').EmbeddingContract;
   }>;
 }
 

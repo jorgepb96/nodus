@@ -4,7 +4,10 @@ import {hasMobileCompletionReplay} from './mobileCompletionReplay';
 import {portableDeepResearchAI} from '@shared/portableDeepResearchAI';
 import { withJobThinkingEffort } from './thinkingEffort';
 import { registerNotebookRun } from './researchNotebookService';
-import { bindAcademicCorpusRun } from './researchCorpusRun';
+import { bindAcademicCorpusRun, resolveAcademicRunScope } from './researchCorpusRun';
+import { researchScopeAuthorization } from './researchCorpusScope';
+import { currentResearchHarness, researchHarnessEnabled, withResearchHarness } from './researchHarnessRuntime';
+import { researchHarnessContext } from './researchHarnessContext';
 import { withDocumentVisualPlanning } from './documentVisualContext';
 import { documentSkillCatalog } from '../../shared/documentSkills';
 import { listDocumentSkills } from '../capabilities/documentCatalog';
@@ -81,6 +84,15 @@ export interface CompanionDeepResearchRun {
 export async function generateDeepResearchReport(request: DeepResearchRequest, onProgress?: (p: DeepResearchProgress) => void, signal?: AbortSignal, companion?:CompanionDeepResearchRun): Promise<DeepResearchReport> {
   if(companion&&(!hasMobileCompletionReplay()||!request.model))throw new Error("mobile_completion_scope_required");
   if(companion&&request.completeGuide)throw new Error("mobile_complete_guide_binding_pending");
+  if (!companion && getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
+    const scope = resolveAcademicRunScope(request.notebookId);
+    const context = researchHarnessContext('deep-research', request, scope);
+    let latest: DeepResearchProgress = { phase: 'discovery', message: context.objective };
+    return withResearchHarness({ request, context, scope, signal,
+      validate: () => { if (getActiveVault().id !== scope.vaultId || researchScopeAuthorization(resolveAcademicRunScope(request.notebookId)) !== researchScopeAuthorization(scope)) throw new Error('research_scope_changed'); },
+      onUpdate: researchRun => onProgress?.({ ...latest, researchRun }),
+    }, runSignal => generateDeepResearchReport({ ...request, model: context.model }, progress => { latest = progress; onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() }); }, runSignal));
+  }
   const settings = getSettings();
   const academic = getActiveVault().type === 'academic';
   if (request.notebookId && !academic) throw new Error('Research notebooks require an academic vault');
@@ -438,7 +450,7 @@ function withGenerationMetadata(
 /** Reproducible compatibility engine. It preserves the historical idea/passage
  * retrieval architecture while sharing the current evidence-driven (length-free)
  * writing and citation safety contract. */
-const canonicalAcademicAI = portableDeepResearchAI({get documentaryEvidence() { return getActiveVault().type === "academic"; }, completeJson, completeText});
+const canonicalAcademicAI = portableDeepResearchAI({currentResearchHarness,get documentaryEvidence() { return getActiveVault().type === "academic"; }, completeJson, completeText});
 const {aiDecomposeObjective} = canonicalAcademicAI;
 export const aiVerifyCitations = canonicalAcademicAI.aiVerifyCitations;
 export const __decomposeObjectiveForTesting = aiDecomposeObjective;

@@ -127,7 +127,7 @@ const ITEM_META_COLS = `item_id, folder_id, title, kind, file_name, mime_type, b
   (blob IS NOT NULL) AS has_blob, extracted_text, description, source, content_hash, doc_type, metadata_json,
   (embedding IS NOT NULL) AS has_embedding, created_at, updated_at`;
 
-const ITEM_META_SELECT = `SELECT ${ITEM_META_COLS} FROM archive_items`;
+const ITEM_META_SELECT = `SELECT ${ITEM_META_COLS} FROM embedding_read_archive_items`;
 
 function parseMetadata(json: string | null): Record<string, string> | null {
   if (!json) return null;
@@ -222,7 +222,7 @@ export function listArchiveItemsMetadataByIds(itemIds: string[]): ArchiveItem[] 
        (blob IS NOT NULL) AS has_blob, NULL AS extracted_text, description, source,
        content_hash, doc_type, metadata_json, (embedding IS NOT NULL) AS has_embedding,
        created_at, updated_at
-     FROM archive_items WHERE item_id IN (${placeholders})`
+     FROM embedding_read_archive_items AS archive_items WHERE item_id IN (${placeholders})`
   ).all(...ids) as ItemMetaRow[];
 
   const tags = new Map<string, string[]>();
@@ -288,7 +288,7 @@ export function listItemsForPerson(personId: string): ArchiveItem[] {
       `SELECT i.item_id, i.folder_id, i.title, i.kind, i.file_name, i.mime_type, i.bytes,
         (i.blob IS NOT NULL) AS has_blob, i.extracted_text, i.description, i.source, i.content_hash, i.doc_type, i.metadata_json,
         (i.embedding IS NOT NULL) AS has_embedding, i.created_at, i.updated_at
-       FROM archive_items i JOIN archive_item_persons ap ON ap.item_id = i.item_id
+       FROM embedding_read_archive_items i JOIN archive_item_persons ap ON ap.item_id = i.item_id
        WHERE ap.person_id = ? ORDER BY i.updated_at DESC`
     )
     .all(personId) as ItemMetaRow[];
@@ -604,7 +604,7 @@ export function archiveItemsForEmbedding(): ArchiveEmbeddingRow[] {
               ai.doc_type, (ai.embedding IS NOT NULL) AS has_embedding,
               ai.embedding_provider, ai.embedding_model, ai.embedding_dim,
               ai.embedding_text_hash
-         FROM archive_items ai
+         FROM embedding_read_archive_items ai
         WHERE COALESCE(${PREFERRED_ARCHIVE_TEXT_SQL}, ai.extracted_text, ai.description, '') <> ''`
     )
     .all() as ArchiveEmbeddingSqlRow[];
@@ -619,7 +619,7 @@ export function archiveItemForEmbedding(itemId: string): ArchiveEmbeddingRow | n
             ai.doc_type, (ai.embedding IS NOT NULL) AS has_embedding,
             ai.embedding_provider, ai.embedding_model, ai.embedding_dim,
             ai.embedding_text_hash
-       FROM archive_items ai
+       FROM embedding_read_archive_items ai
       WHERE ai.item_id=?`
   ).get(itemId) as ArchiveEmbeddingSqlRow | undefined;
   return row ? embeddingRow(row) : null;
@@ -668,7 +668,7 @@ export function archiveEmbeddingCount(): { indexed: number; total: number } {
     indexed: (
       db
         .prepare(
-          `SELECT COUNT(*) AS c FROM archive_items
+          `SELECT COUNT(*) AS c FROM embedding_read_archive_items AS archive_items
             WHERE embedding IS NOT NULL
               AND embedding_provider = ?
               AND embedding_model = ?
@@ -727,7 +727,7 @@ export async function findArchiveItemsSimilar(
   const ranked = await scanSimilar<{ item_id: string; rid: number; similarity: number }>({
     table: 'archive_items',
     sql: `SELECT item_id, rowid AS rid, vec_scan(embedding) AS similarity
-            FROM archive_items
+            FROM embedding_read_archive_items AS archive_items
            WHERE rowid > ? AND rowid <= ? AND ${where.join(' AND ')}`,
     params,
     query: queryVec,

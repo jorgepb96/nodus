@@ -2,16 +2,23 @@ import { dropResearchSentences, researchPlainSentence, type ResearchAuditSource,
 
 /** Applies to the writer, independently of the embedding provider or profile. */
 export const RESEARCH_CHAT_PRECISION_RULES = [
-  'Answer the actual question first. Match the length to its complexity: for a simple factual question use one short paragraph, normally under 120 words; for a comparison or explanation normally stay under 400 words unless the user requests depth. Do not add a catalogue of sources, language inventories or unrelated background.',
+  'Answer the actual question first. Match the length to its complexity: for a simple factual question use one short paragraph, normally under 120 words; for a comparison or explanation normally stay under 400 words unless the user requests depth. Do not add a catalogue of sources, language inventories or unrelated background. Mention an extraction limitation once and only when it materially affects the requested conclusion; avoid repeating citations in a final caveat paragraph.',
+  'When the question names several roles, stages, organisms or criteria, address each requested element explicitly. Condensing must not silently drop one of those facets; if the evidence cannot establish one, identify that precise limit.',
   'For documentary claims, every factual clause and table cell must be supported by the supplied excerpts. A working citation is not proof that its source entails the attached claim. Preserve exact source titles, attribution, dates, values, units, negations and corrections.',
-  'Preserve the subject, action and object of each statement, including ellipsis and temporal contrasts. Do not turn a contrast between what opened in a given year into a claim that one building opened another. Put separately supported facts in separate short sentences; put a derived interpretation in its own explicitly labelled sentence with its premises.',
+  'Preserve the subject, action and object of each statement, including ellipsis and temporal contrasts. Do not turn a contrast between what opened in a given year into a claim that one building opened another. Keep the premises of an interpretation identifiable and cite their actual sources.',
   'Preserve technical terminology and operations faithfully across languages. Prefer the original source term to an approximate translated synonym; add a translation only when it preserves the exact operation or property. A correct original term in parentheses does not excuse a wrong translated term. Do not introduce a translation/version relationship between records unless their provenance explicitly establishes it.',
   'When an excerpt is visibly fragmentary or a table/column extraction breaks its sentences, do not fill missing qualifiers or relationships from memory. Prefer a coherent authorized passage; otherwise state the precise evidence limit.',
-  'Separate what a source states from your calculations, general explanations and hypotheses. Label a calculation or inference explicitly and give its supported premises. Write arithmetic as an explicit equation and check the result. Do not turn a plausible interpretation into a documented cause, mechanism, distribution, policy or procedure.',
-  'When asked to compare interpretation limits, contrast the directly stated measurements and qualifications as your own labelled reasoning with those literal premises. A source need not use the word limit or state the joint comparison verbatim. Do not refuse supported reasoning merely because that joint sentence is absent. This does not authorize inventing measurements, causes, a distribution shape or absence from complete sources.',
+  'Reason across sources: useful comparisons, interpretations and hypotheses may follow from cited evidence even when no source states the combined conclusion verbatim. Distinguish your synthesis naturally from a source\'s explicit claim, using qualifications proportionate to the evidence; no ritual label or separate inference paragraph is required. Cite the premises accurately. Write arithmetic as an explicit equation and check the result. Do not turn an interpretation into a demonstrated fact, cause, mechanism, distribution, policy or procedure.',
+  'When asked to compare interpretation limits, contrast the directly stated measurements and qualifications as your own reasoning with those supported premises. A source need not use the word limit or state the joint comparison verbatim. Do not refuse supported reasoning merely because that joint sentence is absent. This does not authorize inventing measurements, causes, a distribution shape or absence from complete sources.',
   'Mark a table row containing a derived value as a calculation or inference in that row itself; a separate paragraph does not qualify the row. Prefer literal values in the table and an explicitly labelled calculation below it.',
   'Keep distinct quantities and policies distinct unless the evidence explicitly connects them. A stated confidence level does not establish that an interval was calculated. Summary statistics alone do not establish a distribution or explain their difference.',
   'An omitted detail means only that the supplied excerpts do not establish it; it does not prove absence from a document or corpus. Do not infer independent corroboration or a shared study design from repeated or translated wording.',
+  'Keep absence claims within the exact lookup predicates: no matches for author AND title AND year does not prove no records for that author OR year separately. A truncated example inventory cannot establish the years of every record. Never turn a passage silence into "the author does not address this" without limiting the claim to that passage.',
+  'Use only comparisons that bear on the requested question. Do not add a literary-genre foil to an answer about social gender. Political approval or moral evaluation is not evidence of experiential inauthenticity. A fragment without its grammatical subject cannot establish who makes its claim; prefer another coherent excerpt instead of assigning the claim to the catalogue author.',
+  'For a catalogue identity question, answer only the requested metadata fields and name document kinds in the answer language rather than dumping internal enum values. A cover page may establish additional facts but is not a catalogue record; do not call its university, supervisors or month catalogue fields. Metadata catalogue lookups do not depend on passage indexing: do not add unrelated semantic-index or extraction caveats to a catalogue result. Respect exclusions such as no alternative bibliography, even when other real publications were found.',
+  'Link positive catalogue examples with their supplied Nodus work citations so the user can open the records. Counts and zero-result lookups are operational facts and never require a fictitious documentary citation. Do not call a passage an abstract, introduction or conclusion unless the source establishes that section: a page range can span an abstract and the body. Use passage or text when its section is unknown.',
+  'Do not invent disagreement or consensus from differences of emphasis. Compatible propositions are not a contradiction. Catalogue credits for an edited volume identify its editors, not the author of every chapter; when the excerpt speaker is unknown, attribute the statement to the passage or volume, not to its editors. State a count of consulted works only when requested and established by the backend records. When using a secondary source, identify that mediation explicitly.',
+  'A bibliographic reference proves only that the cited work is referenced; it does not prove conceptual continuity, influence, agreement, contradiction or an evolution of theory. Do not attribute those relationships to an author without an explicit supporting passage.',
   'Before finishing, check every assertion, attribution and count against the exact cited excerpt. Remove unsupported additions. If the available evidence cannot answer the question, say briefly that you cannot establish the requested fact, rather than claiming that the documents contain no such information. Do not pad that limitation with unrelated facts, search narration or inventories of sources.',
   'Use an evidence-gap acknowledgement only for an unanswered facet actually requested by the user. Do not add inability statements about source relationships, classifications or distinctions that the question does not require. A directly stated negation can be described as explicit; its source need not itself use the word explicit.',
 ].join('\n');
@@ -148,17 +155,38 @@ export function researchChatAuditedMarkdown(markdown: string): string {
 
 /** A semantic verdict cannot turn a paraphrase into a verbatim quotation. A
  * labelled translation may differ; an unlabelled direct quote must be literal. */
+/** Balanced outer quotations preserve nested source quotations as literal content. */
+export function researchQuotedSpans(text: string) {
+  const spans: Array<{ start: number; end: number; text: string }> = [];
+  const stack: string[] = [];
+  let start = -1;
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index];
+    if (character === '\\') { index++; continue; }
+    if (!stack.length && character === '"' && /\d/u.test(text[index - 1] ?? '')) continue;
+    if (stack.length && character === stack.at(-1)) {
+      stack.pop();
+      if (!stack.length) spans.push({ start, end: index + 1, text: text.slice(start + 1, index) });
+    } else if (character === '«' || character === '“' || character === '"') {
+      if (!stack.length) start = index;
+      stack.push(character === '«' ? '»' : character === '“' ? '”' : '"');
+    }
+  }
+  return { spans, unclosed: stack.length > 0 };
+}
 export function researchChatLiteralQuotes(review: ResearchProseAudit, sources: ResearchAuditSource[]): ResearchProseAudit {
   const normalize = (text: string) => text.normalize('NFC').replace(/\s+/gu, ' ').trim();
   const rejected = new Set<string>();
   const claims = review.claims.map(claim => {
-    if (claim.status !== 'supported' || /traduc|translation|translated|traduit|übersetz|traduç|traduz|翻译|翻譯|訳|번역|переклад|перевод|dịch/iu.test(claim.sentence)) return claim;
-    const quotes = [...claim.sentence.matchAll(/«([^»\n]+)»|“([^”\n]+)”|"([^"\n]+)"/gu)]
-      .map(match => normalize(match[1] ?? match[2] ?? match[3])).filter(quote => quote.length >= 12);
-    if (quotes.every(quote => sources.some(source => claim.evidence.some(evidence => evidence.id === source.id) && normalize(source.text).includes(quote)))) return claim;
+    if (claim.status !== 'supported') return claim;
+    const parsed = researchQuotedSpans(claim.sentence);
+    const quotes = parsed.spans.filter(span => !/(?:traducci[oó]n|traduction|translation|translated|traduit|übersetz(?:ung|t)|tradução|traduzido|翻译|翻譯|訳|번역|переклад|перевод|dịch)(?:\s+[\p{L}-]+){0,4}\s*[:：]\s*$/iu.test(claim.sentence.slice(Math.max(0, span.start - 80), span.start)))
+      .map(span => normalize(span.text)).filter(quote => quote.length >= 12);
+    const missing = quotes.filter(quote => !sources.some(source => claim.evidence.some(evidence => evidence.id === source.id) && normalize(source.text).includes(quote)));
+    if (!missing.length && !parsed.unclosed) return claim;
     rejected.add(researchPlainSentence(claim.sentence));
     return { ...claim, status: 'removed' as const, failure: 'premise_without_literal_evidence' as const,
-      reason: 'The direct quotation does not match the authorized literal source; label a translation or use an attributed paraphrase.' };
+      reason: `The direct quotation does not match the authorized literal source; use an attributed paraphrase or copy the exact excerpt without changing OCR, accents or punctuation. Nonliteral quotes: ${JSON.stringify(missing).slice(0, 1400)}${parsed.unclosed ? '; unclosed quotation delimiter' : ''}` };
   });
   return rejected.size ? { claims, markdown: dropResearchSentences(review.markdown, sentence => rejected.has(sentence)).markdown } : review;
 }

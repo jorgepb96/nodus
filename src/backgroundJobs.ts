@@ -1,6 +1,6 @@
 import type {
   AudioEntityKind,
-  AudioProvider,
+  AudioSegment,
   AudioSegmentRequest,
   DeepResearchProgress,
   DeepResearchReport,
@@ -488,19 +488,17 @@ function drainDeepQueue(): void {
 
 // ── Audio narration generation ───────────────────────────────────────────────
 //
-// Synthesising a whole report or immersion runs one segment at a time in the
-// renderer (Piper/Kokoro in a worker; Hume over IPC). The loop lives here, at
-// module scope, so it keeps running while the user navigates away from the panel
-// that started it — and the progress bar reappears, mid-run, when they return.
-// The panel used to own the loop, so leaving the view unmounted it, cancelled the
-// synthesis, and discarded the progress.
+// Narrating a whole report, immersion, chat answer or dictionary entry runs one segment
+// at a time: each segment is a Ming job in the TTS sidecar that streams fragments back
+// and is saved as a clip by the main process. The loop lives here, at module scope, so
+// it keeps running while the user navigates away from the view that started it — and the
+// progress bar reappears, mid-run, when they return.
 
 export interface AudioGenerationRequest {
   entityKind: AudioEntityKind;
   entityId: string;
-  provider: AudioProvider;
-  voiceId: string;
-  language: string;
+  /** Voice library id; empty uses the saved default. */
+  voiceId?: string;
   segmentRequest: AudioSegmentRequest;
   /** Localised strings the module-scope loop cannot resolve through i18n itself. */
   labels: { preparing: string; noText: string };
@@ -510,6 +508,11 @@ export interface AudioGenerationProgress {
   done: number;
   total: number;
   label: string;
+  /** Fragments of the segment in flight, measured speed and time left (Ming jobs). */
+  fragmentsDone?: number;
+  fragmentsTotal?: number;
+  rtf?: number | null;
+  etaS?: number | null;
   /** Set the moment the user asks to cancel, so the panel can acknowledge the click
    *  instead of looking frozen while the segment in flight is abandoned. */
   cancelling?: boolean;
@@ -578,17 +581,20 @@ export function cancelAudioGeneration(kind: AudioEntityKind, id: string): void {
   } as AnyJob);
 }
 
-/** The synthesis backend, injected by the caller so this module stays free of the
- *  heavy WASM/onnx audio engines (and can be bundled and unit-tested on its own).
- *  `signal` aborts when the user cancels, so the backend can drop the segment. */
-export type SegmentSynthesizer = (
-  provider: AudioProvider,
-  voiceId: string,
-  text: string,
-  signal?: AbortSignal
-) => Promise<Uint8Array>;
+/** Narrates and saves one segment, injected by the caller so this module stays free of
+ *  the TTS client (and can be bundled and unit-tested on its own). `signal` aborts when
+ *  the user cancels, so the job in the sidecar is dropped; `report` forwards fragment
+ *  progress to the job's subscribers. Resolves false when nothing was saved. */
+export interface SegmentNarrationContext {
+  request: AudioGenerationRequest;
+  index: number;
+  total: number;
+  signal: AbortSignal;
+  report: (progress: Pick<AudioGenerationProgress, 'fragmentsDone' | 'fragmentsTotal' | 'rtf' | 'etaS'>) => void;
+}
+export type SegmentNarrator = (segment: AudioSegment, context: SegmentNarrationContext) => Promise<boolean>;
 
-export function startAudioGeneration(request: AudioGenerationRequest, synthesize: SegmentSynthesizer): AudioGenerationJob {
+export function startAudioGeneration(request: AudioGenerationRequest, narrate: SegmentNarrator): AudioGenerationJob {
   const key = audioGenerationJobKey(request.entityKind, request.entityId);
   const existing = getBackgroundJob<AudioGenerationRequest, AudioGenerationProgress, AudioGenerationResult>(key);
   if (existing?.status === 'running') return existing;
@@ -602,37 +608,35 @@ export function startAudioGeneration(request: AudioGenerationRequest, synthesize
       if (segments === CANCELLED) return { count: 0, cancelled: true };
       if (!segments.length) throw new Error(req.labels.noText);
 
+      let fragmentProgress: Pick<AudioGenerationProgress, 'fragmentsDone' | 'fragmentsTotal' | 'rtf' | 'etaS'> = {};
       const report = (label: string) =>
-        onProgress({ done, total: segments.length, label, cancelling: cancellation.requested });
+        onProgress({ done, total: segments.length, label, cancelling: cancellation.requested, ...fragmentProgress });
 
       if (await untilCancelled(cancellation, window.nodus.clearAudioClips(req.entityKind, req.entityId)) === CANCELLED) {
         return { count: 0, cancelled: true };
       }
       report(req.labels.preparing);
 
-      for (const segment of segments) {
+      for (const [position, segment] of segments.entries()) {
         if (cancellation.requested) return { count: done, cancelled: true };
+        fragmentProgress = {};
         report(segment.label);
-        // Race the synthesis: cancelling must end the job now, even when the segment
+        // Race the narration: cancelling must end the job now, even when the segment
         // in flight would take minutes more (or never resolve at all).
-        const synthesized: Promise<Uint8Array | typeof CANCELLED> = synthesize(req.provider, req.voiceId, segment.text, cancellation.controller.signal)
+        const narrated: Promise<boolean | typeof CANCELLED> = narrate(segment, {
+          request: req, index: position, total: segments.length, signal: cancellation.controller.signal,
+          report: (progress) => { fragmentProgress = progress; report(segment.label); },
+        })
           // Aborting the backend rejects the segment; that is the cancellation the
           // user asked for, not a failure to report to them.
           .catch((error: unknown) => {
             if (cancellation.requested) return CANCELLED;
             throw error;
           });
-        const bytes = await untilCancelled(cancellation, synthesized);
-        if (bytes === CANCELLED || cancellation.requested) return { count: done, cancelled: true };
-        await window.nodus.saveAudioClip(req.entityKind, req.entityId, {
-          segmentIndex: segment.index,
-          segmentLabel: segment.label,
-          provider: req.provider,
-          voice: req.voiceId,
-          language: req.language,
-          bytes,
-        });
-        done += 1;
+        const saved = await untilCancelled(cancellation, narrated);
+        if (saved === CANCELLED || cancellation.requested) return { count: done, cancelled: true };
+        if (saved) done += 1;
+        fragmentProgress = {};
         report(segment.label);
       }
 

@@ -35,7 +35,7 @@ import type {
 import { getSettings, updateSettings } from './db/settingsRepo';
 import { getAiConcurrencySnapshot, onAiConcurrencySnapshot, refreshAiConcurrencyPolicy } from './ai/aiClient';
 import * as protect from './protect/protectService';
-import { createIpcContext } from './ipc/context';
+import { createIpcContext, localizedForUi } from './ipc/context';
 import { registerProsopographyIpc } from './ipc/prosopography';
 import { registerTestimoniesIpc } from './ipc/testimonies';
 import { registerToolkitIpc } from './ipc/toolkit';
@@ -57,6 +57,7 @@ import { registerReactionIndexIpc } from './ipc/reactionIndex';
 import { registerCompassIpc } from './ipc/compass';
 import { registerLogsIpc } from './ipc/logs';
 import { registerDriftIpc } from './ipc/drift';
+import { registerTtsIpc } from './ipc/tts';
 import { setBrowserTheme } from './browser/tabs';
 import { browserHistoryRepository } from './browser/history';
 import { applyPipelineLogLimits, initPipelineLogs } from './logging/pipelineLogHost';
@@ -126,7 +127,7 @@ import { reconcileAuthorLayerOnce, reconcileAuthorRolesOnce } from './db/authors
 import { repairGraphIntegrityOnce } from './db/graphIntegrityRepair';
 import { repairDocumentSupportPassagesOnce } from './ai/documentSupportRepair';
 import { getSyncLog } from './db/syncRepo';
-import { fullSync, startRealtimeSync, stopRealtimeSync } from './sync/syncService';
+import { fullSync, getZoteroSyncStatus, onZoteroSyncStatus, startZoteroSync, stopZoteroSync, startRealtimeSync, stopRealtimeSync } from './sync/syncService';
 import {
   restartNodusServerSync,
   startNodusServerSync,
@@ -269,9 +270,15 @@ export function registerIpc(
   registerTestimoniesIpc(context);
   registerLogsIpc(context);
   registerDriftIpc(context);
+  registerTtsIpc(context);
   // The processing log has to be listening before any pipeline can run: this wires the
   // sink, prunes what the previous session left behind and arms the idle prune timer.
   initPipelineLogs();
+
+  onZoteroSyncStatus(status => {
+    const win = getWindow();
+    if (win && !win.isDestroyed()) win.webContents.send('sync:status', localizedForUi(status));
+  });
 
   const nodiChatAborters = new Map<string, AbortController>();
 
@@ -350,7 +357,7 @@ export function registerIpc(
       copiedProviders = copyApiKeysBetweenVaults(sourceVaultId, id);
     }
 
-    stopRealtimeSync();
+    stopZoteroSync();
     stopNodusServerSync();
     stopInboxPolling();
   stopReplicaSync();
@@ -378,7 +385,7 @@ export function registerIpc(
     repairDocumentSupportPassagesOnce();
 
     const settings = getSettings();
-    if (settings.syncMode === 'realtime') startRealtimeSync();
+    startZoteroSync();
     startNodusServerSync();
     // The new vault has its own inbox and its own ledger; the first tick lands within
     // seconds, so switching vaults collects whatever was waiting for that one.
@@ -869,7 +876,7 @@ export function registerIpc(
     await documentIndexQueue.pauseVaultAndDrain(id);
     try {
       if (target.active) {
-      stopRealtimeSync();
+      stopZoteroSync();
       stopNodusServerSync();
       stopInboxPolling();
       stopReplicaSync();
@@ -886,7 +893,7 @@ export function registerIpc(
       repairGraphIntegrityOnce();
       repairDocumentSupportPassagesOnce();
       const settings = getSettings();
-      if (settings.syncMode === 'realtime') startRealtimeSync();
+      startZoteroSync();
       startNodusServerSync();
       startInboxPolling();
   startReplicaSync();
@@ -933,6 +940,7 @@ export function registerIpc(
   h('sync:now', async (_e, options?: { catalogOnly?: boolean }) => fullSync('manual', {
     catalogOnly: options?.catalogOnly === true,
   }));
+  h('sync:status', async () => getZoteroSyncStatus());
   h('sync:log', async () => getSyncLog());
   // automatic encrypted backups (master password lives in the OS keychain)
   h('sync:hasPassphrase', async () => hasSyncPassphrase());

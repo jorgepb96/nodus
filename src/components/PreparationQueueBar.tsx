@@ -6,6 +6,7 @@ import { summarizePreparationQueue, type PreparationItemState, type PreparationQ
 import { Icon } from './ui';
 import { ConfirmModal } from './ConfirmModal';
 import { errorText, t, tx } from '../i18n';
+import { EmbeddingRunSummary } from './EmbeddingRunSummary';
 
 const STATE_LABELS: Record<PreparationItemState, string> = {
   queued: 'En cola', running: 'En curso', paused: 'Pausado', complete: 'Completado', failed: 'Fallido', cancelled: 'Cancelado', blocked: 'Fallido',
@@ -92,6 +93,8 @@ export function PreparationQueueBar({ activity }: { activity: QueueActivity }) {
       <AnimatePresence>
         {expanded && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            {activity.preparation.campaigns.filter(campaign => campaign.audit).map(campaign => <div key={campaign.id} className="py-2">
+              <span className="text-xs">{campaign.vaultName} · {new Date(campaign.createdAt).toLocaleString()}</span><EmbeddingRunSummary run={campaign.audit!} /></div>)}
             <div className="mt-2 max-h-48 divide-y divide-neutral-800 overflow-y-auto">
               {items.map((item) => (
                 <div key={item.documentId} data-testid={`preparation-item-${item.documentId}`} data-state={item.state} className="py-1 text-xs">

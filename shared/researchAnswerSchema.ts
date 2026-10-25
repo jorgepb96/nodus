@@ -1,7 +1,7 @@
 import { RESEARCH_ANSWER_TABLE_LIMITS } from './researchAnswerStructure';
 
-/** Native JSON Schema transport is deliberately limited to the two provider contracts
- *  the structured Research Chat path opts into. Other JSON callers retain JSON mode. */
+/** Native JSON Schema transport is explicitly selected for supported provider contracts.
+ *  Other JSON callers retain their existing JSON mode. */
 export interface ResearchNativeResponseSchema {
   name: string;
   schema: Record<string, unknown>;
@@ -13,7 +13,7 @@ export function structuredResponseFormat(
   jsonMode = false,
   supportsJsonObject = false,
 ): Record<string, unknown> | null {
-  if (schema && (provider === 'openai' || provider === 'openrouter')) {
+  if (schema && (provider === 'openai' || provider === 'openrouter' || provider === 'gemini')) {
     return { type: 'json_schema', json_schema: { name: schema.name, strict: true, schema: schema.schema } };
   }
   if (jsonMode && supportsJsonObject) return { type: 'json_object' };

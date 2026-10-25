@@ -4,6 +4,7 @@ import { currentEmbeddingConfig, embeddingTextForIdea, ideaNeedsEmbedding, updat
 import { embedManyStrict } from './aiClient';
 import { isManualAcademic } from './academicMode';
 import { isMobileOperation } from '../desktopBridge/executionBoundary';
+import { embeddingIndexHead } from '../db/embeddingIndexesRepo';
 
 export interface ManualIndexStatus { state: 'idle' | 'queued' | 'preparing' | 'indexing' | 'ready' | 'error'; error: string | null; }
 type ManualIndexRow = Parameters<typeof ideaNeedsEmbedding>[0] & Parameters<typeof embeddingTextForIdea>[0] & { global_id: string };
@@ -30,6 +31,7 @@ export function manualIndexStatus(): ManualIndexStatus {
 /** Debounced, vault-scoped and independent from the generative scan queue. */
 export function scheduleManualIndex(retry = false): void {
   if (isMobileOperation()) return;
+  if (embeddingIndexHead(getDb())?.enabled === 0) return;
   if (!isManualAcademic()) return;
   const id = currentVaultId();
   if (!id) return;
@@ -48,8 +50,8 @@ export async function runManualIndex(id: string): Promise<void> {
   try {
     await withVaultDatabase(id, async () => {
       if (!isManualAcademic()) return;
-      const rows = getDb().prepare(`SELECT i.* FROM ideas i WHERE i.orphaned_at IS NULL AND EXISTS (
-        SELECT 1 FROM notes n WHERE json_valid(n.source_json) AND json_extract(n.source_json,'$.note')='manual-idea'
+      const rows = getDb().prepare(`SELECT i.* FROM embedding_read_ideas i WHERE i.orphaned_at IS NULL AND EXISTS (
+        SELECT 1 FROM embedding_read_notes n WHERE json_valid(n.source_json) AND json_extract(n.source_json,'$.note')='manual-idea'
         AND json_extract(n.source_json,'$.ref')=i.global_id AND n.trashed_at IS NULL
       )`).all() as ManualIndexRow[];
       const pending = rows.filter(row => ideaNeedsEmbedding(row, embeddingTextForIdea(row)));
@@ -65,7 +67,7 @@ export async function runManualIndex(id: string): Promise<void> {
       for (const row of pending) {
         const text = embeddingTextForIdea(row);
         const [vector] = await embedManyStrict([text]);
-        const current = getDb().prepare('SELECT * FROM ideas WHERE global_id=?').get(row.global_id) as typeof row | undefined;
+        const current = getDb().prepare('SELECT * FROM embedding_read_ideas AS ideas WHERE global_id=?').get(row.global_id) as typeof row | undefined;
         const now = currentEmbeddingConfig();
         const owner = getDb().prepare("SELECT 1 FROM notes WHERE json_valid(source_json) AND json_extract(source_json,'$.ref')=? AND trashed_at IS NULL").get(row.global_id);
         if (!current || !owner) continue;

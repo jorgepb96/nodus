@@ -780,18 +780,30 @@ try {
   console.log('[e2e] ChatGPT MCP connector has readable light/dark surfaces');
 
   await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+  // Models opens on its essentials: one card with the main, extraction and vision pickers,
+  // embeddings and the reranker. Every other kind of model sits behind an icon tab.
+  const essentialModels = page.getByTestId('essential-models');
+  await essentialModels.waitFor({ timeout: 30_000 });
+  assert.equal(await page.getByTestId('model-type-tabs').getByRole('tab').count(), 7, 'every model type has its own tab');
+  assert.ok(await essentialModels.locator('button[aria-haspopup="listbox"]').count() >= 3, 'the essentials card offers the main, extraction and vision pickers');
+  await essentialModels.getByTestId('embedding-model-input').waitFor();
+  await essentialModels.getByTestId('essential-reranker').waitFor();
+  assert.equal(await page.getByTestId('model-settings-mode').count(), 0, 'there is no basic/advanced switch any more');
+  await page.getByTestId('settings-tab-image').click();
   await page.getByText('Generación de imágenes', { exact: true }).waitFor({ timeout: 30_000 });
   assert.equal(await page.getByText('gemini-3.1-flash-lite-image', { exact: false }).count() > 0, true, 'image settings render selected verified model');
+  await page.getByTestId('settings-tab-advanced').click();
   const advancedPickers = page.getByTestId('common-model-overrides').locator('button[aria-haspopup="listbox"]');
+  await advancedPickers.first().waitFor();
   const advancedPickerBoxes = await advancedPickers.evaluateAll((triggers) => triggers.map((trigger) => {
     const box = trigger.getBoundingClientRect();
     return { width: box.width, height: box.height };
   }));
-  assert.ok(advancedPickerBoxes.length >= 5, 'advanced model settings render a common selector for every task, including Nodi');
+  assert.ok(advancedPickerBoxes.length >= 3, 'the corpus analysis tasks without a picker of their own keep one here');
   const advancedPickerHeights = advancedPickerBoxes.map((box) => box.height);
   const advancedPickerWidths = advancedPickerBoxes.map((box) => box.width);
-  assert.ok(Math.max(...advancedPickerHeights) - Math.min(...advancedPickerHeights) <= 1, 'the Nodi model selector has the same height as adjacent advanced selectors');
-  assert.ok(Math.max(...advancedPickerWidths) - Math.min(...advancedPickerWidths) <= 1, 'all common advanced model selectors have the same width');
+  assert.ok(Math.max(...advancedPickerHeights) - Math.min(...advancedPickerHeights) <= 1, 'the per-task selectors share one height');
+  assert.ok(Math.max(...advancedPickerWidths) - Math.min(...advancedPickerWidths) <= 1, 'the per-task selectors share one width');
   for (let i = 0; i < advancedPickerBoxes.length; i++) {
     const trigger = advancedPickers.nth(i);
     await trigger.click();
@@ -803,13 +815,13 @@ try {
     await search.press('Escape');
     assert.equal(await trigger.evaluate((element) => document.activeElement === element), true, 'Escape restores focus to the model trigger');
   }
-  const nodiPicker = page.getByTestId('common-model-overrides').locator('div.grid').filter({ has: page.locator('label').filter({ hasText: 'Asistente Nodi' }) }).locator('button[aria-haspopup="listbox"]');
-  await nodiPicker.click();
+  const relationPicker = page.getByTestId('common-model-overrides').locator('div.grid').filter({ has: page.locator('label').filter({ hasText: 'Relaciones semánticas' }) }).locator('button[aria-haspopup="listbox"]');
+  await relationPicker.click();
   await page.getByTestId('model-picker-search').fill('flash gemini');
   await page.locator('.model-picker-list').getByRole('option', { name: /gemini-flash-lite/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="common-model-overrides"]')?.textContent.includes('gemini-flash-lite'));
-  assert.deepEqual((await page.evaluate(() => window.nodus.getSettings())).nodiModel, searchableModel, 'selecting a search result persists the Nodi model through real IPC');
-  await nodiPicker.click();
+  assert.deepEqual((await page.evaluate(() => window.nodus.getSettings())).relationModel, searchableModel, 'selecting a search result persists the relation model through real IPC');
+  await relationPicker.click();
   await page.getByTestId('model-picker-search').fill('openai smoke');
   await page.locator('.model-picker-list').getByRole('option', { name: /smoke-model/ }).click();
   console.log('[e2e] all advanced model pickers search without strict separators, preserve layout and save selections');
@@ -905,9 +917,16 @@ try {
   await page.getByTestId('whats-new-cinematic-modal').getByRole('button', { name: 'Cerrar', exact: true }).click();
   await page.getByTestId('whats-new-cinematic-modal').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+  await page.getByTestId('settings-tab-local').click();
   await page.getByTestId('nodus-local-ai-models').waitFor({ timeout: 30_000 });
   const localAiStatus = await page.evaluate(() => window.nodus.getNodusLocalAiStatus());
-  assert.equal(localAiStatus.models.length, 9, 'integrated local AI catalog is available over the real preload bridge');
+  assert.equal(localAiStatus.models.length, 12, 'integrated local AI catalog is available over the real preload bridge');
+  for (const legacyId of ['bge-m3-q8_0', 'gte-multilingual-base-int8']) {
+    const [cls, legacy] = [`${legacyId}-cls`, legacyId].map(id => localAiStatus.models.find(model => model.id === id));
+    assert.ok(cls && legacy, `${legacyId} is offered with its CLS profile`);
+    assert.equal(cls.path, legacy.path, 'the CLS and mean profiles share the historical asset directory');
+  }
+  assert.ok(localAiStatus.models.some(model => model.id === 'harrier-oss-v1-0.6b-q8_0'), 'Harrier is offered as a built-in embedding model');
   const embeddingGemmaProfiles = localAiStatus.models.filter(model => model.id.startsWith('embeddinggemma'));
   assert.deepEqual(embeddingGemmaProfiles.map(model => model.id), ['embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1']);
   assert.equal(embeddingGemmaProfiles[0].path, embeddingGemmaProfiles[1].path, 'both profiles share one asset directory');
@@ -930,6 +949,7 @@ try {
     assert.equal(installedRuntime.status.runtime.ready, true, 'Nodus downloads and extracts a working llama.cpp runtime');
     assert.ok(installedRuntime.progress.some((fraction) => fraction >= 1), 'local runtime installation reports completion progress');
   }
+  await page.getByTestId('settings-tab-image').click();
   await page.getByTestId('nodus-local-image-models').waitFor({ timeout: 30_000 });
   const localImageStatus = await page.evaluate(() => window.nodus.getNodusLocalImageStatus());
   assert.equal(localImageStatus.model.id, 'flux-2-klein-4b-q4', 'native FLUX.2 image model is available over the real preload bridge');
@@ -937,6 +957,7 @@ try {
   assert.equal(await page.getByText('FLUX.2 Klein 4B Q4', { exact: true }).count(), 2, 'native model appears in its download section and the shared image selector');
   assert.deepEqual(await page.getByTestId('nodus-image-quality').locator('option').evaluateAll((options) => options.map((option) => option.value)), ['draft', 'balanced', 'high'], 'native image quality exposes all three resolution presets');
   assert.equal(await page.getByText('Licencia: esta integración usa FLUX.2 Klein 4B bajo Apache 2.0. La variante 9B tiene términos no comerciales diferentes y no se descarga.', { exact: true }).count(), 1, 'the 4B license distinction is visible before download');
+  await page.getByTestId('settings-tab-stt').click();
   await page.getByTestId('stt-settings').waitFor({ timeout: 30_000 });
   assert.deepEqual(await page.getByTestId('stt-provider').locator('option').evaluateAll((options) => options.map((option) => option.value)), ['transformers', 'whisper_cpp', 'openai'], 'Settings owns all STT engines');
   const whisperCppStatus = await page.evaluate(() => window.nodus.getWhisperCppStatus());
@@ -2670,7 +2691,7 @@ try {
     return subjectId ? (await window.nodus.getStudyPronunciations(subjectId)).some((entry) => entry.written === 'TCC' && entry.spoken === 'te ce ce') : false;
   }));
   await page.getByRole('button', { name: 'Generar audio', exact: true }).click();
-  await page.getByText('La lectura de estudio requiere una voz local de Piper o Kokoro.', { exact: true }).waitFor({ timeout: 30_000 });
+  await page.getByText('Descarga el motor de voz y un modelo en Ajustes → Modelos → Voz y narración.', { exact: true }).waitFor({ timeout: 30_000 });
   console.log('[e2e] local study narration modes + formula speech + pronunciation dictionary ok');
 
   // These flows remain ready for reactivation, but the corresponding renderer

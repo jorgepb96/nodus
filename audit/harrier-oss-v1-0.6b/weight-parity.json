@@ -1,0 +1,137 @@
+{
+  "format": "nodus.embedding-weight-parity/1",
+  "measuredAt": "2026-10-20",
+  "reference": {
+    "source": "onnx-community/harrier-oss-v1-0.6b-ONNX",
+    "revision": "e4daffa011e666dcd2ff2a3c6c05084090ac314d",
+    "file": "onnx/model_fp16.onnx(+_data)",
+    "sha256": {
+      "model_fp16.onnx": "460cf6e8d8da587e60976b1e36bb5e433c79e5af9681dbab48abad9353d4957c",
+      "model_fp16.onnx_data": "b6e76ada3c256d01a39f5896d3cb96d78fcdf566927da0d9445cc9c999e96069"
+    },
+    "runtime": "Transformers.js 4.3.1 / ONNX Runtime 1.30.0 CPU",
+    "base": "microsoft/harrier-oss-v1-0.6b@f9b9dc8d367d443f2479d27aa5d8d2850c0774ee"
+  },
+  "inputs": "12 texts: 5 instructed queries (es, en, fr, de, zh) and 7 passages (es, en, fr, zh, it, pt, en)",
+  "candidates": [
+    {
+      "name": "GGUF Q8_0 (shipped)",
+      "source": "mradermacher/harrier-oss-v1-0.6b-GGUF@d79decec1ab9442e969e79804515b9c31683d30e",
+      "sha256": "ba2c9408f82cfdb73aaf70aaea9f125f3fb24c5e76ce0efb469e1530e5ec53e4",
+      "runtime": "llama.cpp b10002 Metal, --pooling last",
+      "cosineMean": 0.99993,
+      "cosineMin": 0.99991,
+      "top1Agreement": "5/5",
+      "maxScoreDelta": 0.0017
+    },
+    {
+      "name": "GGUF Q8_0 (second conversion)",
+      "source": "keisuke-miyako/harrier-oss-v1-0.6b-gguf-q8_0@28bd84da46bc6b8b557ad009b5c91676a5883601",
+      "sha256": "78088a910adef94c47ab69d10e40a7a017350a59b20f99636c1df1d55449552c",
+      "runtime": "llama.cpp b10002 Metal, --pooling last",
+      "cosineMean": 0.99993,
+      "cosineMin": 0.99991,
+      "top1Agreement": "5/5",
+      "maxScoreDelta": 0.0017
+    },
+    {
+      "name": "ONNX q8 (model_quantized)",
+      "runtime": "Transformers.js 4.3.1 CPU",
+      "cosineMean": 0.99995,
+      "cosineMin": 0.99993,
+      "top1Agreement": "5/5",
+      "maxScoreDelta": 0.0021
+    },
+    {
+      "name": "ONNX q4",
+      "runtime": "Transformers.js 4.3.1 CPU",
+      "cosineMean": 0.98725,
+      "cosineMin": 0.98313,
+      "top1Agreement": "5/5",
+      "maxScoreDelta": 0.0236
+    }
+  ],
+  "modelCardCheck": {
+    "prompt": "web_search_query",
+    "expectedQ4WebGpu": [
+      [
+        66.66,
+        28.09
+      ],
+      [
+        29.11,
+        70.66
+      ]
+    ],
+    "ggufQ8_0": [
+      [
+        66.2,
+        28.41
+      ],
+      [
+        29.76,
+        69.91
+      ]
+    ],
+    "onnxQ8": [
+      [
+        66.31,
+        28.44
+      ],
+      [
+        29.73,
+        70
+      ]
+    ],
+    "onnxQ4": [
+      [
+        66.66,
+        28.09
+      ],
+      [
+        29.11,
+        70.66
+      ]
+    ]
+  },
+  "runtimeChecks": {
+    "legacyTransformers381": "refuses the ONNX export (GatherBlockQuantized bits attribute needs a newer ONNX Runtime)",
+    "batchInvarianceCosine": 1,
+    "eosAppended": 151643,
+    "ggufMetadata": {
+      "pooling_type": 3,
+      "add_eos_token": true,
+      "eos_token_id": 151643
+    }
+  },
+  "throughputOnM2": {
+    "ggufQ8_0Metal": {
+      "passagesPerSecond": 11.8,
+      "queryLatencyMs": 12
+    },
+    "onnxQ8Cpu": {
+      "passagesPerSecond": 2.15,
+      "queryLatencyMs": 394
+    },
+    "onnxQ4Cpu": {
+      "passagesPerSecond": 2.13,
+      "queryLatencyMs": 199
+    },
+    "note": "~127-token passages, batch of 8, one slot"
+  },
+  "inputCap": {
+    "note": "Nodus caps embedding inputs at 8,000 characters; tokens for 8,000 characters including the query instruction",
+    "tokens": {
+      "spanish": 2266,
+      "chinese": 4432,
+      "japanese": 6418,
+      "arabic": 2686,
+      "russian": 2840,
+      "greek": 6811,
+      "hindi": 7168,
+      "thai": 3798,
+      "tibetan": 10838
+    },
+    "contextLength": 8192
+  }
+}

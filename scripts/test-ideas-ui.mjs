@@ -48,6 +48,8 @@ test('Ideas catalogue can be searched, filtered and sorted', async () => {
   for (const sort of ['label', 'type', 'works', 'connections', 'confidence']) {
     assert.match(view, new RegExp(`sort="${sort}"|value="${sort}"`), `catalogue supports ${sort} sorting`);
   }
+  assert.match(view, /data-testid="ideas-filters-panel"[\s\S]{0,160}role="dialog"/, 'the filters open as a balloon instead of an inline strip');
+  assert.match(view, /group: 'ideas-filter-balloon'/, 'the filter balloon closes on outside click and Escape');
 });
 
 test('clicking ideas opens independent persistent detail tabs', async () => {

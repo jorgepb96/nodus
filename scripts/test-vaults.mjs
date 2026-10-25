@@ -346,8 +346,8 @@ assert.deepEqual(
   'reused passages preserve their exact attachment and page'
 );
 assert.equal(
-  Buffer.from(db.prepare('SELECT embedding FROM ideas WHERE global_id = ?').get('idea-default').embedding).toString('hex'),
-  Buffer.from([1, 2, 3, 4]).toString('hex'),
+  Buffer.from(db.prepare('SELECT embedding FROM embedding_read_ideas WHERE global_id = ?').get('idea-default').embedding).toString('hex'),
+  Buffer.from(new Float32Array([1, 2, 3, 4]).buffer).toString('hex'),
   'idea embedding blob is preserved'
 );
 assert.equal(
@@ -469,12 +469,12 @@ function seedAnalyzedWork(db) {
     'claim',
     'Imported idea',
     'Imported statement',
-    Buffer.from([1, 2, 3, 4]),
+    Buffer.from(new Float32Array([1, 2, 3, 4]).buffer),
     now,
     'openai',
     'text-embedding-3-small',
     4,
-    'idea-hash'
+    db.prepare('SELECT idea_embedding_text_hash(?,?,?,?) h').get('claim', 'Imported idea', 'Imported statement', '').h
   );
   db.prepare('INSERT INTO idea_occurrences (global_id, nodus_id, role, development, confidence) VALUES (?, ?, ?, ?, ?)').run(
     'idea-default',
@@ -504,7 +504,7 @@ function seedAnalyzedWork(db) {
     'deep',
     '{}',
     'summary-content-hash',
-    Buffer.from([5, 6, 7, 8]),
+    Buffer.from(new Float32Array([5, 6, 7, 8]).buffer),
     'openai',
     'text-embedding-3-small',
     4,
@@ -527,7 +527,7 @@ function seedAnalyzedWork(db) {
     12,
     7,
     'deep-hash',
-    Buffer.from([9, 10, 11, 12]),
+    Buffer.from(new Float32Array([9, 10, 11, 12]).buffer),
     'openai',
     'text-embedding-3-small',
     4,
@@ -562,7 +562,7 @@ function seedAnalyzedWork(db) {
     vector_id,nodus_id,version_id,kind,source_id,text,text_hash,weight,embedding,
     embedding_provider,embedding_model,embedding_dim,created_at
   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-    'vector-default','work-default','profile-default','overview',null,'Overview','vector-hash',1,Buffer.from([13,14,15,16]),
+    'vector-default','work-default','profile-default','overview',null,'Overview','vector-hash',1,Buffer.from(new Float32Array([13,14,15,16]).buffer),
     'openai','text-embedding-3-small',4,now,
   );
   db.prepare(`INSERT INTO document_idea_links(

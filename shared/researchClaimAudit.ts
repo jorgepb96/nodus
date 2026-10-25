@@ -5,6 +5,9 @@ export interface ResearchClaimRecord {
   kind: 'fact' | 'attributed' | 'inference' | 'nonfactual';
   status: 'supported' | 'removed' | 'unverified';
   evidence: Array<{ id: string; quote: string; originalQuote?: string }>;
+  /** Direct proofs in this paragraph; inherited proofs remain in evidence for
+   * dependency validation but need not create a repeated citation inventory. */
+  citationEvidenceIds?: string[];
   reason: string;
   /** Deterministic cause of a removal. The judge's prose reason is diagnostic
    * only and never decides acceptance. */
@@ -15,7 +18,7 @@ export type ResearchClaimFailure = 'judge_rejected' | 'no_premises' | 'premise_n
   | 'inference_without_supported_premises' | 'unqualified_inference' | 'unsupported_parts' | 'inconsistent_verdict'
   | 'nonfactual_with_content' | 'restates_rejected_claim' | 'internal_contradiction';
 export interface ResearchProseAudit { markdown: string; claims: ResearchClaimRecord[] }
-export interface ResearchAuditSource { id: string; text: string; label: string; citation: string }
+export interface ResearchAuditSource { proseSupport?: boolean; id: string; text: string; label: string; citation: string; attributionOnly?: boolean; workId?: string; collectiveCredits?: boolean; citationLabel?: string; locator?: string; title?: string }
 
 /** Request-local routing labels avoid asking a judge to reproduce long opaque
  * storage identities. Only an exact supplied alias is expanded; unknown IDs,
@@ -261,6 +264,15 @@ export function dropResearchSentences(markdown: string, drop: (plain: string) =>
   return { markdown: tidy(result), dropped: dropped.reverse() };
 }
 const HAS_CONTENT_MARKER = /\p{N}|nodus:\/\//u;
+/** Topic headings are presentation. Quantities remain factual even in a heading;
+ * actual prose assertions still receive the independent whole-field veto. */
+export function researchEditorialHeading(text: string): boolean {
+  const plain = text.replace(/\[[^\]\n]*\]\(nodus:\/\/[^)\s]+\)/gu, '').replace(/\(\s*\)/gu, '').trim();
+  const heading = /^#{1,6}\s+[^\n]+$/u.test(plain) || /^(?:\*\*[^*\n]+\*\*|__[^_\n]+__)\s*:?$/u.test(plain);
+  const label = plain.replace(/^#{1,6}\s*|[*_]/gu, '').replace(/^\d{1,2}[.)]\s*/u, '');
+  return heading && /\p{L}/u.test(label) && !/\p{N}/u.test(label);
+}
+
 /** The acceptance decision is derived here from the judge's atomic premises. Its
  * `supported` boolean, its unsupported parts and its premises must all agree:
  * a verdict whose parts disagree is not a reliable approval and fails closed. */
@@ -269,7 +281,7 @@ export function decideResearchVerdict(span: string, verdict: Verdict, sources: R
 } {
   const literal = (evidence: { id: string; quote: string }) => sources.some(source => source.id === evidence.id && normalize(source.text).includes(normalize(evidence.quote)));
   if (verdict.kind === 'nonfactual') {
-    if (verdict.premises.length || verdict.unsupportedParts.length || HAS_CONTENT_MARKER.test(span)) return { valid: false, failure: 'nonfactual_with_content', evidence: [] };
+    if (verdict.premises.length || verdict.unsupportedParts.length || HAS_CONTENT_MARKER.test(span) && !researchEditorialHeading(span)) return { valid: false, failure: 'nonfactual_with_content', evidence: [] };
     return verdict.supported ? { valid: true, evidence: [] } : { valid: false, failure: 'judge_rejected', evidence: [] };
   }
   if (!verdict.premises.length) return { valid: false, failure: 'no_premises', evidence: [] };
@@ -283,7 +295,8 @@ export function decideResearchVerdict(span: string, verdict: Verdict, sources: R
       if (!ok) failure ??= 'inference_without_supported_premises';
     } else {
       // An absence, like any fact, needs a source that states it: silence is not a quote.
-      ok = premise.evidence.length > 0 && premise.evidence.every(literal);
+      ok = premise.evidence.length > 0 && premise.evidence.every(evidence => literal(evidence)
+        && sources.some(source => source.id === evidence.id && (!source.attributionOnly || premise.type === 'attribution')));
       if (!ok) failure ??= 'premise_without_literal_evidence';
     }
     premiseValid.push(ok);
@@ -331,7 +344,10 @@ export function applyResearchProseVerdicts(markdown: string, sources: ResearchAu
     const cited = sources.filter(source => sourceIds.has(source.id));
     const text = span.text.replace(PARENTHESIZED_CITATIONS, '').replace(CITATION, '').trimEnd();
     // Headings keep their evidence in the ledger; links would make them body text.
-    const links = /^\s*#{1,6}\s/u.test(span.text) ? '' : cited.map(source => `[${source.label.replace(/[[\]\\]/g, '')}](${source.citation})`).join(' ');
+    const links = /^\s*#{1,6}\s/u.test(span.text) ? '' : cited.map(source => {
+      const label = source.label.replace(/[[\]\\]/g, '');
+      return source.citation ? `[${label}](${source.citation})` : `(${label})`;
+    }).join(' ');
     edits.push({ ...span, text: links ? `${text} ${links}` : text });
   }
   let result = markdown;
@@ -437,4 +453,32 @@ export async function reconcileResearchReport(parts: ResearchReportParts, ledger
   const conflicting = new Set(conflicts.flatMap(item => [researchSentenceKey(statements[item.a]), researchSentenceKey(statements[item.b])]));
   if (conflicting.size) map(plain => conflicting.has(researchSentenceKey(plain)), 'internal_contradiction');
   return finish(conflicts.length, true);
+}
+
+
+/** Short request-local citation destinations reduce opaque-ID transcription and
+ * source/locator drift during whole-answer revision. Only supplied destinations
+ * are expanded. Unknown aliases remain unknown for the normal authority checks. */
+export function researchWriterCitationTransport(sources: readonly ResearchAuditSource[]) {
+  const original = new Set(sources.map(source => source.citation).filter(Boolean));
+  let prefix = 'nr-';
+  while ([...original].some(url => /^nodus:\/\/[^/]+\//u.test(url) && url.split('/').at(-1)?.startsWith(prefix))) prefix = '_' + prefix;
+  const short = new Map<string, string>(), long = new Map<string, string>();
+  for (const citation of original) {
+    const kind = /^nodus:\/\/([^/]+)\//u.exec(citation)?.[1];
+    if (!kind) continue;
+    const alias = `nodus://${kind}/${prefix}${short.size + 1}`;
+    short.set(citation, alias); long.set(alias, citation);
+  }
+  const replace = (text: string, bindings: Map<string, string>) => text.replace(/\]\((nodus:\/\/[^)\s]+)\)/gu,
+    (full, url: string) => bindings.has(url) ? `](${bindings.get(url)})` : full);
+  const project = (text: string) => replace(text, short);
+  const projectValue = <T>(value: T): T => {
+    if (typeof value === 'string') return project(value) as T;
+    if (Array.isArray(value)) return value.map(item => projectValue(item)) as T;
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, projectValue(item)])) as T;
+    return value;
+  };
+  return { project, projectValue, restore: (text: string) => replace(text, long),
+    sources: researchAuditSourceTransport(sources).sources.map(source => ({ ...source, citation: short.get(source.citation) ?? source.citation })) };
 }

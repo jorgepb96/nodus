@@ -638,7 +638,7 @@ export async function findSimilarDocuments(
   const ranked = await scanSimilar<{ vector_id: string; rid: number; similarity: number }>({
     table: 'document_vectors',
     sql: `SELECT dv.vector_id, dv.rowid rid, vec_scan(dv.embedding) similarity
-            FROM document_vectors dv
+            FROM embedding_read_document_vectors dv
             JOIN document_profile_state dps ON dps.nodus_id=dv.nodus_id AND dps.current_version_id=dv.version_id
             JOIN works w ON w.nodus_id=dv.nodus_id
            WHERE dv.rowid>? AND dv.rowid<=? AND dv.embedding IS NOT NULL

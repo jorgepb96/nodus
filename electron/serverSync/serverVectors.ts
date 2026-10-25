@@ -1,5 +1,8 @@
 import { isEmbeddingGemma2, embeddingGemma2Contract } from '@shared/embeddingGemma2';
 import type Database from 'better-sqlite3';
+import { contractForProfile, embeddingGenerationRevision, embeddingIndexHead, hasEmbeddingIndexes, indexRow, registerEmbeddingIndexFunctions } from '../db/embeddingIndexesRepo';
+import { embeddingReadTable } from '../db/embeddingIndexSchema';
+import type { EmbeddingContract } from '@shared/embeddingContract';
 
 /**
  * The corpus embeddings, quantized for the server.
@@ -37,17 +40,31 @@ export interface VectorSetSummary {
   dim: number;
   count: number;
   bytes: number;
+  indexId?: string;
+  generation?: number;
+  embeddingContract?: EmbeddingContract;
 }
 
-/**
- * Which embedding actually describes this table.
- *
- * Read from the DATA rather than from settings: a vault re-indexed with a different model
- * keeps older rows until they are refreshed, and what the server needs to advertise is the
- * embedding its matrix is really built from. The largest coherent group wins, and only that
- * group is published — mixing two models in one matrix would return confident nonsense.
- */
-function dominantEmbedding(db: Database.Database, table: string): { provider: string; model: string; dim: number; count: number } | null {
+function publishedIdentity(db: Database.Database, dim: number): Pick<VectorSetSummary, 'indexId' | 'generation' | 'embeddingContract'> {
+  const head = embeddingIndexHead(db);
+  if (!head?.active_id) return {};
+  const row = indexRow(db, head.active_id);
+  return { indexId: row.id, generation: row.generation, embeddingContract: contractForProfile(JSON.parse(row.profile_json), dim) };
+}
+
+/** Publish the explicitly active generation. The metadata inventory below is only
+ * a compatibility fallback for database snapshots that predate the registry. */
+function selectedEmbedding(db: Database.Database, table: string): { provider: string; model: string; dim: number; count: number } | null {
+  if (hasEmbeddingIndexes(db)) {
+    registerEmbeddingIndexFunctions(db);
+    const head = embeddingIndexHead(db);
+    if (!head?.enabled || !head.active_id) return null;
+    const row = indexRow(db, head.active_id);
+    if (row.legacy || !row.dimensions) return null;
+    const profile = JSON.parse(row.profile_json);
+    const count = (db.prepare(`SELECT COUNT(*) n FROM ${embeddingReadTable(table)} WHERE embedding IS NOT NULL AND length(embedding)=?`).get(row.dimensions * 4) as { n: number }).n;
+    return count ? { provider: profile.provider, model: profile.model, dim: row.dimensions, count } : null;
+  }
   try {
     const rows = db
       .prepare(
@@ -68,9 +85,9 @@ function dominantEmbedding(db: Database.Database, table: string): { provider: st
 
 export function describeVectorSet(db: Database.Database, kind: VectorKind): VectorSetSummary | null {
   const source = SOURCES[kind];
-  const embedding = dominantEmbedding(db, source.table);
+  const embedding = selectedEmbedding(db, source.table);
   if (!embedding || embedding.count === 0) return null;
-  return { kind, provider: embedding.provider, model: embedding.model, dim: embedding.dim, count: embedding.count, bytes: embedding.count * embedding.dim };
+  return { kind, provider: embedding.provider, model: embedding.model, dim: embedding.dim, count: embedding.count, bytes: embedding.count * embedding.dim, ...publishedIdentity(db, embedding.dim) };
 }
 
 /**
@@ -82,13 +99,13 @@ export function describeVectorSet(db: Database.Database, kind: VectorKind): Vect
  */
 export function buildVectorSet(db: Database.Database, kind: VectorKind): { buffer: Buffer; summary: VectorSetSummary } | null {
   const source = SOURCES[kind];
-  const embedding = dominantEmbedding(db, source.table);
+  const embedding = selectedEmbedding(db, source.table);
   if (!embedding || embedding.count === 0 || embedding.dim <= 0) return null;
 
   const { provider, model, dim } = embedding;
   const rows = db
     .prepare(
-      `SELECT "${source.id}" AS id, embedding FROM "${source.table}"
+      `SELECT "${source.id}" AS id, embedding FROM "${hasEmbeddingIndexes(db) ? embeddingReadTable(source.table) : source.table}"
         WHERE embedding IS NOT NULL AND embedding_provider = ? AND embedding_model = ? AND embedding_dim = ?
         ORDER BY "${source.id}"`
     )
@@ -118,22 +135,28 @@ export function buildVectorSet(db: Database.Database, kind: VectorKind): { buffe
   if (ids.length === 0) return null;
 
   const count = ids.length;
-  const embeddingContract = provider === 'nodus' && isEmbeddingGemma2(model) ? embeddingGemma2Contract(model) : undefined;
+  const head = embeddingIndexHead(db);
+  const embeddingContract = head?.active_id ? contractForProfile(JSON.parse(indexRow(db, head.active_id).profile_json), dim)
+    : provider === 'nodus' && isEmbeddingGemma2(model) ? embeddingGemma2Contract(model) : undefined;
   if (embeddingContract && embeddingContract.dim !== dim) throw new Error('embedding_contract_dimension_mismatch');
-  const header = Buffer.from(JSON.stringify({ embeddingContract, format: VECTOR_FORMAT, version: VECTOR_VERSION, kind, provider, model, dim, quant: VECTOR_QUANT, count }), 'utf8');
+  const activeIndex = head?.active_id ? indexRow(db, head.active_id) : null;
+  const header = Buffer.from(JSON.stringify({ indexId: activeIndex?.id, generation: activeIndex?.generation, embeddingContract, format: VECTOR_FORMAT, version: VECTOR_VERSION, kind, provider, model, dim, quant: VECTOR_QUANT, count }), 'utf8');
   const idTable = Buffer.from(JSON.stringify(ids), 'utf8');
   const headerLength = Buffer.alloc(4);
   headerLength.writeUInt32LE(header.length, 0);
   const idsLength = Buffer.alloc(4);
   idsLength.writeUInt32LE(idTable.length, 0);
   const buffer = Buffer.concat([headerLength, header, idsLength, idTable, matrix.subarray(0, count * dim)]);
-  return { buffer, summary: { kind, provider, model, dim, count, bytes: buffer.length } };
+  return { buffer, summary: { kind, provider, model, dim, count, bytes: buffer.length, ...publishedIdentity(db, dim) } };
 }
 
 export interface VectorizeChunk {
   provider: string;
   model: string;
   dimensions: number;
+  indexId?: string;
+  generation?: number;
+  embeddingContract?: EmbeddingContract;
   vectors: Array<{ id: string; values: number[] }>;
 }
 
@@ -143,10 +166,10 @@ export interface VectorizeChunk {
  */
 export function *buildVectorizeChunks(db: Database.Database, kind: VectorKind, chunkSize = 250): Generator<VectorizeChunk> {
   const source = SOURCES[kind];
-  const embedding = dominantEmbedding(db, source.table);
+  const embedding = selectedEmbedding(db, source.table);
   if (!embedding || embedding.count === 0 || embedding.dim <= 0 || embedding.dim > 1536) return;
   const rows = db.prepare(
-    `SELECT "${source.id}" AS id, embedding FROM "${source.table}"
+    `SELECT "${source.id}" AS id, embedding FROM "${hasEmbeddingIndexes(db) ? embeddingReadTable(source.table) : source.table}"
       WHERE embedding IS NOT NULL AND embedding_provider = ? AND embedding_model = ? AND embedding_dim = ?
       ORDER BY "${source.id}"`
   ).iterate(embedding.provider, embedding.model, embedding.dim) as Iterable<{ id: string; embedding: Buffer }>;
@@ -157,11 +180,11 @@ export function *buildVectorizeChunks(db: Database.Database, kind: VectorKind, c
     if (!values.every(Number.isFinite)) continue;
     vectors.push({ id: String(entry.id), values });
     if (vectors.length >= chunkSize) {
-      yield { provider: embedding.provider, model: embedding.model, dimensions: embedding.dim, vectors };
+      yield { provider: embedding.provider, model: embedding.model, dimensions: embedding.dim, ...publishedIdentity(db, embedding.dim), vectors };
       vectors = [];
     }
   }
-  if (vectors.length) yield { provider: embedding.provider, model: embedding.model, dimensions: embedding.dim, vectors };
+  if (vectors.length) yield { provider: embedding.provider, model: embedding.model, dimensions: embedding.dim, ...publishedIdentity(db, embedding.dim), vectors };
 }
 
 /**
@@ -172,5 +195,10 @@ export function *buildVectorizeChunks(db: Database.Database, kind: VectorKind, c
  */
 export function vectorRevision(db: Database.Database, kind: VectorKind): string | null {
   const summary = describeVectorSet(db, kind);
+  const head = embeddingIndexHead(db);
+  if (summary && head?.active_id) {
+    const row = indexRow(db, head.active_id);
+    return `${row.id}|${row.generation}|${embeddingGenerationRevision(db, row.id, row.generation)}|${kind}`;
+  }
   return summary ? `${summary.provider}|${summary.model}|${summary.dim}|${summary.count}` : null;
 }

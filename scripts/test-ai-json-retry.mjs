@@ -95,6 +95,19 @@ try {
   assert.match(seen[0].headers['user-agent'], /^Nodus\/\d+\.\d+/, 'requests announce the app and its version');
   assert.doesNotMatch(seen[0].headers['user-agent'], /OpenAI/i, 'the SDK User-Agent is replaced, not appended to');
 
+  // Optional visual planners return root arrays, including an intentional empty
+  // result. Preserve that envelope instead of extracting only an inner object.
+  const arrayGuard = (value) => Array.isArray(value);
+  for (const content of ['[]', '["map", "timeline"]', '[{"id":"one"},{"id":"two","labels":["a{b}"]}]', '```json\n[{"id":"one"}]\n```']) {
+    run([content]);
+    const expected = JSON.parse(content.replace(/^```json\n|\n```$/g, ''));
+    assert.deepEqual(await aiClient.completeJson(opts, arrayGuard, model), expected);
+    assert.equal(seen.length, 1, 'a valid root array costs one provider call');
+  }
+  run(['[{"id":"one"},{"id":"two"}']);
+  await assert.rejects(() => aiClient.completeJson(opts, arrayGuard, model), (error) => error.code === 'output_truncated');
+  assert.equal(seen.length, 1, 'an unclosed outer array cannot become a completed inner object');
+
   /** A repair prompt would ship the bad text back under this key. It is forbidden here. */
   const isRepairCall = (hit) => JSON.stringify(hit.body).includes('invalid_json');
 
@@ -313,6 +326,15 @@ try {
   run([{ status: 400, error: 'context length exceeded' }]);
   await assert.rejects(() => aiClient.completeText({ system: 'system', user: 'user' }, refused));
   assert.equal(seen.length, 1, 'an unnamed 400 is surfaced, not replayed');
+
+  run([{ status: 402, error: 'budget exhausted' }, '{"ideas":[]}']);
+  await assert.rejects(() => aiClient.completeJson(opts, guard, model), error => {
+    assert.equal(error.code, 'budget_exhausted');
+    assert.equal(error.config, true);
+    assert.match(error.message, /Presupuesto agotado/);
+    return true;
+  });
+  assert.equal(seen.length, 1, 'an exhausted paid allowance stops without retry or invalid-key advice');
 
   console.log('AI JSON retry budget verified.');
 } finally {

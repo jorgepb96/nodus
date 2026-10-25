@@ -24,6 +24,10 @@ try {
  const vault=vaults.createVault('Isolated mobile Deep Research scope','academic');
  await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,()=>withMobileOperation(async()=>{
   assert.equal(resolveAcademicRunScope().vaultId,vault.id,'Canonical scope must belong to the actual owning vault');
+  const indexes=require('../electron/db/embeddingIndexesRepo.ts');assert(indexes.embeddingIndexHead(database.getDb()));assert.equal(indexes.activeEmbeddingIndex(database.getDb()),null);
+  const description=await mobileDeepResearchSource({request,generationId,stage:'describe',input:[],history:[],replies:{}});
+  assert.equal(description.value.context.queryEmbeddingModel,undefined,'a lexical source has no semantic model metadata');
+  assert.equal(indexes.activeEmbeddingIndex(database.getDb()),null,'source inspection must not prepare or activate an index');
   await assert.rejects(mobileDeepResearchSource({request,generationId,expectedVaultId:'foreign-vault',...input,history:[],replies:{}}),/scope_conflict/);
   await assert.rejects(mobileDeepResearchSource({request,generationId,stage:'deleteVault',input:{},history:[],replies:{}}),/invalid_deep_research_source_request/);
   await assert.rejects(mobileDeepResearchSource({request:{...request,notebookId:'foreign-notebook'},generationId,...input,history:[],replies:{}}),/not_found|not_authorized|notebook|scope/i);

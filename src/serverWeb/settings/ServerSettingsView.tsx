@@ -267,7 +267,7 @@ export function blankProfile(
         quality: "balanced",
         style: "antique_book",
       },
-      audio: { provider: "piper", voice: "", speed: 1 },
+      audio: { provider: "ming", voice: "", speed: 1 },
       studyPolicy: {
         enabled: true,
         privacyMode: "hybrid",

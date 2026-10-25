@@ -1,3 +1,4 @@
+import { clearActiveEmbeddingFamilies } from './embeddingIndexesRepo';
 import fs from 'node:fs';
 import { dbPath, getDb, SCHEMA_VERSION } from './database';
 import type { StudyDataMaintenanceResult, StudyDataOverview } from '@shared/types';
@@ -33,9 +34,9 @@ export function getStudyDataOverview(): StudyDataOverview {
     databaseBytes: fileSize(file) + fileSize(`${file}-wal`) + fileSize(`${file}-shm`),
     materialBytes: scalar('SELECT COALESCE(SUM(length(content_blob)), 0) AS value FROM study_materials'),
     recordingBytes: scalar('SELECT COALESCE(SUM(length(audio_blob)), 0) AS value FROM study_recordings'),
-    embeddingBytes: scalar('SELECT COALESCE(SUM(length(embedding)), 0) AS value FROM study_docs')
-      + scalar('SELECT COALESCE(SUM(length(embedding)), 0) AS value FROM study_materials')
-      + scalar('SELECT COALESCE(SUM(length(embedding)), 0) AS value FROM study_ideas'),
+    embeddingBytes: scalar('SELECT COALESCE(SUM(length(embedding)), 0) AS value FROM embedding_read_study_docs AS study_docs')
+      + scalar('SELECT COALESCE(SUM(length(embedding)), 0) AS value FROM embedding_read_study_materials AS study_materials')
+      + scalar('SELECT COALESCE(SUM(length(embedding)), 0) AS value FROM embedding_read_study_ideas AS study_ideas'),
     studyRows: rows,
     trashRows,
     integrityOk: quick.length === 1 && quick[0]?.quick_check === 'ok',
@@ -55,15 +56,7 @@ export function rebuildStudyIndexes(): StudyDataMaintenanceResult {
 
 export function clearStudyEmbeddingCache(): StudyDataMaintenanceResult {
   const db = getDb();
-  const documents = db.prepare(`UPDATE study_docs SET embedding = NULL, embedding_provider = NULL,
-    embedding_model = NULL, embedding_dim = NULL, embedding_text_hash = NULL WHERE embedding IS NOT NULL`).run();
-  const materials = db.prepare(`UPDATE study_materials SET embedding = NULL, embedding_provider = NULL,
-    embedding_model = NULL, embedding_dim = NULL, embedding_text_hash = NULL, index_status = 'pending',
-    index_error = NULL, indexed_at = NULL WHERE embedding IS NOT NULL`).run();
-  const ideas = db.prepare(`UPDATE study_ideas SET embedding = NULL, embedding_provider = NULL,
-    embedding_model = NULL, embedding_dim = NULL, embedding_text_hash = NULL WHERE embedding IS NOT NULL`).run();
-  db.prepare("UPDATE study_knowledge_jobs SET status='pending', phase='embedding-cleared', error=NULL, updated_at=? WHERE status='done'").run(new Date().toISOString());
-  const changedRows = documents.changes + materials.changes + ideas.changes;
+  const changedRows = clearActiveEmbeddingFamilies(db, ['study_docs', 'study_materials', 'study_ideas', 'study_search']);
   return { ok: true, changedRows, message: `${changedRows} embeddings locales eliminados. Se regenerarán cuando vuelvas a indexar.` };
 }
 

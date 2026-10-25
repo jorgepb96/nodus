@@ -192,15 +192,19 @@ test('every microphone access is blocked by the just-in-time recording notice', 
 });
 
 test('file pickers open directly, with no import privacy modal', async () => {
-  // Native pickers stay centralised in a single audited entry point, so future
-  // importers cannot quietly reach dialog.showOpenDialog on their own.
+  // Import pickers stay centralised. Support's separate wrapper confines the
+  // returned paths to the isolated copy; it does not introduce an import gate.
   const electronFiles = await sourceFiles('electron', new Set(['.ts']));
   const rawDialogs = [];
   for (const file of electronFiles) {
     const source = await readFile(file, 'utf8');
     if (source.includes('dialog.showOpenDialog')) rawDialogs.push(path.relative(repoRoot, file));
   }
-  assert.deepEqual(rawDialogs, ['electron/privacy.ts']);
+  assert.deepEqual(rawDialogs.sort(), ['electron/privacy.ts', 'electron/support/isolation.ts']);
+  const isolation = await read('electron/support/isolation.ts');
+  assert.match(isolation, /const open=dialog\.showOpenDialog,openSync=dialog\.showOpenDialogSync/);
+  assert.match(isolation, /Reflect\.apply\(open,dialog,args\)[\s\S]*?boundary\.check\(file\)/);
+  assert.match(isolation, /Reflect\.apply\(openSync,dialog,args\)[\s\S]*?boundary\.check\(file\)/);
 
   // That entry point opens the OS picker directly: file imports are processed
   // locally and no longer interrupt the user with an in-app consent modal.
@@ -234,7 +238,7 @@ test('file pickers open directly, with no import privacy modal', async () => {
 test('new study materials use a remembered in-app AI processing decision', async () => {
   const [notice, settings, defaults, preload, apiTypes, ipc, consent, policy, knowledge] = await Promise.all([
     read('src/privacyNotices.tsx'),
-    read('src/views/Settings.tsx'),
+    read('src/views/settings/ModelSettings.tsx'),
     read('shared/defaultAppSettings.ts'),
     read('@bridge'),
     read('@api'),
@@ -394,7 +398,7 @@ test('the vectors switch exists and the privacy notice matches what really trave
   const [privacy, settings, publisher] = await Promise.all([
     read('PRIVACY.md'),
     read('src/views/Settings.tsx'),
-    read('electron/serverSync/serverSyncService.ts'),
+    read('electron/serverSync/atomicEmbeddingPublication.ts'),
   ]);
   // PRIVACY.md used to state outright that embeddings were never uploaded. They are now,
   // behind a switch — and a privacy notice that contradicts the code is the worst outcome.
@@ -406,7 +410,7 @@ test('the vectors switch exists and the privacy notice matches what really trave
   assert.match(settings, /nodusServerIncludeVectors/);
   assert.match(settings, /Incluye las representaciones auditadas de documentos/);
   // Off means off.
-  assert.match(publisher, /if \(!config\.includeVectors\) return;/);
+  assert.match(publisher, /config\.includeVectors \? snapshot\.vectors : \[\]/);
   // Passage vectors are gated by the passages switch, not by the vectors one alone.
-  assert.match(publisher, /(?:config|publicationConfig)\.includePassages \? \['ideas', 'documents', 'passages'\] : \['ideas', 'documents'\]/);
+  assert.match(await read('electron/serverSync/serverSyncService.ts'), /(?:config|publicationConfig)\.includePassages \? \['ideas', 'documents', 'passages'\] : \['ideas', 'documents'\]/);
 });

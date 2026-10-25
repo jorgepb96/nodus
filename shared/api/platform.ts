@@ -1,6 +1,7 @@
 // The platform slice of the window.nodus contract. NodusApi extends it, so the
 // renderer surface stays flat and every call site is unchanged.
 import type { NodusLocalAiStatus } from '../localAiModels';
+import type { ClipSync } from '../narrationSync';
 import type { NodusLocalImageStatus } from '../localImageModels';
 import type { CloudflareCompleteDirectDeployInput, CloudflareDeployState, CloudflareDirectDeployPreparation, CloudflareVaultInventory } from '../cloudflare';
 import type { BrowserConnectorPairingPrompt } from '../browserConnector';
@@ -33,7 +34,6 @@ import type {
   EmbeddingProvider,
   GenerateTranslationRequest,
   GitHubCopilotSubscriptionStatus,
-  HumeVoiceInfo,
   ImageModelInfo,
   LocalProvider,
   LocalAiRequestDiagnostic,
@@ -67,6 +67,13 @@ import type {
 } from '../types';
 
 export interface PlatformApi {
+  openNodusSupport(): Promise<void>;
+  supportDistributionState():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  checkSupportDownload():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  installSupportDownload():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  saveSupportInstaller():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  cancelSupportDownload():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  revealSupportInstallation():Promise<void>;
   getMcpStatus(): Promise<McpServerStatus>;
   regenerateMcpToken(): Promise<string>;
   getMcpTunnelStatus(): Promise<McpTunnelStatus>;
@@ -247,10 +254,11 @@ export interface PlatformApi {
     entityId: string,
     input: { segmentIndex: number; segmentLabel: string; provider: AudioProvider; voice: string; language: string; bytes: Uint8Array }
   ): Promise<AudioClip>;
-  getAudioClipDataUrl(clipId: string): Promise<string | null>;
   deleteAudioClip(clipId: string): Promise<void>;
   deleteEntityAudioClips(entityKind: AudioEntityKind, entityId: string): Promise<void>;
   exportAudioClip(clipId: string): Promise<{ path: string } | null>;
+  /** Text and silences of a saved clip's fragments, for the read-along highlight. */
+  getAudioClipSync(clipId: string): Promise<ClipSync | null>;
   listStudyAudioBookmarks(entityKind: AudioEntityKind, entityId: string): Promise<StudyAudioBookmark[]>;
   createStudyAudioBookmark(entityKind: AudioEntityKind, entityId: string, segmentIndex: number, label: string): Promise<StudyAudioBookmark>;
   deleteStudyAudioBookmark(id: string): Promise<void>;
@@ -267,13 +275,6 @@ export interface PlatformApi {
   deleteContentTranslation(id: string): Promise<void>;
   /** Fires for local and server-received translation changes while a reader stays open. */
   onContentTranslationsChanged(cb: (entityKind: TranslationEntityKind | null, entityId: string | null) => void): () => void;
-  // Hume cloud TTS (BYO-key). The key is stored in the main process; the renderer
-  // only learns whether one exists, the voice list, and the audio bytes.
-  humeStatus(): Promise<{ hasKey: boolean }>;
-  humeSetKey(key: string): Promise<{ hasKey: boolean }>;
-  humeClearKey(): Promise<{ hasKey: boolean }>;
-  humeVoices(language?: string): Promise<HumeVoiceInfo[]>;
-  humeSynthesize(voiceId: string, provider: 'HUME_AI' | 'CUSTOM_VOICE', text: string): Promise<Uint8Array>;
 
   // zotero
   zoteroPing(): Promise<ZoteroPingResult>;

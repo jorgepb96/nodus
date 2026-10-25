@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -84,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -100,6 +105,7 @@ export const JA: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["ja"],
   'No se pudieron cargar los documentos guardados.': '保存済みの文書を読み込めませんでした。',
   'El catálogo de documentos guardados tiene un formato inválido.': '保存済み文書の一覧の形式が無効です。',
+  ...EMBEDDING_INDEX_TRANSLATIONS["ja"],
   ...BACKUPS_TRANSLATIONS.ja,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ja,
@@ -121,9 +127,11 @@ export const JA: Record<string, string> = {
   ...DOCUMENT_SKILLS_TRANSLATIONS.ja,
   ...RESEARCH_PROMPT_TRANSLATIONS.ja,
   ...RESEARCH_SOURCE_TRANSLATIONS.ja,
+  ...RESEARCH_HARNESS_TRANSLATIONS["ja"],
   ...RESEARCH_REASONING_TRANSLATIONS.ja,
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["ja"],
   ...CHAT_SKILLS_TRANSLATIONS.ja,
+  ...NARRATION_TRANSLATIONS['ja'],
   ...CAPABILITIES_TRANSLATIONS.ja,
   ...STELLAR_GRAPH_TRANSLATIONS.ja,
   ...PROTECT_TRANSLATIONS.ja,
@@ -188,6 +196,7 @@ export const JA: Record<string, string> = {
   ...DEEP_RESEARCH_QUALITY_TRANSLATIONS.ja,
   ...TEXT_PROVENANCE_TRANSLATIONS.ja,
   ...MODEL_SETTINGS_TRANSLATIONS.ja,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.ja,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['ja'],
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.ja,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.ja,
@@ -2748,8 +2757,8 @@ export const JA: Record<string, string> = {
   "Buscar dentro del documento": "このドキュメント内を検索する",
   "Preparando el índice de búsqueda…": "検索インデックスを構築しています…",
   "Este archivo no contiene una capa de texto que Nodus pueda buscar.": "このファイルには、Nodus が検索できるテキストレイヤーがありません。",
-  "Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.": "この PDF には検索可能なテキストがありません。クリーンな Markdown を開いて OCR テキストを確認します。",
-  "Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.": "画像にはテキストレイヤーがありません。クリーンな Markdown を使用して OCR テキストを検索します。",
+  "Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.": "この PDF には検索可能なテキストがありません。Markdown を開いて OCR テキストを確認します。",
+  "Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.": "画像にはテキストレイヤーがありません。Markdown を使用して OCR テキストを検索します。",
   "Coincidencia {current} de {total}": "{total} の {current} と一致します",
   "No se encontró ese texto": "一致するものが見つかりませんでした",
   "Ir a la coincidencia anterior": "前の試合に戻る",
@@ -5376,6 +5385,7 @@ export const JA: Record<string, string> = {
   "Cambiar modelo": "機種変更",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "埋め込みモデルを変更すると、既存のベクトルは新しいモデルで機能しなくなるため、インデックスを再作成する必要があります。",
   "Embeddings multilingües de alta calidad para corpus amplios.": "大規模なコーパス向けの高品質な多言語埋め込み。",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "Microsoft の多言語埋め込み（検索用の指示付き）。ローカルモデルの中で多言語 MTEB スコアが最も高く、約 6.5 GB の GPU メモリを確保するため、16 GB 以上のメモリを搭載したコンピューターを推奨します。",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "精度とメモリ使用量のバランスが取れたロングコンテキストの多言語埋め込み。",
   "Opción ligera y rápida para equipos con menos memoria.": "メモリの少ないコンピュータ向けの軽量かつ高速なオプションです。",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "会話、要約、アイデアのための非常に軽量なビジョンモデル。",
@@ -7628,7 +7638,7 @@ export const JA: Record<string, string> = {
   "Activar Global": "グローバルを有効にする",
   "Configura las copias de seguridad para activar Global.": "グローバルを有効にするようにバックアップを構成します。",
   "Biblioteca global activada.": "グローバルライブラリが有効になりました。",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "Global は、すべてのVaultにオリジナルとクリーンな Markdown をまとめて提供します。",
+  "Global reúne originales y Markdown para todos tus vaults.": "Global は、すべてのVaultにオリジナルとMarkdown をまとめて提供します。",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "このVaultには、既存のコレクション、スキャン、要約、埋め込み、分析が保存されます。",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "必要に応じていつでもグローバルライブラリを有効にします。このVaultは変更されません。",
   "Light": "ライト",
@@ -8372,3 +8382,5 @@ export const JA: Record<string, string> = {
 };
 
 Object.assign(JA, SIGN_TRANSLATIONS['ja']);
+
+Object.assign(JA, RESEARCH_QUEUE_TRANSLATIONS['ja']);

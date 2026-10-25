@@ -23,6 +23,8 @@ export interface DocumentaryRetrievalInput {
   settings: RetrievalSettings;
   threshold: number;
   read?: ResearchDocumentRead;
+  includeRerankCandidates?: boolean;
+  rerankOrder?: Array<{ id: string; text: string; index_key: string }>;
 }
 
 const evidenceKey = (passage: Passage) => JSON.stringify([passage.document_id, passage.text, passage.locator_json]);
@@ -31,8 +33,8 @@ const target = (passage: Passage) => ({ id: passage.id, documentId: passage.docu
 /** Same production ranking, scope and budget in the worker and isolated SQL tests.
  * Facet probes are fused into one lexical lane before combining it with semantics;
  * repeating a query cannot multiply its vote. Neither path changes stored vectors. */
-export function retrieveDocumentary(input:DocumentaryRetrievalInput,store:Store) {
-  const activity:Activity=store.activity??(()=>{});
+export function retrieveDocumentary(input: DocumentaryRetrievalInput, store: Store) {
+  const activity: Activity = store.activity ?? (() => {});
   const budget = new ResearchRetrievalBudget(input.settings);
   budget.nextRound();
   const read = input.read ? validateResearchDocumentRead(input.read) : null;
@@ -74,7 +76,16 @@ export function retrieveDocumentary(input:DocumentaryRetrievalInput,store:Store)
       semanticIds: [...(prior?.semanticIds ?? []), ...(laneIndex === 1 ? [passage.id] : [])] });
   });
   budget.candidates = fused.size;
-  const ranked = [...fused.values()].sort((a, b) => b.score - a.score);
+  let ranked = [...fused.values()].sort((a, b) => b.score - a.score);
+  const requested = input.rerankOrder;
+  const byId = new Map(ranked.map(entry => [entry.passage.id, entry.passage]));
+  const rerankingApplied = !!requested?.length && requested.every(item => byId.get(item.id)?.text === item.text && byId.get(item.id)?.index_key === item.index_key)
+    && new Set(requested.map(item => item.id)).size === requested.length;
+  if (rerankingApplied) {
+    const order = new Map(requested!.map((item, index) => [item.id, index]));
+    ranked = ranked.map((entry, index) => ({ entry, rank: order.get(entry.passage.id) ?? requested!.length + index }))
+      .sort((a, b) => a.rank - b.rank).map(({ entry }) => entry);
+  }
   const chosen: Passage[] = [];
   const works = new Set<string>();
   const acceptedContent = new Set<string>();
@@ -118,7 +129,8 @@ export function retrieveDocumentary(input:DocumentaryRetrievalInput,store:Store)
     chosen.push(...next);
     frontier = next;
   }
-  return { passages: chosen, retrievalTrace: {
+  return { passages: chosen, ...(input.includeRerankCandidates ? { rerankCandidates: ranked.slice(0, 30).map(entry => entry.passage) } : {}),
+    ...(requested ? { rerankingApplied } : {}), retrievalTrace: {
     semantic: semantic.map(target), lexical: lexical.map(target),
     lexicalQueries: lexicalLists.map(({ query, passages }) => ({ query, candidates: passages.map(target) })),
     selected: chosen.map(passage => ({ ...target(passage),

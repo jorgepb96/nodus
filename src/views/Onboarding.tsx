@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { configureEmbeddingIndex } from '../configureEmbeddingIndex';
 import './onboarding.css';
 import { motion } from 'framer-motion';
 import type { AiProvider, AppSettings, AcademicMode, ZoteroCollection, ModelRef, VaultSummary, ZoteroPingResult } from '@shared/types';
@@ -228,6 +229,7 @@ export function Onboarding({
     downloadCancellationRequested.current = false;
     try {
       await downloadLocalModels([aiModel, embeddingModel]);
+      if (!await configureEmbeddingIndex(embeddingModel)) return;
       const favorites = settings.favorites.some((model) => model.provider === aiModel.provider && model.model === aiModel.model)
         ? settings.favorites
         : [...settings.favorites, aiModel];
@@ -474,7 +476,7 @@ export function Onboarding({
           <div className="space-y-3 rounded-xl border border-neutral-800 p-4">
             <h3 className="font-semibold">{t('Añade como prefieras')}</h3>
             <p className="text-sm leading-6 text-neutral-400">{t('Después del asistente podrás arrastrar PDF, EPUB y otros archivos a Biblioteca, añadir una obra por DOI o ISBN, importar referencias o crear una ficha manual.')}</p>
-            <p className="text-xs text-neutral-500">{t('Nodus tratará de completar metadatos y preparar una versión limpia de lectura automáticamente.')}</p>
+            <p className="text-xs text-neutral-500">{t('Nodus tratará de completar metadatos y preparar una versión Markdown automáticamente.')}</p>
           </div>
         )}
 

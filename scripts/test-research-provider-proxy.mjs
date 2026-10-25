@@ -112,3 +112,74 @@ test('free catalogues preserve provider metadata and only list the authorised mo
     assert.equal(JSON.parse(log).accountedUsd, 0);
   } finally { await proxy.close(); fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+test('provider caps survive restarts, cannot borrow another cap and exclude only BGE', async () => {
+  const root = createResearchTestRoot(); let calls = 0;
+  const config = { providerLimitsUsd: { deepseek: .01, openrouter: .01, gemini: .01 }, allowedProviders: ['deepseek', 'openrouter', 'gemini'], excludeBgeFromBudget: true,
+    extraChatModels: ['gemini-3.8-flash', 'qwen/qwen3.8-max-0902'], dispatch: async () => { calls++; return Response.json({ choices: [{ message: { content: '{}' } }], usage: { prompt_tokens: 2, completion_tokens: 1 } }); } };
+  let proxy = await startResearchProviderProxy(root, config);
+  const post = async (provider, body, route='chat/completions') => {
+    const r = await fetch(`${proxy.url}/${provider}/${route}`, { method:'POST', headers:{Authorization:'Bearer fixture'},body:JSON.stringify(body) }); await r.text(); return r.status;
+  };
+  try {
+    const base = {messages:[{role:'user',content:'fixture'}],max_tokens:10};
+    assert.equal(await post('gemini',{...base,model:'gemini-3.8-flash'}),200);
+    assert.equal(await post('openrouter',{...base,model:'qwen/qwen3.8-max-0902',provider:{max_price:{prompt:2,completion:6}}}),200);
+    assert.equal(await post('openrouter',{model:'baai/bge-m3',input:'fixture'},'embeddings'),200);
+    assert.equal(proxy.ledgers.openrouter.read().calls.length,1);
+    assert.equal(proxy.bgeLedger.read().calls.length,1);
+    assert.equal(await post('deepseek',{...base,model:'deepseek-flash',max_tokens:30000}),402);
+    assert.equal(calls,3,'the over-budget call never reaches the network');
+    assert.equal(await post('openrouter',{...base,model:'qwen/qwen3.8-max-0902',provider:{max_price:{prompt:3,completion:6}}}),403,'Routing cannot silently exceed the reserved per-token price');
+    assert.equal(await post('gemini',{...base,model:'gemini-3.8-flash',extra_body:{google:{tools:[{google_search:{}}]}}}),403,'Unmetered server search is forbidden');
+    await proxy.close(); proxy=await startResearchProviderProxy(root,config);
+    assert.equal(proxy.ledgers.gemini.read().calls.length,1,'restart preserves previous spending');
+    assert.equal(proxy.ledgers.openrouter.read().calls.length,1);
+    assert.equal(await post('gemini',{...base,model:'gemini-3.8-flash',max_tokens:30000}),402);
+    assert.equal(calls,3);
+  } finally { await proxy.close();fs.rmSync(root,{recursive:true,force:true}); }
+});
+
+test('diagnostic capture persists only visible content, never provider thinking or credentials', async () => {
+  const root=createResearchTestRoot();
+  const proxy=await startResearchProviderProxy(root,{captureVisibleResponses:true,dispatch:async()=>Response.json({choices:[{message:{content:'{"valid":false}',reasoning_content:'PRIVATE-REASONING'},finish_reason:'stop'}],usage:{prompt_tokens:2,completion_tokens:2}})});
+  try{
+    const r=await fetch(`${proxy.url}/deepseek/chat/completions`,{method:'POST',headers:{Authorization:'Bearer PRIVATE-KEY'},body:JSON.stringify({model:'deepseek-flash',messages:[{role:'user',content:'fixture'}],max_tokens:10})});await r.text();
+    const file=fs.readdirSync(path.join(root,'artifacts')).find(file=>file.endsWith('-visible.json'));
+    const saved=fs.readFileSync(path.join(root,'artifacts',file),'utf8');assert.match(saved,/valid/);assert.doesNotMatch(saved,/PRIVATE-REASONING|PRIVATE-KEY|reasoning_content/);
+  }finally{await proxy.close();fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('compatibility accounting includes thinking present only in total tokens', async()=>{
+ const root=createResearchTestRoot();const proxy=await startResearchProviderProxy(root,{dispatch:async()=>Response.json({choices:[{message:{content:'{}'}}],usage:{prompt_tokens:10,completion_tokens:2,total_tokens:30}})});
+ try{const r=await fetch(`${proxy.url}/deepseek/chat/completions`,{method:'POST',headers:{Authorization:'Bearer fixture'},body:JSON.stringify({model:'deepseek-flash',messages:[{role:'user',content:'fixture'}],max_tokens:30})});await r.text();assert.equal(r.status,200);assert.equal(proxy.ledger.read().calls[0].outputTokens,20);}finally{await proxy.close();fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('native OpenRouter calls retain paid price caps and live catalogue metadata', async()=>{
+ const root=createResearchTestRoot();let forwarded;
+ const models=[['qwen/qwen3.6-plus',.325,1.95],['deepseek/deepseek-v4.1-flash-1017',.3,1.2],['mistralai/mistral-large-4-0',.68,2.09]];
+ const proxy=await startResearchProviderProxy(root,{allowedProviders:['openrouter'],providerLimitsUsd:{openrouter:.8},extraChatModels:models.map(m=>m[0]),catalogDispatch:async()=>Response.json({data:[...models.map(([id])=>({id,reasoning:{supported_efforts:['low','none']}})),{id:'unapproved'}]}),dispatch:async(_url,init)=>{forwarded=JSON.parse(init.body);return Response.json({choices:[{message:{content:'{}'}}],usage:{prompt_tokens:2,completion_tokens:1,cost:.000001}});}});
+ try{
+  const catalog=await fetch(`${proxy.url}/openrouter/models`,{headers:{Authorization:'Bearer fixture'}});assert.deepEqual((await catalog.json()).data.map(m=>m.id),models.map(m=>m[0]));
+  for(const [model,prompt,completion]of models){
+   const response=await fetch(`${proxy.url}/openrouter/chat/completions`,{method:'POST',headers:{Authorization:'Bearer fixture'},body:JSON.stringify({model,messages:[{role:'user',content:'fixture'}],max_tokens:20})});await response.text();assert.equal(response.status,200);assert.deepEqual(forwarded.provider,{require_parameters:true,max_price:{prompt,completion}});
+  }
+  assert.equal(proxy.ledgers.openrouter.read().calls.length,models.length);
+ }finally{await proxy.close();fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('an unknown dispatched failure retains cost and is a service error, not invalid credentials', async () => {
+  const root = createResearchTestRoot(); let attempts = 0;
+  const proxy = await startResearchProviderProxy(root, { dispatch: async () => {
+    if (++attempts === 1) throw new TypeError('must-not-log-sensitive-key');
+    return new Response(JSON.stringify({ choices: [{ message: { content: 'Checked' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), { status: 200 });
+  } });
+  try {
+    const body = { model: 'deepseek-flash', messages: [{ role: 'user', content: 'Synthetic evidence' }], max_tokens: 100 };
+    const send = () => fetch(proxy.url + '/deepseek/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer fixture-key', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const failed = await send(); assert.equal(failed.status, 503); assert.match(await failed.text(), /research_upstream_unavailable/);
+    assert.equal(proxy.ledger.read().calls[0].actualUsd, null, 'Unknown usage is never released');
+    assert.equal((await send()).status, 200, 'A transient dispatch failure does not invalidate the key');
+    assert.doesNotMatch(fs.readFileSync(path.join(root, 'artifacts/provider-metrics.jsonl'), 'utf8'), /must-not-log-sensitive-key|fixture-key/);
+  } finally { await proxy.close(); fs.rmSync(root, { recursive: true, force: true }); }
+});

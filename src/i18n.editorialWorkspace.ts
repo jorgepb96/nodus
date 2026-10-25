@@ -1,5 +1,6 @@
 export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
   "en": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "The resource will be removed from the document. You can undo this action.",
     "Buscar bloques": "Search blocks",
     "Buscar bloques…": "Search blocks…",
     "No hay bloques coincidentes.": "No matching blocks.",
@@ -165,6 +166,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Your document is saved on this device, but the Mac has not accepted synchronization."
   },
   "fr": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "La ressource sera retirée du document. Vous pouvez annuler cette action.",
     "Buscar bloques": "Rechercher des blocs",
     "Buscar bloques…": "Rechercher des blocs…",
     "No hay bloques coincidentes.": "Aucun bloc correspondant.",
@@ -308,6 +310,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Votre document est enregistré sur cet appareil, mais le Mac n’a pas accepté la synchronisation."
   },
   "de": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "Die Ressource wird aus dem Dokument entfernt. Du kannst diese Aktion rückgängig machen.",
     "Buscar bloques": "Blöcke suchen",
     "Buscar bloques…": "Blöcke suchen…",
     "No hay bloques coincidentes.": "Keine passenden Blöcke.",
@@ -451,6 +454,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Ihr Dokument ist auf diesem Gerät gespeichert, aber der Mac hat die Synchronisierung nicht akzeptiert."
   },
   "pt": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "O recurso será removido do documento. Pode anular esta ação.",
     "Buscar bloques": "Pesquisar blocos",
     "Buscar bloques…": "Pesquisar blocos…",
     "No hay bloques coincidentes.": "Nenhum bloco correspondente.",
@@ -594,6 +598,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "O documento está guardado neste dispositivo, mas o Mac não aceitou a sincronização."
   },
   "pt-BR": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "O recurso será removido do documento. Você pode desfazer esta ação.",
     "Buscar bloques": "Buscar blocos",
     "Buscar bloques…": "Buscar blocos…",
     "No hay bloques coincidentes.": "Nenhum bloco correspondente.",
@@ -737,6 +742,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Seu documento está salvo neste dispositivo, mas o Mac não aceitou a sincronização."
   },
   "it": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "La risorsa verrà rimossa dal documento. Puoi annullare questa azione.",
     "Buscar bloques": "Cerca blocchi",
     "Buscar bloques…": "Cerca blocchi…",
     "No hay bloques coincidentes.": "Nessun blocco corrispondente.",
@@ -880,6 +886,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Il documento è salvato su questo dispositivo, ma il Mac non ha accettato la sincronizzazione."
   },
   "tr": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "Kaynak belgeden kaldırılacak. Bu işlemi geri alabilirsiniz.",
     "Buscar bloques": "Blok ara",
     "Buscar bloques…": "Blok ara…",
     "No hay bloques coincidentes.": "Eşleşen blok yok.",
@@ -1023,6 +1030,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Belgeniz bu cihazda kaydedildi, ancak Mac eşitlemeyi kabul etmedi."
   },
   "zh-CN": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "此资源将从文档中移除。您可以撤销此操作。",
     "Buscar bloques": "搜索块",
     "Buscar bloques…": "搜索块…",
     "No hay bloques coincidentes.": "没有匹配的块。",
@@ -1166,6 +1174,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "您的文档已保存在此设备上，但 Mac 尚未接受同步。"
   },
   "zh-TW": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "此資源將從文件中移除。您可以復原此操作。",
     "Buscar bloques": "搜尋區塊",
     "Buscar bloques…": "搜尋區塊…",
     "No hay bloques coincidentes.": "沒有符合的區塊。",
@@ -1309,6 +1318,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "您的文件已儲存在此裝置上，但 Mac 尚未接受同步。"
   },
   "ja": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "このリソースを文書から削除します。この操作は元に戻せます。",
     "Buscar bloques": "ブロックを検索",
     "Buscar bloques…": "ブロックを検索…",
     "No hay bloques coincidentes.": "一致するブロックはありません。",
@@ -1452,6 +1462,7 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "文書はこのデバイスに保存されていますが、Mac は同期を受け付けていません。"
   },
   "ko": {
+    "El recurso se eliminará del documento. Puedes deshacer esta acción.": "이 리소스가 문서에서 제거됩니다. 이 작업은 실행 취소할 수 있습니다.",
     "Buscar bloques": "블록 검색",
     "Buscar bloques…": "블록 검색…",
     "No hay bloques coincidentes.": "일치하는 블록이 없습니다.",

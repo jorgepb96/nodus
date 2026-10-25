@@ -37,7 +37,7 @@ function profileWithFavorites(favorites) {
       chatReasoning: 'medium', codexReasoningEfforts: {}, preferFastOpenRouter: true,
       providerFreeTier: {},
       image: { provider: 'google', model: 'gemini-3.1-flash-lite-image', quality: 'balanced', style: 'antique_book' },
-      audio: { provider: 'piper', voice: '', speed: 1 },
+      audio: { provider: 'ming', voice: '', speed: 1 },
       studyPolicy: {
         enabled: true, privacyMode: 'hybrid', confirmExternal: true, monthlyBudgetUsd: 0,
         budgetWarningPercent: 80, maxInputChars: 120000, maxOutputTokens: 4000,

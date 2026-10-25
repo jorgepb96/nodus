@@ -66,6 +66,7 @@ test('site footers preserve the independence statement and legal notice', () => 
     'research-atlas/index.html',
     'contribute/index.html',
     'faq/index.html',
+    'models/index.html',
     'blog/index.html',
   ];
 

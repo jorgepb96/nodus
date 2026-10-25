@@ -53,7 +53,7 @@ parentPort?.on('message', (input: RetrievalRequest) => {
     const result = runDocumentaryRetrieval(retrievalStore, input, (key, operation, status, count) => {
       if (input.activity) parentPort!.postMessage({ id, type: 'activity', key, operation, status, count });
     });
-    parentPort!.postMessage({ id, ...result });
+    parentPort!.postMessage({ id, ...result, workerRssBytes: process.memoryUsage().rss });
   } catch (error) {
     parentPort!.postMessage({ id, error: error instanceof Error ? error.message : 'documentary_retrieval_failed' });
   }

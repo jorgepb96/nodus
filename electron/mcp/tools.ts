@@ -31,6 +31,9 @@ import type {
 import path from 'node:path';
 import { getDb, openDbPath } from '../db/database';
 import { getActiveVault, listVaults } from '../vaults/vaultRegistry';
+import { listResearchRuns } from '../db/researchRunsRepo';
+import { interruptResearchRun } from '../ai/researchHarnessRuntime';
+import { resumeResearchRun } from '../ai/researchHarnessControls';
 import * as ideas from '../db/ideasRepo';
 import { getWork, getWorkByZoteroKey, getWorkByAliasKey, listWorks } from '../db/worksRepo';
 import * as gaps from '../db/gapsRepo';
@@ -1162,6 +1165,8 @@ const TOOL_VAULT_SCOPE: Record<string, VaultType[]> = {
   nodus_list_deep_research_jobs: RESEARCH_VAULTS,
   nodus_get_deep_research_job: RESEARCH_VAULTS,
   nodus_cancel_deep_research_job: RESEARCH_VAULTS,
+  nodus_list_research_runs: ['academic'],
+  nodus_control_research_run: ['academic'],
   // Records layer.
   nodus_list_persons: RECORDS_VAULTS,
   nodus_get_person: RECORDS_VAULTS,
@@ -2432,6 +2437,9 @@ export function registerTools(server: McpServer): void {
         '"nodus" (default) — Nodus\'s own configured model plans and writes the whole report and returns it (save=true also stores it as a draft). ' +
         '"client" — returns a self-contained writing kit (corpus materials with verbatim citation tokens, evidence-derived section plan, method and citation policy) so the MODEL CALLING THIS MCP articulates and drafts the report itself; when done, that draft is passed to nodus_finalize_deep_research to validate citations and assemble references. Both keep Nodus as the grounding authority. writer="nodus" can consume provider tokens and may take several minutes; it sends MCP progress notifications (planning, per-section, assembly) when the request carries a progressToken. It also holds this call open for the whole generation and waits behind anything already in the shared lane — prefer nodus_enqueue_deep_research unless the report is needed in this very turn.',
       inputSchema: {
+        harnessVersion: z.enum(['legacy', 'v1']).optional(),
+        explorationMode: z.enum(['fast', 'expanded']).optional().describe('Investigation breadth, independent of model thinking; expanded is the report default.'),
+        webSearch: z.enum(['auto', 'off']).optional(),
         objective: z.string().trim().min(1).max(8_000),
         approach: deepResearchApproachSchema,
         deepResearchVersion: deepResearchVersionSchema,
@@ -2447,9 +2455,9 @@ export function registerTools(server: McpServer): void {
         save: z.boolean().default(false),
         title: z.string().trim().min(1).max(2_000).optional(),
       },
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    ({ objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, writer, model, save, title }, extra) =>
+    ({ harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, writer, model, save, title }, extra) =>
       tool(async () => {
         if (writer === 'client') {
           return buildDeepResearchBrief({ objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength });
@@ -2461,7 +2469,7 @@ export function registerTools(server: McpServer): void {
         // response shape (the full saved draft, not just its id).
         const report = await runDeepResearchJob(
           {
-            request: { objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
+            request: { harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
             origin: 'mcp',
             save: false,
           },
@@ -2533,6 +2541,9 @@ export function registerTools(server: McpServer): void {
         'The job is bound to the vault active right now: if the user switches vault before it starts, it is cancelled rather than researched against a different corpus. ' +
         'Poll nodus_get_deep_research_job for status; with save=true (the default) the finished report is stored as a Nodus writing draft and appears in the user\'s Deep Research gallery.',
       inputSchema: {
+        harnessVersion: z.enum(['legacy', 'v1']).optional(),
+        explorationMode: z.enum(['fast', 'expanded']).optional().describe('Investigation breadth, independent of model thinking; expanded is the report default.'),
+        webSearch: z.enum(['auto', 'off']).optional(),
         objective: z.string().trim().min(1).max(8_000),
         approach: deepResearchApproachSchema,
         deepResearchVersion: deepResearchVersionSchema,
@@ -2544,13 +2555,13 @@ export function registerTools(server: McpServer): void {
         save: z.boolean().default(true).describe('Store the finished report as a Nodus writing draft. Leave true unless the user only wants to read it here.'),
         title: z.string().trim().min(1).max(2_000).optional(),
       },
-      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    ({ objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model, save, title }) =>
+    ({ harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model, save, title }) =>
       tool(() => {
         ensureDeepResearchLane();
         const job = enqueueDeepResearchJob({
-          request: { objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
+          request: { harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
           origin: 'mcp',
           save,
           title,
@@ -2558,6 +2569,16 @@ export function registerTools(server: McpServer): void {
         return { job, hint: 'Call nodus_get_deep_research_job with this id to follow it. Do not claim the report exists until its status is "completed".' };
       })()
   );
+
+  server.registerTool('nodus_list_research_runs', {
+    title: 'List research executions', description: 'Lists research harness progress and resumable executions in the active academic vault. Read-only.',
+    inputSchema: { conversationId: z.string().max(100).optional(), entryId: z.string().max(100).optional() }, annotations: { readOnlyHint: true, openWorldHint: false },
+  }, ({ conversationId, entryId }) => tool(() => ({ runs: listResearchRuns(conversationId, entryId) }))());
+  server.registerTool('nodus_control_research_run', {
+    title: 'Control a research execution', description: 'Pauses, resumes or cancels an existing research execution in the active academic vault. Resume can consume provider tokens and preserves the original source boundary and budget.',
+    inputSchema: { runId: z.string().min(1).max(100), action: z.enum(['pause', 'resume', 'cancel']) },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  }, ({ runId, action }) => tool(async () => action === 'resume' ? resumeResearchRun(runId) : interruptResearchRun(runId, action === 'cancel'))());
 
   server.registerTool(
     'nodus_list_deep_research_jobs',

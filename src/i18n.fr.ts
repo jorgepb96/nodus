@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 /**
@@ -90,6 +94,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -100,6 +105,7 @@ export const FR: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["fr"],
   'No se pudieron cargar los documentos guardados.': 'Les documents enregistrés n’ont pas pu être chargés.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Le catalogue des documents enregistrés a un format invalide.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["fr"],
   ...BACKUPS_TRANSLATIONS.fr,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.fr,
@@ -123,9 +129,11 @@ export const FR: Record<string, string> = {
   "Elige al menos una base de datos.": "Choisissez au moins une base de données.",
   ...RESEARCH_PROMPT_TRANSLATIONS["fr"],
   ...RESEARCH_SOURCE_TRANSLATIONS["fr"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["fr"],
   ...RESEARCH_REASONING_TRANSLATIONS["fr"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["fr"],
   ...CHAT_SKILLS_TRANSLATIONS['fr'],
+  ...NARRATION_TRANSLATIONS['fr'],
   ...CAPABILITIES_TRANSLATIONS['fr'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['fr'],
   ...STELLAR_GRAPH_TRANSLATIONS["fr"],
@@ -133,6 +141,7 @@ export const FR: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.fr,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.fr,
   ...MODEL_SETTINGS_TRANSLATIONS.fr,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.fr,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['fr'],
   ...DICTIONARY_TRANSLATIONS.fr,
   'Tamaño de Nodi': 'Taille de Nodi',
@@ -3025,8 +3034,8 @@ export const FR: Record<string, string> = {
   'Buscar dentro del documento': 'Rechercher dans ce document',
   'Preparando el índice de búsqueda…': 'Préparation de l’index de recherche…',
   'Este archivo no contiene una capa de texto que Nodus pueda buscar.': 'Ce fichier ne contient aucune couche de texte interrogeable par Nodus.',
-  'Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.': 'Ce PDF ne contient pas de texte interrogeable. Ouvrez le Markdown épuré pour consulter le texte OCR.',
-  'Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.': 'Les images ne contiennent pas de couche de texte. Utilisez le Markdown épuré pour rechercher le texte OCR.',
+  'Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.': 'Ce PDF ne contient pas de texte interrogeable. Ouvrez le Markdown pour consulter le texte OCR.',
+  'Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.': 'Les images ne contiennent pas de couche de texte. Utilisez le Markdown pour rechercher le texte OCR.',
   'Coincidencia {current} de {total}': 'Occurrence {current} sur {total}',
   'No se encontró ese texto': 'Ce texte est introuvable',
   'Ir a la coincidencia anterior': 'Aller à l’occurrence précédente',
@@ -5906,6 +5915,7 @@ export const FR: Record<string, string> = {
   'Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.':
     'Si vous changez de modèle d\'embeddings, les vecteurs précédents ne fonctionneront pas avec le nouveau modèle et vous devrez réindexer.',
   'Embeddings multilingües de alta calidad para corpus amplios.': 'Embeddings multilingues de haute qualité pour de grands corpus.',
+  'Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.': 'Embeddings multilingues de Microsoft avec instruction de recherche. Le meilleur score MTEB multilingue des modèles locaux ; il réserve environ 6,5 Go de mémoire GPU, un ordinateur de 16 Go ou plus est donc conseillé.',
   'Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.':
     'Embeddings multilingues à contexte long, avec un bon équilibre entre précision et mémoire.',
   'Opción ligera y rápida para equipos con menos memoria.': 'Option légère et rapide pour les ordinateurs avec moins de mémoire.',
@@ -8240,7 +8250,7 @@ export const FR: Record<string, string> = {
   "Activar Global": "Activer Globale",
   "Configura las copias de seguridad para activar Global.": "Configurez les sauvegardes pour activer la portée globale.",
   "Biblioteca global activada.": "Bibliothèque globale activée.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "La portée globale réunit les originaux et le Markdown propre de tous vos coffres.",
+  "Global reúne originales y Markdown para todos tus vaults.": "La portée globale réunit les originaux et le Markdown de tous vos coffres.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "Ce coffre conserve les collections, analyses, résumés, embeddings et résultats existants.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "Activez la Bibliothèque globale quand vous le souhaitez ; ce coffre ne changera pas.",
   "{n} documento(s) añadidos; {reused} componente(s) reutilizados con huellas exactas.": "{n} document(s) ajouté(s) ; {reused} composant(s) réutilisé(s) avec des empreintes exactes.",
@@ -9003,3 +9013,5 @@ export const FR: Record<string, string> = {
 };
 
 Object.assign(FR, SIGN_TRANSLATIONS['fr']);
+
+Object.assign(FR, RESEARCH_QUEUE_TRANSLATIONS['fr']);

@@ -14,6 +14,7 @@ audit/embeddinggemma-2/** -text
 audit/research-chat-grounding/** -text
 scripts/fixtures/documentary-retrieval-baseline-af66e85f.ts -text
 audit/research-retrieval-followup/** -text
+audit/harrier-oss-v1-0.6b/** -text
 # Keep generated QA traces out of the default GitHub code-review diff. The
 # evidence remains versioned and its human-readable result pages stay visible.
 audit/embeddinggemma-2/** linguist-generated=true
@@ -21,6 +22,8 @@ audit/research-chat-grounding/** linguist-generated=true
 audit/embeddinggemma-2/README.md linguist-generated=false
 audit/research-chat-grounding/README.md linguist-generated=false
 audit/research-chat-grounding/**/README.md linguist-generated=false
+audit/harrier-oss-v1-0.6b/** linguist-generated=true
+audit/harrier-oss-v1-0.6b/README.md linguist-generated=false
 # Raw command output is byte-hashed evidence, including terminal whitespace.
 audit/research-chat-grounding/**/*.log -whitespace
 # The archived long-document fixture includes a tested terminal blank line.

@@ -110,7 +110,9 @@ try {
   assert.match(settingsUi, /stt-transformers-model-list/, 'Transformers models use the shared settings list pattern');
   assert.match(settingsUi, /stt-whisper-model-list/, 'whisper.cpp models use the shared settings list pattern');
   assert.doesNotMatch(settingsUi, /xl:grid-cols-[45]/, 'transcription model catalogs do not regress to card grids');
-  assert.match(settingsUi, /bg-white[^\n]*dark:bg-neutral-950/, 'STT settings has explicit light and dark surfaces');
+  // The surface comes from the shared Settings card, whose `.card` rule defines both themes.
+  assert.match(settingsUi, /<SettingsPanel[\s\S]*data-testid="stt-settings"/, 'STT settings is drawn with the shared Settings panel');
+  assert.match(await readFile(path.join(root, 'src/components/SettingsPanel.tsx'), 'utf8'), /className=\{`settings-panel card /, 'the shared panel uses the themed card surface');
   assert.match(recordingsUi, /study-recording-language/, 'recordings expose per-audio language selection');
   // El progreso y el texto parcial se extrajeron a src/components/media, compartidos con
   // el vault de Testimonios. El invariante no cambia — se ve lo que va saliendo mientras

@@ -12,6 +12,8 @@ export function classifyReleaseAsset(name) {
   if (typeof name !== 'string') return null;
   const lower = name.toLowerCase();
 
+  if (/^nodus-(?:support|runtime)-/.test(lower)) return null;
+
   if (/^latest.*\.ya?ml$/i.test(name) || lower.endsWith('.blockmap')) return null;
   if (lower.endsWith('.deb') || lower.endsWith('.appimage') || lower.endsWith('.rpm')) return 'linux';
   if (lower.endsWith('.dmg') || lower.endsWith('.zip')) return 'macos';
@@ -34,6 +36,8 @@ function hasArchToken(lower, token) {
 export function classifyInstallerAsset(name) {
   if (typeof name !== 'string') return null;
   const lower = name.toLowerCase();
+
+  if (/^nodus-(?:support|runtime)-/.test(lower)) return null;
 
   if (/^latest.*\.ya?ml$/i.test(name) || lower.endsWith('.blockmap')) return null;
   if (lower.endsWith('.deb')) return 'linuxDeb';

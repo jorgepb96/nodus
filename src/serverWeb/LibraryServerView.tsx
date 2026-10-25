@@ -193,7 +193,7 @@ function ReaderOpeningFormatDialog({
             disabled={!document.cleanAvailable}
             onClick={() => onChoose("clean")}
           >
-            <strong className="block text-sm">{t("Markdown limpio")}</strong>
+            <strong className="block text-sm">{t("Markdown")}</strong>
             <span className="mt-1 block text-xs leading-5 text-neutral-500">
               {t("Lectura adaptable con índice e imágenes extraídas.")}
             </span>
@@ -297,7 +297,7 @@ function ReaderFilesMenu({
             onClick={() => choose("clean")}
           >
             <Icon name="book" size={12} />
-            <span className="truncate">{t("Markdown limpio")}</span>
+            <span className="truncate">{t("Markdown")}</span>
           </button>
           <button
             type="button"
@@ -557,7 +557,7 @@ export function PublishedLibraryView({ spaceId, onOpen }: LibraryProps) {
                   </span>
                   <span className="text-neutral-500">
                     {item.cleanAvailable
-                      ? t("Texto limpio")
+                      ? t("Markdown")
                       : item.originalAvailable
                         ? t("Original")
                         : t("Metadatos")}
@@ -1133,7 +1133,7 @@ export function LibraryDetail({
           data-testid="library-reader-source-picker"
         >
           <option value="clean" disabled={!document.cleanAvailable}>
-            {t("Markdown limpio")}
+            {t("Markdown")}
           </option>
           <option value="original" disabled={!document.originalAvailable}>
             {t("Archivo original")}
@@ -1260,7 +1260,7 @@ export function LibraryDetail({
               </span>
               <p className="mt-1 text-xs text-neutral-400">
                 {source === "clean"
-                  ? t("Markdown limpio")
+                  ? t("Markdown")
                   : document.originalFileName || t("Archivo original")}
               </p>
             </div>

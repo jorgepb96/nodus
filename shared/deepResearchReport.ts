@@ -12,7 +12,7 @@ import { documentFigureInsertions } from './documentFigureExport';
  * desktop and in the asset store on the server — so the caller passes it in.
  */
 import type { PromptLanguage, WritingWorkshopDraft, WritingWorkshopMatrixRow } from './types';
-import { stripLeadingAbstract } from './writingDocument';
+import { stripLeadingAbstract, researchDocumentProse } from './writingDocument';
 import {
   PROFESSIONAL_REPORT_THEMES,
   anchoredMarkdown,
@@ -270,7 +270,7 @@ export function deepResearchReportInput(
 ): ProfessionalReportInput {
   const language = draft.brief.language ?? 'es';
   const labels = DEEP_LABELS[language];
-  const body = stripLeadingAbstract(draft.draftMarkdown, draft.abstract);
+  const body = researchDocumentProse(stripLeadingAbstract(draft.draftMarkdown, draft.abstract), Boolean(draft.limitations?.length));
   const report = anchoredMarkdown(body, 'report', documentFigureInsertions(body, 'body', visuals));
   const abstract = anchoredMarkdown(draft.abstract || draft.brief.objective, 'summary');
   const sections: ProfessionalReportSection[] = [

@@ -6,6 +6,7 @@ import { uploadEditorFile } from './editorAttachments';
 
 /** Match Nodus's existing resource policy without silently inserting a broken preview. */
 function canEmbed(value: string, type: string) {
+  if (typeof window.nodus?.getPageAsset === 'function' && /^nodus-blob:\/\/[a-f0-9]{64}$/.test(value)) return true;
   if (/^data:/i.test(value)) return value.length < 2_800_000 && (type === 'file' || value.toLowerCase().startsWith(`data:${type}/`));
   try {
     const url = new URL(value, location.href);

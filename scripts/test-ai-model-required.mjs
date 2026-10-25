@@ -57,28 +57,30 @@ test('the app presents one translated light and dark modal and routes to Models'
   }
 });
 
-test('every model row shown in the reported Settings block has a short description', async () => {
-  const settings = await read('src/views/Settings.tsx');
+test('every model row in Settings → AI models has a short description', async () => {
+  const [models, settings] = await Promise.all([read('src/views/settings/ModelSettings.tsx'), read('src/views/Settings.tsx')]);
   for (const label of [
-    'Modelo de embeddings (similitud semántica multilingüe)',
-    'Extracción de temas, ideas y evidencias',
-    'Visión y OCR de imágenes',
+    'Chat y texto',
+    'Extracción',
+    'Visión y OCR',
+    'Embeddings',
+    'Reordenamiento',
     'Resúmenes de obras',
     'Comprensión de documentos completos',
     'Auditor de fichas documentales',
     'Fusión y deduplicación',
-    'Asistente Nodi',
-    'Indexación de embeddings',
+    'Relaciones semánticas',
     'Llamadas simultáneas',
     'Razonamiento (chat/tutor/escritura)',
     'IA y datos del alumnado',
     'OpenRouter: priorizar velocidad',
-    'Email Unpaywall (fallback de texto)',
     'Modo de contexto deep scan',
     'Palabras por fragmento',
   ]) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    assert.match(settings, new RegExp(`<Row[^>]*label=\\{t\\('${escaped}'\\)\\}[^>]*hint=`), label);
+    assert.match(models, new RegExp(`<SettingsRow[^>]*label=\\{t\\('${escaped}'\\)\\}[^>]*hint=`), label);
   }
-  assert.match(settings, /keys\.map\(\(key\) => <Row key=\{key\} label=\{t\(VAULT_MODEL_FIELDS\[key\]\)\} hint=\{t\(VAULT_MODEL_HINTS\[key\]\)\}/);
+  // Unpaywall feeds text extraction, so it moved to the Text and OCR section.
+  assert.match(settings, /<Row label=\{t\('Email Unpaywall \(fallback de texto\)'\)\} hint=/);
+  assert.match(models, /<EmbeddingIndexesManager settings=/, 'embedding maintenance is managed per saved index');
 });

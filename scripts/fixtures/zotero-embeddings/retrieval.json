@@ -1,0 +1,331 @@
+{
+  "description": "Controlled authored scientific passage fixture; not a benchmark on a user library or full papers. Each query has one preregistered relevant passage.",
+  "passages": [
+    {
+      "id": "0",
+      "text": "Randomization distributes measured and unmeasured confounders between treatment arms in expectation. Allocation concealment prevents investigators from predicting assignment."
+    },
+    {
+      "id": "1",
+      "text": "Blinding prevents participants and outcome assessors from knowing the assigned treatment. It reduces performance and detection biases after allocation."
+    },
+    {
+      "id": "2",
+      "text": "A confidence interval quantifies uncertainty around an estimated population effect. A 95% confidence procedure covers the true parameter in 95% of repeated samples."
+    },
+    {
+      "id": "3",
+      "text": "A prediction interval describes where a future individual observation may lie. It includes both uncertainty in the estimated mean and individual variation."
+    },
+    {
+      "id": "4",
+      "text": "Multiple imputation replaces each missing value with several plausible draws and pools estimates across completed datasets. It propagates uncertainty about missing data."
+    },
+    {
+      "id": "5",
+      "text": "Complete-case analysis excludes observations with any missing required variables. It may lose statistical power and introduce bias when missingness depends on outcomes."
+    },
+    {
+      "id": "6",
+      "text": "La sensibilidad diagnóstica es la proporción de personas enfermas que reciben un resultado positivo. Una sensibilidad alta reduce los falsos negativos."
+    },
+    {
+      "id": "7",
+      "text": "La especificidad diagnóstica es la proporción de personas sanas que reciben un resultado negativo. Una especificidad alta reduce los falsos positivos."
+    },
+    {
+      "id": "8",
+      "text": "In RNA sequencing, differential expression analysis identifies genes whose transcript abundance changes between experimental conditions, after accounting for library size."
+    },
+    {
+      "id": "9",
+      "text": "Single-cell RNA sequencing measures transcript abundance in individual cells, enabling identification of heterogeneous cell populations hidden by bulk measurements."
+    },
+    {
+      "id": "10",
+      "text": "Los modelos de efectos aleatorios de un metaanálisis permiten que el efecto verdadero varíe entre estudios e incorporan la heterogeneidad entre ellos."
+    },
+    {
+      "id": "11",
+      "text": "El sesgo de publicación aparece cuando la probabilidad de publicar un estudio depende de sus resultados. Los estudios con resultados nulos pueden quedar infrarrepresentados."
+    },
+    {
+      "id": "12",
+      "text": "Contrastive learning trains representations by bringing positive pairs closer and separating negative pairs in an embedding space. It is commonly used for semantic retrieval."
+    },
+    {
+      "id": "13",
+      "text": "A cross-encoder reranker jointly reads a query and a candidate passage to estimate relevance. Unlike independent embeddings it must process each query-passage pair."
+    },
+    {
+      "id": "14",
+      "text": "La conductividad térmica mide la facilidad con la que un material transmite calor bajo un gradiente de temperatura. No equivale a la energía necesaria para calentarlo."
+    },
+    {
+      "id": "15",
+      "text": "La capacidad calorífica específica es la energía necesaria para elevar en un grado la temperatura de una unidad de masa. Describe almacenamiento de energía térmica."
+    },
+    {
+      "id": "16",
+      "text": "Longitudinal cohort studies repeatedly observe the same participants over time. They can establish temporal ordering between an exposure and a subsequent outcome."
+    },
+    {
+      "id": "17",
+      "text": "Cross-sectional studies measure exposure and outcome at one time point. They estimate prevalence but generally cannot establish which came first."
+    }
+  ],
+  "queries": [
+    {
+      "text": "¿Qué procedimiento reparte los factores de confusión entre los grupos del ensayo?",
+      "relevant": [
+        "0"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "How does hiding the upcoming treatment assignment prevent selection bias?",
+      "relevant": [
+        "0"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Cómo reducir el sesgo del evaluador que conoce el tratamiento?",
+      "relevant": [
+        "1"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "What protects outcome assessment from knowledge of the treatment received?",
+      "relevant": [
+        "1"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué intervalo expresa la incertidumbre de la estimación de un efecto?",
+      "relevant": [
+        "2"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which statistical interval has a repeated-sampling coverage interpretation?",
+      "relevant": [
+        "2"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué intervalo utilizar para anticipar el valor de una observación individual futura?",
+      "relevant": [
+        "3"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which interval accounts for individual variation when forecasting one new observation?",
+      "relevant": [
+        "3"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Cómo completar datos ausentes sin ignorar la incertidumbre de su imputación?",
+      "relevant": [
+        "4"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which missing-data method combines estimates from several completed datasets?",
+      "relevant": [
+        "4"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué análisis elimina todos los registros incompletos?",
+      "relevant": [
+        "5"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which missing-data approach discards incomplete observations?",
+      "relevant": [
+        "5"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué medida indica cuántos enfermos detecta una prueba?",
+      "relevant": [
+        "6"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which diagnostic metric measures detection among patients who truly have the disease?",
+      "relevant": [
+        "6"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué medida expresa cuántas personas sanas clasifica correctamente una prueba?",
+      "relevant": [
+        "7"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which diagnostic measure describes correct negative results among healthy people?",
+      "relevant": [
+        "7"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Cómo identificar genes cuya abundancia de transcritos cambia entre condiciones?",
+      "relevant": [
+        "8"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which sequencing analysis compares gene expression between experimental conditions?",
+      "relevant": [
+        "8"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué técnica permite distinguir poblaciones celulares ocultas al promediar una muestra?",
+      "relevant": [
+        "9"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "How can transcriptomic measurements reveal heterogeneity between individual cells?",
+      "relevant": [
+        "9"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué metaanálisis admite que el efecto real difiera entre estudios?",
+      "relevant": [
+        "10"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which meta-analysis model allows true effects to differ between studies?",
+      "relevant": [
+        "10"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué sesgo aparece cuando los resultados nulos tienen menos probabilidades de publicarse?",
+      "relevant": [
+        "11"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Why might a literature review overrepresent statistically significant studies?",
+      "relevant": [
+        "11"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué entrenamiento acerca pares positivos y separa los negativos?",
+      "relevant": [
+        "12"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which representation-learning objective pulls matching examples together?",
+      "relevant": [
+        "12"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué modelo vuelve a ordenar pasajes leyendo cada uno junto con la consulta?",
+      "relevant": [
+        "13"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which retrieval stage jointly encodes the question and each candidate document?",
+      "relevant": [
+        "13"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué propiedad describe la facilidad para transmitir calor?",
+      "relevant": [
+        "14"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which material property controls heat flow under a temperature gradient?",
+      "relevant": [
+        "14"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué propiedad mide la energía necesaria para calentar una unidad de masa un grado?",
+      "relevant": [
+        "15"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which property quantifies energy required to raise the temperature of one kilogram?",
+      "relevant": [
+        "15"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué diseño sigue a las mismas personas para observar la secuencia entre exposición y desenlace?",
+      "relevant": [
+        "16"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which observational design follows a group of participants over time?",
+      "relevant": [
+        "16"
+      ],
+      "language": "en"
+    },
+    {
+      "text": "¿Qué estudio mide exposición y desenlace en un único momento?",
+      "relevant": [
+        "17"
+      ],
+      "language": "es"
+    },
+    {
+      "text": "Which design estimates prevalence using a snapshot of a population?",
+      "relevant": [
+        "17"
+      ],
+      "language": "en"
+    }
+  ]
+}

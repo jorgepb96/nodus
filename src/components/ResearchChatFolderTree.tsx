@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type DragEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
 import type { ChatConversationSummary, ResearchChatProjectFolder } from '@shared/types';
 import { UNFILED_FOLDER, canNestFolder, folderChildren, type ChatFolderSelection } from '@shared/researchChatFolders';
 import { ConfirmModal } from './ConfirmModal';
@@ -88,6 +88,24 @@ export function chatDragProps(conversation: ChatConversationSummary) {
 
 type Zone = 'before' | 'inside' | 'after';
 
+/** Drop feedback also clears when a drag is cancelled without leaving the row. */
+export function useHistoryDropHint<T>() {
+  const [hint, setHint] = useState<T | null>(null);
+  useEffect(() => {
+    if (hint === null) return;
+    const clear = () => setHint(null);
+    document.addEventListener('dragend', clear, true);
+    document.addEventListener('drop', clear, true);
+    window.addEventListener('blur', clear);
+    return () => {
+      document.removeEventListener('dragend', clear, true);
+      document.removeEventListener('drop', clear, true);
+      window.removeEventListener('blur', clear);
+    };
+  }, [hint]);
+  return [hint, setHint] as const;
+}
+
 function siblingsIndex(folders: ResearchChatProjectFolder[], moving: ResearchChatProjectFolder, target: ResearchChatProjectFolder, zone: Zone): number {
   const siblings = (folderChildren(folders, target.projectId).get(target.parentId) ?? []).filter(folder => folder.id !== moving.id);
   return siblings.findIndex(folder => folder.id === target.id) + (zone === 'after' ? 1 : 0);
@@ -124,15 +142,22 @@ async function dropOutside(actions: ChatFolderActions, item: Dragged, projectId:
  * there takes a chat out of its folder and a folder back to its project's root; on a
  * project's own row (projectId given) a chat from elsewhere joins that project.
  */
-export function outsideDropProps(actions: ChatFolderActions, run: (action: () => Promise<unknown>) => void, projectId: string | null = null) {
+export function outsideDropProps(actions: ChatFolderActions, run: (action: () => Promise<unknown>) => void, projectId: string | null = null, onHover?: (active: boolean) => void) {
+  const hover = (event: DragEvent) => {
+    if (!dragged || !acceptsOutside(projectId)) { onHover?.(false); return; }
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'move';
+    onHover?.(true);
+  };
   return {
-    onDragOver: (event: DragEvent) => {
-      if (!dragged || !acceptsOutside(projectId)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.dataTransfer.dropEffect = 'move';
+    onDragEnter: hover,
+    onDragOver: hover,
+    onDragLeave: (event: DragEvent) => {
+      if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) onHover?.(false);
     },
     onDrop: (event: DragEvent) => {
+      onHover?.(false);
       const item = dragged;
       if (!item || !acceptsOutside(projectId)) return;
       event.preventDefault();
@@ -144,7 +169,7 @@ export function outsideDropProps(actions: ChatFolderActions, run: (action: () =>
 }
 
 function useFolderDrop(folder: ResearchChatProjectFolder, actions: ChatFolderActions, run: (action: () => Promise<unknown>) => void, expand: (id: string) => void, contentsInline = false) {
-  const [hint, setHint] = useState<Zone | null>(null);
+  const [hint, setHint] = useHistoryDropHint<Zone>();
   const zoneOf = (event: DragEvent): Zone => {
     // Alphabetical inline trees support nesting, not manual sibling reordering.
     if (contentsInline || dragged?.kind !== 'folder') return 'inside';
@@ -152,19 +177,21 @@ function useFolderDrop(folder: ResearchChatProjectFolder, actions: ChatFolderAct
     const y = (event.clientY - box.top) / Math.max(1, box.height);
     return y < 0.28 ? 'before' : y > 0.72 ? 'after' : 'inside';
   };
+  const hover = (event: DragEvent) => {
+    if (!dragged) return;
+    // A folder answers for itself: a refused drop must not fall through to the free
+    // space behind it, which would move the folder to the root instead.
+    event.stopPropagation();
+    const zone = zoneOf(event);
+    if (!acceptsOnFolder(actions.folders, folder, zone)) { setHint(null); return; }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setHint(zone);
+  };
   return {
     hint,
-    onDragOver: (event: DragEvent) => {
-      if (!dragged) return;
-      // A folder answers for itself: a refused drop must not fall through to the free
-      // space behind it, which would move the folder to the root instead.
-      event.stopPropagation();
-      const zone = zoneOf(event);
-      if (!acceptsOnFolder(actions.folders, folder, zone)) { setHint(null); return; }
-      event.preventDefault();
-      event.dataTransfer.dropEffect = 'move';
-      setHint(zone);
-    },
+    onDragEnter: hover,
+    onDragOver: hover,
     onDragLeave: (event: DragEvent) => {
       if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) setHint(null);
     },
@@ -249,13 +276,14 @@ export function FolderTreeRowView({ row, tree, ui, actions, run, baseIndent = 10
   /** The sidebar expands folders to reveal their own chats as well as subfolders. */
   contentsInline?: boolean;
 }) {
+  const [outsideHint, setOutsideHint] = useHistoryDropHint<boolean>();
   if (row.kind !== 'folder') {
     const folderId = row.kind === 'unfiled' ? UNFILED_FOLDER : null;
     const selected = tree.selection?.projectId === row.projectId && tree.selection.folderId === folderId;
     const label = row.kind === 'unfiled' ? t('Sin carpeta') : rootLabel ?? t('Todos los chats');
-    return <div className={`research-history-row research-folder-row ${selected ? 'is-active' : ''}`} style={{ paddingLeft: baseIndent }} data-marquee-host
+    return <div className={`research-history-row research-folder-row ${selected ? 'is-active' : ''} ${outsideHint ? 'is-drop-inside' : ''}`} style={{ paddingLeft: baseIndent }} data-marquee-host
       data-testid={row.kind === 'unfiled' ? `research-folder-unfiled-${row.projectId}` : `research-folder-root-${row.projectId}`}
-      {...outsideDropProps(actions, run, row.projectId)}>
+      {...outsideDropProps(actions, run, row.projectId, active => setOutsideHint(active ? true : null))}>
       <span className="research-folder-toggle" aria-hidden="true" />
       <button type="button" className="research-history-main" aria-pressed={selected} title={tx('{n} chat(s)', { n: row.count })}
         onClick={() => tree.select(selected && row.kind === 'unfiled' ? { projectId: row.projectId, folderId: null } : { projectId: row.projectId, folderId })}>
@@ -287,7 +315,7 @@ function FolderRow({ row, tree, ui, actions, run, baseIndent, contentsInline }: 
   return <div className={`research-history-row research-folder-row group ${selected ? 'is-active' : ''} ${ui.menuFolderId === folder.id ? 'is-menu-open' : ''} ${drop.hint ? `is-drop-${drop.hint}` : ''}`}
     style={{ paddingLeft: baseIndent + row.depth * INDENT }} data-marquee-host data-testid={`research-folder-${folder.id}`}
     draggable={!renaming} onDragStart={event => beginDrag(event, { kind: 'folder', folder }, folder.name)} onDragEnd={endDrag}
-    onDragOver={drop.onDragOver} onDragLeave={drop.onDragLeave} onDrop={drop.onDrop}>
+    onDragEnter={drop.onDragEnter} onDragOver={drop.onDragOver} onDragLeave={drop.onDragLeave} onDrop={drop.onDrop}>
     <button type="button" className={`research-folder-toggle ${row.expanded ? 'is-open' : ''}`} tabIndex={row.hasChildren ? 0 : -1}
       aria-label={row.expanded ? tx('Contraer {name}', { name: folder.name }) : tx('Desplegar {name}', { name: folder.name })} aria-expanded={row.hasChildren ? row.expanded : undefined}
       style={row.hasChildren ? undefined : { visibility: 'hidden' }} onClick={() => tree.toggle(folder.id)}><Icon name="chevronRight" size={12} /></button>

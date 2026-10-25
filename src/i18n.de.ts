@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 /**
@@ -90,6 +94,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -100,6 +105,7 @@ export const DE: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["de"],
   'No se pudieron cargar los documentos guardados.': 'Die gespeicherten Dokumente konnten nicht geladen werden.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Der Katalog gespeicherter Dokumente hat ein ungültiges Format.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["de"],
   ...BACKUPS_TRANSLATIONS.de,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.de,
@@ -123,9 +129,11 @@ export const DE: Record<string, string> = {
   "Elige al menos una base de datos.": "Wählen Sie mindestens eine Datenbank aus.",
   ...RESEARCH_PROMPT_TRANSLATIONS["de"],
   ...RESEARCH_SOURCE_TRANSLATIONS["de"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["de"],
   ...RESEARCH_REASONING_TRANSLATIONS["de"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["de"],
   ...CHAT_SKILLS_TRANSLATIONS['de'],
+  ...NARRATION_TRANSLATIONS['de'],
   ...CAPABILITIES_TRANSLATIONS['de'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['de'],
   ...STELLAR_GRAPH_TRANSLATIONS["de"],
@@ -133,6 +141,7 @@ export const DE: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.de,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.de,
   ...MODEL_SETTINGS_TRANSLATIONS.de,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.de,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['de'],
   ...DICTIONARY_TRANSLATIONS.de,
   'Tamaño de Nodi': 'Nodi-Größe',
@@ -3028,8 +3037,8 @@ export const DE: Record<string, string> = {
   'Buscar dentro del documento': 'Dieses Dokument durchsuchen',
   'Preparando el índice de búsqueda…': 'Suchindex wird vorbereitet…',
   'Este archivo no contiene una capa de texto que Nodus pueda buscar.': 'Diese Datei enthält keine Textebene, die Nodus durchsuchen kann.',
-  'Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.': 'Dieses PDF enthält keinen durchsuchbaren Text. Öffnen Sie das bereinigte Markdown, um den OCR-Text zu lesen.',
-  'Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.': 'Bilder enthalten keine Textebene. Verwenden Sie das bereinigte Markdown, um den OCR-Text zu durchsuchen.',
+  'Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.': 'Dieses PDF enthält keinen durchsuchbaren Text. Öffnen Sie das Markdown, um den OCR-Text zu lesen.',
+  'Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.': 'Bilder enthalten keine Textebene. Verwenden Sie das Markdown, um den OCR-Text zu durchsuchen.',
   'Coincidencia {current} de {total}': 'Treffer {current} von {total}',
   'No se encontró ese texto': 'Dieser Text wurde nicht gefunden',
   'Ir a la coincidencia anterior': 'Zum vorherigen Treffer',
@@ -5912,6 +5921,7 @@ export const DE: Record<string, string> = {
   'Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.':
     'Wenn Sie das Embeddings-Modell wechseln, sind die bisherigen Vektoren mit dem neuen Modell nicht nutzbar und Sie müssen neu indexieren.',
   'Embeddings multilingües de alta calidad para corpus amplios.': 'Hochwertige mehrsprachige Embeddings für große Korpora.',
+  'Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.': 'Mehrsprachige Embeddings von Microsoft mit Suchanweisung. Der höchste mehrsprachige MTEB-Wert unter den lokalen Modellen; reserviert etwa 6,5 GB GPU-Speicher, daher wird ein Rechner mit 16 GB oder mehr empfohlen.',
   'Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.':
     'Mehrsprachige Embeddings mit langem Kontext und gutem Gleichgewicht zwischen Genauigkeit und Speicherbedarf.',
   'Opción ligera y rápida para equipos con menos memoria.': 'Eine leichte und schnelle Option für Computer mit weniger Speicher.',
@@ -8249,7 +8259,7 @@ export const DE: Record<string, string> = {
   "Activar Global": "Global aktivieren",
   "Configura las copias de seguridad para activar Global.": "Richten Sie Sicherungen ein, um Global zu aktivieren.",
   "Biblioteca global activada.": "Globale Bibliothek aktiviert.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "Global bündelt Originale und bereinigtes Markdown für alle Vaults.",
+  "Global reúne originales y Markdown para todos tus vaults.": "Global bündelt Originale und Markdown für alle Vaults.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "Dieser Vault behält vorhandene Sammlungen, Scans, Zusammenfassungen, Embeddings und Analysen.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "Aktivieren Sie die globale Bibliothek jederzeit; dieser Vault bleibt unverändert.",
   "{n} documento(s) añadidos; {reused} componente(s) reutilizados con huellas exactas.": "{n} Dokument(e) hinzugefügt; {reused} Komponente(n) mit exakten Fingerabdrücken wiederverwendet.",
@@ -9010,3 +9020,5 @@ export const DE: Record<string, string> = {
 };
 
 Object.assign(DE, SIGN_TRANSLATIONS['de']);
+
+Object.assign(DE, RESEARCH_QUEUE_TRANSLATIONS['de']);

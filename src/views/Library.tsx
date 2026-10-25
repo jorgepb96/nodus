@@ -327,6 +327,8 @@ export function Library({
   snapshot,
   onSnapshotChange,
   onOpenCollections,
+  onSync,
+  syncing,
   onOpenNodusCollections,
   onOpenGraph,
   onOpenAssistant,
@@ -346,6 +348,8 @@ export function Library({
   snapshot?: LibraryVaultSnapshot;
   onSnapshotChange?: (next: LibraryVaultSnapshot) => void;
   onOpenCollections: () => void;
+  onSync: () => Promise<void>;
+  syncing: boolean;
   onOpenNodusCollections: () => void;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
@@ -1187,11 +1191,23 @@ export function Library({
         </div>
         {scopeControls}
         <div className="library-header-actions">
-          {vaultType === 'academic' && <><input ref={addFilesRef} type="file" multiple hidden onChange={event => { if (event.target.files?.length) void importDroppedIntoVault(event.target.files); event.target.value = ''; }} /><button className="btn btn-primary" data-testid="library-vault-add-files" onClick={() => addFilesRef.current?.click()}><Icon name="plus" size={14} />{t('Añadir archivos')}</button></>}
+          {vaultType === 'academic' && <>
+            <input ref={addFilesRef} type="file" multiple hidden onChange={event => { if (event.target.files?.length) void importDroppedIntoVault(event.target.files); event.target.value = ''; }} />
+            <button type="button" className="btn btn-primary h-8 w-8 shrink-0 !p-0" data-testid="library-vault-add-files" title={t('Añadir archivos')} aria-label={t('Añadir archivos')} onClick={() => addFilesRef.current?.click()}>
+              <Icon name="plus" size={16} />
+            </button>
+          </>}
 
           {vaultType === 'academic' && <>
-            <button className="btn btn-ghost border border-neutral-700" data-testid="library-prepare-sources" data-scope={selectedVisibleIds.length > 0 ? 'selection' : 'library'} onClick={() => void indexWorks(selectedVisibleIds.length > 0 ? selectedVisibleIds : undefined)}>{t(selectedVisibleIds.length > 0 ? 'Indexar selección' : 'Indexar biblioteca')}</button>
-            <button className="btn btn-ghost" onClick={openResearchPreparationQueue}>{t('Ver en Queue')}</button>
+            <button type="button" className="btn btn-ghost h-8 w-8 shrink-0 !p-0" data-testid="library-vault-sync-zotero" title={t(syncing ? 'Actualizando…' : 'Sincronizar Zotero')} aria-label={t(syncing ? 'Actualizando…' : 'Sincronizar Zotero')} aria-busy={syncing} disabled={syncing} onClick={() => void onSync()}>
+              <Icon name="refresh" size={16} className={syncing ? 'animate-spin' : ''} />
+            </button>
+            <button type="button" className="btn btn-ghost h-8 w-8 shrink-0 border border-neutral-700 !p-0" data-testid="library-prepare-sources" data-scope={selectedVisibleIds.length > 0 ? 'selection' : 'library'} title={t(selectedVisibleIds.length > 0 ? 'Indexar selección' : 'Indexar biblioteca')} aria-label={t(selectedVisibleIds.length > 0 ? 'Indexar selección' : 'Indexar biblioteca')} onClick={() => void indexWorks(selectedVisibleIds.length > 0 ? selectedVisibleIds : undefined)}>
+              <Icon name="layers" size={16} />
+            </button>
+            <button type="button" className="btn btn-ghost h-8 w-8 shrink-0 !p-0" data-testid="library-vault-open-queue" title={t('Ver en Queue')} aria-label={t('Ver en Queue')} onClick={openResearchPreparationQueue}>
+              <Icon name="clock" size={16} />
+            </button>
           </>}
           <AcademicSecondary compact={compact}>
           {simple && academicMode !== 'manual' && <button className="btn btn-ghost" onClick={() => void (selectedVisibleIds.length ? processFullSelected() : processFullLibrary())}>{t('Extraer ideas')}</button>}
@@ -1837,7 +1853,7 @@ export function Library({
                         testId={`vault-library-index-${w.nodus_id}`} onClick={() => void indexWorks([w.nodus_id])} />;
                     })()}
                     <RowIconButton
-                      title={t('Abrir lector limpio')}
+                      title={t('Abrir Markdown')}
                       icon="book"
                       tone="cyan"
                       onClick={() => openReader(w)}
@@ -1860,7 +1876,7 @@ export function Library({
                           { label: t('Ver en Queue'), icon: 'list', onClick: openResearchPreparationQueue },
                         ] : []),
                         {
-                          label: t('Abrir lector limpio'),
+                          label: t('Abrir Markdown'),
                           icon: 'book',
                           onClick: () => openReader(w),
                         },

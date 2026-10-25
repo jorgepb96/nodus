@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 /**
@@ -90,6 +94,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -100,6 +105,7 @@ export const PT: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["pt"],
   'No se pudieron cargar los documentos guardados.': 'Não foi possível carregar os documentos guardados.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'O catálogo de documentos guardados tem um formato inválido.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["pt"],
   ...BACKUPS_TRANSLATIONS.pt,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.pt,
@@ -123,9 +129,11 @@ export const PT: Record<string, string> = {
   "Elige al menos una base de datos.": "Escolha pelo menos uma base de dados.",
   ...RESEARCH_PROMPT_TRANSLATIONS["pt"],
   ...RESEARCH_SOURCE_TRANSLATIONS["pt"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["pt"],
   ...RESEARCH_REASONING_TRANSLATIONS["pt"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["pt"],
   ...CHAT_SKILLS_TRANSLATIONS['pt'],
+  ...NARRATION_TRANSLATIONS['pt'],
   ...CAPABILITIES_TRANSLATIONS['pt'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['pt'],
   ...STELLAR_GRAPH_TRANSLATIONS["pt"],
@@ -133,6 +141,7 @@ export const PT: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.pt,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.pt,
   ...MODEL_SETTINGS_TRANSLATIONS.pt,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.pt,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['pt'],
   ...DICTIONARY_TRANSLATIONS.pt,
   'Tamaño de Nodi': 'Tamanho do Nodi',
@@ -3003,8 +3012,8 @@ export const PT: Record<string, string> = {
   'Buscar dentro del documento': 'Pesquisar neste documento',
   'Preparando el índice de búsqueda…': 'A preparar o índice de pesquisa…',
   'Este archivo no contiene una capa de texto que Nodus pueda buscar.': 'Este ficheiro não contém uma camada de texto pesquisável pelo Nodus.',
-  'Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.': 'Este PDF não contém texto pesquisável. Abra o Markdown limpo para consultar o texto OCR.',
-  'Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.': 'As imagens não contêm uma camada de texto. Use o Markdown limpo para pesquisar o OCR.',
+  'Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.': 'Este PDF não contém texto pesquisável. Abra o Markdown para consultar o texto OCR.',
+  'Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.': 'As imagens não contêm uma camada de texto. Use o Markdown para pesquisar o OCR.',
   'Coincidencia {current} de {total}': 'Correspondência {current} de {total}',
   'No se encontró ese texto': 'Esse texto não foi encontrado',
   'Ir a la coincidencia anterior': 'Ir para a correspondência anterior',
@@ -5861,6 +5870,7 @@ export const PT: Record<string, string> = {
   'Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.':
     'Se mudar de modelo de embeddings, os vetores anteriores não funcionarão com o novo modelo e terá de reindexar.',
   'Embeddings multilingües de alta calidad para corpus amplios.': 'Embeddings multilingues de alta qualidade para corpus extensos.',
+  'Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.': 'Embeddings multilingues da Microsoft com instrução de pesquisa. A melhor pontuação MTEB multilingue entre os modelos locais; reserva cerca de 6,5 GB de memória da GPU, pelo que se recomenda um computador com 16 GB ou mais.',
   'Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.':
     'Embeddings multilingues com contexto longo e um bom equilíbrio entre precisão e memória.',
   'Opción ligera y rápida para equipos con menos memoria.': 'Opção leve e rápida para computadores com menos memória.',
@@ -8191,7 +8201,7 @@ export const PT: Record<string, string> = {
   "Activar Global": "Ativar Global",
   "Configura las copias de seguridad para activar Global.": "Configure as cópias de segurança para ativar o âmbito Global.",
   "Biblioteca global activada.": "Biblioteca global ativada.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "O âmbito Global reúne originais e Markdown limpo para todos os cofres.",
+  "Global reúne originales y Markdown para todos tus vaults.": "O âmbito Global reúne originais e Markdown para todos os cofres.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "Este cofre conserva coleções, análises, resumos, embeddings e resultados existentes.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "Ative a Biblioteca global quando quiser; este cofre não será alterado.",
   "{n} documento(s) añadidos; {reused} componente(s) reutilizados con huellas exactas.": "{n} documento(s) adicionado(s); {reused} componente(s) reutilizado(s) com impressões digitais exatas.",
@@ -8952,3 +8962,5 @@ export const PT: Record<string, string> = {
 };
 
 Object.assign(PT, SIGN_TRANSLATIONS['pt']);
+
+Object.assign(PT, RESEARCH_QUEUE_TRANSLATIONS['pt']);

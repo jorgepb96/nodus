@@ -93,6 +93,10 @@ for the inventory reports, cache behavior, and performance validation procedure.
 
 ## Publishing releases
 
+Every release, hotfixes included, follows the [release policy](docs/release-policy.md):
+how to choose the version, which identifiers to update, how to write the What's New
+modal and the notes, and when to merge and publish.
+
 Stable and Beta are separate GitHub Actions entry points backed by the shared
 `release-build.yml` implementation:
 
@@ -115,6 +119,13 @@ full CI and, for Stable, the Zotero plugin. Intel starts in a separate workflow
 after publication and appends its signed assets later. See
 [Release execution and measurement](docs/release-performance.md) for installer
 validation and timing definitions.
+
+Nodus Support is published independently after Nodus. Its signed app downloads
+do not require the repair qualification catalog to be populated; repair actions
+and recovery artifacts retain their qualification checks. To backfill an existing
+release after fixing the publisher, dispatch `release-support.yml` from the fixed
+commit with that release's channel and tag. The selected commit's package version
+must match the published tag. Safety checks and packaging use that same commit.
 
 Linux AppImages support both the built-in Electron updater and external
 AppImageUpdate tools. See [AppImage update compatibility](docs/appimage-updates.md)

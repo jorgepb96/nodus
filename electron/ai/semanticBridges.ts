@@ -11,6 +11,7 @@ import {
 } from '../db/ideasRepo';
 import { completeJsonWithHeadroom } from './structuredHeadroom';
 import { loadCheckpoints, saveCheckpoint, clearCheckpoints } from '../db/scanCheckpointRepo';
+import { activeEmbeddingIndex, profileFingerprint } from '../db/embeddingIndexesRepo';
 import { computeNearestNeighbors } from '../graph/computeHost';
 import { getSettings } from '../db/settingsRepo';
 import { semanticBridgePrompt } from '@shared/graphPromptPacks';
@@ -133,7 +134,7 @@ function bridgeQueryIds(nodusIds?: string[]): Set<string> {
   const rows = db
     .prepare(
       `SELECT i.global_id
-         FROM ideas i
+         FROM embedding_read_ideas i
         WHERE i.embedding IS NOT NULL AND i.orphaned_at IS NULL
         ORDER BY (SELECT COUNT(*) FROM visible_edges e WHERE e.from_id = i.global_id OR e.to_id = i.global_id) ASC,
                  i.created_at DESC
@@ -208,10 +209,12 @@ async function validateCandidates(
 ): Promise<Map<string, { from: string; to: string; type: EdgeType; confidence: number; similarity: number; rationale: string | null }>> {
   const batches = chunk(candidates, VALIDATION_BATCH);
   const prompt = semanticBridgePrompt(language);
+  const context = activeEmbeddingIndex(getDb());
   const contentHash = crypto
     .createHash('sha256')
     .update(JSON.stringify({
       policy: 2,
+      index: context ? [context.indexId, context.generation, profileFingerprint(context.profile)] : null,
       model,
       language,
       prompt,

@@ -12,7 +12,10 @@ import { createResearchTestRoot, researchTestEnvironment, macResearchSandbox, ve
 import { prepareEmbeddingCorpus } from './embeddinggemma-corpus.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const productionProfiles = ['multilingual-e5-small-int8', 'gte-multilingual-base-int8', 'bge-m3-q8_0', 'embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1'];
+const productionProfiles = ['multilingual-e5-small-int8', 'gte-multilingual-base-int8', 'bge-m3-q8_0', 'embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1', 'harrier-oss-v1-0.6b-q8_0', 'gte-multilingual-base-int8-cls', 'bge-m3-q8_0-cls'];
+// Each embedder runs with its own pooling (mean when undeclared); Harrier instructs queries only.
+const llamaProfile = modelId => NODUS_LOCAL_MODELS.find(model => model.id === modelId)?.runtime === 'llama_cpp';
+const HARRIER_QUERY_PREFIX = 'Instruct: Given a web search query, retrieve relevant passages that answer the query\nQuery: ';
 const controls = ['embeddinggemma-2-text-q4-512-lab', 'embeddinggemma-2-text-q4-256-lab', 'embeddinggemma-2-text-q8-768-lab'];
 const hash = buffer => createHash('sha256').update(buffer).digest('hex');
 const mode = process.argv[2] ?? 'runtime';
@@ -56,7 +59,7 @@ async function prepareModel(modelId) {
   console.log(`Preparing ${modelId} (${root})`);
   for (const asset of assets) await download(asset, directory);
   let executable;
-  if (modelId === 'bge-m3-q8_0') {
+  if (llamaProfile(modelId)) {
     const runtimeModule = path.join(root, 'tmp/runtime.mjs');
     await build({ entryPoints: [path.join(repo, 'shared/localAiRuntime.ts')], outfile: runtimeModule, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent' });
     const { runtimeAssetCatalog } = await import(pathToFileURL(runtimeModule));
@@ -77,7 +80,8 @@ async function prepareModel(modelId) {
 function inferenceWorker(modelId, directory) {
   const eg2 = modelId.startsWith('embeddinggemma-2-');
   const file = eg2 ? path.join(repo, 'dist-electron/embeddingGemma2Worker.cjs') : path.join(repo, 'scripts/embeddinggemma-legacy-worker.cjs');
-  const worker = new Worker(file, { workerData: { directory, dtype: modelId.includes('-q4-') ? 'q4' : 'q8', threads: Math.max(1, Math.min(4, os.availableParallelism() - 1)) } });
+  const pooling = NODUS_LOCAL_MODELS.find(model => model.id === modelId)?.pooling ?? 'mean';
+  const worker = new Worker(file, { workerData: { directory, pooling, dtype: modelId.includes('-q4-') ? 'q4' : 'q8', threads: Math.max(1, Math.min(4, os.availableParallelism() - 1)) } });
   let next = 0; const pending = new Map();
   worker.on('message', reply => { const request = pending.get(reply.id); if (!request) return; pending.delete(reply.id); reply.ok ? request.resolve(reply.result) : request.reject(new Error(reply.error)); });
   const fail = error => { for (const request of pending.values()) request.reject(error); pending.clear(); };
@@ -127,14 +131,15 @@ function absenceThreshold(rows) {
 async function runChild(modelId, directory, audit) {
   const start = performance.now();
   let runtime;
-  if (modelId === 'bge-m3-q8_0') {
+  if (llamaProfile(modelId)) {
     const metadata = JSON.parse(await fs.readFile(path.join(root, 'artifacts/model-manifest.json'), 'utf8'));
     const port = Number(process.argv.find(value => value.startsWith('--local-port='))?.slice(13));
-    const child = spawn(metadata.executable, ['--model', path.join(directory, metadata.modelFile), '--host', '127.0.0.1', '--port', String(port), '--ctx-size', '8192', '--batch-size', '8192', '--ubatch-size', '8192', '--embedding', '--pooling', 'mean', '--threads', '4', '--parallel', '1', '--n-gpu-layers', '999', '--no-webui'], { cwd: path.dirname(metadata.executable), stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(metadata.executable, ['--model', path.join(directory, metadata.modelFile), '--host', '127.0.0.1', '--port', String(port), '--ctx-size', '8192', '--batch-size', '8192', '--ubatch-size', '8192', '--embedding', '--pooling', metadata.pooling ?? 'mean', '--threads', '4', '--parallel', '1', '--n-gpu-layers', '999', '--no-webui'], { cwd: path.dirname(metadata.executable), stdio: ['ignore', 'ignore', 'pipe'] });
     child.stderr.on('data', bytes => syncFs.appendFileSync(path.join(root, 'artifacts/llama-runtime.log'), bytes));
     const deadline = Date.now() + 120000;
     while (Date.now() < deadline) { if (child.exitCode !== null) throw new Error(`llama-server exited: ${child.exitCode}`); if (await fetch(`http://127.0.0.1:${port}/health`).then(response => response.ok).catch(() => false)) break; await new Promise(resolve => setTimeout(resolve, 200)); }
-    runtime = { worker: { terminate: async () => { child.kill('SIGTERM'); } }, embed: async texts => {
+    runtime = { worker: { terminate: async () => { child.kill('SIGTERM'); } }, embed: async (inputs, role = 'document', _titles = [], lane = 'recommended') => {
+      const texts = lane === 'recommended' && role === 'query' && modelId.startsWith('harrier-') ? inputs.map(text => HARRIER_QUERY_PREFIX + text) : inputs;
       const output = [];
       for (let offset = 0; offset < texts.length; offset += 8) {
         const response = await fetch(`http://127.0.0.1:${port}/v1/embeddings`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ input: texts.slice(offset, offset + 8), model: modelId }) });
@@ -150,7 +155,7 @@ async function runChild(modelId, directory, audit) {
     if (!vector.every(Number.isFinite) || Math.abs(Math.hypot(...vector) - 1) > .0001) throw new Error('Invalid native result');
     const warm = []; for (let n = 0; n < 5; n++) { const before = performance.now(); await runtime.embed(['When was the school library opened?'], 'query'); warm.push(performance.now() - before); }
     const report = { profile: modelId, platform: process.platform, architecture: process.arch, node: process.version, cpu: os.cpus()[0].model, memoryBytes: os.totalmem(), dimensions: vector.length, coldMs, warmMs: warm,
-      maxRssKiB: process.resourceUsage().maxRSS, network: 'OS sandbox denies all external inference traffic', runtime: modelId.startsWith('embeddinggemma') ? 'Transformers.js 4.3.1 / CPU' : modelId === 'bge-m3-q8_0' ? 'llama.cpp b10002 / native' : 'Transformers.js 3.8.1 / CPU', results: [] };
+      maxRssKiB: process.resourceUsage().maxRSS, network: 'OS sandbox denies all external inference traffic', runtime: modelId.startsWith('embeddinggemma') ? 'Transformers.js 4.3.1 / CPU' : llamaProfile(modelId) ? `llama.cpp b10002 / native · ${NODUS_LOCAL_MODELS.find(model => model.id === modelId).pooling ?? 'mean'} pooling` : `Transformers.js 3.8.1 / CPU · ${NODUS_LOCAL_MODELS.find(model => model.id === modelId).pooling ?? 'mean'} pooling`, results: [] };
     if (modelId.startsWith('embeddinggemma')) {
       try { await runtime.embed(['token '.repeat(10000)], 'query'); throw new Error('Oversized input was silently accepted'); }
       catch (error) { if (!/8192 tokens/.test(error.message)) throw error; report.oversizeRejected = true; }
@@ -260,7 +265,7 @@ if (mode === 'child') {
     } else await prepareEmbeddingCorpus(root);
   }
   if (process.platform !== 'darwin') throw new Error('Native audit requires a disposable OS/container with enforced isolation on this platform');
-  const localPort = modelId === 'bge-m3-q8_0' ? await new Promise(resolve => { const server = http.createServer(); server.listen(0, '127.0.0.1', () => { const port = server.address().port; server.close(() => resolve(port)); }); }) : null;
+  const localPort = llamaProfile(modelId) ? await new Promise(resolve => { const server = http.createServer(); server.listen(0, '127.0.0.1', () => { const port = server.address().port; server.close(() => resolve(port)); }); }) : null;
   const policy = macResearchSandbox(root, localPort ? [localPort] : []);
   const isolation = verifyResearchSandbox(root, policy);
   await fs.writeFile(path.join(root, 'artifacts/isolation-verification.json'), JSON.stringify(isolation, null, 2));

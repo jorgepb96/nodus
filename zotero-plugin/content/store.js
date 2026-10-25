@@ -161,9 +161,9 @@
   function setAgentAuto(v) { S("agentAuto", v ? "1" : "0"); }
 
   // ---- local history privacy/retention ----
-  // History is private-by-default. Users can explicitly opt in from Settings;
-  // disabling it also removes the already persisted conversation file.
-  function getHistoryEnabled() { return P("history.enabled", "0") === "1"; }
+  // Chats stay local to this Zotero profile. An explicit opt-out in Settings
+  // still disables persistence and removes the saved conversation file.
+  function getHistoryEnabled() { return P("history.enabled", "1") === "1"; }
   function setHistoryEnabled(v) { S("history.enabled", v ? "1" : "0"); }
   function getHistoryRetention() {
     const value = Number(P("history.retentionDays", 365));
@@ -194,6 +194,29 @@
   function convPath() {
     const dir = Services.dirsvc.get("ProfD", Components.interfaces.nsIFile).path;
     return PathUtils.join(dir, "nodus-zotero-conversations.json");
+  }
+  function conversationItem(conversation) {
+    const owner = conversation && conversation.zoteroItem;
+    if (owner && Number.isInteger(Number(owner.libraryID)) && Number(owner.libraryID) > 0 && /^[A-Za-z0-9_-]{1,80}$/.test(String(owner.key || ""))) {
+      return { libraryID: Number(owner.libraryID), key: String(owner.key) };
+    }
+    // Older histories only recorded the source attachments. Recover the owner
+    // when every attachment belongs to the same item; never guess for a corpus.
+    const match = /^current:(\d+:[A-Za-z0-9_-]+(?:,\d+:[A-Za-z0-9_-]+)*)$/.exec(String(conversation && conversation.sourceIdentity || ""));
+    if (!match) return null;
+    let resolved = null;
+    try {
+      for (const source of match[1].split(",")) {
+        const [libraryID, key] = source.split(":");
+        const item = Zotero.Items.getByLibraryAndKey(Number(libraryID), key);
+        const parent = item && (item.parentItem || item);
+        if (!parent) return null;
+        const next = { libraryID: Number(parent.libraryID), key: String(parent.key) };
+        if (resolved && (resolved.libraryID !== next.libraryID || resolved.key !== next.key)) return null;
+        resolved = next;
+      }
+    } catch (e) { return null; }
+    return resolved;
   }
   function compactAudit(audit) {
     if (!audit || typeof audit !== "object") return audit || null;
@@ -236,6 +259,7 @@
         mode: conversation.mode === "standalone" ? "standalone" : "connected",
         sourceScope: SOURCE_SCOPES.includes(conversation.sourceScope) ? conversation.sourceScope : "current",
         sourceIdentity: String(conversation.sourceIdentity || "").slice(0, 20000),
+        zoteroItem: conversationItem(conversation),
         model: conversation.model && typeof conversation.model === "object" ? {
           provider: String(conversation.model.provider || "").slice(0, 80),
           model: String(conversation.model.model || "").slice(0, 240),
@@ -285,21 +309,33 @@
     }
     catch (e) { return []; }
   }
-  async function saveConversations(list) {
-    try {
+  let conversationWrites = Promise.resolve();
+  function queueConversationWrite(write) {
+    conversationWrites = conversationWrites.then(write).catch((e) => {
+      try { Zotero.logError(e); } catch (x) {}
+      return false;
+    });
+    return conversationWrites;
+  }
+  function saveConversations(list) {
+    // Capture this revision before awaiting earlier writes. Sending, streaming
+    // completion and navigation can otherwise race over the same .tmp file.
+    const serialized = JSON.stringify(compactConversations(list));
+    return queueConversationWrite(async () => {
       const target = convPath();
       const temp = target + ".tmp";
-      await IOUtils.writeUTF8(temp, JSON.stringify(compactConversations(list)));
+      await IOUtils.writeUTF8(temp, serialized);
       await IOUtils.move(temp, target, { noOverwrite: false });
       if (IOUtils.setPermissions) await IOUtils.setPermissions(target, 0o600);
-    } catch (e) { try { Zotero.logError(e); } catch (x) {} }
+      return true;
+    });
   }
-  async function deleteConversationHistory() {
-    try {
+  function deleteConversationHistory() {
+    return queueConversationWrite(async () => {
       await IOUtils.remove(convPath(), { ignoreAbsent: true });
       await IOUtils.remove(convPath() + ".tmp", { ignoreAbsent: true });
       return true;
-    } catch (e) { try { Zotero.logError(e); } catch (x) {} return false; }
+    });
   }
   const EVIDENCE_CACHE_VERSION = 1;
   let evidenceDbPromise = null;
@@ -373,6 +409,7 @@
     const copy = { ...(index || {}) };
     const chunks = [];
     let totalFloats = 0;
+    const allVectors = [];
     for (const source of Array.isArray(index && index.chunks) ? index.chunks : []) {
       const chunk = { ...source };
       const vector = Array.isArray(source.embedding) ? source.embedding : null;
@@ -380,9 +417,17 @@
         chunk.embeddingOffset = totalFloats;
         chunk.embeddingLength = vector.length;
         totalFloats += vector.length;
+        allVectors.push(vector);
       } else {
         delete chunk.embeddingOffset;
         delete chunk.embeddingLength;
+      }
+      chunk.embeddingVariants = {};
+      for (const [fingerprint, value] of Object.entries(source.embeddingVariants || {})) {
+        if (fingerprint === source.embeddingModel || !Array.isArray(value)) continue;
+        chunk.embeddingVariants[fingerprint] = { offset: totalFloats, length: value.length };
+        totalFloats += value.length;
+        allVectors.push(value);
       }
       chunk.embedding = null;
       chunks.push(chunk);
@@ -390,10 +435,9 @@
     copy.chunks = chunks;
     const vectors = new Float32Array(totalFloats);
     let cursor = 0;
-    for (const source of Array.isArray(index && index.chunks) ? index.chunks : []) {
-      if (!Array.isArray(source.embedding) || !source.embedding.length) continue;
-      vectors.set(source.embedding.map(Number), cursor);
-      cursor += source.embedding.length;
+    for (const vector of allVectors) {
+      vectors.set(vector.map(Number), cursor);
+      cursor += vector.length;
     }
     copy.cache = {
       schema: EVIDENCE_CACHE_VERSION,
@@ -408,6 +452,11 @@
     const raw = source.byteLength ? new Uint8Array(source).buffer : new ArrayBuffer(0);
     const vectors = new Float32Array(raw);
     for (const chunk of Array.isArray(copy.chunks) ? copy.chunks : []) {
+      const variants = {};
+      for (const [key, ref] of Object.entries(chunk.embeddingVariants || {})) {
+        if (Number.isInteger(ref.offset) && Number.isInteger(ref.length) && ref.offset >= 0 && ref.length > 0 && ref.offset + ref.length <= vectors.length) variants[key] = Array.from(vectors.subarray(ref.offset, ref.offset + ref.length));
+      }
+      chunk.embeddingVariants = variants;
       const offset = Number(chunk.embeddingOffset);
       const length = Number(chunk.embeddingLength);
       if (Number.isInteger(offset) && Number.isInteger(length) && offset >= 0 && length > 0 && offset + length <= vectors.length) {
@@ -473,8 +522,8 @@
         vectorPath = String(row.vector_path);
       }
     } catch (e) { try { Zotero.logError(e); } catch (x) {} }
-    // The sidecars remain independently recoverable if SQLite metadata was
-    // interrupted after the atomic file move.
+    // The SQLite pointer identifies a complete file pair; interrupted writes
+    // leave the previous published generation available.
     try {
       const packed = await IOUtils.read(dataPath);
       const vectors = await IOUtils.read(vectorPath);
@@ -498,8 +547,16 @@
   async function saveEvidenceIndex(index) {
     try {
       await IOUtils.makeDirectory(evidenceDir(), { ignoreExisting: true });
-      const target = evidenceDataPath(index.libraryID, index.attachmentKey);
-      const vectorsTarget = evidenceVectorPath(index.libraryID, index.attachmentKey);
+      const db = await evidenceDb();
+      const previous = await db.rowQueryAsync(
+        "SELECT data_path, vector_path FROM evidence_indexes WHERE library_id=? AND attachment_key=?",
+        [Number(index.libraryID), String(index.attachmentKey || "")]
+      );
+      // Publish the pair through one SQLite row update. A failed write or move
+      // cannot overwrite either file belonging to the previous generation.
+      const generation = evidenceStem(index.libraryID, index.attachmentKey) + "-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+      const target = PathUtils.join(evidenceDir(), generation + ".json.gz");
+      const vectorsTarget = PathUtils.join(evidenceDir(), generation + ".f32");
       const packed = detachEmbeddings(index);
       const dataBytes = await gzipText(JSON.stringify(packed.index));
       const dataTmp = target + ".tmp";
@@ -512,7 +569,6 @@
         await IOUtils.setPermissions(target, 0o600);
         await IOUtils.setPermissions(vectorsTarget, 0o600);
       }
-      const db = await evidenceDb();
       await db.queryAsync(
         "INSERT INTO evidence_indexes " +
         "(library_id, attachment_key, item_key, signature, index_version, embedding_model, total_pages, total_chars, data_path, vector_path, updated_at) " +
@@ -528,14 +584,21 @@
           target, vectorsTarget, Number(index.updatedAt) || Date.now(),
         ]
       );
+      if (previous) {
+        for (const file of [previous.data_path, previous.vector_path]) {
+          try { await IOUtils.remove(String(file), { ignoreAbsent: true }); } catch (e) {}
+        }
+      }
       return target;
     } catch (e) { try { Zotero.logError(e); } catch (x) {} return null; }
   }
   async function deleteEvidenceIndex(libraryID, attachmentKey) {
     try {
-      await IOUtils.remove(evidenceDataPath(libraryID, attachmentKey), { ignoreAbsent: true });
-      await IOUtils.remove(evidenceVectorPath(libraryID, attachmentKey), { ignoreAbsent: true });
       const db = await evidenceDb();
+      const row = await db.rowQueryAsync("SELECT data_path, vector_path FROM evidence_indexes WHERE library_id=? AND attachment_key=?", [Number(libraryID), String(attachmentKey || "")]);
+      const paths = new Set([evidenceDataPath(libraryID, attachmentKey), evidenceVectorPath(libraryID, attachmentKey)]);
+      if (row) { paths.add(String(row.data_path)); paths.add(String(row.vector_path)); }
+      for (const file of paths) await IOUtils.remove(file, { ignoreAbsent: true });
       await db.queryAsync("DELETE FROM evidence_indexes WHERE library_id=? AND attachment_key=?", [Number(libraryID), String(attachmentKey || "")]);
       return true;
     } catch (e) { return false; }
@@ -640,6 +703,8 @@
   function newId() { return "c_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8); }
 
   window.NodusStore = {
+    getEmbeddingModel: () => P("embeddingModel", ""),
+    setEmbeddingModel: (key) => S("embeddingModel", key),
     getMode, setMode, getLang, setLang, getModel, setModel, getMaxTokens, setMaxTokens, getReasoning, setReasoning, getHlColors, setHlColors, getContext, setContext,
     SOURCE_SCOPES, getSourceScope, setSourceScope, getOnboarded, setOnboarded,
     getKey, setKey, getSecretStorageStatus, getLocalBase, setLocalBase, getPinned, setPinned, isPinned, togglePinned,
@@ -647,7 +712,7 @@
     getAutoUpdate, setAutoUpdate,
     getAgent, setAgent, getAgentAuto, setAgentAuto,
     getHistoryEnabled, setHistoryEnabled, getHistoryRetention, setHistoryRetention,
-    getManual, setManual, loadConversations, saveConversations, deleteConversationHistory, compactAudit, compactConversations,
+    getManual, setManual, loadConversations, saveConversations, deleteConversationHistory, conversationItem, compactAudit, compactConversations,
     EVIDENCE_CACHE_VERSION, gzipText, gunzipText, compactEvidenceIndex, detachEmbeddings, attachEmbeddings,
     loadEvidenceIndex, saveEvidenceIndex, deleteEvidenceIndex, listEvidenceRecords, loadEvidenceIndexes,
     pruneEvidenceIndexes, clearEvidenceIndexes, evidenceCacheStats, closeEvidenceDb, newId,

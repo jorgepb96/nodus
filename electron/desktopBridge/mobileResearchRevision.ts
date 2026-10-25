@@ -5,9 +5,16 @@ import {createHash} from 'node:crypto';
 import {getDb} from '../db/database';
 import {getActiveVault} from '../vaults/vaultRegistry';
 import {effectiveEmbeddingConfig} from '../ai/aiClient';
+import {activeEmbeddingIndex,embeddingIndexHead} from '../db/embeddingIndexesRepo';
 import {resolveAcademicRunScope} from '../ai/researchCorpusRun';
 import {canonicalJson} from '../../shared/canonicalJson';
 import type {DeepResearchRequest} from '../../shared/types';
+/** Prepared lexical sources remain usable when semantic search has no active index.
+ * Other configuration failures still propagate; this never prepares an index. */
+export function mobileResearchEmbeddingConfig():ReturnType<typeof effectiveEmbeddingConfig>|null {
+ const db=getDb();
+ return embeddingIndexHead(db)&&!activeEmbeddingIndex(db)?null:effectiveEmbeddingConfig();
+}
 /** Corpus source revision excludes derived indexes/profiles and their status.
  * It includes actual authored graph content and authoritative work text identity. */
 export function mobileDeepResearchCorpusRevision(request?:DeepResearchRequest):string {
@@ -22,7 +29,7 @@ export function mobileDeepResearchCorpusRevision(request?:DeepResearchRequest):s
  }
  if(vaultType==='genealogy'){let preparedCount=0;for(const work of listWorksPage({},{limit:100,offset:0}).items){if(preparedCount>=10)break;const prepared=getLibraryReaderRawContent(work.zotero_key);if(!prepared?.markdown?.trim())continue;digest.update(canonicalJson([work.nodus_id,prepared.markdown,readDocumentarySourceMap(prepared.folder,prepared.sourceMapFile)]));preparedCount++;}}
  const scope=vaultType==='academic'?resolveAcademicRunScope(request?.notebookId):null;
- if(vaultType==='academic')digest.update(canonicalJson(effectiveEmbeddingConfig()));
+ if(vaultType==='academic')digest.update(canonicalJson(mobileResearchEmbeddingConfig()));
  if(scope)digest.update(canonicalJson({scopeId:scope.id,notebookId:scope.notebookId,notebookRevision:scope.notebookRevision,permissionFingerprint:scope.permissionFingerprint,documents:scope.documents.map(item=>({id:item.id,revision:item.revision})).sort((a,b)=>a.id.localeCompare(b.id))}));
  return digest.digest('hex');
 }

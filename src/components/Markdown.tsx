@@ -70,6 +70,7 @@ function MarkdownComponent({
   verify = true,
   allowDataImages = false,
   localReaderImages = false,
+  renderLocalImage,
   chatVisuals = false,
 }: {
   content: string;
@@ -97,6 +98,8 @@ function MarkdownComponent({
   allowDataImages?: boolean;
   /** Private image URIs are resolved by the scoped native reader, never by a network fetch. */
   localReaderImages?: boolean;
+  /** Supplied by editor windows that can read local vault assets. */
+  renderLocalImage?: (src: string, alt?: string) => ReactNode;
 }) {
   const documentFigures = useDocumentFigures(content);
   const insertDocumentFigures = () => (tree: any) => {
@@ -197,7 +200,7 @@ function MarkdownComponent({
               if (/^https:\/\//i.test(source)) void window.nodus.openExternal(source);
             }} /> : null;
           },
-          img: ({ src, alt }) => chatVisuals && src?.startsWith('nodus-image://chat/') ? <ChatVisual source={src} alt={alt} /> : <img src={src} alt={alt} />,
+          img: ({ src, alt }) => chatVisuals && src?.startsWith('nodus-image://chat/') ? <ChatVisual source={src} alt={alt} /> : src?.startsWith('nodus-blob://') && renderLocalImage ? renderLocalImage(src, alt) : <img src={src} alt={alt} />,
           p: ({ node, children, ...props }) => {
             const first = (node as any)?.children?.[0];
             const href = first?.tagName === 'a' ? String(first.properties?.href ?? '') : '';
@@ -338,7 +341,7 @@ function MarkdownComponent({
               </a>
             );
           },
-  }),[documentFigures,onCitation,onReaderCitation,onStudyDocument,onStudyMaterial,onStudyRecording,onStudyEvidence,onGuideEvidence,onWorldEntry,onTestimonyLink,verify,validity,chatVisuals]);
+  }),[documentFigures,onCitation,onReaderCitation,onStudyDocument,onStudyMaterial,onStudyRecording,onStudyEvidence,onGuideEvidence,onWorldEntry,onTestimonyLink,verify,validity,chatVisuals,renderLocalImage]);
 
   return (
     <div className={`md ${className}`}>
@@ -349,6 +352,7 @@ function MarkdownComponent({
           if (chatVisuals && key === 'src' && /^nodus-image:\/\/chat\/[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(value)) return value;
           if (allowDataImages && key === 'src' && /^data:image\/(?:png|jpeg|gif|webp|avif|svg\+xml);base64,/i.test(value)) return value;
           if (localReaderImages && key === 'src' && /^(?:nodus-image|nodus-library|nodus-archive):\/\/[^\s<>]+$/.test(value)) return value;
+          if (renderLocalImage && key === 'src' && /^nodus-blob:\/\/[a-f0-9]{64}$/.test(value)) return value;
           return nodusUrlTransform(value);
         }}
         components={components}
@@ -446,7 +450,7 @@ function CitationLink({
         data-citation-id={citation.id}
         data-web-source={citation.kind === 'passage' && citation.id.startsWith('web:') ? 'true' : undefined}
         data-verified={unverified ? 'false' : undefined}
-        title={
+        aria-description={
           unverified
             ? t('Fuente no encontrada: esta cita no se pudo verificar en el corpus.')
             : citation.kind === 'passage' && citation.id.startsWith('web:') ? t('Abrir la fuente web en una pestaña nueva del navegador de Nodus')

@@ -1,0 +1,401 @@
+{
+  "format": "nodus.embedding-controlled-summary/1",
+  "measuredAt": "2026-10-20",
+  "corpus": "audit/embeddinggemma-2/corpus-manifest.json (replayed byte for byte)",
+  "hardware": "Apple M2, 16 GB, macOS ARM64",
+  "profiles": {
+    "gte-multilingual-base-int8": {
+      "runtime": "Transformers.js 3.8.1 / CPU",
+      "dimensions": 768,
+      "coldMs": 730,
+      "warmMs": [
+        6,
+        6,
+        8,
+        7,
+        6
+      ],
+      "corpus": {
+        "format": "nodus.embedding-corpus/2",
+        "sha256": "07a1033e0152d5643ae134fec61f4e2f4fcc628a2665c2e8e9b48c63ebae517b",
+        "queriesSha256": "f2c818a8ad1e4e54a5b7202c0a1ca53d63d6caca1491d2ad6b7b0b65374ab4ca"
+      }
+    },
+    "bge-m3-q8_0": {
+      "runtime": "llama.cpp b10002 / native · mean pooling",
+      "dimensions": 1024,
+      "coldMs": 11017,
+      "warmMs": [
+        24,
+        18,
+        17,
+        17,
+        17
+      ],
+      "corpus": {
+        "format": "nodus.embedding-corpus/2",
+        "sha256": "bdf402ce00498de5c660860a65c10afcf343bda54ee49bf61cca76f14d6877d0",
+        "queriesSha256": "f2c818a8ad1e4e54a5b7202c0a1ca53d63d6caca1491d2ad6b7b0b65374ab4ca"
+      }
+    },
+    "multilingual-e5-small-int8": {
+      "runtime": "Transformers.js 3.8.1 / CPU",
+      "dimensions": 384,
+      "coldMs": 1755,
+      "warmMs": [
+        3,
+        3,
+        2,
+        2,
+        2
+      ],
+      "corpus": {
+        "format": "nodus.embedding-corpus/2",
+        "sha256": "eb490d3673bd6b6e1807729287efb1bb369c42fefedd78cd1f50602a57ae9cc5",
+        "queriesSha256": "f2c818a8ad1e4e54a5b7202c0a1ca53d63d6caca1491d2ad6b7b0b65374ab4ca"
+      }
+    },
+    "embeddinggemma-2-text-q8-512-v1": {
+      "runtime": "Transformers.js 4.3.1 / CPU",
+      "dimensions": 512,
+      "coldMs": 1953,
+      "warmMs": [
+        145,
+        223,
+        95,
+        80,
+        85
+      ],
+      "corpus": {
+        "format": "nodus.embedding-corpus/2",
+        "sha256": "96352808f9b6950f46f0d0c491c4a39bdc0fffe6354e518a33120214f91031d0",
+        "queriesSha256": "f2c818a8ad1e4e54a5b7202c0a1ca53d63d6caca1491d2ad6b7b0b65374ab4ca"
+      }
+    },
+    "harrier-oss-v1-0.6b-q8_0": {
+      "runtime": "llama.cpp b10002 / native · last pooling",
+      "dimensions": 1024,
+      "coldMs": 13247,
+      "warmMs": [
+        111,
+        33,
+        12,
+        12,
+        12
+      ],
+      "corpus": {
+        "format": "nodus.embedding-corpus/2",
+        "sha256": "ba3f04bad2fc369d9a6554974f3b601517c852434db3a91d5a66e71d0ddc96e8",
+        "queriesSha256": "f2c818a8ad1e4e54a5b7202c0a1ca53d63d6caca1491d2ad6b7b0b65374ab4ca"
+      }
+    }
+  },
+  "rows": [
+    {
+      "profile": "gte-multilingual-base-int8",
+      "lane": "current",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.95,
+      "recall10": 0.9762,
+      "mrr10": 0.9417,
+      "ndcg10": 0.9353,
+      "absenceBalancedAccuracy": 0.75,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9107821939595923,
+        "hard-negative": 0.851743991260878,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "lane": "current",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9524,
+      "recall10": 0.9881,
+      "mrr10": 0.9714,
+      "ndcg10": 0.968,
+      "absenceBalancedAccuracy": 0.7,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9753953169047639,
+        "hard-negative": 0.8869329014124446,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "lane": "recommended",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.95,
+      "recall10": 0.9762,
+      "mrr10": 0.9417,
+      "ndcg10": 0.9353,
+      "absenceBalancedAccuracy": 0.75,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9107821939595923,
+        "hard-negative": 0.851743991260878,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "lane": "recommended",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9524,
+      "recall10": 0.9881,
+      "mrr10": 0.9714,
+      "ndcg10": 0.968,
+      "absenceBalancedAccuracy": 0.7,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9753953169047639,
+        "hard-negative": 0.8869329014124446,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "lane": "current",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9762,
+      "recall10": 1,
+      "mrr10": 0.9857,
+      "ndcg10": 0.9895,
+      "absenceBalancedAccuracy": 0.9286,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9876976584523819,
+        "hard-negative": 1,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "lane": "current",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9643,
+      "recall10": 0.9952,
+      "mrr10": 0.9929,
+      "ndcg10": 0.9882,
+      "absenceBalancedAccuracy": 0.8071,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 1,
+        "hard-negative": 0.9541976021856561,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "lane": "recommended",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9762,
+      "recall10": 1,
+      "mrr10": 0.9857,
+      "ndcg10": 0.9895,
+      "absenceBalancedAccuracy": 0.9286,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9876976584523819,
+        "hard-negative": 1,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "lane": "recommended",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9643,
+      "recall10": 0.9952,
+      "mrr10": 0.9929,
+      "ndcg10": 0.9882,
+      "absenceBalancedAccuracy": 0.8071,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 1,
+        "hard-negative": 0.9541976021856561,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "lane": "current",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9619,
+      "recall10": 0.9952,
+      "mrr10": 1,
+      "ndcg10": 0.9934,
+      "absenceBalancedAccuracy": 0.55,
+      "ndcg10ByDifficulty": {
+        "monolingual": 1,
+        "cross-language": 1,
+        "hard-negative": 0.9537315036611524,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "lane": "current",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9619,
+      "recall10": 0.9929,
+      "mrr10": 1,
+      "ndcg10": 0.9914,
+      "absenceBalancedAccuracy": 0.5357,
+      "ndcg10ByDifficulty": {
+        "monolingual": 1,
+        "cross-language": 1,
+        "hard-negative": 0.9396742600848004,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "lane": "recommended",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9667,
+      "recall10": 0.9952,
+      "mrr10": 0.9833,
+      "ndcg10": 0.9818,
+      "absenceBalancedAccuracy": 0.6,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9833333333333333,
+        "cross-language": 0.9876976584523819,
+        "hard-negative": 0.9592741521270127,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "lane": "recommended",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9643,
+      "recall10": 0.9929,
+      "mrr10": 0.9905,
+      "ndcg10": 0.9844,
+      "absenceBalancedAccuracy": 0.6,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9833333333333333,
+        "cross-language": 1,
+        "hard-negative": 0.9406472853728178,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "lane": "recommended",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9762,
+      "recall10": 1,
+      "mrr10": 1,
+      "ndcg10": 1,
+      "absenceBalancedAccuracy": 0.8571,
+      "ndcg10ByDifficulty": {
+        "monolingual": 1,
+        "cross-language": 1,
+        "hard-negative": 1,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "lane": "recommended",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9667,
+      "recall10": 1,
+      "mrr10": 1,
+      "ndcg10": 0.9966,
+      "absenceBalancedAccuracy": 0.5857,
+      "ndcg10ByDifficulty": {
+        "monolingual": 1,
+        "cross-language": 1,
+        "hard-negative": 0.975902416112438,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "harrier-oss-v1-0.6b-q8_0",
+      "lane": "current",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9714,
+      "recall10": 1,
+      "mrr10": 1,
+      "ndcg10": 0.999,
+      "absenceBalancedAccuracy": 0.6429,
+      "ndcg10ByDifficulty": {
+        "monolingual": 1,
+        "cross-language": 1,
+        "hard-negative": 0.9930730148624916,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "harrier-oss-v1-0.6b-q8_0",
+      "lane": "current",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9619,
+      "recall10": 0.9929,
+      "mrr10": 1,
+      "ndcg10": 0.9919,
+      "absenceBalancedAccuracy": 0.4857,
+      "ndcg10ByDifficulty": {
+        "monolingual": 1,
+        "cross-language": 1,
+        "hard-negative": 0.9429660466379467,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "harrier-oss-v1-0.6b-q8_0",
+      "lane": "recommended",
+      "retrieval": "semantic",
+      "queries": 70,
+      "recall5": 0.9762,
+      "recall10": 1,
+      "mrr10": 0.9857,
+      "ndcg10": 0.9894,
+      "absenceBalancedAccuracy": 0.7214,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9876976584523819,
+        "cross-language": 0.9876976584523819,
+        "hard-negative": 0.999307831664176,
+        "no-evidence": null
+      }
+    },
+    {
+      "profile": "harrier-oss-v1-0.6b-q8_0",
+      "lane": "recommended",
+      "retrieval": "hybrid",
+      "queries": 70,
+      "recall5": 0.9619,
+      "recall10": 0.9929,
+      "mrr10": 0.9905,
+      "ndcg10": 0.9837,
+      "absenceBalancedAccuracy": 0.4786,
+      "ndcg10ByDifficulty": {
+        "monolingual": 0.9833333333333333,
+        "cross-language": 1,
+        "hard-negative": 0.9361015334213842,
+        "no-evidence": null
+      }
+    }
+  ]
+}

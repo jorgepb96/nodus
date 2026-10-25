@@ -49,9 +49,11 @@ import { t } from ${from('src/i18n')};
 import { BrowserMediaPopover, BrowserMediaProvider, useBrowserMedia } from ${from('src/components/browser/BrowserMedia')};
 import { DriftProvider, useDrift } from ${from('src/components/drift/DriftProvider')};
 import { DriftMiniPlayer } from ${from('src/components/drift/DriftMiniPlayer')};
+import { AudioPlayerProvider, useAudioPlayer } from ${from('src/components/AudioPlayer')};
+import { NarrationMiniPlayer } from ${from('src/components/narration/NarrationMiniPlayer')};
 ${productionFunction('HeaderAction')}
 ${productionFunction('BrowserMediaHeaderAction')}
-export { BrowserMediaProvider, DriftProvider };
+export { BrowserMediaProvider, DriftProvider, AudioPlayerProvider };
 export const Header = BrowserMediaHeaderAction;
 export const probe: { current: ReturnType<typeof useDrift> | null } = { current: null };
 export function Probe() { probe.current = useDrift(); return null; }
@@ -90,6 +92,8 @@ function environment(t, { browser = false } = {}) {
     getBrowserDeviceVolume: async () => 40,
     setBrowserDeviceVolume: async (value) => { calls.device.push(value); },
     browserMediaCommand: async (...args) => { calls.browser.push(args); },
+    // The narration player shares the header button; it only reads the saved speed here.
+    getSettings: async () => ({ audioSpeed: 1 }),
   };
   const root = createRoot(dom.window.document.getElementById('root'));
   t.after(async () => { await act(async () => { root.unmount(); await flush(); }); dom.window.close(); });
@@ -98,8 +102,8 @@ function environment(t, { browser = false } = {}) {
   return {
     calls, q, settle,
     async render(strict) {
-      const tree = h(harness.BrowserMediaProvider, null, h(harness.DriftProvider, null,
-        h(harness.Probe), h(harness.Header, { onOpenTab: () => {}, onOpenDrift: () => {} })));
+      const tree = h(harness.AudioPlayerProvider, null, h(harness.BrowserMediaProvider, null, h(harness.DriftProvider, null,
+        h(harness.Probe), h(harness.Header, { onOpenTab: () => {}, onOpenDrift: () => {} }))));
       await act(async () => { root.render(strict ? h(React.StrictMode, null, tree) : tree); });
       await settle();
       await act(async () => { await harness.probe.current.loadCatalog(); });

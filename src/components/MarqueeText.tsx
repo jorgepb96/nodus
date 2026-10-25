@@ -13,7 +13,11 @@ export function MarqueeText({ text, className = '' }: { text: string; className?
     const host = outer?.closest<HTMLElement>('[data-marquee-host]');
     if (!outer || !host) return;
     const measure = () => {
-      const shift = outer.scrollWidth - outer.clientWidth;
+      // Chat actions overlay the title: slide its end clear of those controls too.
+      const actions = host.matches('.research-history-chat') ? host.querySelector<HTMLElement>(':scope > .research-history-row-actions') : null;
+      const covered = actions ? Math.max(0, outer.getBoundingClientRect().right - actions.getBoundingClientRect().left + 8) : 0;
+      const textWidth = covered ? outer.firstElementChild!.getBoundingClientRect().width : outer.scrollWidth;
+      const shift = textWidth - outer.clientWidth + covered;
       const overflowing = shift > 1;
       outer.classList.toggle('is-overflowing', overflowing);
       if (!overflowing) return;

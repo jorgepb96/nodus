@@ -4,6 +4,7 @@
 // Synthetic data only.
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -86,4 +87,20 @@ test('the payload carries target availability and the rule explains it', () => {
   assert.match(payload.target_availability, /commercially available/);
   assert.equal(evidence.synthesisEvidencePayload({ target: 'CCO', startingMaterials: [], disconnections: [], passages: [] }), null, 'nothing at all: no payload');
   assert.match(evidence.SYNTHESIS_EVIDENCE_SYSTEM_RULE, /target_availability/);
+});
+
+test('the stock option lives in Integrations, only while Chemistry Studio is active', () => {
+  const source = readFileSync(path.join(root, 'src/views/Settings.tsx'), 'utf8');
+  const settingsTab = (id) => source.split('\n').find(line => line.includes(`id: '${id}'`)) ?? '';
+  assert.doesNotMatch(settingsTab('models'), /chemistry|quimica|stock/i, 'model selection no longer advertises a chemistry-only switch');
+  assert.match(settingsTab('integrations'), /chemistry.*stock/i, 'the Integrations tab owns the stock-list search terms');
+
+  const gate = "chemistryStudioActive && visibleSettingsSection('integrations', 'Chemistry Studio'";
+  const gateAt = source.lastIndexOf(gate);
+  const optionAt = source.indexOf('chemistryUseStockLists');
+  const backupAt = source.lastIndexOf("visibleSettingsSection('data', 'Backup");
+  assert.ok(gateAt > 0, 'the Chemistry Studio section is gated by the active capability');
+  assert.ok(optionAt > gateAt && backupAt > optionAt, 'the switch sits in the Integrations section, before the data tab');
+  assert.equal((source.match(/data-testid="chemistry-stock-settings"/g) ?? []).length, 1, 'the switch has one home');
+  assert.match(source, /plugin\.id === 'chemistry-studio' && Boolean\(plugin\.active\)/, 'it stays hidden until the package is active');
 });

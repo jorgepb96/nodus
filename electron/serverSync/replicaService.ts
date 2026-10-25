@@ -3,6 +3,7 @@ import os from 'node:os';
 import Database from 'better-sqlite3';
 import { ensureWorkspaceDevice, getDb, withDatabaseContext } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
+import { registerEmbeddingIndexFunctions } from '../db/embeddingIndexesRepo';
 import { SCHEMA_VERSION } from '../db/migrations';
 import { quoteIdentifier, identityColumns } from '../db/rowIdentity';
 import { createVault, deleteVault, getVault, listVaults, updateVaultRemote } from '../vaults/vaultRegistry';
@@ -250,6 +251,7 @@ function openReplicaDb(vault: VaultSummary): Database.Database | null {
   try {
     // Writable, unlike the publisher's read-only siblings: applying a publication is a write.
     const db = new Database(vault.path, { fileMustExist: true });
+    registerEmbeddingIndexFunctions(db);
     ensureWorkspaceDevice(db);
     // A non-active replica never goes through openDatabase(), which is where the gate
     // normally lives — without this, a writer's queue would silently never be populated.

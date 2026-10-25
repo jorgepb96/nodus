@@ -35,6 +35,10 @@ const [
     readFile(path.join(root, "src/app/viewSnapshots.ts"), "utf8"),
     readFile(path.join(root, "shared/academicPromptPacks.ts"), "utf8"),
   ]);
+const dictionaryLane = await readFile(
+  path.join(root, "electron/ai/dictionaryGenerationLane.ts"),
+  "utf8",
+);
 
 assert.match(
   navigation,
@@ -304,9 +308,14 @@ assert.match(
   "the status column renders an animated generation indicator",
 );
 assert.match(
-  academicIpc,
+  academicIpc + dictionaryLane,
   /new DictionaryGenerationQueue\([\s\S]*generateDictionaryEntry\(request, report\)/,
   "the background queue runs the shared Dictionary investigation and synthesis",
+);
+assert.match(
+  dictionaryLane,
+  /new DictionaryGenerationQueue\([\s\S]*work => \{[\s\S]*getActiveVault\(\)\.id[\s\S]*withoutDatabaseContext\(\(\) => withOwningVault\(vaultId, \(\) => withVaultDatabase\(vaultId, work\)\)\)/,
+  "the background queue captures the owning vault before scheduling, instead of inheriting a closed connection",
 );
 assert.match(
   ai,
@@ -320,8 +329,13 @@ assert.match(
 );
 assert.match(
   generationQueue,
-  /const execute = this\.bindExecution\(\(\) => this\.#run\(request, token\)\)[\s\S]*setImmediate\(\(\) => \{ void execute\(\)/,
+  /const execute = this\.bindExecution\(async \(\) => \{ await this\.#run\(request, token\); \}\)[\s\S]*setImmediate\(\(\) => \{ void execute\(\)\.catch\(/,
   "every entry gets its own independently scheduled background execution",
+);
+assert.match(
+  ai,
+  /const definition = await generateDictionaryDefinition\([\s\S]*?harness\?\.validate\(\);[\s\S]*?saveDictionaryVersion\(definition\)/,
+  "a Dictionary version is only saved after generation and validation have finished",
 );
 assert.match(
   generationQueue,
@@ -358,10 +372,11 @@ assert.match(
   /restoreDictionaryVersion/,
   "version restoration is available",
 );
-assert.match(
-  ai,
-  /return saveDictionaryVersion\(await generateDictionaryDefinition\(/,
-  "the owning vault saves only after the shared generation and verification core completes",
+const generatedAt = ai.indexOf("const definition = await generateDictionaryDefinition(");
+const savedAt = ai.indexOf("const version = saveDictionaryVersion", generatedAt);
+assert.ok(
+  generatedAt >= 0 && savedAt > generatedAt,
+  "the shared generation and harness stages complete before any version is saved, so failure preserves current content",
 );
 assert.match(
   view,

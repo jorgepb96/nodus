@@ -4,6 +4,8 @@ import { NODI_ORB_DEFAULT_COLOR } from './nodiOrb';
 import { NODI_DEFAULT_SCALE } from './nodiSize';
 import { DEFAULT_NODUS_IMAGE_QUALITY } from './localImageModels';
 import { EMPTY_CUSTOM_EVENT_TYPES } from './eventTypes';
+import { DEFAULT_TTS_RETENTION } from './ttsModels';
+import { DEFAULT_LOCAL_RERANKER_ID } from './localRerankers';
 
 // Factory defaults are shared by Desktop and the locally bundled mobile surfaces.
 // Effective model choices and provider availability are supplied by the executing device.
@@ -24,9 +26,13 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'providerKeys' | 'lockedPro
   libraryScopeOnboardingVersion: 0,
   embeddingProvider: 'openai',
   embeddingModel: DEFAULT_EMBEDDING_MODELS.openai,
+  researchReranking: 'off',
+  researchRerankerModel: DEFAULT_LOCAL_RERANKER_ID,
   localProviders: DEFAULT_LOCAL_PROVIDERS,
   customProvider: DEFAULT_CUSTOM_PROVIDER,
   favorites: [],
+  imageFavorites: [],
+  studyImproveLastStyleId: 'builtin:clear',
   defaultModel: null,
   modelSettingsMode: 'basic',
   modelSettingsVersion: 0,
@@ -84,6 +90,20 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'providerKeys' | 'lockedPro
   audioProvider: 'piper',
   audioVoice: '',
   audioSpeed: 1,
+  ttsModelId: '',
+  ttsVoiceId: 'cc0:es-dave',
+  ttsPhononVoiceId: 'phonon:b6FvJAiokjdqIti4',
+  ttsKokoroVoiceId: 'kokoro:ef_dora',
+  ttsPocketVoiceId: 'pocket:lola',
+  ttsAcceptedLicenses: [],
+  ttsLanguage: 'auto',
+  ttsVoiceFilters: {},
+  ttsStreaming: true,
+  narrationHighlight: 'word',
+  narrationHighlightStyle: 'fill',
+  narrationFollow: true,
+  ttsIdleUnloadMin: 5,
+  ttsRetention: DEFAULT_TTS_RETENTION,
   syncMode: 'manual',
   readTag: 'leído',
   autoLightScan: false,
@@ -113,7 +133,7 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'providerKeys' | 'lockedPro
   betaUpdates: false,
   browserSitePermissions: {},
   browserDownloadFolder: null,
-  browserHomeMode: 'start',
+  browserHomeMode: 'bookmarks',
   browserHomeUrl: '',
   browserNewTabMode: 'home',
   browserSearchEngine: 'google',
@@ -142,6 +162,9 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'providerKeys' | 'lockedPro
   codexReasoningEfforts: {},
   researchEffortByModel: {},
   researchWebSearch: 'auto',
+  researchHarnessVersion: 'v1',
+  researchHarnessRolloutVersion: 1,
+  researchExplorationByMode: {},
   researchAnswerVerification: 'off',
   openRouterThroughput: true,
   providerFreeTier: {},

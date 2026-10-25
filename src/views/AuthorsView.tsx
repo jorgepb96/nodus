@@ -15,7 +15,7 @@ import { Badge, Icon, Spinner, TypeDot } from '../components/ui';
 import { IdeaDetailModal } from '../components/IdeaDetailModal';
 import { ModelPicker } from '../components/ModelPicker';
 import { WorkIdeasModal } from './WorkIdeasModal';
-import { useDataRefresh, useScanComplete } from '../hooks';
+import { useDataRefresh, useDismissableLayer, useScanComplete } from '../hooks';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import type { AuthorNavigationTarget, PendingGraphNavigationTarget } from '../navigation';
 import type { AuthorsSnapshot } from '../app/viewSnapshots';
@@ -322,9 +322,18 @@ function AuthorsCatalog({
     report.current?.({ query: queryFilter, sortBy, synthFilter, savedOnly, filtersOpen });
   }, [filtersOpen, queryFilter, savedOnly, sortBy, synthFilter]);
 
-  // Filter controls report on the click itself as well as through the effect. This
-  // preserves a deliberate close even when dismissing the panel and navigating
-  // away are handled in the same browser interaction.
+  // The filters open as a balloon anchored to their button, as in the Library:
+  // an outside click or Escape closes them. A dismissal is as deliberate as a
+  // second click on the trigger, so it is persisted on the event itself.
+  const closeFilterPanel = () => {
+    setFiltersOpenState(false);
+    report.current?.({ filtersOpen: false });
+  };
+  const filterBalloonRef = useDismissableLayer<HTMLDivElement>({
+    open: filtersOpen,
+    onDismiss: closeFilterPanel,
+    group: 'authors-filter-balloon',
+  });
   const toggleFilterPanel = () => {
     const nextOpen = !filtersOpen;
     setFiltersOpenState(nextOpen);
@@ -448,37 +457,47 @@ function AuthorsCatalog({
             <Icon name="search" size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
             <input data-testid="authors-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('Buscar autor…')} className="input input-with-leading-icon w-full" />
           </div>
-          <button className={`btn border border-neutral-700 ${filtersOpen || savedOnly || synthFilter !== 'all' ? 'bg-indigo-500/10 text-indigo-300' : 'btn-ghost'}`} onClick={toggleFilterPanel}>
-            <Icon name="filter" /> {t('Filtros')}
-          </button>
+          <div className="relative shrink-0" ref={filterBalloonRef}>
+            <button className={`btn border border-neutral-700 ${filtersOpen || savedOnly || synthFilter !== 'all' ? 'bg-indigo-500/10 text-indigo-300' : 'btn-ghost'}`} onClick={toggleFilterPanel} aria-expanded={filtersOpen} aria-haspopup="dialog" aria-controls={filtersOpen ? 'authors-filters-panel' : undefined}>
+              <Icon name="filter" /> {t('Filtros')}
+            </button>
+            {filtersOpen && (
+              <div
+                id="authors-filters-panel"
+                data-testid="authors-filters-panel"
+                role="dialog"
+                aria-label={t('Filtros')}
+                className="authors-filter-balloon absolute right-0 top-full z-40 mt-2 w-64 max-w-[calc(100vw-3rem)] rounded-xl border border-neutral-200 bg-white p-3 shadow-2xl dark:border-neutral-700 dark:bg-neutral-950"
+              >
+                <div className="space-y-2">
+                  <button
+                    data-testid="authors-tab-saved"
+                    aria-pressed={savedOnly}
+                    className={`btn h-8 w-full justify-start text-xs ${savedOnly ? 'bg-amber-500/15 text-amber-300' : 'btn-ghost border border-neutral-300 dark:border-neutral-700'}`}
+                    onClick={toggleSavedFilter}
+                  >
+                    <Icon name="star" size={13} className={savedOnly ? 'fill-current' : ''} /> {t('Autores guardados')}
+                  </button>
+                  <label className="block text-[11px] font-medium text-neutral-500">
+                    <span className="mb-1 block">{t('Síntesis')}</span>
+                    <select className="input h-8 w-full text-xs" value={synthFilter} onChange={(event) => changeSynthesisFilter(event.target.value as SynthFilter)}>
+                      {(Object.keys(SYNTH_FILTER_LABELS) as SynthFilter[]).map((key) => <option key={key} value={key}>{t(SYNTH_FILTER_LABELS[key])}</option>)}
+                    </select>
+                  </label>
+                  <label className="block text-[11px] font-medium text-neutral-500">
+                    <span className="mb-1 block">{t('Ordenar')}</span>
+                    <select className="input h-8 w-full text-xs" value={sortBy} onChange={(event) => setSortBy(event.target.value as SortKey)}>
+                      {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => <option key={key} value={key}>{t(SORT_LABELS[key])}</option>)}
+                    </select>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
           <button data-testid="authors-open-matrix" className="btn btn-secondary" onClick={onOpenMatrix}>
             <Icon name="grid" /> {t('Matriz de síntesis')}
           </button>
         </div>
-        {filtersOpen && (
-          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-neutral-900/55 p-2">
-            <button
-              data-testid="authors-tab-saved"
-              aria-pressed={savedOnly}
-              className={`btn h-8 text-xs ${savedOnly ? 'bg-amber-500/15 text-amber-300' : 'btn-ghost border border-neutral-700'}`}
-              onClick={toggleSavedFilter}
-            >
-              <Icon name="star" size={13} className={savedOnly ? 'fill-current' : ''} /> {t('Autores guardados')}
-            </button>
-            <label className="flex items-center gap-2 text-xs text-neutral-500">
-              {t('Síntesis')}
-              <select className="input h-8 text-xs" value={synthFilter} onChange={(event) => changeSynthesisFilter(event.target.value as SynthFilter)}>
-                {(Object.keys(SYNTH_FILTER_LABELS) as SynthFilter[]).map((key) => <option key={key} value={key}>{t(SYNTH_FILTER_LABELS[key])}</option>)}
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-xs text-neutral-500">
-              {t('Ordenar')}
-              <select className="input h-8 text-xs" value={sortBy} onChange={(event) => setSortBy(event.target.value as SortKey)}>
-                {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => <option key={key} value={key}>{t(SORT_LABELS[key])}</option>)}
-              </select>
-            </label>
-          </div>
-        )}
         {selected.size > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2 py-1.5 text-xs">
             <b>{tx('{n} seleccionados', { n: selected.size })}</b>

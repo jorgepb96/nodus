@@ -171,6 +171,7 @@ function walk(dir) {
 
 // Data tables whose Spanish values are handed to t() from somewhere else.
 const INDIRECT_KEY_SOURCES = [
+  { file: 'shared/embeddingRuns.ts', pattern: /^\s{2}\w+:\s*(["'])((?:\\.|(?!\1).)*?)\1,/gm },
   { file: 'src/academicInterfaceProfiles.ts', pattern: /\b(?:label|description):\s*(["'])((?:\\.|(?!\1).)*?)\1/g },
   { file: 'src/components/AcademicInterface.tsx', pattern: /\b(?:title|body|action):\s*(["'])((?:\\.|(?!\1).)*?)\1/g },
   // Exploration errors are caught by the workspace and translated through errorText().

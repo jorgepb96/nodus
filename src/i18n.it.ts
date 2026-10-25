@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -84,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -95,6 +100,7 @@ export const IT: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["it"],
   'No se pudieron cargar los documentos guardados.': 'Non è stato possibile caricare i documenti salvati.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Il catalogo dei documenti salvati ha un formato non valido.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["it"],
   ...BACKUPS_TRANSLATIONS.it,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.it,
@@ -118,9 +124,11 @@ export const IT: Record<string, string> = {
   "Elige al menos una base de datos.": "Scegli almeno un database.",
   ...RESEARCH_PROMPT_TRANSLATIONS["it"],
   ...RESEARCH_SOURCE_TRANSLATIONS["it"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["it"],
   ...RESEARCH_REASONING_TRANSLATIONS["it"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["it"],
   ...CHAT_SKILLS_TRANSLATIONS['it'],
+  ...NARRATION_TRANSLATIONS['it'],
   ...CAPABILITIES_TRANSLATIONS['it'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['it'],
   ...STELLAR_GRAPH_TRANSLATIONS["it"],
@@ -128,6 +136,7 @@ export const IT: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.it,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.it,
   ...MODEL_SETTINGS_TRANSLATIONS.it,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.it,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['it'],
   ...DICTIONARY_TRANSLATIONS.it,
   'Tamaño de Nodi': 'Dimensione di Nodi',
@@ -2740,8 +2749,8 @@ export const IT: Record<string, string> = {
   "Buscar dentro del documento": "Cerca nel documento",
   "Preparando el índice de búsqueda…": "Preparazione dell’indice di ricerca…",
   "Este archivo no contiene una capa de texto que Nodus pueda buscar.": "Questo file non contiene un livello di testo ricercabile da Nodus.",
-  "Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.": "Questo PDF non contiene testo ricercabile. Apri il Markdown pulito per consultare il testo OCR.",
-  "Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.": "Le immagini non contengono un livello di testo. Usa il Markdown pulito per cercare il testo OCR.",
+  "Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.": "Questo PDF non contiene testo ricercabile. Apri il Markdown per consultare il testo OCR.",
+  "Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.": "Le immagini non contengono un livello di testo. Usa il Markdown per cercare il testo OCR.",
   "Coincidencia {current} de {total}": "Occorrenza {current} di {total}",
   "No se encontró ese texto": "Testo non trovato",
   "Ir a la coincidencia anterior": "Vai all’occorrenza precedente",
@@ -3449,7 +3458,7 @@ export const IT: Record<string, string> = {
   "Jerarquía legible, ideal para entregar a una IA.": "Gerarchia leggibile, ideale per essere consegnata a un'intelligenza artificiale.",
   "JSON": "JSON",
   "Mantener": "Tieni",
-  "Markdown": "Ribasso",
+  "Markdown": "Markdown",
   "Mover": "Muoviti",
   "Notas reordenadas por IA.": "Note riordinate da AI.",
   "Ordenar notas": "Ordina le note",
@@ -5371,6 +5380,7 @@ export const IT: Record<string, string> = {
   "Cambiar modelo": "Cambia modello",
   "Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.": "Se modifichi i modelli di incorporamento, i vettori esistenti non funzioneranno con il nuovo modello e dovrai reindicizzarli.",
   "Embeddings multilingües de alta calidad para corpus amplios.": "Incorporamenti multilingue di alta qualità per corpora di grandi dimensioni.",
+  "Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.": "Incorporamenti multilingue di Microsoft con istruzione di ricerca. Il punteggio MTEB multilingue più alto tra i modelli locali; riserva circa 6,5 GB di memoria GPU, quindi è consigliato un computer con almeno 16 GB.",
   "Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.": "Incorporamenti multilingue a lungo contesto con un buon equilibrio tra precisione e utilizzo della memoria.",
   "Opción ligera y rápida para equipos con menos memoria.": "Un'opzione leggera e veloce per i computer con meno memoria.",
   "Modelo visual muy ligero para conversación, resúmenes e ideas.": "Un modello di visione molto leggero per conversazioni, riepiloghi e idee.",
@@ -7654,7 +7664,7 @@ export const IT: Record<string, string> = {
   "Activar Global": "Attiva Globale",
   "Configura las copias de seguridad para activar Global.": "Configura i backup per attivare l'ambito globale.",
   "Biblioteca global activada.": "Biblioteca globale attivata.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "L'ambito globale riunisce originali e Markdown pulito per tutti i vault.",
+  "Global reúne originales y Markdown para todos tus vaults.": "L'ambito globale riunisce originali e Markdown per tutti i vault.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "Questo vault conserva raccolte, scansioni, riepiloghi, embedding e analisi esistenti.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "Attiva la Biblioteca globale quando vuoi; questo vault non cambierà.",
   "{n} documento(s) añadidos; {reused} componente(s) reutilizados con huellas exactas.": "{n} documento/i aggiunto/i; {reused} componente/i riutilizzato/i con impronte esatte.",
@@ -8416,3 +8426,5 @@ export const IT: Record<string, string> = {
 };
 
 Object.assign(IT, SIGN_TRANSLATIONS['it']);
+
+Object.assign(IT, RESEARCH_QUEUE_TRANSLATIONS['it']);

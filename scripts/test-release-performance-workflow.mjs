@@ -99,7 +99,7 @@ test('Intel starts asynchronously only after publication and cannot hold the pri
   for (const [file, name] of [['release.yml', 'publish-stable'], ['release-beta.yml', 'publish-beta']]) {
     assert.equal(read(file).jobs[name].permissions.actions, 'write', 'reusable callers must permit the independent dispatch');
   }
-  for (const [name, job] of Object.entries(jobs)) if (name !== 'release-macos-intel') {
+  for (const [name, job] of Object.entries(jobs)) if (!['release-macos-intel','release-support'].includes(name)) {
     assert.notEqual(job.permissions?.actions, 'write', `${name} must not dispatch workflows`);
   }
 });

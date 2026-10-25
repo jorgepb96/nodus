@@ -1,3 +1,6 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -26,6 +29,7 @@ import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
 import { RESEARCH_SOURCE_TRANSLATIONS } from './i18n.researchSources';
 import { RESEARCH_REASONING_TRANSLATIONS } from './i18n.researchReasoning';
 import { CHAT_SKILLS_TRANSLATIONS } from './i18n.chatSkills';
+import { NARRATION_TRANSLATIONS } from './i18n.narration';
 import { CAPABILITIES_TRANSLATIONS } from './i18n.capabilities';
 import { STELLAR_GRAPH_TRANSLATIONS } from './i18n.stellarGraph';
 import { PROTECT_TRANSLATIONS } from './i18n.protect';
@@ -84,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -99,6 +104,7 @@ export const EN: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["en"],
   'No se pudieron cargar los documentos guardados.': 'Saved documents could not be loaded.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'The saved document catalogue has an invalid format.',
+  ...EMBEDDING_INDEX_TRANSLATIONS["en"],
   ...BACKUPS_TRANSLATIONS.en,
   ...CALENDAR_SYNC_TRANSLATIONS["en"],
   ...AGENT_RUNTIME_TRANSLATIONS["en"],
@@ -120,9 +126,11 @@ export const EN: Record<string, string> = {
   "Elige al menos una base de datos.": "Choose at least one database.",
   ...RESEARCH_PROMPT_TRANSLATIONS.en,
   ...RESEARCH_SOURCE_TRANSLATIONS["en"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["en"],
   ...RESEARCH_REASONING_TRANSLATIONS["en"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["en"],
   ...CHAT_SKILLS_TRANSLATIONS['en'],
+  ...NARRATION_TRANSLATIONS['en'],
   ...CAPABILITIES_TRANSLATIONS['en'],
   ...DOCUMENT_SKILLS_TRANSLATIONS['en'],
   ...STELLAR_GRAPH_TRANSLATIONS["en"],
@@ -130,6 +138,7 @@ export const EN: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.en,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.en,
   ...MODEL_SETTINGS_TRANSLATIONS.en,
+  ...SETTINGS_LAYOUT_TRANSLATIONS.en,
   ...EMBEDDING_GEMMA2_TRANSLATIONS['en'],
   ...DICTIONARY_TRANSLATIONS.en,
   'Tamaño de Nodi': 'Nodi size',
@@ -3096,8 +3105,8 @@ export const EN: Record<string, string> = {
   'Buscar dentro del documento': 'Search within this document',
   'Preparando el índice de búsqueda…': 'Building the search index…',
   'Este archivo no contiene una capa de texto que Nodus pueda buscar.': 'This file has no text layer Nodus can search.',
-  'Este PDF no contiene texto buscable. Abre el Markdown limpio para consultar el OCR.': 'This PDF has no searchable text. Open the clean Markdown to consult the OCR text.',
-  'Las imágenes no contienen una capa textual. Usa el Markdown limpio para buscar el OCR.': 'Images have no text layer. Use the clean Markdown to search the OCR text.',
+  'Este PDF no contiene texto buscable. Abre el Markdown para consultar el OCR.': 'This PDF has no searchable text. Open the Markdown to consult the OCR text.',
+  'Las imágenes no contienen una capa textual. Usa el Markdown para buscar el OCR.': 'Images have no text layer. Use the Markdown to search the OCR text.',
   'Coincidencia {current} de {total}': 'Match {current} of {total}',
   'No se encontró ese texto': 'No matches found',
   'Ir a la coincidencia anterior': 'Go to the previous match',
@@ -6153,6 +6162,7 @@ export const EN: Record<string, string> = {
   'Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.':
     'If you change embedding models, existing vectors will not work with the new model and you will have to reindex.',
   'Embeddings multilingües de alta calidad para corpus amplios.': 'High-quality multilingual embeddings for large corpora.',
+  'Embeddings multilingües de Microsoft con instrucción de búsqueda. La mejor puntuación MTEB multilingüe de los modelos locales; reserva unos 6,5 GB de memoria de GPU, así que conviene un equipo con 16 GB o más.': 'Multilingual embeddings from Microsoft with a search instruction. The highest multilingual MTEB score among the local models; it reserves about 6.5 GB of GPU memory, so a machine with 16 GB or more is advisable.',
   'Embeddings multilingües con contexto largo y buen equilibrio entre precisión y memoria.':
     'Long-context multilingual embeddings with a good balance of accuracy and memory use.',
   'Opción ligera y rápida para equipos con menos memoria.': 'A light and fast option for computers with less memory.',
@@ -8477,7 +8487,7 @@ export const EN: Record<string, string> = {
   "Activar Global": "Enable Global",
   "Configura las copias de seguridad para activar Global.": "Configure backups to enable Global.",
   "Biblioteca global activada.": "Global Library enabled.",
-  "Global reúne originales y Markdown limpio para todos tus vaults.": "Global brings originals and clean Markdown together for all your vaults.",
+  "Global reúne originales y Markdown para todos tus vaults.": "Global brings originals and Markdown together for all your vaults.",
   "Este vault conserva colecciones, scans, resúmenes, embeddings y análisis existentes.": "This vault preserves existing collections, scans, summaries, embeddings, and analyses.",
   "Activa la Biblioteca global cuando quieras; este vault no cambiará.": "Enable the Global Library whenever you want; this vault will not change.",
   "Light": "Light",
@@ -9239,3 +9249,5 @@ export const EN: Record<string, string> = {
 };
 
 Object.assign(EN, SIGN_TRANSLATIONS['en']);
+
+Object.assign(EN, RESEARCH_QUEUE_TRANSLATIONS['en']);

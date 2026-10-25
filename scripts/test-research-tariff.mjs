@@ -18,7 +18,7 @@ test('tariff accounting bounds the entire interval and fails closed outside veri
   assert.equal(cost('2026-10-07T03:59:59Z', '2026-10-07T04:00:01Z'), 1.5);
   assert.equal(cost('2026-10-06T23:00:00Z', '2026-10-07T11:00:00Z'), 1.5);
   assert.equal(cost('2026-10-07T20:00:00'), 1.5, 'an unspecified timezone cannot justify a discount');
-  for (const [start, end] of [['invalid', 'invalid'], ['2026-10-08T20:00:00Z', '2026-10-08T20:00:01Z'], ['2026-09-01T20:00:00Z', '2026-09-01T20:00:01Z'], ['2026-10-07T20:01:00Z', '2026-10-07T20:00:00Z']]) assert.equal(cost(start, end), 1.5);
+  for (const [start, end] of [['invalid', 'invalid'], ['2026-10-19T20:00:00Z', '2026-10-19T20:00:01Z'], ['2026-09-01T20:00:00Z', '2026-09-01T20:00:01Z'], ['2026-10-07T20:01:00Z', '2026-10-07T20:00:00Z']]) assert.equal(cost(start, end), 1.5);
   assert.throws(() => deepseekUsageUpperBound(-1, 1, '', ''));
 });
 

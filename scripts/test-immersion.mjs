@@ -30,7 +30,7 @@ try {
     bundle: true,
     format: 'esm',
     platform: 'node',
-    external: ['@shared/*'],
+    alias: { '@shared': path.join(repoRoot, 'shared') },
     logLevel: 'silent',
   });
   const mod = await import(pathToFileURL(outfile).href);
@@ -42,9 +42,7 @@ try {
     buildCitationLabels,
     normalizeBareCitations,
     IMMERSION_LIMITS,
-    IMMERSION_TIME,
   } = mod;
-  const FIXED_MINUTES = IMMERSION_TIME.panorama + IMMERSION_TIME.contrasts + IMMERSION_TIME.frontiers + IMMERSION_TIME.exam;
 
   // ── Fake material ───────────────────────────────────────────────────────────
   const makeMaterial = (ideaCount = 24, passageCount = 8) => {
@@ -241,6 +239,19 @@ try {
     assert.equal(stationCalls, plan.stations.length + 1, 'the failed station received exactly one fresh attempt');
   }
 
+  // V1 stops immediately on failures that no unchanged retry can repair.
+  for (const code of ['auth', 'budget_exhausted', 'context_overflow']) {
+    const deps = happyDeps(makeMaterial());
+    let calls = 0;
+    deps.haltOnProviderFailure = true;
+    deps.writePanorama = async () => { calls++; throw Object.assign(new Error(code), { code }); };
+    deps.writeStation = async () => { throw new Error('must not fan out after terminal failure'); };
+    await assert.rejects(() => orchestrateImmersion(
+      { topic: 'test', language: 'es', minutes: 30, includeQuiz: true, model: null }, deps
+    ), error => error.code === code);
+    assert.equal(calls, 1);
+  }
+
   // ── Every AI step failing → structural fallback, still completes ────────────
   {
     const material = makeMaterial();
@@ -273,6 +284,36 @@ try {
     assert.ok(plan.exam.feynman.length > 0, 'exam fallback exists');
     assert.ok(plan.stoppedReason && plan.stoppedReason.length > 0, 'degradation recorded');
     assert.equal(plan.contrasts.rows.length, plan.stations.length, 'fallback contrasts complete');
+  }
+
+  // Station research must run before writing, and its fresh citations must reach
+  // both the writer and the output policy. Verification precedes persistence.
+  {
+    const material = makeMaterial();
+    const deps = happyDeps(material);
+    const write = deps.writeStation;
+    let prepared = 0, verified = 0;
+    deps.prepareStation = async (spec, corpus) => {
+      const id = `late-station-${++prepared}`;
+      corpus.passages.push({ ...corpus.passages[0], id, text: 'Fresh literal evidence collected for this station.' });
+      spec.passageIds = [id];
+    };
+    deps.writeStation = async input => {
+      assert.ok(input.passages[0].id.startsWith('late-station-'));
+      return write(input);
+    };
+    const phases = [];
+    deps.verifyPlan = async plan => { assert.ok(!phases.includes('done')); verified++; return { ...plan, overview: 'Verified overview' }; };
+    const plan = await orchestrateImmersion({ topic: material.topic, language: 'es', minutes: 90, includeQuiz: true, model: null }, deps, p => phases.push(p.phase));
+    assert.equal(phases.at(-1), 'done');
+    assert.equal(prepared, plan.stations.length);
+    assert.equal(verified, 1);
+    assert.equal(plan.overview, 'Verified overview');
+    assert.ok(plan.stations.every(station => station.citations.some(c => c.text === 'Fresh literal evidence collected for this station.')));
+    phases.length = 0;
+    deps.verifyPlan = async () => { throw new Error('verification unavailable'); };
+    await assert.rejects(() => orchestrateImmersion({ topic: material.topic, language: 'es', minutes: 90, includeQuiz: true, model: null }, deps, p => phases.push(p.phase)), /verification unavailable/);
+    assert.ok(!phases.includes('done'), 'Failed verification never announces a ready lesson');
   }
 
   // ── No material → clean error ───────────────────────────────────────────────

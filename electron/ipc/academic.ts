@@ -1,3 +1,4 @@
+import type { DictionaryProgress } from '@shared/dictionary';
 import { exportAcademicDocument, inspectAcademicDocument } from '../export/academicExport';
 import {mobileWritingWorkshopSource, mobileWritingWorkshopCatalogue, mobileWritingWorkshopDraftCatalogue, saveMobileWritingWorkshop} from '../ai/mobileWritingWorkshop';
 import * as preparationExperience from '../ai/researchPreparationExperience';
@@ -5,7 +6,9 @@ import { onDocumentaryPreparationChanged } from '../ai/documentaryPreparationEve
 import { manualIndexStatus, scheduleManualIndex } from '../ai/manualIdeaIndex';
 import { embedQuery as embedResearchQuery } from '../ai/aiClient';
 import { assertAcademicAutomation } from '../ai/academicMode';
+import * as embeddingIndexes from '../ai/embeddingIndexes';
 import { registerResearchAttachmentIpc } from './researchAttachments';
+import { registerResearchHarnessIpc } from './researchHarness';
 import { dialogTitle } from '../dialogTitles';
 import { getResearchSystemPrompts, saveResearchSystemPrompt, selectResearchSystemPrompt, deleteResearchSystemPrompt } from '../db/researchSystemPromptsRepo';
 import { mergeHybridResults, searchSnippet } from '@shared/hybridSearch';
@@ -147,13 +150,12 @@ import type {
   DictionaryEvidenceRef,
   DictionaryEvidenceRequest,
   DictionaryGenerationRequest,
-  DictionaryProgress,
   DictionaryListRequest,
   DictionaryRelationType,
 } from '@shared/dictionary';
 import { immersionAnnotationDocumentId } from '@shared/readerAnnotations';
 import { applyDecorativeImageOption, invalidateDecorativeImageGeneration } from '../ai/decorativeImages';
-import { DictionaryGenerationQueue } from '../ai/dictionaryGenerationQueue';
+import { dictionaryGenerationJobs } from '../ai/dictionaryGenerationLane';
 import * as zotero from '../zotero/zoteroClient';
 import * as dedupe from '../db/dedupeRepo';
 import * as ideaDedupe from '../db/ideaDedupeRepo';
@@ -319,7 +321,7 @@ import * as notes from '../db/notesRepo';
 import * as workspace from '../db/workspaceRepo';
 import * as studyNoteLinks from '../db/studyNoteLinksRepo';
 import type { StudyNoteLinkFilter, StudyNoteLinkInput } from '@shared/studyNoteLinks';
-import { getDb, withVaultDatabase, withoutDatabaseContext } from '../db/database';
+import { getDb, withVaultDatabase } from '../db/database';
 import { deleteWorks, worksRunningNow } from '../db/workDeletion';
 import { removeGlobalLibraryLinksForWorks } from '../library/libraryService';
 import { getActiveVault, getVault, withOwningVault } from '../vaults/vaultRegistry';
@@ -406,30 +408,6 @@ function announceDictionary(entryId: string | null): void {
   }
 }
 
-function announceDictionaryProgress(progress: DictionaryProgress): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-      win.webContents.send('dictionary:progress', localizedForUi(progress));
-      if (progress.phase === 'failed' && isAiModelRequiredError(progress.error)) {
-        win.webContents.send('ai:modelRequired');
-      }
-    }
-  }
-}
-
-const dictionaryGenerationJobs = new DictionaryGenerationQueue(
-  async (request, report) => {
-    const version = await generateDictionaryEntry(request, report);
-    announceDictionary(request.entryId);
-    return version;
-  },
-  announceDictionaryProgress,
-  work => {
-    const vaultId = getActiveVault().id;
-    return () => withoutDatabaseContext(() => withOwningVault(vaultId, () => withVaultDatabase(vaultId, work)));
-  },
-);
-
 function announceWritingDraftAnnotations(draftId: string | null): void {
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
@@ -476,6 +454,7 @@ function pageCapableLibraryCopy(nodusId: string): OpenEvidenceAtPageResult['loca
 
 let releasePreparationProgress: (() => void) | null = null;
 export function registerAcademicIpc(context: IpcContext): void {
+  registerResearchHarnessIpc(context);
   releasePreparationProgress?.();
   releasePreparationProgress = onDocumentaryPreparationChanged(() => {
     const progress = preparationExperience.getResearchPreparationProgress();
@@ -732,11 +711,13 @@ export function registerAcademicIpc(context: IpcContext): void {
     }
     return all.length;
   });
-  h('works:meta', async (_e, nodusId: string) => {
+  h('works:meta', async (_e, nodusId: string, options?: { timeoutMs?: number }) => {
     const w = works.getWork(nodusId);
     if (!w) return null;
     const { zoteroUserId } = getSettings();
-    const meta = await zotero.getItemMeta(zoteroUserId, w.zotero_key).catch(() => null);
+    const timeoutMs = Number(options?.timeoutMs);
+    const signal = Number.isFinite(timeoutMs) ? AbortSignal.timeout(Math.max(100, Math.min(10_000, Math.trunc(timeoutMs)))) : undefined;
+    const meta = await zotero.getItemMeta(zoteroUserId, w.zotero_key, signal).catch(() => null);
     if (!meta) return null;
     return meta;
   });
@@ -775,14 +756,14 @@ export function registerAcademicIpc(context: IpcContext): void {
     const work = works.getWork(nodusId);
     if (!work) return;
     works.setSummaryPending(nodusId);
-    scanQueue.enqueue(nodusId, work.title, 'summary', model);
+    scanQueue.enqueue(nodusId, work.title, 'summary', model, { refresh: work.summary_status === 'done' });
   });
   h('works:summarizeBulk', async (_e, nodusIds: string[], model?: ModelRef | null) => {
     for (const nodusId of nodusIds) {
       const work = works.getWork(nodusId);
       if (!work) continue;
       works.setSummaryPending(nodusId);
-      scanQueue.enqueue(nodusId, work.title, 'summary', model);
+      scanQueue.enqueue(nodusId, work.title, 'summary', model, { refresh: work.summary_status === 'done' });
     }
   });
   h('works:summarizeAll', async (_e, model?: ModelRef | null) => {
@@ -1816,7 +1797,8 @@ export function registerAcademicIpc(context: IpcContext): void {
         },
         controller.signal,
         result => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:concilium', requestId, result); },
-        activity => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:activity', requestId, activity); }
+        activity => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:activity', requestId, activity); },
+        run => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:run', requestId, run); }
       );
     } finally {
       const s = (t: number) => (t ? ((t - t0) / 1000).toFixed(1) : '-');
@@ -2203,8 +2185,33 @@ export function registerAcademicIpc(context: IpcContext): void {
     exportProjectChapter(request)
   );
 
+  // Comparisons belong to their invoking renderer; cancellation cannot target
+  // another window's query. They never change the active index.
+  const embeddingComparisons = new Map<string, AbortController>();
+  h('embeddingIndexes:compare', async (event, input: import('@shared/embeddingComparison').EmbeddingComparisonRequest) => {
+    if (!input || typeof input.requestId !== 'string' || !/^[a-z0-9-]{8,80}$/i.test(input.requestId)) throw new Error('Identificador de comparación no válido.');
+    const owner = `${event.sender.id}:`;
+    if ([...embeddingComparisons.keys()].some(key => key.startsWith(owner))) throw new Error('Ya hay una comparación en curso.');
+    const key = owner + input.requestId, controller = new AbortController();
+    embeddingComparisons.set(key, controller);
+    const destroyed = () => controller.abort();
+    event.sender.once('destroyed', destroyed);
+    try { return await (await import('../ai/embeddingComparison')).compareEmbeddingIndexes(input, controller.signal); }
+    finally { embeddingComparisons.delete(key); event.sender.removeListener('destroyed', destroyed); }
+  });
+  h('embeddingIndexes:cancelComparison', async (event, id: string) => { embeddingComparisons.get(`${event.sender.id}:${id}`)?.abort(); });
+  h('embeddingIndexes:runs', async (_e, id?: string, vaultId?: string) => embeddingIndexes.listEmbeddingIndexRuns(id, vaultId));
+  h('embeddingIndexes:rerankerStatus', async () => (await import('../ai/localReranker')).localRerankerStatus());
+  h('embeddingIndexes:rerankerPrepare', async (_e, action: 'download' | 'cancel', modelId?: string) => (await import('../ai/localReranker')).prepareLocalReranker(action, modelId));
+  h('embeddingIndexes:rerankerDelete', async (_e, modelId: string) => (await import('../ai/localReranker')).deleteLocalReranker(modelId));
   // embedding pipeline
   h('embeddings:start', async (_e, nodusIds?: string[]) => startEmbedding(nodusIds));
+  h('embeddingIndexes:list', async (_e, vaultId?: string) => embeddingIndexes.listEmbeddingIndexes(vaultId));
+  h('embeddingIndexes:preview', async (_e, input) => embeddingIndexes.previewEmbeddingIndex(input));
+  h('embeddingIndexes:prepare', async (_e, input) => embeddingIndexes.prepareEmbeddingIndex(input));
+  h('embeddingIndexes:activate', async (_e, id: string, vaultId?: string) => embeddingIndexes.activateEmbeddingIndex(id, vaultId));
+  h('embeddingIndexes:control', async (_e, id: string, action: 'pause' | 'resume' | 'cancel', vaultId?: string) => embeddingIndexes.controlEmbeddingIndex(id, action, vaultId));
+  h('embeddingIndexes:delete', async (_e, id: string, vaultId?: string) => embeddingIndexes.deleteEmbeddingIndex(id, vaultId));
   h('embeddings:reindexAll', async () => reindexAll());
   h('embeddings:pause', async () => pauseEmbedding());
   h('embeddings:resume', async () => resumeEmbedding());

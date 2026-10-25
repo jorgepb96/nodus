@@ -15,6 +15,7 @@ export interface AcademicApproachContext {
  relationships:Array<{from:string;relation:string;to:string;confidence:number}>;
 }
 export interface DeepResearchCompletionHost {
+ currentResearchHarness?:()=>unknown;
  documentaryEvidence:boolean;
  completeJson<T>(opts:CallOpts,guard:(v:unknown)=>v is T,model?:ModelRef|null):Promise<T>;
  completeText(opts:CallOpts,model?:ModelRef|null):Promise<string>;
@@ -395,6 +396,8 @@ async function aiPlanReport(input: PlanInput, model: ModelRef | null, approach?:
   );
   const ai = await completeJson<AiPlan>({ system, user, temperature: 0.2, maxTokens: 6000 }, isAiPlan, model);
   const draft = planFromAi(ai);
+  // The harness owns research supervision and its final source-bound review.
+  if (host.currentResearchHarness?.()) return draft;
   let candidate = draft;
   try {
     const reviewSystem = promptPack.reviewPlan;

@@ -92,6 +92,8 @@ try {
     'nodus_generate_deep_research',
     'nodus_finalize_deep_research',
     'nodus_enqueue_deep_research',
+    'nodus_list_research_runs',
+    'nodus_control_research_run',
     'nodus_list_deep_research_jobs',
     'nodus_get_deep_research_job',
     'nodus_cancel_deep_research_job',
@@ -1078,6 +1080,8 @@ try {
   // The deep-research pipeline degrades gracefully without an AI provider (fallback
   // plan + sections), so it walks every phase and the bridge must fire throughout.
   const deepArgs = {
+    // This transport fixture injects the legacy writer without a provider model.
+    harnessVersion: 'legacy',
     objective: 'Estado del turismo visual en el corpus',
     sectionLimit: 'auto',
     writer: 'nodus',
@@ -1132,11 +1136,13 @@ try {
   // background, one at a time. The second is still waiting when the first is generating,
   // which is exactly when it can be cancelled.
   const firstQueued = await callTool(server, 'nodus_enqueue_deep_research', {
+    harnessVersion: 'legacy', // Queue transport uses the same injected legacy writer as deepArgs.
     objective: 'Informe encolado sobre el corpus',
     sectionLimit: 'single',
     save: true,
   });
   const secondQueued = await callTool(server, 'nodus_enqueue_deep_research', {
+    harnessVersion: 'legacy',
     objective: 'Segundo informe encolado',
     sectionLimit: 'auto',
     save: false,
@@ -1374,13 +1380,17 @@ try {
 
     // Coverage is model-scoped: re-embedding under a different model must resurface the
     // warning, because the stored vectors can no longer match the configured model.
-    const stale = getDb().prepare('UPDATE passages SET embedding_model = ?');
-    stale.run('some-other-model');
+    const indexes = require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'));
+    const originalIndex = indexes.activeEmbeddingIndex(getDb());
+    const otherIndex = indexes.createIndex(getDb(), { ...originalIndex.profile, model: 'some-other-model' });
+    getDb().prepare('UPDATE embedding_index_state SET pending_id=?').run(otherIndex.id);
+    indexes.commitEmbeddingIndex(getDb(), indexes.indexContext(getDb(), otherIndex));
     const afterModelChange = await callTool(server, 'nodus_search_passages', { query: 'turismo visual', limit: 10, minSimilarity: 0.18 });
     assert.equal(afterModelChange.passages.length, 0, 'vectors from another model cannot match');
     assert.equal(afterModelChange.indexed, 0, 'so coverage drops to zero');
     assert.ok(afterModelChange.warning, 'and the empty result is flagged rather than read as absence');
-    stale.run(embedConfig.model);
+    getDb().prepare('UPDATE embedding_index_state SET pending_id=?').run(originalIndex.indexId);
+    indexes.commitEmbeddingIndex(getDb(), originalIndex);
   } finally {
     aiClient.embedQuery = originalEmbed;
   }

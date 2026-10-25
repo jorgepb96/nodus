@@ -63,6 +63,7 @@ const report = resumeRoot ? JSON.parse(fs.readFileSync(path.join(harness.root, '
   : { format: 'nodus.embedding-product-e2e/1', root: harness.root, campaignRoot, profile: modelId, isolation: harness.proof,
     chatModel: 'deepseek-flash', completed: false, checks: {}, answers: [], pending: [], startedAt: new Date().toISOString() };
 assert.equal(report.profile, modelId, 'a resumed profile cannot change its configuration');
+report.runtime ??= NODUS_LOCAL_MODELS.find(model => model.id === modelId).runtime;
 if (resumeRoot) { report.attempts ??= []; report.attempts.push({ failure: report.failure, finishedAt: report.finishedAt, processExit: report.processExit });
   for (const key of ['failure', 'failureUi', 'failureScreenshot', 'processExit', 'runtimeErrors']) delete report[key]; report.completed = false; }
 const artifacts = path.join(harness.root, 'artifacts');
@@ -107,6 +108,7 @@ try {
   if (!resumeRoot) {
   await page.getByRole('button', { name: 'Ajustes', exact: true }).first().click();
   await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+  await page.getByTestId('settings-tab-local').click();
   const downloadModelId = modelId.startsWith('embeddinggemma') ? 'embeddinggemma-2-text-q8-512-v1' : modelId;
   const card = page.getByTestId(`local-model-${downloadModelId}`);
   await card.getByRole('button', { name: 'Descargar', exact: true }).click();
@@ -152,6 +154,7 @@ try {
   if (modelId.startsWith('embeddinggemma') && !report.checks.uiProfileSelection) {
     await page.getByRole('button', { name: 'Ajustes', exact: true }).first().click();
     await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
+    await page.getByTestId('settings-tab-essentials').click();
     const alternate = modelId.includes('-512-') ? 'embeddinggemma-2-text-q8-256-v1' : 'embeddinggemma-2-text-q8-512-v1';
     for (const selected of [alternate, modelId]) {
       await page.getByTestId('embedding-model-input').fill(selected);

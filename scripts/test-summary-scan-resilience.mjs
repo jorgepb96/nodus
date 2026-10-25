@@ -38,7 +38,7 @@ const virtual = new Map([
   `],
   ['../db/libraryAnalysisProvenance', `
     export const analysisModelFingerprint = () => 'summary-model-fingerprint';
-    export const isLocalAnalysisCurrent = () => false;
+    export const isLocalAnalysisCurrent = () => globalThis.__summaryCurrent === true;
     export const recordLocalAnalysisProvenance = (input) => globalThis.__summaryEvents.localProvenance.push(input);
   `],
   ['@shared/localAiModels', `export const modelRefSupportsCapability = () => true;`],
@@ -76,7 +76,7 @@ try {
   };
   const freshEvents = () => ({ results: [], upserts: [], embeddings: [], provenance: [], localProvenance: [], perf: [], transactions: 0, completes: [] });
   globalThis.__summaryDb = {
-    prepare: () => ({ all: () => [] }),
+    prepare: () => ({ all: () => [], get: () => globalThis.__summaryStored }),
     transaction: (operation) => () => {
       globalThis.__summaryEvents.transactions += 1;
       return operation();
@@ -86,6 +86,29 @@ try {
   const originalWarn = console.warn;
   console.warn = () => undefined;
   try {
+    // Reproduce Galant 2017: the chain marks the DB pending but still passes the
+    // earlier done snapshot. Reusing its valid summary must settle the marker.
+    const cachedWork = { ...work, summary_status: 'done', summary_hash: scan.summaryContentHash(work) };
+    globalThis.__summaryCurrent = true;
+    globalThis.__summaryStored = { exists: 1 };
+    globalThis.__summaryEvents = freshEvents();
+    globalThis.__summaryComplete = async () => { throw new Error('A current summary must not call the provider'); };
+    await scan.runSummaryScan(cachedWork);
+    assert.deepEqual(globalThis.__summaryEvents.results, [[work.nodus_id, 'done', cachedWork.summary_hash]],
+      'a cached return restores done after the chain set pending');
+    assert.equal(globalThis.__summaryEvents.upserts.length, 0, 'reuse preserves the saved text');
+    globalThis.__summaryEvents = freshEvents();
+    await scan.runSummaryScan({ ...cachedWork, summary_status: 'pending' });
+    assert.equal(globalThis.__summaryEvents.results[0][1], 'done', 'an orphan pending summary also recovers without inference');
+
+    globalThis.__summaryStored = undefined;
+    globalThis.__summaryEvents = freshEvents();
+    globalThis.__summaryComplete = async () => 'Recovered missing summary text.';
+    globalThis.__summaryEmbed = async () => [1, 0];
+    await scan.runSummaryScan(cachedWork);
+    assert.equal(globalThis.__summaryEvents.upserts.length, 1, 'provenance without readable text cannot masquerade as a cached summary');
+    globalThis.__summaryCurrent = false;
+
     globalThis.__summaryEvents = freshEvents();
     globalThis.__summaryComplete = async () => 'A committed orientation summary.';
     globalThis.__summaryEmbed = async () => { throw new Error('embedding runtime unavailable'); };
@@ -178,5 +201,7 @@ try {
   delete globalThis.__summaryEvents;
   delete globalThis.__summaryProvenanceFails;
   delete globalThis.__SummaryAiError;
+  delete globalThis.__summaryCurrent;
+  delete globalThis.__summaryStored;
   await rm(scratch, { recursive: true, force: true });
 }

@@ -2,7 +2,7 @@ import {portableResearchCorpusRun} from '@shared/portableResearchCorpusRun';
 import {bindPreparedResearchCorpus} from '@shared/portableResearchCorpusBinding';
 import { researchActivityStep, startResearchActivity } from './researchActivity';
 import type { ResolvedResearchScope } from '@shared/researchCorpus';
-import { RETRIEVAL_PRESETS, validateRetrievalSettings } from '@shared/researchCorpus';
+import { RETRIEVAL_PRESETS, RESEARCH_LONGFORM_AGENT_SETTINGS, validateRetrievalSettings } from '@shared/researchCorpus';
 import { ResearchRetrievalBudget } from '@shared/researchRetrievalBudget';
 import type { DeepResearchRequest, WritingWorkshopIdeaCandidate, WritingWorkshopSnapshot } from '@shared/types';
 import type { DeepResearchDeps } from './deepResearchCore';
@@ -28,9 +28,11 @@ import { deepenResearch } from './researchActionCoordinator';
 import { getGlobalLibraryItem, globalLibraryAttachmentPath } from '../library/libraryService';
 import { readResearchOriginalInWorker } from '../library/libraryExtractionWorkerHost';
 import { activeManualIdeaIds } from '../db/manualIdeaVisibility';
+import { ResearchWebGrant, webDepth } from './researchWebStep';
 import { extractCitationRefs } from './citationSanitize';
 import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { getScopedLegacyPassageDetail } from '../citations/scopedLegacyCitations';
+import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 
 /** Research Chat's agent: the turn's plan and how many independent sources a finish needs.
  * Deep Research, the Dictionary and notebook reads leave it unset and keep their loop. */
@@ -79,13 +81,16 @@ export function scopedResearchGraph(scope:ResolvedResearchScope,workIds:string[]
     return { gaps, contradictions, themes };
 }
 
-export const {ResearchCorpusRun}=portableResearchCorpusRun({recordEmbeddingTrace,getActiveVault:(...args)=>getActiveVault(...args),getResearchNotebook:(...args)=>getResearchNotebook(...args),researchCorpusInventory:(...args)=>researchCorpusInventory(...args),assertResearchDocument:(...args)=>assertResearchDocument(...args),assertResearchDocumentPermission:(...args)=>assertResearchDocumentPermission(...args),documentsById:(...args)=>documentsById(...args),researchFingerprint:(...args)=>researchFingerprint(...args),resolveResearchSourceScope:(...args)=>resolveResearchSourceScope(...args),scopedIdeaEvidencePassages:(...args)=>scopedIdeaEvidencePassages(...args),getResearchPreparationInventory:(...args)=>getResearchPreparationInventory(...args),retrieveSharedDocumentaryEvidence:(...args)=>retrieveSharedDocumentaryEvidence(...args),retrieveHierarchical:(...args)=>retrieveHierarchical(...args),selectPassageEvidence:(...args)=>selectPassageEvidence(...args),embed:(...args)=>embedQuery(...args),embedMany:(...args)=>embedMany(...args),insertScopedReceipts:(...args)=>insertScopedReceipts(...args),recordScopedSourcePassage:(...args)=>recordScopedSourcePassage(...args),recordScopedLegacyPassage:(...args)=>recordScopedLegacyPassage(...args),getSettings:(...args)=>getSettings(...args),readAutomaticResearchZotero:(...args)=>readAutomaticResearchZotero(...args),pinZoteroOriginals:(...args)=>pinZoteroOriginals(...args),getGlobalLibraryItem:(...args)=>getGlobalLibraryItem(...args),globalLibraryAttachmentPath:(...args)=>globalLibraryAttachmentPath(...args),readResearchOriginalInWorker:(...args)=>readResearchOriginalInWorker(...args),getDocumentaryPassageDetail:(...args)=>getDocumentaryPassageDetail(...args),getScopedLegacyPassageDetail:(...args)=>getScopedLegacyPassageDetail(...args),extractCitationRefs:(...args)=>extractCitationRefs(...args),researchActivityStep:(...args)=>researchActivityStep(...args),startResearchActivity:(...args)=>startResearchActivity(...args),deepenResearch:(...args)=>deepenResearch(...args),manualIdeaIds:()=>getSettings().academicMode==='manual'?activeManualIdeaIds(getDb()):null,lexicalIdeas:ids=>getDb().prepare(`SELECT global_id,type,label,statement FROM ideas WHERE global_id IN (SELECT value FROM json_each(?))`).all(JSON.stringify(ids)) as Array<{global_id:string;type:WritingWorkshopIdeaCandidate['type'];label:string;statement:string}>,ideaWorkIds:id=>getDb().prepare('SELECT DISTINCT nodus_id FROM idea_occurrences WHERE global_id=?').all(id) as Array<{nodus_id:string}>,graph:scopedResearchGraph});
+export const {ResearchCorpusRun}=portableResearchCorpusRun({currentResearchHarness,recordEmbeddingTrace,getActiveVault:(...args)=>getActiveVault(...args),getResearchNotebook:(...args)=>getResearchNotebook(...args),researchCorpusInventory:(...args)=>researchCorpusInventory(...args),assertResearchDocument:(...args)=>assertResearchDocument(...args),assertResearchDocumentPermission:(...args)=>assertResearchDocumentPermission(...args),documentsById:(...args)=>documentsById(...args),researchFingerprint:(...args)=>researchFingerprint(...args),resolveResearchSourceScope:(...args)=>resolveResearchSourceScope(...args),scopedIdeaEvidencePassages:(...args)=>scopedIdeaEvidencePassages(...args),getResearchPreparationInventory:(...args)=>getResearchPreparationInventory(...args),retrieveSharedDocumentaryEvidence:(...args)=>retrieveSharedDocumentaryEvidence(...args),retrieveHierarchical:(...args)=>retrieveHierarchical(...args),selectPassageEvidence:(...args)=>selectPassageEvidence(...args),embed:(...args)=>embedQuery(...args),embedMany:(...args)=>embedMany(...args),insertScopedReceipts:(...args)=>insertScopedReceipts(...args),recordScopedSourcePassage:(...args)=>recordScopedSourcePassage(...args),recordScopedLegacyPassage:(...args)=>recordScopedLegacyPassage(...args),getSettings:(...args)=>getSettings(...args),readAutomaticResearchZotero:(...args)=>readAutomaticResearchZotero(...args),pinZoteroOriginals:(...args)=>pinZoteroOriginals(...args),getGlobalLibraryItem:(...args)=>getGlobalLibraryItem(...args),globalLibraryAttachmentPath:(...args)=>globalLibraryAttachmentPath(...args),readResearchOriginalInWorker:(...args)=>readResearchOriginalInWorker(...args),getDocumentaryPassageDetail:(...args)=>getDocumentaryPassageDetail(...args),getScopedLegacyPassageDetail:(...args)=>getScopedLegacyPassageDetail(...args),extractCitationRefs:(...args)=>extractCitationRefs(...args),researchActivityStep:(...args)=>researchActivityStep(...args),startResearchActivity:(...args)=>startResearchActivity(...args),deepenResearch:(...args)=>deepenResearch(...args),manualIdeaIds:()=>getSettings().academicMode==='manual'?activeManualIdeaIds(getDb()):null,lexicalIdeas:ids=>getDb().prepare(`SELECT global_id,type,label,statement FROM ideas WHERE global_id IN (SELECT value FROM json_each(?))`).all(JSON.stringify(ids)) as Array<{global_id:string;type:WritingWorkshopIdeaCandidate['type'];label:string;statement:string}>,ideaWorkIds:id=>getDb().prepare('SELECT DISTINCT nodus_id FROM idea_occurrences WHERE global_id=?').all(id) as Array<{nodus_id:string}>,graph:scopedResearchGraph});
 export type ResearchCorpusRun=InstanceType<typeof ResearchCorpusRun>;
 
 export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResearchRequest, signal?: AbortSignal, options?: {sourceOnly: true}): DeepResearchDeps {
   const scope = resolveAcademicRunScope(request.notebookId);
-  const settings = validateRetrievalSettings(request.retrieval ?? (request.notebookId ? getResearchNotebook(request.notebookId)?.settings : undefined) ?? RETRIEVAL_PRESETS.deep);
+  const settings = validateRetrievalSettings(request.retrieval ?? (request.notebookId ? getResearchNotebook(request.notebookId)?.settings : undefined) ?? (currentResearchHarness() ? RESEARCH_LONGFORM_AGENT_SETTINGS : RETRIEVAL_PRESETS.deep));
   const run = new ResearchCorpusRun(scope, settings, signal, !options?.sourceOnly);
+  if (run.harness && !options?.sourceOnly) {
+    run.web = new ResearchWebGrant(request.webSearch ?? 'off', webDepth(settings), request.objective, signal, request.model, Math.floor(run.budget.evidenceTokenLimit / 3));
+  }
   if (options?.sourceOnly) {
     // A companion may consult prepared evidence, never trigger PDF extraction,
     // Zotero original fetching, OCR, indexing or new derived profiles.
@@ -94,5 +99,5 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
       throw new Error('desktop_preparation_required');
     };
   }
-  return bindPreparedResearchCorpus(deps,run,request.model ?? getSettings().deepResearchModel ?? getSettings().synthesisModel,{createResearchProseAuditor,createResearchSectionCoverage,findResearchConflicts,withResearchValidationThinking,contextWindow:model=>researchModelContextWindow(resolveModelRef(model)),withResearchRequestBudget},signal);
+  return bindPreparedResearchCorpus(deps,run,request.model ?? getSettings().deepResearchModel ?? getSettings().synthesisModel,{researchHarnessStage,createResearchProseAuditor,createResearchSectionCoverage,findResearchConflicts,withResearchValidationThinking,contextWindow:model=>researchModelContextWindow(resolveModelRef(model)),withResearchRequestBudget},signal);
 }

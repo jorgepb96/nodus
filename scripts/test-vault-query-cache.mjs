@@ -35,7 +35,7 @@ try {
     readFile(path.join(root, 'src/views/IdeasView.tsx'), 'utf8'),
   ]);
   assert.match(hooks, /notifyDataChanged[\s\S]*?invalidateVaultQueryCache\(\)/, 'explicit data changes must invalidate cache');
-  assert.match(hooks, /prevActive && !active[\s\S]*?invalidateVaultQueryCache\(\)/, 'completed scans must invalidate cache');
+  assert.match(hooks, /!active && \(prevActive \|\| newlyFinished\)[\s\S]*?invalidateVaultQueryCache\(\)/, 'completed scans, including single-event cached jobs, must invalidate cache');
   assert.match(app, /setActiveVaultQueryScope\(activeVault\?\.id/, 'cache scope must follow the active vault');
   for (const [name, source] of [['Home', home], ['Library', library], ['Ideas', ideas]]) {
     assert.match(source, /getVaultQueryCache/, `${name} must reuse a valid cached query`);

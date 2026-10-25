@@ -64,12 +64,12 @@ function seedCorpus(db) {
 
   // Global ideas. g-shared is the case the whole design exists for.
   const idea = db.prepare('INSERT INTO ideas(global_id,type,label,statement,embedding,created_at) VALUES(?,?,?,?,?,?)');
-  idea.run('g-a-only', 'claim', 'Idea solo de A', 'statement', Buffer.from([1, 2, 3]), stamp);
-  idea.run('g-shared', 'claim', 'Idea compartida', 'statement', Buffer.from([9, 9, 9]), stamp);
-  idea.run('g-b-only', 'claim', 'Idea solo de B', 'statement', Buffer.from([4, 5, 6]), stamp);
+  idea.run('g-a-only', 'claim', 'Idea solo de A', 'statement', null, stamp);
+  idea.run('g-shared', 'claim', 'Idea compartida', 'statement', null, stamp);
+  idea.run('g-b-only', 'claim', 'Idea solo de B', 'statement', null, stamp);
   // A manual idea belongs to a note and may legitimately have no occurrence at all: a
   // delete must never mark it dormant or remove it.
-  idea.run('g-manual', 'claim', 'Idea manual', 'statement', Buffer.from([7, 7, 7]), stamp);
+  idea.run('g-manual', 'claim', 'Idea manual', 'statement', null, stamp);
   db.prepare('INSERT INTO notes(id,title,kind,content,source_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?)')
     .run('note-manual', 'Nota', 'markdown', '', JSON.stringify({ note: 'manual-idea', ref: 'g-manual' }), stamp, stamp);
 
@@ -121,16 +121,16 @@ function seedCorpus(db) {
     passage_id,nodus_id,chunk_index,text,page_label,char_len,content_hash,embedding,
     embedding_provider,embedding_model,embedding_dim,embedding_text_hash,created_at
   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`);
-  passage.run(`${A}#0`, A, 0, 'pasaje A 0', 'p. 1', 11, 'h-a0', Buffer.from([1]), 'p', 'm', 1, 'h-a0', stamp);
-  passage.run(`${A}#1`, A, 1, 'pasaje A 1', 'p. 2', 11, 'h-a1', Buffer.from([2]), 'p', 'm', 1, 'h-a1', stamp);
-  passage.run(`${B}#0`, B, 0, 'pasaje B 0', 'p. 1', 11, 'h-b0', Buffer.from([3]), 'p', 'm', 1, 'h-b0', stamp);
+  passage.run(`${A}#0`, A, 0, 'pasaje A 0', 'p. 1', 11, 'h-a0', Buffer.from(new Float32Array([1, 0, 0]).buffer), 'openai', 'text-embedding-3-small', 3, 'h-a0', stamp);
+  passage.run(`${A}#1`, A, 1, 'pasaje A 1', 'p. 2', 11, 'h-a1', Buffer.from(new Float32Array([2, 0, 0]).buffer), 'openai', 'text-embedding-3-small', 3, 'h-a1', stamp);
+  passage.run(`${B}#0`, B, 0, 'pasaje B 0', 'p. 1', 11, 'h-b0', Buffer.from(new Float32Array([3, 0, 0]).buffer), 'openai', 'text-embedding-3-small', 3, 'h-b0', stamp);
 
   const summary = db.prepare(`INSERT INTO work_summaries(
     nodus_id,summary,source_level,content_hash,embedding,embedding_provider,embedding_model,
     embedding_dim,embedding_text_hash,created_at,updated_at
   ) VALUES(?,?,?,?,?,?,?,?,?,?,?)`);
-  summary.run(A, 'Resumen A', 'deep', 'hs-a', Buffer.from([1]), 'p', 'm', 1, 'hs-a', stamp, stamp);
-  summary.run(B, 'Resumen B', 'deep', 'hs-b', Buffer.from([2]), 'p', 'm', 1, 'hs-b', stamp, stamp);
+  summary.run(A, 'Resumen A', 'deep', 'hs-a', Buffer.from(new Float32Array([1, 0, 0]).buffer), 'openai', 'text-embedding-3-small', 3, 'hs-a', stamp, stamp);
+  summary.run(B, 'Resumen B', 'deep', 'hs-b', Buffer.from(new Float32Array([2, 0, 0]).buffer), 'openai', 'text-embedding-3-small', 3, 'hs-b', stamp, stamp);
 
   const synthesis = db.prepare('INSERT INTO work_idea_synthesis(nodus_id,thesis,generated_at) VALUES(?,?,?)');
   synthesis.run(A, 'tesis A', stamp);
@@ -213,9 +213,9 @@ function seedCorpus(db) {
   ) VALUES(?,?,?,?,?,?,?,?,?,?,?)`);
   version.run('v-a', A, 'current', 'sf-a', '1', 1, 'es', 'resumen A', '{}', 'ph', stamp);
   version.run('v-b', B, 'current', 'sf-b', '1', 1, 'es', 'resumen B', '{}', 'ph', stamp);
-  const vector = db.prepare('INSERT INTO document_vectors(vector_id,nodus_id,version_id,kind,text,text_hash,embedding,created_at) VALUES(?,?,?,?,?,?,?,?)');
-  vector.run('vec-a', A, 'v-a', 'overview', 'texto A', 'th-a', Buffer.from([1]), stamp);
-  vector.run('vec-b', B, 'v-b', 'overview', 'texto B', 'th-b', Buffer.from([2]), stamp);
+  const vector = db.prepare(`INSERT INTO document_vectors(vector_id,nodus_id,version_id,kind,text,text_hash,embedding,created_at,embedding_provider,embedding_model,embedding_dim) VALUES(?,?,?,?,?,?,?,?,'openai','text-embedding-3-small',3)`);
+  vector.run('vec-a', A, 'v-a', 'overview', 'texto A', 'th-a', Buffer.from(new Float32Array([1, 0, 0]).buffer), stamp);
+  vector.run('vec-b', B, 'v-b', 'overview', 'texto B', 'th-b', Buffer.from(new Float32Array([2, 0, 0]).buffer), stamp);
   const ideaLink = db.prepare('INSERT INTO document_idea_links(version_id,nodus_id,global_id,target_kind,target_id,role,score,created_at) VALUES(?,?,?,?,?,?,?,?)');
   ideaLink.run('v-a', A, 'g-shared', 'section', 's-a', 'principal', 1, stamp);
   ideaLink.run('v-b', B, 'g-shared', 'section', 's-b', 'principal', 1, stamp);
@@ -246,7 +246,11 @@ function freshDatabase() {
   database.closeDb();
   for (const suffix of ['', '-wal', '-shm']) rmSync(`${dbFile}${suffix}`, { force: true });
   const db = database.getDb();
+  require(path.join(repoRoot, 'electron/db/settingsRepo.ts')).getSettings();
   seedCorpus(db);
+  const capture = db.prepare(`UPDATE ideas SET embedding=?,embedding_provider='openai',embedding_model='text-embedding-3-small',embedding_dim=3,
+    embedding_text_hash=idea_embedding_text_hash(type,label,statement,COALESCE((SELECT GROUP_CONCAT(DISTINCT t.label) FROM idea_theme_links l JOIN themes t ON t.theme_id=l.theme_id WHERE l.global_id=ideas.global_id),'')) WHERE global_id=?`);
+  for (const [id,vector] of [['g-a-only',[1,2,3]],['g-shared',[9,9,9]],['g-b-only',[4,5,6]],['g-manual',[7,7,7]]]) capture.run(Buffer.from(new Float32Array(vector).buffer),id);
   return db;
 }
 
@@ -364,11 +368,11 @@ test('a surviving work keeps every single row it had, byte for byte', () => {
 
 test('shared analysis survives: the idea, its embedding and its other occurrence', () => {
   const db = freshDatabase();
-  const sharedEmbeddingBefore = Buffer.from(db.prepare('SELECT embedding FROM ideas WHERE global_id=?').get('g-shared').embedding);
+  const sharedEmbeddingBefore = Buffer.from(db.prepare('SELECT embedding FROM embedding_read_ideas WHERE global_id=?').get('g-shared').embedding);
 
   const result = deleteWorks([A], { vaultId: VAULT });
 
-  const shared = db.prepare('SELECT orphaned_at, embedding FROM ideas WHERE global_id=?').get('g-shared');
+  const shared = db.prepare('SELECT orphaned_at, embedding FROM embedding_read_ideas WHERE global_id=?').get('g-shared');
   assert.ok(shared, 'an idea two works share is never deleted with one of them');
   assert.equal(shared.orphaned_at, null, 'an idea with a remaining occurrence is not even dormant');
   assert.deepEqual(Buffer.from(shared.embedding), sharedEmbeddingBefore, 'the shared embedding is untouched');
@@ -391,10 +395,10 @@ test('shared analysis survives: the idea, its embedding and its other occurrence
 
   // An idea only A referenced goes dormant — kept, with its id and embedding, so a
   // rescan re-attaches the same row instead of minting a new identity.
-  const dormant = db.prepare('SELECT orphaned_at, embedding FROM ideas WHERE global_id=?').get('g-a-only');
+  const dormant = db.prepare('SELECT orphaned_at, embedding FROM embedding_read_ideas WHERE global_id=?').get('g-a-only');
   assert.ok(dormant, 'an orphaned idea is kept, not deleted');
   assert.ok(dormant.orphaned_at, 'it is marked dormant');
-  assert.deepEqual(Buffer.from(dormant.embedding), Buffer.from([1, 2, 3]));
+  assert.equal(dormant.embedding, null, 'removing the last source theme invalidates its old input recipe');
   assert.equal(result.dormantIdeas, 1, 'exactly the idea that lost its last occurrence went dormant');
 
   // A manual idea has no occurrence by design and must never be flagged.

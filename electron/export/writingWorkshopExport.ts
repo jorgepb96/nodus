@@ -17,7 +17,7 @@ import type {
   PromptLanguage,
 } from '@shared/types';
 import { citationWords } from '@shared/citationWords';
-import { stripLeadingAbstract } from '@shared/writingDocument';
+import { stripLeadingAbstract, researchDocumentProse } from '@shared/writingDocument';
 import { DEEP_LABELS, deepResearchReportInput, type DeepReportLabels } from '@shared/deepResearchReport';
 import { markdownToPdf } from './markdownRender';
 import { markdownToDocx, pngSize, type DocxImage } from './markdownDocx';
@@ -289,7 +289,7 @@ function renderDraftMarkdown(draft: WritingWorkshopDraft): string {
     `## ${labels.draft}`,
     // The body already opens with the abstract and closes with its limitations and
     // references, so those are rendered once — here from the body, not twice.
-    stripLeadingAbstract(draft.draftMarkdown, draft.abstract),
+    draft.brief.kind === 'deep_research' ? researchDocumentProse(stripLeadingAbstract(draft.draftMarkdown, draft.abstract), Boolean(draft.limitations?.length)) : stripLeadingAbstract(draft.draftMarkdown, draft.abstract),
     '',
     `## ${labels.matrix}`,
     matrixTable(draft.matrix, report, labels, citationWords(language).source),

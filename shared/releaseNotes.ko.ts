@@ -1,3 +1,4 @@
+import { RELEASE_5_16_1_HIGHLIGHTS } from './releaseNotes5161';
 import { RELEASE_5_16_0_HIGHLIGHTS } from './releaseNotes5160';
 import { RELEASE_5_15_4_HIGHLIGHTS } from './releaseNotes5154';
 import { RELEASE_5_15_3_HIGHLIGHTS } from './releaseNotes5153';
@@ -23,6 +24,7 @@ import { RELEASE_5_7_2_HIGHLIGHTS } from './releaseNotes572';
 /* Korean release notes, keyed by version. Machine-translated from the English highlights. */
 import { RELEASE_5_5_0_HIGHLIGHTS } from './releaseNotes550';
 export const RELEASE_NOTES_KO: Record<string, string[]> = {
+  "5.16.1": RELEASE_5_16_1_HIGHLIGHTS.map(highlight => highlight['ko']),
   "5.16.0": RELEASE_5_16_0_HIGHLIGHTS.map(highlight => highlight['ko']),
   "5.15.4": RELEASE_5_15_4_HIGHLIGHTS.map(highlight => highlight['ko']),
   "5.15.3": RELEASE_5_15_3_HIGHLIGHTS.map(highlight => highlight['ko']),

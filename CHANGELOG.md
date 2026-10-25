@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.16.1 — 2026-10-25
+
+### Enhancements
+- Organize Settings with grouped side navigation and an AI models essentials card. Separate model types into tabs, remove the basic/advanced switch and preserve independent model choices when changing the main model.
+- Open Ideas and Authors filters in floating panels without moving the catalog. Close them from the trigger, an outside click or Escape.
+
 ## 5.16.0 — 2026-10-24
 
 ### New features

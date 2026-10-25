@@ -45,9 +45,9 @@ export function LocalRerankerControl({ enabled, selected, onChange, onSelect }: 
     });
   };
   const selectedReady = models.find(model => model.id === selectedId)?.available ?? false;
-  return <div className="space-y-2 rounded-lg border border-neutral-700 p-3 text-sm" data-testid="local-reranker-control">
-    <label className="flex gap-2"><input type="checkbox" checked={enabled && selectedReady} disabled={!selectedReady || Boolean(busy)} onChange={event => { void onChange(event.target.checked).catch(cause => setError(ipcErrorText(cause))); }} />{t('Reordenamiento local opcional')}</label>
-    <p className="text-xs text-neutral-500">{t('Ordena los candidatos de la búsqueda documental con un modelo local. No modifica ni regenera embeddings. Si falla, se conserva el orden original.')}</p>
+  // The Settings panel around this control carries its title and explanation.
+  return <div className="space-y-3 text-sm" data-testid="local-reranker-control">
+    <label className="flex items-center gap-2 font-medium text-neutral-800 dark:text-neutral-200"><input type="checkbox" checked={enabled && selectedReady} disabled={!selectedReady || Boolean(busy)} onChange={event => { void onChange(event.target.checked).catch(cause => setError(ipcErrorText(cause))); }} />{t('Reordenamiento local opcional')}</label>
     <SettingsModelList data-testid="local-reranker-models">
       {LOCAL_RERANKER_MODELS.map(model => {
         const local = models.find(entry => entry.id === model.id);

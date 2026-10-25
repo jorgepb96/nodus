@@ -238,7 +238,7 @@ test('file pickers open directly, with no import privacy modal', async () => {
 test('new study materials use a remembered in-app AI processing decision', async () => {
   const [notice, settings, defaults, preload, apiTypes, ipc, consent, policy, knowledge] = await Promise.all([
     read('src/privacyNotices.tsx'),
-    read('src/views/Settings.tsx'),
+    read('src/views/settings/ModelSettings.tsx'),
     read('electron/db/settingsRepo.ts'),
     read('@bridge'),
     read('@api'),

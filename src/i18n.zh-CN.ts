@@ -88,6 +88,7 @@ import { CHEMISTRY_STOCK_TRANSLATIONS } from './i18n.chemistryStock';
 import { DEEP_RESEARCH_QUALITY_TRANSLATIONS } from './i18n.deepResearchQuality';
 import { TEXT_PROVENANCE_TRANSLATIONS } from './i18n.textProvenance';
 import { MODEL_SETTINGS_TRANSLATIONS } from './i18n.modelSettings';
+import { SETTINGS_LAYOUT_TRANSLATIONS } from './i18n.settingsLayout';
 import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
@@ -134,6 +135,7 @@ export const ZH_CN: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS['zh-CN'],
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS['zh-CN'],
   ...MODEL_SETTINGS_TRANSLATIONS['zh-CN'],
+  ...SETTINGS_LAYOUT_TRANSLATIONS['zh-CN'],
   ...EMBEDDING_GEMMA2_TRANSLATIONS['zh-CN'],
   ...DICTIONARY_TRANSLATIONS['zh-CN'],
   ...PAGE_TRANSLATIONS['zh-CN'],

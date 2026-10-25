@@ -24,6 +24,7 @@ import {
 import { AI_PROVIDERS, PROVIDER_LABELS, Icon, isLocalAiProvider, sameModel } from '../components/ui';
 import { IMAGE_PROVIDER_LABELS } from '@shared/providers';
 import { SettingsModelDot, SettingsModelList, settingsModelRowClass } from '../components/SettingsModelList';
+import { SettingsPanel } from '../components/SettingsPanel';
 import { codexReasoningLabel } from '../components/ModelPicker';
 import { withCodexReasoning } from '@shared/codexReasoning';
 import { t, tx } from '../i18n';
@@ -59,14 +60,10 @@ export function ProvidersSettings({
 
   return (
     <>
-    <section className="card p-4 mb-4">
-      <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-3">{t('Proveedores de IA y modelos')}</h2>
-      <p className="mb-4 text-xs leading-5 text-neutral-500">
-        {t('Las claves de API y los modelos configurados se comparten entre todas tus bóvedas.')}
-      </p>
+    <SettingsPanel icon="key" title={t('Proveedores de IA y modelos')} description={t('Las claves de API y los modelos configurados se comparten entre todas tus bóvedas.')}>
 
       {(settings.lockedProviderKeys?.length ?? 0) > 0 && (
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-100" data-testid="locked-api-key-recovery">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-100" data-testid="locked-api-key-recovery">
           <div className="flex flex-wrap items-center gap-3">
             <div className="min-w-0 flex-1">
               <b>{t('Nodus ha encontrado claves de API cifradas que todavía no puede leer.')}</b>
@@ -158,7 +155,7 @@ export function ProvidersSettings({
           )
         )}
       </div>
-    </section>
+    </SettingsPanel>
     </>
   );
 }
@@ -642,20 +639,17 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
   const money = (value: number | null) => value == null ? t('No disponible') : `$${value.toLocaleString(undefined, { maximumFractionDigits: 4 })} / 1M`;
 
   return (
-    <section className="card p-4 mb-4">
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">{t('Generación de imágenes')}</h2>
-          <p className="mt-1 text-xs leading-5 text-neutral-500">
-            {t('Configuración independiente para las imágenes decorativas opcionales. OpenAI usa su API oficial de imágenes y reutiliza la clave de OpenAI; Google reutiliza la clave de Gemini.')}
-          </p>
-        </div>
-        <button className="btn btn-ghost border border-neutral-700 gap-1.5" onClick={() => void load()} disabled={loading}>
-          <span className={loading ? 'animate-spin' : ''}>↻</span> {t('Actualizar modelos')}
+    <SettingsPanel
+      icon="image"
+      title={t('Generación de imágenes')}
+      description={t('Configuración independiente para las imágenes decorativas opcionales. OpenAI usa su API oficial de imágenes y reutiliza la clave de OpenAI; Google reutiliza la clave de Gemini.')}
+      actions={
+        <button className="btn btn-ghost gap-1.5 border border-neutral-300 dark:border-neutral-700" onClick={() => void load()} disabled={loading}>
+          <Icon name="refresh" size={14} className={loading ? 'animate-spin' : ''} /> {t('Actualizar modelos')}
         </button>
-      </div>
-
-      <div className="mt-4 grid grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)] gap-3 max-md:grid-cols-1">
+      }
+    >
+      <div className="grid grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)] gap-3 max-md:grid-cols-1">
         <label className="text-xs text-neutral-500">
           {t('Estilo predeterminado')}
           <select
@@ -670,13 +664,13 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
         </label>
         <div className="text-xs text-neutral-500">
           {t('Selección actual')}
-          <div className="mt-1 rounded-md border border-neutral-800 px-3 py-2 text-sm text-neutral-300">
+          <div className="mt-1 rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-800 dark:border-neutral-800 dark:text-neutral-300">
             {IMAGE_PROVIDER_LABELS[settings.imageProvider]} · {settings.imageModel}
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         <input
           className="input min-w-[16rem] flex-1"
           value={search}
@@ -691,13 +685,13 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
         </select>
       </div>
 
-      <p className="mt-2 text-[11px] leading-4 text-neutral-600">
+      <p className="text-[11px] leading-4 text-neutral-500">
         {t('Como los proveedores publican tamaños y métricas diferentes, la ordenación por precio se aplica por separado dentro de cada proveedor. Los modelos sin precio directo quedan al final; no se estiman costes.')}
       </p>
-      {error && <div className="mt-3 text-xs text-red-400">{error}</div>}
-      {loading && <div className="mt-4 text-sm text-neutral-500">{t('Consultando catálogos oficiales…')}</div>}
+      {error && <div className="text-xs text-red-400">{error}</div>}
+      {loading && <div className="text-sm text-neutral-500">{t('Consultando catálogos oficiales…')}</div>}
       {!loading && (
-        <SettingsModelList className="mt-3 max-h-[32rem] overflow-y-auto" data-testid="image-generation-model-list">
+        <SettingsModelList className="max-h-[32rem] overflow-y-auto" data-testid="image-generation-model-list">
           {shown.map((model) => {
             const selected = settings.imageProvider === model.provider && settings.imageModel === model.id;
             const favorite = settings.imageFavorites?.some(ref => ref.provider === model.provider && ref.model === model.id) ?? false;
@@ -726,11 +720,11 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
           {shown.length === 0 && <div className="p-4 text-sm text-neutral-500">{t('No hay modelos compatibles que coincidan.')}</div>}
         </SettingsModelList>
       )}
-      <div className="mt-2 flex items-center justify-between text-[10px] text-neutral-600">
+      <div className="flex items-center justify-between text-[11px] text-neutral-500">
         <span>{tx('{n} modelos compatibles con salida de imagen', { n: shown.length })}</span>
-        <button className="hover:text-indigo-300" onClick={() => window.nodus.openExternal('https://openrouter.ai/models?output_modalities=image&order=pricing-low-to-high')}>{t('Ver catálogo de OpenRouter')}</button>
+        <button className="text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => window.nodus.openExternal('https://openrouter.ai/models?output_modalities=image&order=pricing-low-to-high')}>{t('Ver catálogo de OpenRouter')}</button>
       </div>
-    </section>
+    </SettingsPanel>
   );
 }
 

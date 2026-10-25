@@ -28,6 +28,7 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
     ['archiveView', 'src/views/PrimarySourcesArchiveView.tsx'],
     ['placePicker', 'src/components/PlacePicker.tsx'],
     ['settings', 'src/views/Settings.tsx'],
+    ['modelSettings', 'src/views/settings/ModelSettings.tsx'],
     ['app', '@shell'],
     ['toolkit', 'src/views/ToolkitView.tsx'],
   ].map(([key, relative]) => [key, readSource(relative)]));
@@ -77,10 +78,10 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
   ]) assert.ok(sources.tour.includes(step), `tour teaches: ${step}`);
   assert.match(sources.settings, /primary-sources-tour-replay/);
   assert.match(sources.settings, /primarySourcesTourComplete: false/);
-  assert.match(sources.settings, /getPrimarySourceGovernanceWorkspace/);
-  assert.match(sources.settings, /updatePrimarySourcePolicySettings/);
-  assert.match(sources.settings, /Política de IA de Fuentes primarias/);
-  assert.match(sources.settings, /EmbeddingIndexesManager/,
+  assert.match(sources.modelSettings, /getPrimarySourceGovernanceWorkspace/);
+  assert.match(sources.modelSettings, /updatePrimarySourcePolicySettings/);
+  assert.match(sources.modelSettings, /Política de IA de Fuentes primarias/);
+  assert.match(sources.modelSettings, /EmbeddingIndexesManager/,
     'Primary Sources uses the same staged index coordinator as every vault');
   const inventory = readSource('electron/ai/embeddingIndexInventory.ts');
   assert.match(inventory, /case 'archive_items'/);

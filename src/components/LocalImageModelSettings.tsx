@@ -11,6 +11,7 @@ import {
 import { t } from '../i18n';
 import { ConfirmModal } from './ConfirmModal';
 import { Icon } from './ui';
+import { SettingsPanel } from './SettingsPanel';
 
 function formatBytes(bytes: number): string {
   if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toLocaleString(undefined, { maximumFractionDigits: 1 })} GB`;
@@ -77,14 +78,12 @@ export function LocalImageModelSettings({
     : status?.runtime.downloading ? status.runtime.progress : progress;
 
   return (
-    <section className="card p-4 mb-4" data-testid="nodus-local-image-models">
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">{t('Generación de imágenes local')}</h2>
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-neutral-500">
-            {t('Descarga opcional: Nodus genera la imagen en este equipo, sin API, sin coste por uso y sin enviar el prompt a terceros.')}
-          </p>
-        </div>
+    <SettingsPanel
+      data-testid="nodus-local-image-models"
+      icon="cube"
+      title={t('Generación de imágenes local')}
+      description={t('Descarga opcional: Nodus genera la imagen en este equipo, sin API, sin coste por uso y sin enviar el prompt a terceros.')}
+      actions={
         <div className={`rounded-lg border px-3 py-2 text-xs ${status?.runtime.ready ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300' : 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300'}`}>
           <div>{status?.runtime.ready
             ? `${t('Motor de imágenes listo')} · stable-diffusion.cpp`
@@ -92,9 +91,9 @@ export function LocalImageModelSettings({
           </div>
           <button className="mt-1 text-[10px] underline decoration-dotted underline-offset-2 opacity-80 hover:opacity-100" title={t('Abrir licencia de stable-diffusion.cpp')} onClick={() => void window.nodus.openExternal('https://github.com/leejet/stable-diffusion.cpp/blob/b290693/LICENSE')}>stable-diffusion.cpp · MIT</button>
         </div>
-      </div>
-
-      <div className="mt-4 rounded-lg border border-neutral-200 bg-white px-3 py-3 dark:border-neutral-800 dark:bg-transparent">
+      }
+    >
+      <div className="rounded-lg border border-neutral-200 bg-white px-3 py-3 dark:border-neutral-800 dark:bg-transparent">
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div className="min-w-0">
             <div className="flex items-start gap-2">
@@ -122,7 +121,7 @@ export function LocalImageModelSettings({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(12rem,20rem)_minmax(0,1fr)] sm:items-end">
+      <div className="grid gap-3 sm:grid-cols-[minmax(12rem,20rem)_minmax(0,1fr)] sm:items-end">
         <label className="text-xs text-neutral-500">
           {t('Calidad')}
           <select
@@ -137,11 +136,11 @@ export function LocalImageModelSettings({
         <p className="text-[11px] leading-4 text-neutral-500">{t('FLUX.2 Klein usa siempre sus 4 pasos recomendados; la calidad cambia la resolución, el consumo de memoria y el tiempo de generación.')}</p>
       </div>
 
-      <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-5 text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
         {t('Licencia: esta integración usa FLUX.2 Klein 4B bajo Apache 2.0. La variante 9B tiene términos no comerciales diferentes y no se descarga.')}
       </div>
-      {transferBusy && transferProgress > 0 && <div className="mt-4 h-1.5 overflow-hidden rounded bg-neutral-800" data-testid="nodus-local-image-download-progress"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, transferProgress * 100)}%` }} /></div>}
-      {error && <p className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">{error}</p>}
+      {transferBusy && transferProgress > 0 && <div className="h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" data-testid="nodus-local-image-download-progress"><div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, transferProgress * 100)}%` }} /></div>}
+      {error && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">{error}</p>}
       {confirmDelete && <ConfirmModal
         title={t('Eliminar modelo local')}
         message={t('Se eliminarán FLUX.2 Klein 4B Q4 y sus componentes del almacenamiento de Nodus. Las imágenes ya generadas se conservarán.')}
@@ -150,6 +149,6 @@ export function LocalImageModelSettings({
         onConfirm={() => void remove()}
         onCancel={() => setConfirmDelete(false)}
       />}
-    </section>
+    </SettingsPanel>
   );
 }

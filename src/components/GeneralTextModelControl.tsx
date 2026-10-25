@@ -93,7 +93,7 @@ export function GeneralTextModelControl({
           menu
         />
         <button
-          className="btn btn-ghost justify-center border border-neutral-700"
+          className="btn btn-ghost justify-center border border-neutral-300 dark:border-neutral-700"
           data-testid="general-text-model-load"
           disabled={loading}
           onClick={() => void discover()}

@@ -145,7 +145,7 @@ try {
   assert.match(ipc, /if \(!event\.sender\.isDestroyed\(\)\) event\.sender\.send\('ai:nodusLocal:progress'/, 'progress cannot abort a download after its renderer is destroyed');
   assert.match(preload, /ai:nodusLocal:progress/, 'preload forwards download progress safely');
   assert.match(preload, /cancelNodusLocalDownloads: \(\) => ipcRenderer\.invoke\('ai:nodusLocal:cancelDownloads'\)/, 'the renderer can request cancellation');
-  assert.match(settings, /<EmbeddingIndexesManager settings=/, 'embedding changes use the saved-index manager');
+  assert.match(readSource('src/views/settings/ModelSettings.tsx'), /<EmbeddingIndexesManager settings=/, 'embedding changes use the saved-index manager');
   const indexManager = readSource('src/components/EmbeddingIndexesManager.tsx');
   assert.match(indexManager, /previewEmbeddingIndex/, 'embedding changes preview compatibility before preparation');
   assert.match(indexManager, /<ConfirmModal[\s\S]*Preparar y activar[\s\S]*prepareEmbeddingIndex/, 'preparation requires explicit confirmation');

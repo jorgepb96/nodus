@@ -9,7 +9,7 @@ import { OccurrenceCard, EvidenceLocationLink } from '../components/NodeDetailPa
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { buildIdeaNote } from '../notes';
-import { notifyDataChanged, useDataRefresh, useScanComplete } from '../hooks';
+import { notifyDataChanged, useDataRefresh, useDismissableLayer, useScanComplete } from '../hooks';
 import {
   ASSISTANT_CONTEXTS,
   type IdeaNavigationTarget,
@@ -174,8 +174,18 @@ export function IdeasView({
     });
   }, [activeIdeaId, filtersOpen, openIdeas, searchQuery, sortKey, surface, typeFilter]);
 
-  // Do not leave an explicit filter close waiting for a passive effect: the same
-  // click may also dismiss this section. Persist the user's action immediately.
+  // The filters open as a balloon anchored to their button, as in the Library:
+  // an outside click or Escape closes them. A dismissal is as deliberate as a
+  // second click on the trigger, so it is persisted on the event itself.
+  const closeFilterPanel = () => {
+    setFiltersOpenState(false);
+    report.current?.({ filtersOpen: false });
+  };
+  const filterBalloonRef = useDismissableLayer<HTMLDivElement>({
+    open: filtersOpen,
+    onDismiss: closeFilterPanel,
+    group: 'ideas-filter-balloon',
+  });
   const toggleFilterPanel = () => {
     const nextOpen = !filtersOpen;
     setFiltersOpenState(nextOpen);
@@ -284,35 +294,48 @@ export function IdeasView({
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
-              <button
-                data-testid="ideas-filters-toggle"
-                className={`btn border border-neutral-300 dark:border-neutral-700 ${filtersOpen || typeFilter ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'btn-ghost'}`}
-                onClick={toggleFilterPanel}
-              >
-                <Icon name="filter" /> {t('Filtros')}{typeFilter ? <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] dark:bg-indigo-500/20">1</span> : null}
-              </button>
-            </div>
-            {filtersOpen && (
-              <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl bg-neutral-50 p-2 dark:bg-neutral-900/55">
-                <label className="flex items-center gap-2 text-xs text-neutral-500">
-                  {t('Tipo')}
-                  <select data-testid="ideas-type-filter" className="input h-8 text-xs" value={typeFilter} onChange={(event) => changeTypeFilter(event.target.value as IdeaType | '')}>
-                    <option value="">{t('Todos los tipos')}</option>
-                    {(['claim', 'finding', 'construct', 'method', 'framework'] as IdeaType[]).map((type) => <option key={type} value={type}>{t(NODE_LABELS[type])}</option>)}
-                  </select>
-                </label>
-                <label className="flex items-center gap-2 text-xs text-neutral-500">
-                  {t('Ordenar')}
-                  <select data-testid="ideas-sort" className="input h-8 text-xs" value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
-                    <option value="label">{t('Nombre')}</option>
-                    <option value="type">{t('Tipo')}</option>
-                    <option value="works">{t('Nº de obras')}</option>
-                    <option value="connections">{t('Nº de conexiones')}</option>
-                    <option value="confidence">{t('Confianza')}</option>
-                  </select>
-                </label>
+              <div className="relative shrink-0" ref={filterBalloonRef}>
+                <button
+                  data-testid="ideas-filters-toggle"
+                  className={`btn border border-neutral-300 dark:border-neutral-700 ${filtersOpen || typeFilter ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' : 'btn-ghost'}`}
+                  onClick={toggleFilterPanel}
+                  aria-expanded={filtersOpen}
+                  aria-haspopup="dialog"
+                  aria-controls={filtersOpen ? 'ideas-filters-panel' : undefined}
+                >
+                  <Icon name="filter" /> {t('Filtros')}{typeFilter ? <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] dark:bg-indigo-500/20">1</span> : null}
+                </button>
+                {filtersOpen && (
+                  <div
+                    id="ideas-filters-panel"
+                    data-testid="ideas-filters-panel"
+                    role="dialog"
+                    aria-label={t('Filtros')}
+                    className="ideas-filter-balloon absolute right-0 top-full z-40 mt-2 w-60 max-w-[calc(100vw-3rem)] rounded-xl border border-neutral-200 bg-white p-3 shadow-2xl dark:border-neutral-700 dark:bg-neutral-950"
+                  >
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-medium text-neutral-500">
+                        <span className="mb-1 block">{t('Tipo')}</span>
+                        <select data-testid="ideas-type-filter" className="input h-8 w-full text-xs" value={typeFilter} onChange={(event) => changeTypeFilter(event.target.value as IdeaType | '')}>
+                          <option value="">{t('Todos los tipos')}</option>
+                          {(['claim', 'finding', 'construct', 'method', 'framework'] as IdeaType[]).map((type) => <option key={type} value={type}>{t(NODE_LABELS[type])}</option>)}
+                        </select>
+                      </label>
+                      <label className="block text-[11px] font-medium text-neutral-500">
+                        <span className="mb-1 block">{t('Ordenar')}</span>
+                        <select data-testid="ideas-sort" className="input h-8 w-full text-xs" value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+                          <option value="label">{t('Nombre')}</option>
+                          <option value="type">{t('Tipo')}</option>
+                          <option value="works">{t('Nº de obras')}</option>
+                          <option value="connections">{t('Nº de conexiones')}</option>
+                          <option value="confidence">{t('Confianza')}</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
 
           <div ref={scrollerRef} data-testid="ideas-table-scroll" className="min-h-0 flex-1 overflow-auto">

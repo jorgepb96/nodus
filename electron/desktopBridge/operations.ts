@@ -190,7 +190,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   if (!handler) throw new Error('operation_unavailable');
   if (method === 'updateSettings') {
     const patch = args[0];
-    const permitted = new Set(['modelSettingsMode', 'dictionaryModel', 'deepResearchModel', 'chatModel', 'argumentMapModel', 'synthesisModel', 'studyModel', 'improveModel', 'immersionModel', 'writingModel', 'researchThinkingEffort', 'researchEffortByModel', 'researchWebSearch']);
+    const permitted = new Set(['modelSettingsMode', 'dictionaryModel', 'deepResearchModel', 'chatModel', 'argumentMapModel', 'synthesisModel', 'studyModel', 'improveModel', 'immersionModel', 'writingModel', 'researchThinkingEffort', 'researchEffortByModel', 'researchWebSearch',
+      // The mobile Writing surface owns these two UI preferences: choosing the improvement
+      // prompt and which prompts stay in the compact toolbar. They are not provider secrets.
+      'studyImproveLastStyleId', 'studyImproveToolbarStyleIds']);
     if (!patch || typeof patch !== 'object' || Array.isArray(patch) || Object.keys(patch).some(key => !permitted.has(key))) throw new Error('settings_forbidden');
     if ('modelSettingsMode' in patch && !['basic', 'advanced'].includes(String(patch.modelSettingsMode))) throw new Error('settings_forbidden');
   }

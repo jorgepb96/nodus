@@ -32,6 +32,7 @@ import { createDatabaseFromCsv } from '../db/databasesRepo';
 import * as projects from '../db/projectsRepo';
 import { generateWritingWorkshopDraft } from '../ai/writingWorkshop';
 import { saveWritingWorkshopDraft } from '../db/writingDraftsRepo';
+import { getSettings } from '../db/settingsRepo';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
 import { currentPublishedRevision, markVaultDirty } from './serverSyncService';
 import { fetchWithTimeout, normalizeUrl, type VaultServerConfig } from './serverSyncShared';
@@ -171,8 +172,11 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
         passageIds: stringArray(payload, 'passageIds'),
         tutorRouteIds: stringArray(payload, 'tutorRouteIds'),
       };
-      const draft = await generateWritingWorkshopDraft({ brief, selection, model: optionalModel(payload) });
-      const saved = saveWritingWorkshopDraft({ draft, model: optionalModel(payload), title: optionalText(payload, 'title') });
+      // A mobile composer sends no model. Resolve the owning Mac's effective writing model
+      // once, use it for generation and persist that same identity in the saved draft.
+      const model = optionalModel(payload) ?? getSettings().writingModel;
+      const draft = await generateWritingWorkshopDraft({ brief, selection, model });
+      const saved = saveWritingWorkshopDraft({ draft, model, title: optionalText(payload, 'title') });
       return { result: { draftId: saved.id, title: saved.title }, changedVault: true };
     }
     case 'projects.create': {

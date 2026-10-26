@@ -4,7 +4,7 @@ import { Icon } from '../ui';
 import { t } from '../../i18n';
 
 /** Local attachments download as files; Electron rejects window.open(data:…). */
-export function EditorFileDownloadButton() {
+export function EditorFileDownloadButton({onDownload}:{onDownload?:(url:string,name:string)=>Promise<void>}={}) {
   const editor = useBlockNoteEditor();
   const components = useComponentsContext()!;
   const dictionary = useDictionary();
@@ -14,12 +14,13 @@ export function EditorFileDownloadButton() {
     return blocks.length === 1 ? blocks[0] : undefined;
   } });
   const url = block && 'url' in block.props ? block.props.url : '';
-  if (typeof url !== 'string' || !url.startsWith('data:') && !/^nodus-blob:\/\/[a-f0-9]{64}$/.test(url)) return <FileDownloadButton />;
+  if (!block || typeof url !== 'string' || !url || (!url.startsWith('data:') && !/^nodus-blob:\/\/[a-f0-9]{64}$/.test(url) && !onDownload)) return <FileDownloadButton />;
   const label = dictionary.formatting_toolbar.file_download.tooltip[block!.type] || dictionary.formatting_toolbar.file_download.tooltip.file;
   const Button = components.FormattingToolbar.Button;
   return <><Button className="bn-button" label={label} mainTooltip={label} icon={<Icon name="download" size={18} />} onClick={() => void (async () => {
     setError(false);
     try {
+      if(onDownload){await onDownload(url,block&&'name' in block.props&&typeof block.props.name==='string'?block.props.name||block.type:'attachment');return;}
       // Decode locally: fetch(data:…) is blocked by Server's connect-src policy.
       const stored = /^nodus-blob:\/\/([a-f0-9]{64})$/.exec(url);
       const saved = stored ? await window.nodus.getPageAsset(stored[1]) : null;

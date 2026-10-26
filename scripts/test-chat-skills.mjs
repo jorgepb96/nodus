@@ -92,13 +92,19 @@ test('history replay keeps the model prose and drops the app’s own control blo
 });
 
 test('every chat surface replays only model prose in history', () => {
+  const studyAdapter = fs.readFileSync(path.join(root, 'electron/ai/studyAssistant.ts'), 'utf8');
+  assert.match(studyAdapter, /import\s*\{buildStudyChatPrompt\}\s*from '@shared\/studyChatPrompt'/);
+  assert.match(studyAdapter, /return buildStudyChatPrompt\(request,citations,promptLanguage\(getSettings\(\)\.promptLanguage\)\)/, 'the live Study adapter must use the same sanitized prompt builder');
+  const worldAdapter = fs.readFileSync(path.join(root, 'electron/ai/worldChat.ts'), 'utf8');
+  assert.match(worldAdapter, /import\s*\{calculateWorldChatFacts\}\s*from '@shared\/worldChatFacts'/);
+  assert.match(worldAdapter, /return calculateWorldChatFacts\(request,desktopWorldChatSource\(\),language\)/, 'the live World adapter must use sanitized canonical facts');
   // The helper is dead unless each surface routes its stored assistant turns through it.
   const seams = [
     ['electron/ai/researchAssistant.ts', /chatProseForHistory\(m\.content\)/],
-    ['electron/ai/studyAssistant.ts', /role === 'assistant' \? chatProseForHistory\(content\)/],
+    ['shared/studyChatPrompt.ts', /role === 'assistant' \? chatProseForHistory\(content\)/],
     ['electron/ai/nodiChat.ts', /chatProseForHistory\(message\.content\)/],
     ['electron/ai/characterChat.ts', /role === 'character' \? chatProseForHistory\(content\)/],
-    ['electron/ai/worldChat.ts', /chatProseForHistory\(turn\.content\)/],
+    ['shared/worldChatFacts.ts', /chatProseForHistory\(turn\.content\)/],
     ['electron/ai/databaseChat.ts', /chatProseForHistory\(turn\.content\)/],
   ];
   for (const [file, pattern] of seams) {

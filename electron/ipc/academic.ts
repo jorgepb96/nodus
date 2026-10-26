@@ -1,4 +1,6 @@
+import type { DictionaryProgress } from '@shared/dictionary';
 import { exportAcademicDocument, inspectAcademicDocument } from '../export/academicExport';
+import {mobileWritingWorkshopSource, mobileWritingWorkshopCatalogue, mobileWritingWorkshopDraftCatalogue, saveMobileWritingWorkshop} from '../ai/mobileWritingWorkshop';
 import * as preparationExperience from '../ai/researchPreparationExperience';
 import { onDocumentaryPreparationChanged } from '../ai/documentaryPreparationEvents';
 import { manualIndexStatus, scheduleManualIndex } from '../ai/manualIdeaIndex';
@@ -217,7 +219,7 @@ import { getCachedWorkIdeaSynthesis, synthesizeWorkIdeas } from '../ai/workIdeaS
 import { exportAuthorSyntheses } from '../export/authorSynthesisExport';
 import { setAuthorSaved } from '../db/savedAuthorsRepo';
 import { buildStudyPlan, generateStudySession } from '../ai/studyGuide';
-import { buildImmersionScope, evaluateImmersionAnswer, generateImmersionSession } from '../ai/immersion';
+import { buildImmersionScope, evaluateImmersionAnswer, generateImmersionSession, mobileImmersionGenerationContext, mobileImmersionOfflineSource, saveMobileImmersion } from '../ai/immersion';
 import * as immersionRepo from '../db/immersionRepo';
 import { generateHypothesisLab } from '../ai/hypothesisLab';
 import * as studyProgress from '../db/studyProgressRepo';
@@ -230,6 +232,8 @@ import { transcribeStudyAudio as transcribeOpenAiStudyAudio } from '../ai/studyT
 import { diarizeStudyRecording } from '../ai/studyDiarization';
 import { cancelWhisperCpp, deleteWhisperCppModel, downloadWhisperCppModel, getWhisperCppStatus, transcribeWhisperCpp, installWhisperCpp, uninstallWhisperCpp } from '../stt/whisperCpp';
 import { improveStudyText } from '../ai/studyImprove';
+import {mobileStudyImprovementContext, mobileStudyImprovementOfflineSource, saveMobileStudyImprovement} from '../ai/mobileStudyImprovement';
+import type {MobileStudyImprovementSave} from '@shared/mobileStudyImprovement';
 import { suggestStudySynonyms } from '../ai/studySynonyms';
 import * as studySearch from '../ai/studySearch';
 import * as studyAssistant from '../ai/studyAssistant';
@@ -470,6 +474,17 @@ export function registerAcademicIpc(context: IpcContext): void {
 
   h('dictionary:list', async (_e, request: DictionaryListRequest) => dictionaryRepo.listDictionaryEntries(request));
   h('dictionary:facets', async () => dictionaryRepo.listDictionaryFacets());
+  h('dictionary:mobile:context', async (_e, entryId: string, webSearch?: string) => (await import('../ai/dictionary')).dictionaryMobileGenerationContext(entryId, webSearch));
+  h('dictionary:mobile:scan', async (_e, entryId: string) => {
+    const detail = (await import('../ai/dictionary')).scanMobileDictionaryEvidence(entryId);
+    announceDictionary(entryId);
+    return detail;
+  });
+  h('dictionary:mobile:save', async (_e, input: Parameters<typeof import('../ai/dictionary').saveMobileDictionaryDefinition>[0]) => {
+    const version = (await import('../ai/dictionary')).saveMobileDictionaryDefinition(input);
+    announceDictionary(version.entryId);
+    return version;
+  });
   h('dictionary:get', async (_e, id: string) => dictionaryRepo.getDictionaryEntryDetail(id));
   h('dictionary:create', async (_e, input: DictionaryEntryInput) => {
     const entry = dictionaryRepo.createDictionaryEntry(input);
@@ -519,6 +534,17 @@ export function registerAcademicIpc(context: IpcContext): void {
       console.error(`[dictionary] generation failed for ${request.entryId}`, error);
       return { ok: false as const, failureDetail };
     }
+  });
+  h('dictionary:generate:mobile', async (event, request: DictionaryGenerationRequest) => {
+    const version = await generateDictionaryEntry(request, progress => {
+      event.sender.send('mobile:dictionary:progress', { ...progress, mode: request.mode });
+    });
+    announceDictionary(request.entryId);
+    const progress: DictionaryProgress = { entryId: request.entryId, mode: request.mode,
+      phase: version.outcome === 'degraded' ? 'degraded' : 'done',
+      message: version.outcome === 'degraded' ? 'La síntesis necesita revisión' : 'Definición generada' };
+    event.sender.send('mobile:dictionary:progress', progress);
+    return progress;
   });
   h('dictionary:generate:start', async (_e, request: DictionaryGenerationRequest) => {
     return dictionaryGenerationJobs.start(request);
@@ -1040,6 +1066,15 @@ export function registerAcademicIpc(context: IpcContext): void {
     return result;
   });
   h('study:tree:duplicate', async (_e, kind: StudyEntityKind, id: string) => studyOrg.duplicateStudyTree(kind, id));
+  // Companion document commands do not enqueue extraction or indexing.
+  h('study:mobile:duplicate', async (_e, id: string) => {
+    if (typeof id !== 'string' || !id || id.length > 128) throw new Error('invalid_study_document');
+    return studyOrg.duplicateStudyTree('document', id);
+  });
+  h('study:mobile:trash', async (_e, id: string) => {
+    if (typeof id !== 'string' || !id || id.length > 128) throw new Error('invalid_study_document');
+    return studyOrg.setStudyLifecycle('document', id, 'trash');
+  });
   h('study:tag:create', async (_e, input: CreateStudyTagInput) => studyOrg.createStudyTag(input));
   h('study:tag:update', async (_e, id: string, patch: Partial<CreateStudyTagInput> & { favorite?: boolean; position?: number }) =>
     studyOrg.updateStudyTag(id, patch));
@@ -1105,6 +1140,9 @@ export function registerAcademicIpc(context: IpcContext): void {
     downloadWhisperCppModel(model, (fraction) => event.sender.send('study:stt:modelProgress', requestId, fraction)));
   h('study:stt:whisperCpp:delete', async (_event, model: string) => deleteWhisperCppModel(model));
   h('study:styles:list', async (_e, options?: { includeArchived?: boolean; search?: string }) => studyStyles.listStudyStyles(options));
+  h('study:improve:mobile:context', async (_e, request: StudyImproveRequest) => mobileStudyImprovementContext(request));
+  h('study:improve:mobile:offlineSource', async (_e, target) => mobileStudyImprovementOfflineSource(target));
+  h('study:improve:mobile:save', async (_e, input: MobileStudyImprovementSave) => saveMobileStudyImprovement(input));
   h('study:styles:create', async (_e, input: StudyStyleInput) => studyStyles.createStudyStyle(input));
   h('study:styles:update', async (_e, id: string, patch: Partial<StudyStyleInput>) => studyStyles.updateStudyStyle(id, patch));
   h('study:styles:duplicate', async (_e, id: string) => studyStyles.duplicateStudyStyle(id));
@@ -1358,6 +1396,13 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('study:knowledge:progress', async () => getStudyKnowledgeProgress());
   h('study:knowledge:reanalyze', async (_e, sourceKind: 'material' | 'document', sourceId: string) => reanalyzeStudyKnowledgeSource(sourceKind, sourceId));
   h('study:assistant:sources', async () => studyAssistant.getStudyAssistantSources());
+  h('study:assistant:mobileSources',async (_e,selection:unknown)=>studySearch.getMobileStudyChatSourcePack(selection));
+  h('study:assistant:mobileOriginal',async (_e,request:unknown)=>studySearch.getMobileStudyChatOriginal(request));
+  h('study:assistant:mobileCatalogue',async ()=>{
+    const workspace=studyOrg.getStudyWorkspace();
+    const named=(rows:Array<{id:string;name:string}>)=>rows.map(({id,name})=>({id,name}));
+    return {version:1,courses:named(workspace.courses),subjects:named(workspace.subjects),topics:named(workspace.topics),sources:studyAssistant.getStudyAssistantSources()};
+  });
   h('study:assistant:list', async (_e, includeArchived?: boolean) => studyAssistant.listStudyAssistantConversations(Boolean(includeArchived)));
   h('study:assistant:get', async (_e, id: string) => studyAssistant.getStudyAssistantConversation(id));
   h('study:assistant:create', async (_e, input?: StudyAssistantConversationInput) => studyAssistant.createStudyAssistantConversation(input));
@@ -1548,6 +1593,9 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('study:session', async (_e, request: StudySessionRequest) => generateStudySession(request));
   // inmersión (guided topic mastery: scope → generate → resume/replay forever)
   h('immersion:scope', async (_e, request: ImmersionScopeRequest) => buildImmersionScope(request));
+  h('immersion:mobile:context', async (_e, request: ImmersionRequest) => mobileImmersionGenerationContext(request));
+  h('immersion:mobile:offlineSource', async (_e, target) => mobileImmersionOfflineSource(target));
+  h('immersion:mobile:save', async (_e, input: Parameters<typeof saveMobileImmersion>[0]) => saveMobileImmersion(input));
   h('immersion:generate', async (e, requestId: string, request: ImmersionRequest) => {
     const session = await generateImmersionSession(request, (p) =>
       e.sender.send('immersion:generate:progress', requestId, p)
@@ -1682,10 +1730,12 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('research:zotero:read', async (_e, input: Parameters<typeof researchZotero.readResearchZotero>[0]) => researchZotero.readResearchZotero(input));
   h('research:notebooks:list', async () => researchNotebooks.listResearchNotebooks());
   h('research:notebooks:save', async (_e, input) => researchNotebooks.saveResearchNotebook(input));
+  h('research:notebooks:save-mobile', async (_e, input) => researchNotebooks.saveResearchNotebook(input, { prepare: false }));
   h('research:notebooks:delete', async (_e, id: string) => researchNotebooks.deleteResearchNotebook(id));
   h('research:notebooks:resolve', async (_e, id: string) => researchNotebooks.resolveResearchNotebook(id));
   h('research:notebooks:appearance', async (_e, id: string, patch: { name?: string; icon?: string | null; color?: string | null }) => researchNotebooks.updateResearchNotebookAppearance(id, patch));
   h('research:notebooks:preparation', async (_e, id: string) => researchNotebooks.ensureNotebookPrepared(id));
+  h('research:notebooks:preparation-read', async (_e, id: string) => researchNotebooks.getResearchNotebookPreparation(id));
   h('research:notebooks:search', async (_e, id: string, query: string) => {
     if (typeof query !== 'string' || query.length > 10000) throw new Error('Invalid research query');
     const scope = researchNotebooks.resolveResearchNotebook(id);
@@ -1763,6 +1813,14 @@ export function registerAcademicIpc(context: IpcContext): void {
 
   // writing workshop
   h('writing:snapshot', async (_e, brief: WritingWorkshopBrief) => buildWritingWorkshopSnapshot(brief));
+  h('writing:mobile:source', async (_e, selection) => mobileWritingWorkshopSource(selection));
+  h('writing:mobile:catalogue', async (_e, input) => mobileWritingWorkshopCatalogue(input));
+  h('writing:mobile:drafts', async (_e, input) => mobileWritingWorkshopDraftCatalogue(input));
+  h('writing:mobile:save', async (_e, input) => {
+    const saved = await saveMobileWritingWorkshop(input);
+    announceWritingDrafts();
+    return saved;
+  });
   h('writing:draft', async (_e, request: WritingWorkshopDraftRequest) => generateWritingWorkshopDraft(request));
   h('writing:export', async (_e, request: WritingWorkshopExportRequest) => exportWritingWorkshopDraft(request));
   h('writing:exportZip', async (e, requestId: string, request: DeepResearchArchiveRequest) =>
@@ -1770,7 +1828,19 @@ export function registerAcademicIpc(context: IpcContext): void {
       if (!e.sender.isDestroyed()) e.sender.send('writing:exportZip:progress', requestId, done, total, title);
     })
   );
-  h('writing:saved:list', async () => writingDrafts.listWritingWorkshopDrafts());
+  h('writing:saved:list', async () => writingDrafts.listWritingWorkshopDrafts({ requireComplete: true }));
+  h('writing:saved:downloadCatalogue', async (_e, request: {offset: number; limit: number}) => {
+    if (!request || !Number.isSafeInteger(request.offset) || request.offset < 0 ||
+        !Number.isSafeInteger(request.limit) || request.limit < 1 || request.limit > 200 ||
+        Object.keys(request).some(key => !['offset', 'limit'].includes(key))) throw new Error('invalid_writing_download_page');
+    const page = writingDrafts.listWritingWorkshopDraftSummaries(request);
+    return {items: page.drafts.map(({id, title, createdAt, updatedAt}) => ({id, title, createdAt, updatedAt})),
+      total: page.total, offset: request.offset, limit: request.limit};
+  });
+  h('writing:saved:get', async (_e, id: string) => {
+    if (typeof id !== 'string' || !id || id.length > 256) throw new Error('invalid_writing_draft_id');
+    return writingDrafts.getWritingWorkshopDraft(id);
+  });
   h('writing:saved:save', async (e, request: WritingWorkshopSaveDraftRequest) => {
     const saved = writingDrafts.saveWritingWorkshopDraft(request);
     announceWritingDrafts();
@@ -1831,6 +1901,14 @@ export function registerAcademicIpc(context: IpcContext): void {
     ensureDeepResearchLane();
     return listDeepResearchJobs();
   });
+  h('research:deep:queue:enqueue-mobile', async (event, request: DeepResearchRequest) => {
+    ensureDeepResearchLane();
+    const vault = getActiveVault();
+    const bridgeJobId = (event as typeof event & { mobileBridgeJobId?: string }).mobileBridgeJobId;
+    const requireExisting = (event as typeof event & { mobileBridgeRecovery?: boolean }).mobileBridgeRecovery;
+    return enqueueDeepResearchJob({ request, origin: 'mobile', bridgeJobId, requireExisting, save: true, vault: { id: vault.id, name: vault.name } });
+  });
+  h('research:deep:queue:clear-mobile', async () => { ensureDeepResearchLane(); return clearFinishedDeepResearchJobs(getActiveVault().id); });
   h('research:deep:queue:enqueue', async (_e, request: DeepResearchRequest) => {
     ensureDeepResearchLane();
     return enqueueDeepResearchJob({ request, origin: 'app', save: true });
@@ -1870,6 +1948,7 @@ export function registerAcademicIpc(context: IpcContext): void {
     buildArgumentMap(request, request.model)
   );
   h('argumentMap:discover', async () => discoverArgumentRoutes());
+  h('mobile:argument:list', async (_e,cursor?:string|null,limit?:number) => (await import('../desktopBridge/academicGeneration')).listSavedCompanionArgumentMaps(cursor,limit));
 
   // research chat history
   h('research:prompts:list', (_e, key?: string | null) => getResearchSystemPrompts(key));

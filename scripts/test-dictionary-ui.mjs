@@ -23,7 +23,7 @@ const [
     readFile(path.join(root, "src/app/views/corpus.tsx"), "utf8"),
     readFile(path.join(root, "src/navigation.ts"), "utf8"),
     readFile(path.join(root, "src/views/AuthorsView.tsx"), "utf8"),
-    readFile(path.join(root, "electron/ai/dictionary.ts"), "utf8"),
+    Promise.all([readFile(path.join(root, "electron/ai/dictionary.ts"), "utf8"), readFile(path.join(root, "shared/dictionaryGenerationCore.ts"), "utf8")]).then(files => files.join("\n")),
     readFile(path.join(root, "electron/ipc/academic.ts"), "utf8"),
     readFile(
       path.join(root, "electron/ai/dictionaryGenerationQueue.ts"),
@@ -35,6 +35,10 @@ const [
     readFile(path.join(root, "src/app/viewSnapshots.ts"), "utf8"),
     readFile(path.join(root, "shared/academicPromptPacks.ts"), "utf8"),
   ]);
+const dictionaryLane = await readFile(
+  path.join(root, "electron/ai/dictionaryGenerationLane.ts"),
+  "utf8",
+);
 
 assert.match(
   navigation,
@@ -194,7 +198,7 @@ assert.match(
 );
 assert.match(
   view,
-  /listDictionaryEntries\(\{[\s\S]*?query,[\s\S]*?letter:[\s\S]*?sort:/,
+  /readDictionaryCatalogue\(request => window\.nodus\.listDictionaryEntries\(request\), \{[\s\S]*?query,[\s\S]*?letter:[\s\S]*?sort:/,
   "overview sends search, filters and sorting through IPC",
 );
 assert.match(view, /updateDictionaryEntry/, "manual editing is wired");
@@ -304,9 +308,14 @@ assert.match(
   "the status column renders an animated generation indicator",
 );
 assert.match(
-  academicIpc + await readFile(path.join(root, 'electron/ai/dictionaryGenerationLane.ts'), 'utf8'),
+  academicIpc + dictionaryLane,
   /new DictionaryGenerationQueue\([\s\S]*generateDictionaryEntry\(request, report\)/,
   "the background queue runs the shared Dictionary investigation and synthesis",
+);
+assert.match(
+  dictionaryLane,
+  /new DictionaryGenerationQueue\([\s\S]*work => \{[\s\S]*getActiveVault\(\)\.id[\s\S]*withoutDatabaseContext\(\(\) => withOwningVault\(vaultId, \(\) => withVaultDatabase\(vaultId, work\)\)\)/,
+  "the background queue captures the owning vault before scheduling, instead of inheriting a closed connection",
 );
 assert.match(
   ai,
@@ -320,8 +329,13 @@ assert.match(
 );
 assert.match(
   generationQueue,
-  /setImmediate\([\s\S]*this\.#run\(request, token\)/,
+  /const execute = this\.bindExecution\(async \(\) => \{ await this\.#run\(request, token\); \}\)[\s\S]*setImmediate\(\(\) => \{ void execute\(\)\.catch\(/,
   "every entry gets its own independently scheduled background execution",
+);
+assert.match(
+  ai,
+  /const definition = await generateDictionaryDefinition\([\s\S]*?harness\?\.validate\(\);[\s\S]*?saveDictionaryVersion\(definition\)/,
+  "a Dictionary version is only saved after generation and validation have finished",
 );
 assert.match(
   generationQueue,
@@ -358,11 +372,11 @@ assert.match(
   /restoreDictionaryVersion/,
   "version restoration is available",
 );
-const generatedAt = ai.indexOf("generated = await researchHarnessStage('dictionary.definition'");
+const generatedAt = ai.indexOf("const definition = await generateDictionaryDefinition(");
 const savedAt = ai.indexOf("const version = saveDictionaryVersion", generatedAt);
 assert.ok(
   generatedAt >= 0 && savedAt > generatedAt,
-  "provider generation completes before any version is saved, so failure preserves current content",
+  "the shared generation and harness stages complete before any version is saved, so failure preserves current content",
 );
 assert.match(
   view,
@@ -416,8 +430,12 @@ assert.match(
 );
 assert.match(
   ai,
-  /applyCitationPolicy[\s\S]*extractCitationClaims[\s\S]*aiVerifyCitations/,
-  "generation reuses Deep Research citation validation",
+  /applyCitationPolicy\(generated\.descriptionMarkdown, maps\)[\s\S]*extractCitationClaims\(cleaned, maps\)[\s\S]*await verifyCitations\(claims, model\)/,
+  "the shared core validates retained citations after applying citation policy",
+);
+assert.match(
+  ai, /verifyCitations: typeof aiVerifyCitations = aiVerifyCitations/,
+  "Desktop supplies the actual AI citation verifier to the shared core",
 );
 assert.match(
   ai,

@@ -3,6 +3,7 @@ import { getVaultByPath } from '../vaults/vaultRegistry';
 import { currentEmbeddingConfig, embeddingTextForIdea, ideaNeedsEmbedding, updateIdeaEmbedding } from '../db/ideasRepo';
 import { embedManyStrict } from './aiClient';
 import { isManualAcademic } from './academicMode';
+import { isMobileOperation } from '../desktopBridge/executionBoundary';
 import { embeddingIndexHead } from '../db/embeddingIndexesRepo';
 
 export interface ManualIndexStatus { state: 'idle' | 'queued' | 'preparing' | 'indexing' | 'ready' | 'error'; error: string | null; }
@@ -29,6 +30,7 @@ export function manualIndexStatus(): ManualIndexStatus {
 }
 /** Debounced, vault-scoped and independent from the generative scan queue. */
 export function scheduleManualIndex(retry = false): void {
+  if (isMobileOperation()) return;
   if (embeddingIndexHead(getDb())?.enabled === 0) return;
   if (!isManualAcademic()) return;
   const id = currentVaultId();

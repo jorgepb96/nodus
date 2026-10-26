@@ -1,6 +1,7 @@
+import { cloneAcademicDocument } from '@shared/academicDocument';
+import { createNoteWithIdentity } from './notesRepo';
 import {academicMarkdownProjection,assertAcademicSupplement} from '@shared/academicProjection';
 import { normalizeAcademicMetadata } from '@shared/academicDocument';
-import { isManualAcademic } from '../ai/academicMode';
 import { scheduleManualIndex } from '../ai/manualIdeaIndex';
 // El Workspace por dentro: el editor completo sobre una NOTA, y los enlaces con la
 // biblioteca.
@@ -256,7 +257,9 @@ export function updateWorkspaceNote(noteId: string, input: StudyDocUpdateInput):
       now(), noteId
     );
     const source = parseJson<{ note?: string; ref?: string }>(current.source_json, {});
-    if (isManualAcademic() && source.note === 'manual-idea' && source.ref) {
+    // Authored idea development and its owning structured note describe the
+    // same content in every academic mode, including companion creation.
+    if (source.note === 'manual-idea' && source.ref) {
       db.prepare(`UPDATE ideas SET label=?, statement=?, embedding=CASE WHEN label<>? OR statement<>? THEN NULL ELSE embedding END WHERE global_id=?`)
         .run(title, content, title, content, source.ref);
       scheduleManualIndex();
@@ -269,6 +272,19 @@ export function updateWorkspaceNote(noteId: string, input: StudyDocUpdateInput):
     } else savedDocument = synchronizeNotePage(noteId, title, content);
     return { ...getNote(noteId)!, editorRevision: savedDocument.revision };
   })();
+}
+
+/** The source draft and this copy are committed by the owning mobile receipt. */
+export function duplicateWorkspaceNoteWithIdentity(noteId: string, targetId: string): Note {
+  const row = noteRow(noteId), editor = getWorkspaceNoteEditorData(noteId);
+  const source = getNote(noteId)!;
+  const title = `${editor.documentTitle ?? String(row.title)} (copia)`;
+  createNoteWithIdentity({title, content: '', kind: source.kind === 'idea' ? 'markdown' : source.kind, folderId: source.folderId, tags: source.tags}, targetId);
+  const cloned = editor.nativeDocument ? cloneAcademicDocument(editor.nativeDocument, editor.academicMetadata) : null;
+  return updateWorkspaceNote(targetId, {title, contentMarkdown: editor.contentMarkdown ?? text(row.content),
+    ...(cloned ? {nativeDocument: cloned.document, academicMetadata: cloned.metadata} : {academicMetadata: editor.academicMetadata}),
+    schemaVersion: editor.schemaVersion, style: editor.style, spellcheckLanguage: String(row.spellcheck_language ?? 'es-ES'),
+    customDictionary: editor.customDictionary, expectedRevision: getWorkspaceNoteEditorData(targetId).revision});
 }
 
 export function restoreWorkspaceNoteVersion(noteId: string, versionId: string): Note {
@@ -291,9 +307,13 @@ export function restoreWorkspaceNoteVersion(noteId: string, versionId: string): 
 // ── Comentarios anclados ─────────────────────────────────────────────────────────
 
 export function createWorkspaceAnnotation(noteId: string, input: StudyAnnotationInput): StudyAnnotation {
+  return createWorkspaceAnnotationWithIdentity(noteId, input, crypto.randomUUID());
+}
+
+/** Owning mobile receipt transaction supplies a stable annotation identity. */
+export function createWorkspaceAnnotationWithIdentity(noteId: string, input: StudyAnnotationInput, id: string): StudyAnnotation {
   const db = getDb();
   noteRow(noteId);
-  const id = crypto.randomUUID();
   const timestamp = now();
   const position = Number((db
     .prepare('SELECT COALESCE(MAX(position), -1) + 1 AS value FROM note_annotations WHERE note_id = ?')

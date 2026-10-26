@@ -125,12 +125,14 @@ function formatTokens(value: number): string {
   return value >= 1_000_000 ? `${(value / 1_000_000).toFixed(1)} M` : value >= 1_000 ? `${Math.round(value / 1_000)} k` : String(value);
 }
 
-export function CompleteGuideComposer({ value, onChange, model, thinkingEffort, onReadyChange }: {
+export function CompleteGuideComposer({ value, onChange, model, thinkingEffort, onReadyChange, loadCatalog, loadPreview }: {
   value: CompleteGuideComposerState;
   onChange: (next: CompleteGuideComposerState) => void;
   model: ModelRef | null;
   thinkingEffort: ResearchEffort;
   onReadyChange: (ready: boolean) => void;
+  loadCatalog?: () => Promise<CompleteGuideCatalog>;
+  loadPreview?: (request: Parameters<Window['nodus']['previewCompleteGuide']>[0]) => Promise<CompleteGuidePreview>;
 }) {
   const [catalog, setCatalog] = useState<CompleteGuideCatalog | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -142,7 +144,7 @@ export function CompleteGuideComposer({ value, onChange, model, thinkingEffort, 
 
   useEffect(() => {
     let alive = true;
-    void window.nodus.listCompleteGuideCatalog()
+    void (loadCatalog ? loadCatalog() : window.nodus.listCompleteGuideCatalog())
       .then((next) => {
         if (!alive) return;
         setCatalog(next);
@@ -159,7 +161,7 @@ export function CompleteGuideComposer({ value, onChange, model, thinkingEffort, 
       })
       .catch((error) => alive && setLoadError(error instanceof Error ? error.message : String(error)));
     return () => { alive = false; };
-  }, []);
+  }, [loadCatalog]);
 
   const tree = useMemo(() => (catalog ? buildCompleteGuideTree(catalog.sources, catalog.organization, { query, unplacedLabel: t('Sin ubicación') }) : null), [catalog, query]);
   const selectedKeys = useSelectedKeys(catalog, value.selection);
@@ -175,13 +177,13 @@ export function CompleteGuideComposer({ value, onChange, model, thinkingEffort, 
     let alive = true;
     setPreviewing(true);
     const timer = setTimeout(() => {
-      void window.nodus.previewCompleteGuide({ completeGuide: { ...value, runId: 'preview-run' }, model, thinkingEffort })
+      void (loadPreview ?? window.nodus.previewCompleteGuide)({ completeGuide: { ...value, runId: 'preview-run' }, model, thinkingEffort })
         .then((next) => { if (alive) { setPreview(next); setPreviewError(null); onReadyChange(next.totals.readablePassages > 0); } })
         .catch((error) => { if (alive) { setPreviewError(error instanceof Error ? error.message : String(error)); onReadyChange(false); } })
         .finally(() => alive && setPreviewing(false));
     }, 400);
     return () => { alive = false; clearTimeout(timer); };
-  }, [value, selectedKeys.size, model?.provider, model?.model, thinkingEffort]);
+  }, [value, selectedKeys.size, model?.provider, model?.model, thinkingEffort, loadPreview]);
 
   const toggleExpanded = (id: string) => setExpanded((current) => {
     const next = new Set(current);

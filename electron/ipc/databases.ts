@@ -4,6 +4,9 @@ import { dialogTitle } from '../dialogTitles';
 import type { IpcContext } from './context';
 import crypto from 'node:crypto';
 import { withVaultDatabase } from '../db/database';
+import { mobileDatabaseResearchCatalogue } from '../desktopBridge/databaseResearchCatalogue';
+import {mobileDatabaseResearchReader} from '../desktopBridge/databaseResearchReading';
+import {mobileDatabaseResearchSourcePack,saveMobileDatabaseResearchReport} from '../desktopBridge/databaseResearchPublication';
 import * as dbMode from '../db/databasesRepo';
 import * as taskMode from '../db/databaseTasksRepo';
 import * as automationMode from '../db/databaseAutomationsRepo';
@@ -615,9 +618,10 @@ export function registerDatabasesIpc({ h, getWindow, chatAborters }: IpcContext)
   });
   h('db:deepResearch:enqueue', async (e, input: DatabaseDeepResearchJobInput) => {
     const vault = databaseResearchVault();
-    const job = await enqueueDatabaseDeepResearch(vault.id, input);
+    const host=e as typeof e & {mobileBridgeJobId?:string;mobileBridgeRecovery?:boolean};
+    const job = await enqueueDatabaseDeepResearch(vault.id, input,{bridgeJobId:host.mobileBridgeJobId,requireExisting:host.mobileBridgeRecovery});
     if (!e.sender.isDestroyed()) e.sender.send('db:deepResearch:progress', {
-      runId: job.id, status: job.status, progress: job.progress / 100, step: null, phase: job.phase, message: 'Añadida a la cola.',
+      runId: job.id, status: job.status, progress: job.progress, step: null, phase: job.phase, message: 'Añadida a la cola.',
     });
     return job;
   });
@@ -636,8 +640,20 @@ export function registerDatabasesIpc({ h, getWindow, chatAborters }: IpcContext)
   h('db:deepResearch:reports:list', async (_e, query?: { limit?: number; offset?: number; query?: string; reportType?: DatabaseDeepResearchReportType }) => {
     const vault = databaseResearchVault(); return withVaultDatabase(vault.id, () => databaseResearch.listDatabaseResearchReports(query));
   });
+  h('db:deepResearch:mobileCatalogue', async (_e,input?: {limit?:number;offset?:number}) => {
+    const vault = databaseResearchVault(); return withVaultDatabase(vault.id,()=>mobileDatabaseResearchCatalogue(input));
+  });
   h('db:deepResearch:report:get', async (_e, id: string) => {
     const vault = databaseResearchVault(); return withVaultDatabase(vault.id, () => databaseResearch.getDatabaseResearchReport(id));
+  });
+  h('db:deepResearch:mobileReader',async(_e,id:string)=>{
+    const vault=databaseResearchVault(); return withVaultDatabase(vault.id,()=>mobileDatabaseResearchReader(id));
+  });
+  h('db:deepResearch:mobileSourcePack',async(_e,input:{databaseIds:string[]})=>{
+    const vault=databaseResearchVault();return withVaultDatabase(vault.id,()=>mobileDatabaseResearchSourcePack(input));
+  });
+  h('db:deepResearch:mobilePublication',async(_e,input:Parameters<typeof saveMobileDatabaseResearchReport>[0])=>{
+    const vault=databaseResearchVault();return withVaultDatabase(vault.id,()=>saveMobileDatabaseResearchReport(input));
   });
   h('db:deepResearch:report:read', async (_e, id: string, read: boolean) => {
     const vault = databaseResearchVault();

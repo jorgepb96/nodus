@@ -35,6 +35,22 @@ function makeDraft(type: PageBlockType): PageBlockDraft {
   };
 }
 
+async function inlinePageAsset(file:File):Promise<PageAsset & {url:string}>{
+  if(file.size>2_000_000)throw new Error(t('El archivo supera 2 MB.'));
+  const url=await new Promise<string>((resolve,reject)=>{
+    const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(reader.error??new Error(t('No se pudo cargar el archivo.')));reader.readAsDataURL(file);
+  });
+  return {blobHash:'',name:file.name||'archivo',mimeType:file.type||null,bytes:file.size,url};
+}
+function pickInlinePageAsset(kind:'image'|'file'|'audio'|'video'):Promise<(PageAsset & {url:string})|null>{
+  return new Promise((resolve,reject)=>{
+    const input=document.createElement('input');input.type='file';input.accept=kind==='file'?'*/*':`${kind}/*`;
+    input.style.display='none';document.body.append(input);
+    input.addEventListener('cancel',()=>{input.remove();resolve(null);},{once:true});
+    input.addEventListener('change',()=>{const file=input.files?.[0];input.remove();if(!file)resolve(null);else void inlinePageAsset(file).then(resolve,reject);},{once:true});input.click();
+  });
+}
+
 function draftSignature(value: PageBlockDraft[]): string {
   return JSON.stringify(value.map((entry) => ({
     id: entry.id, parentBlockId: entry.parentBlockId ?? null, type: entry.type, content: entry.content ?? {},
@@ -44,10 +60,12 @@ function draftSignature(value: PageBlockDraft[]): string {
 function MediaPreview({ block }: { block: PageBlockDraft }) {
   const hash = typeof block.content?.blobHash === 'string' ? block.content.blobHash : '';
   const mime = typeof block.content?.mimeType === 'string' ? block.content.mimeType : '';
+  const inline = typeof block.content?.url === 'string' && block.content.url.startsWith('data:') ? block.content.url : '';
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     let objectUrl: string | null = null;
+    if (inline) { setUrl(inline); return; }
     if (!hash) { setUrl(null); return; }
     void window.nodus.getPageAsset(hash).then((bytes) => {
       if (!active || !bytes) return;
@@ -58,7 +76,7 @@ function MediaPreview({ block }: { block: PageBlockDraft }) {
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [hash, mime]);
+  }, [hash, mime, inline]);
   if (!url) return null;
   if (block.type === 'image') return <img className="mt-2 max-h-72 max-w-full rounded-lg object-contain" src={url} alt={String(block.content?.caption ?? block.content?.name ?? '')} />;
   if (block.type === 'audio') return <audio className="mt-2 w-full" controls src={url} />;
@@ -67,12 +85,13 @@ function MediaPreview({ block }: { block: PageBlockDraft }) {
 }
 
 export function PageBlockEditor({
-  rowId, pageId, onDocumentChange, onNavigatePage,
+  rowId, pageId, onDocumentChange, onNavigatePage, mobileLocalAssets = false,
 }: {
   rowId?: string;
   pageId?: string;
   onDocumentChange?: (document: PageDocument) => void;
   onNavigatePage?: (pageId: string) => void;
+  mobileLocalAssets?: boolean;
 }) {
   const [document, setDocument] = useState<PageDocument | null>(null);
   const [drafts, setDrafts] = useState<PageBlockDraft[]>([]);
@@ -90,6 +109,7 @@ export function PageBlockEditor({
   const dragIndex = useRef<number | null>(null);
   const undoStack = useRef<PageBlockDraft[][]>([]);
   const redoStack = useRef<PageBlockDraft[][]>([]);
+  const persisting = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -134,12 +154,14 @@ export function PageBlockEditor({
 
   const persist = useCallback(async (snapshot: PageBlockDraft[], serial: number) => {
     const current = documentRef.current;
-    if (!current) return;
+    if (!current || (mobileLocalAssets && persisting.current)) return;
+    if(mobileLocalAssets)persisting.current=true;
     setSaving(true);
     setSaved(false);
     setError(null);
     try {
       const result = await window.nodus.savePageDocument({
+        ...(mobileLocalAssets?{title:current.page.title}:{}),
         pageId: current.page.id,
         expectedRevision: current.revision,
         blocks: snapshot,
@@ -155,7 +177,7 @@ export function PageBlockEditor({
       onDocumentChange?.(result.document);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 1_500);
-      if (serial !== serialRef.current) {
+      if (serial !== serialRef.current && !mobileLocalAssets) {
         void persist(draftsRef.current, serialRef.current);
       } else {
         setSaving(false);
@@ -163,8 +185,10 @@ export function PageBlockEditor({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setSaving(false);
+    } finally {
+      if(mobileLocalAssets){persisting.current=false;if(serial!==serialRef.current)void persist(draftsRef.current,serialRef.current);}
     }
-  }, [onDocumentChange]);
+  }, [onDocumentChange,mobileLocalAssets]);
 
   const commit = useCallback((next: PageBlockDraft[], options: { history?: boolean; immediate?: boolean } = {}) => {
     if (documentRef.current?.page.locked) return;
@@ -176,7 +200,8 @@ export function PageBlockEditor({
     setDrafts(next);
     const serial = ++serialRef.current;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { saveTimer.current = null; void persist(next, serial); }, options.immediate ? 0 : 550);
+    if(mobileLocalAssets)void persist(next,serial);
+    else saveTimer.current = setTimeout(() => { saveTimer.current = null; void persist(next, serial); }, options.immediate ? 0 : 550);
   }, [persist]);
 
   const updateBlock = (index: number, patch: Partial<PageBlockDraft>) => {
@@ -225,13 +250,14 @@ export function PageBlockEditor({
   };
 
   const pickAsset = async (index: number, kind: 'image' | 'file' | 'audio' | 'video') => {
-    const asset = await window.nodus.pickPageAsset(kind);
-    if (asset) updateContent(index, { ...asset });
+    try {
+      const asset = mobileLocalAssets ? await pickInlinePageAsset(kind) : await window.nodus.pickPageAsset(kind);
+      if (asset) updateContent(index, { ...asset });
+    } catch(cause){setError(cause instanceof Error?cause.message:String(cause));}
   };
 
   const appendDroppedFile = async (file: File) => {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const asset: PageAsset = await window.nodus.storePageAsset({ name: file.name, mimeType: file.type || null, bytes });
+    const asset: PageAsset = mobileLocalAssets ? await inlinePageAsset(file) : await window.nodus.storePageAsset({ name: file.name, mimeType: file.type || null, bytes:new Uint8Array(await file.arrayBuffer()) });
     const type: PageBlockType = file.type.startsWith('image/') ? 'image'
       : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('video/') ? 'video' : 'file';
     const draft = makeDraft(type);
@@ -277,6 +303,7 @@ export function PageBlockEditor({
         </div>
       )}
       <fieldset disabled={document.page.locked} className="contents">
+      {mobileLocalAssets&&<input className="mobile-page-title" aria-label={t('Título de la página')} value={document.page.title} onChange={event=>{const next={...document,page:{...document.page,title:event.target.value}};documentRef.current=next;setDocument(next);commit(draftsRef.current,{history:false,immediate:true});}}/>}
       <div className="mb-3 flex min-h-8 flex-wrap items-center gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-700 dark:text-neutral-300">{t('Contenido de la página')}</h3>
         <span className="text-[11px] text-neutral-600 dark:text-neutral-400" aria-live="polite">
@@ -336,6 +363,7 @@ export function PageBlockEditor({
                 }}
                 onPickAsset={(kind) => void pickAsset(index, kind)}
                 onNavigatePage={onNavigatePage}
+                mobileLocalAssets={mobileLocalAssets}
               />
             </div>
             <div className="absolute right-1 top-1.5 flex opacity-0 group-hover/page-block:opacity-100 group-focus-within/page-block:opacity-100">
@@ -371,8 +399,9 @@ function BlockMenu({ onSelect }: { onSelect: (type: PageBlockType) => void }) {
 }
 
 function BlockInput({
-  block, onContent, onSlash, onIndent, onPickAsset, onNavigatePage,
+  block, onContent, onSlash, onIndent, onPickAsset, onNavigatePage, mobileLocalAssets = false,
 }: {
+  mobileLocalAssets?: boolean;
   block: PageBlockDraft;
   onContent: (patch: Record<string, unknown>) => void;
   onSlash: () => void;
@@ -420,26 +449,29 @@ function BlockInput({
   if (['image', 'file', 'audio', 'video'].includes(block.type)) {
     const kind = block.type as 'image' | 'file' | 'audio' | 'video';
     const name = String(content.name ?? '');
-    return <div className="rounded-lg border border-dashed border-neutral-300 p-3 dark:border-neutral-700"><div className="flex items-center gap-2"><Icon name={kind === 'image' ? 'image' : kind === 'file' ? 'file' : kind === 'audio' ? 'audio' : 'video'} size={15} /><span className="min-w-0 flex-1 truncate text-sm">{name || t(BLOCK_LABELS[block.type])}</span><button className="btn h-8 px-2 text-xs" onClick={() => onPickAsset(kind)}>{name ? t('Reemplazar') : t('Elegir archivo')}</button></div><MediaPreview block={block} /></div>;
+    return <div className="rounded-lg border border-dashed border-neutral-300 p-3 dark:border-neutral-700"><div className="flex items-center gap-2"><Icon name={kind === 'image' ? 'image' : kind === 'file' ? 'file' : kind === 'audio' ? 'audio' : 'video'} size={15} /><span className="min-w-0 flex-1 truncate text-sm">{name || t(BLOCK_LABELS[block.type])}</span><button className="btn h-8 px-2 text-xs" onClick={() => onPickAsset(kind)}>{name ? t('Reemplazar') : t('Elegir archivo')}</button></div>{mobileLocalAssets && Boolean(content.blobHash||content.url)&&<button type="button" className="btn mt-2" onClick={()=>void (window as any).nodusMobileCall('openPageResource',{source:content.url||`nodus-blob://${content.blobHash}`,name:name||'archivo'})}>{t('Abrir archivo')}</button>}<MediaPreview block={block} /></div>;
   }
   if (block.type === 'bookmark') return <div className="grid gap-1 sm:grid-cols-[1fr_2fr]"><input aria-label={t('Título')} className="input h-9 text-sm" value={String(content.title ?? '')} placeholder={t('Título')} onChange={(event) => onContent({ title: event.target.value })} /><input aria-label="URL" className="input h-9 text-sm" type="url" value={String(content.url ?? '')} placeholder="https://" onChange={(event) => onContent({ url: event.target.value })} /></div>;
   if (block.type === 'embed') return <textarea aria-label={t('Contenido incrustado')} className="min-h-16 w-full resize-y rounded-lg border border-neutral-200 bg-transparent p-2 font-mono text-xs outline-none dark:border-neutral-800" value={String(content.html ?? content.url ?? '')} placeholder={t('Pega una URL o código de inserción seguro')} onChange={(event) => onContent({ html: event.target.value })} />;
   if (block.type === 'subpage' || block.type === 'mention') return <div className="grid gap-1 sm:grid-cols-[1fr_1fr_auto]"><input aria-label={t('Etiqueta')} className="input h-9 text-sm" value={String(content.title ?? content.label ?? '')} placeholder={t('Etiqueta')} onChange={(event) => onContent(block.type === 'subpage' ? { title: event.target.value } : { label: event.target.value })} /><input aria-label={t('ID de página')} className="input h-9 text-sm" value={String(content.pageId ?? '')} placeholder={t('ID de página')} onChange={(event) => onContent({ pageId: event.target.value })} /><button type="button" className="btn h-9 px-3 text-xs" disabled={!content.pageId} onClick={() => onNavigatePage?.(String(content.pageId ?? ''))}>{t('Abrir')}</button></div>;
   if (block.type === 'synced_block') return <div className="space-y-2"><input aria-label={t('ID del bloque original')} className="input h-9 w-full text-sm" value={String(content.sourceBlockId ?? '')} placeholder={t('ID del bloque original')} onChange={(event) => onContent({ sourceBlockId: event.target.value })} /><SyncedBlockPreview blockId={String(content.sourceBlockId ?? '')} onNavigatePage={onNavigatePage} /></div>;
-  if (block.type === 'database_view') return <LinkedDatabaseViewBlock content={content} onContent={onContent} onNavigatePage={onNavigatePage} />;
+  if (block.type === 'database_view') return <LinkedDatabaseViewBlock content={content} onContent={onContent} onNavigatePage={onNavigatePage} readOnly={mobileLocalAssets} onOpenRow={mobileLocalAssets?row=>void (window as any).nodusMobileCall('openMobileDatabaseRow',row):undefined} />;
   if (block.type === 'markdown') return <textarea aria-label={t('Markdown conservado sin pérdida')} className="min-h-28 w-full resize-y rounded-lg border border-amber-300 bg-amber-50/50 p-3 font-mono text-xs outline-none dark:border-amber-900 dark:bg-amber-950/20" value={String(content.markdown ?? '')} placeholder={t('Markdown conservado sin pérdida')} onChange={(event) => onContent({ markdown: event.target.value })} />;
   return textArea();
 }
 
-function SyncedBlockPreview({ blockId, onNavigatePage }: { blockId: string; onNavigatePage?: (pageId: string) => void }) {
+export function SyncedBlockPreview({ blockId, onNavigatePage }: { blockId: string; onNavigatePage?: (pageId: string) => void }) {
   const [source, setSource] = useState<Awaited<ReturnType<typeof window.nodus.getSyncedBlockSource>>>(null);
+  const [issue,setIssue]=useState<string|null>(null),[loading,setLoading]=useState(false),[attempt,setAttempt]=useState(0);
   useEffect(() => {
-    let active = true;
+    let active = true;setIssue(null);setSource(null);setLoading(Boolean(blockId));
     if (!blockId) { setSource(null); return; }
-    void window.nodus.getSyncedBlockSource(blockId).then((value) => { if (active) setSource(value); });
+    void window.nodus.getSyncedBlockSource(blockId).then((value) => { if (active) setSource(value); }).catch(error=>{if(active)setIssue(error instanceof Error?error.message:String(error));}).finally(()=>{if(active)setLoading(false);});
     return () => { active = false; };
-  }, [blockId]);
+  }, [blockId,attempt]);
   if (!blockId) return null;
+  if(loading)return <div role="status">{t('Cargando bloque original…')}</div>;
+  if(issue)return <div role="alert"><p>{issue}</p><button type="button" onClick={()=>setAttempt(value=>value+1)}>{t('Reintentar')}</button></div>;
   if (!source) return <div role="status" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">{t('El bloque original no existe.')}</div>;
   return (
     <button type="button" className="w-full rounded-lg border border-indigo-200 bg-indigo-50/60 p-3 text-left dark:border-indigo-900 dark:bg-indigo-950/20" onClick={() => onNavigatePage?.(source.page.id)}>

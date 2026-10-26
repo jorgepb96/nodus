@@ -233,7 +233,7 @@ test('the grid never reaches Google until a video is opened', async () => {
 test('the watched flags are app-wide, like the tutorial version they sit next to', async () => {
   const [types, defaults, prefs] = await Promise.all([
     read('@api'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
   ]);
   assert.match(types, /tutorialVideosWatched: string\[\]/);

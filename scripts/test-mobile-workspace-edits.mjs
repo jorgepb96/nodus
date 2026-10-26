@@ -1,0 +1,359 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { installRuntimeHooks, requireElectronRuntime } from './lib/tsRuntimeHooks.mjs';
+
+if (!requireElectronRuntime(fileURLToPath(import.meta.url), '--electron-mobile-workspace-edits')) process.exit(0);
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-mobile-workspace-edits-'));
+const runtime = installRuntimeHooks(root); runtime.app.on = () => {}; runtime.app.once = () => {};
+const require = createRequire(import.meta.url);
+let database;
+try {
+  database = require('../electron/db/database.ts');
+  const { getActiveVault, createVault, setActiveVault } = require('../electron/vaults/vaultRegistry.ts');
+  const notes = require('../electron/db/notesRepo.ts');
+  const workspace = require('../electron/db/workspaceRepo.ts');
+  const { markdownToBlockNote } = require('../shared/blockNoteDocument.ts');
+  const { applyWorkspaceEdit, mobileWorkspaceEditorData } = require('../electron/desktopBridge/workspaceEdits.ts');
+  const ideas = require('../electron/db/ideasRepo.ts');
+  const graph = require('../electron/graph/graphService.ts'), stellar = require('../electron/graph/stellarService.ts');
+  const { manualIndexStatus } = require('../electron/ai/manualIdeaIndex.ts');
+  const first = getActiveVault(), other = createVault('Otra bóveda aislada');
+  const scoped = work => database.withVaultDatabase(first.id, () => work(database.getDb()));
+  const note = await scoped(() => notes.createNote({ title: 'Documento móvil', content: 'Original' }));
+  const original = await scoped(() => workspace.getWorkspaceNoteEditorData(note.id));
+  const markdown = '# Documento móvil\n\nConserva [fuente](nodus://evidence/source) y $x^2$.\n\n| a | b |\n| --- | --- |\n| 37 | 2024 |';
+  const nativeDocument = markdownToBlockNote(markdown);
+  const request = { id: randomUUID(), noteId: note.id, input: { title: 'Documento móvil', contentMarkdown: markdown, nativeDocument, schemaVersion: 2, expectedRevision: original.revision } };
+  const saved = await applyWorkspaceEdit(first.id, 'phone-grant', request);
+  assert.equal(saved.id, request.id); assert.equal(saved.editorData.revision, original.revision + 1);
+  assert.deepEqual(saved.editorData.nativeDocument, nativeDocument);
+  const history = saved.editorData.versions.length;
+  const replay = await applyWorkspaceEdit(first.id, 'phone-grant', { ...request, input: Object.fromEntries(Object.entries(request.input).reverse()) });
+  assert.deepEqual(replay, saved, 'A lost acknowledgement must return the original commit');
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(note.id))).versions.length, history);
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', { ...request, input: { ...request.input, title: 'Changed payload' } }), /idempotency_conflict/);
+  const mac = await scoped(() => workspace.updateWorkspaceNote(note.id, { ...request.input, title: 'Edición del Mac', expectedRevision: saved.editorData.revision }));
+  const conflictId = randomUUID();
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', { ...request, id: conflictId }), error => {
+    assert.equal(error.code, 'revision_conflict'); assert.equal(error.remote.revision, mac.editorRevision);
+    assert.equal(error.remote.documentTitle, 'Edición del Mac'); return true;
+  });
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(conflictId).n), 0, 'A conflict has no commit receipt');
+  await scoped(() => workspace.createWorkspaceAnnotation(note.id, { from: 0, to: 8, selectedText: 'Conserva', comment: 'Locked passage', locked: true }));
+  const invalidId = randomUUID();
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', { id: invalidId, noteId: note.id, input: { title: 'Invalid edit', contentMarkdown: 'Removed', nativeDocument: markdownToBlockNote('Removed'), schemaVersion: 2, expectedRevision: mac.editorRevision } }), /bloqueado/);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(invalidId).n), 0, 'Invalid structured edits never commit a receipt');
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(note.id))).revision, mac.editorRevision);
+  await assert.rejects(applyWorkspaceEdit(other.id, 'phone-grant', request), /document_unavailable/);
+  database.closeDb(); setActiveVault(other.id);
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', request), saved, 'A restart and active-vault switch retain the original scoped receipt');
+  const folder = await scoped(() => notes.createNoteFolder({ name: 'Creación companion' }));
+  const createdId = randomUUID();
+  const createdNativeDocument = markdownToBlockNote(markdown);
+  const creation = { id: randomUUID(), noteId: createdId, creation: { kind: 'markdown', folderId: folder.id, tags: ['offline'] },
+    input: { ...request.input, nativeDocument: createdNativeDocument, title: 'Creada en el móvil', expectedRevision: 0 } };
+  const created = await applyWorkspaceEdit(first.id, 'phone-grant', creation);
+  assert.equal(created.note.id, createdId); assert.equal(created.note.folderId, folder.id);
+  assert.deepEqual(created.note.tags, ['offline']); assert.deepEqual(created.editorData.nativeDocument, createdNativeDocument);
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', creation), created, 'Creation replays its canonical receipt without another note');
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(createdId).n), 1);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(createdId))).versions.length, created.editorData.versions.length);
+  const collision = { ...creation, id: randomUUID() };
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', collision), /identity_conflict/);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(collision.id).n), 0);
+  for (const invalidCreation of [{ ...creation.creation, kind: 'idea', globalId: 'invalid' }, { ...creation.creation, source: { ref: 'private' } }, { ...creation.creation, tags: [37] }]) {
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', { ...creation, id: randomUUID(), noteId: randomUUID(), creation: invalidCreation }), /invalid_workspace_creation/);
+  }
+  for (const invalid of [
+    { creation: { ...creation.creation, folderId: randomUUID() } },
+    { input: { ...creation.input, nativeDocument: [{ id: 'invalid-block', type: 'unsupported-private-block' }] } },
+    { input: { ...creation.input, nativeDocument } },
+  ]) {
+    const rejected = { ...creation, ...invalid, id: randomUUID(), noteId: randomUUID() };
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', rejected));
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(rejected.noteId).n), 0, 'Invalid creations roll back the note and its complete structured editor');
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
+  }
+  const {seedWorkspaceNote} = require('../src/mobileWeb/workspaceNotes.ts');
+  const captureMarkdown = '# Captura\n\nCita [S1](nodus://idea/source-37) y $x^2$.\n\n| A | B |\n| --- | --- |\n| 7 | 30 |';
+  const provenance = {origin:'assistant',model:{provider:'openai',model:'real-model-reference',pending:false,reasoningEffort:'high'},ref:'response-37',note:'Captured answer',authoredOn:'mobile',researchChat:{surface:'research',conversationId:'conversation-37',conversationTitle:'Real context',messageId:'message-7',messageIndex:2,references:[{citationId:'S1',label:'Actual citation',subtitle:null,quote:'Original quotation',href:'nodus://idea/source-37'}]}};
+  const withoutBlockIds=blocks=>blocks.map(({id,children,...block})=>({...block,children:withoutBlockIds(children??[])}));
+  const nextBeforeCaptures = await scoped(() => ideas.nextGlobalId());
+  for (const kind of ['markdown','assistant','writing','debate','idea','hypothesis']) {
+    const seeded = seedWorkspaceNote({title:'Same explicit capture',content:captureMarkdown,kind,source:provenance,tags:['capture'],folderId:folder.id});
+    assert.deepEqual(withoutBlockIds(seeded.nativeDocument),withoutBlockIds(markdownToBlockNote(captureMarkdown)));
+    assert.deepEqual(seeded.source,provenance);
+    const intent={id:randomUUID(),noteId:randomUUID(),creation:{kind,source:seeded.source,tags:seeded.tags,folderId:folder.id},input:{title:seeded.title,contentMarkdown:seeded.content,nativeDocument:seeded.nativeDocument,schemaVersion:2,expectedRevision:0}};
+    const committed=await applyWorkspaceEdit(first.id,'phone-grant',intent);
+    assert.equal(committed.note.kind,kind);assert.deepEqual(committed.note.source,provenance);assert.equal(committed.note.content,captureMarkdown);
+    assert.deepEqual(committed.editorData.nativeDocument,seeded.nativeDocument);
+    database.closeDb();setActiveVault(other.id);
+    assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',intent),committed,'Reopen/lost ACK returns exact seeded capture receipt');
+    assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(intent.noteId).n),1);
+    const secondSeed=seedWorkspaceNote({title:seeded.title,content:seeded.content,kind,source:provenance});
+    const second={...intent,id:randomUUID(),noteId:randomUUID(),input:{...intent.input,nativeDocument:secondSeed.nativeDocument}};
+    const again=await applyWorkspaceEdit(first.id,'phone-grant',second);
+    assert.notEqual(again.note.id,committed.note.id,'Two explicit identical captures are two notes, never content-hash deduplicated');
+    const invalid={...intent,id:randomUUID(),noteId:randomUUID(),input:{...intent.input,nativeDocument:[{id:'invalid',type:'unsupported-private-block'}]}};
+    await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',invalid));
+    assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(invalid.noteId).n),0,'Invalid seeded document rolls back note and metadata');
+  }
+  assert.equal(await scoped(()=>ideas.nextGlobalId()),nextBeforeCaptures,'Kind idea captures do not allocate a manual or derived idea identity');
+  assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM ideas WHERE label=?').get('Same explicit capture').n),0);
+  const imageData='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN3sAAAAASUVORK5CYII=';
+  const imageSeed=seedWorkspaceNote({title:'Inline capture',content:`![Preserved](${imageData})`,kind:'assistant',source:provenance});
+  assert.ok(JSON.stringify(imageSeed.nativeDocument).includes(imageData),'Canonical Markdown importer preserves inline resource bytes');
+  const imageCapture={id:randomUUID(),noteId:randomUUID(),creation:{kind:'assistant',source:provenance,folderId:null,tags:[]},input:{title:imageSeed.title,contentMarkdown:imageSeed.content,nativeDocument:imageSeed.nativeDocument,schemaVersion:2,expectedRevision:0}};
+  const imageCaptureSaved=await applyWorkspaceEdit(first.id,'phone-grant',imageCapture);
+  assert.deepEqual(imageCaptureSaved.editorData.nativeDocument,imageSeed.nativeDocument);assert.equal(imageCaptureSaved.note.content,imageSeed.content);
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageCapture),imageCaptureSaved);
+
+  // A valid sub-2 MB attachment occurs in native JSON and Markdown. Its
+  // complete envelope exceeds the former 4 MiB transport limit.
+  const {MOBILE_WORKSPACE_EDIT_MAX_BYTES} = require('../shared/mobileWorkspace.ts');
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#6158e8"/><!--' + 'x'.repeat(1989000) + '--></svg>';
+  const image = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
+  const imageNote = await scoped(() => notes.createNote({title:'Imagen conservada',content:''}));
+  const imageOriginal = await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id));
+  const imageRequest = {id:randomUUID(),noteId:imageNote.id,input:{title:'Imagen conservada',contentMarkdown:`![Nodus](${image})`,
+    nativeDocument:[{id:'image-37',type:'image',props:{url:image,name:'Nodus.svg',caption:'Nodus'}}],schemaVersion:2,expectedRevision:imageOriginal.revision}};
+  const wireBytes = Buffer.byteLength(JSON.stringify(imageRequest));
+  assert.ok(wireBytes > 4 * 1024 * 1024 && wireBytes < MOBILE_WORKSPACE_EDIT_MAX_BYTES);
+  const imageSaved = await applyWorkspaceEdit(first.id,'phone-grant',imageRequest);
+  assert.deepEqual(imageSaved.editorData.nativeDocument,imageRequest.input.nativeDocument);
+  assert.equal(imageSaved.editorData.contentMarkdown,imageRequest.input.contentMarkdown);
+  const imageHistory = imageSaved.editorData.versions.length;
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageRequest),imageSaved);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id))).versions.length,imageHistory);
+  // The larger native projection allowance cannot admit oversized arbitrary
+  // legacy content, or a forged synced projection beside unchanged native data.
+  await scoped(() => {
+    const pageRepo=require('../electron/db/pagesRepo.ts'),Y=require('yjs');
+    const document=pageRepo.getPageDocumentForNote(imageNote.id),revision=document.revision;
+    const forged={...document.blocks[0],content:{...document.blocks[0].content,unvalidated:'x'.repeat(1_000_001)}};
+    assert.throws(()=>pageRepo.savePageDocument({pageId:document.page.id,title:document.page.title,expectedRevision:revision,blocks:[forged],nativeDocument:null}),/límite de 1 MB/);
+    const ydoc=new Y.Doc();Y.applyUpdate(ydoc,document.yjsState);
+    ydoc.getMap('blockById').get(forged.id).set('contentJson',JSON.stringify(forged.content));
+    assert.throws(()=>pageRepo.applyPageDocumentUpdate(document.page.id,Y.encodeStateAsUpdate(ydoc,document.stateVector),revision),/límite de 1 MB/);
+    ydoc.destroy();
+    assert.equal(pageRepo.getPageDocumentForNote(imageNote.id).revision,revision,'Rejected projections cannot change the real document');
+  });
+  const nextDerivedId = await scoped(() => ideas.nextGlobalId());
+  const ideaCreation = { id: randomUUID(), noteId: randomUUID(), creation: { kind: 'idea', folderId: folder.id, tags: [], globalId: `manual-${randomUUID()}` },
+    input: { title: 'Idea escrita sin conexión', contentMarkdown: 'Desarrollo creado por el usuario.', nativeDocument: markdownToBlockNote('Desarrollo creado por el usuario.'), schemaVersion: 2, expectedRevision: 0 } };
+  const authored = await applyWorkspaceEdit(first.id, 'phone-grant', ideaCreation);
+  assert.equal(authored.note.kind, 'idea'); assert.equal(authored.note.id, ideaCreation.noteId);
+  assert.deepEqual(authored.note.source, { origin: 'idea', ref: ideaCreation.creation.globalId, note: 'manual-idea', authoredOn: 'mobile' });
+  assert.deepEqual(authored.editorData.nativeDocument, ideaCreation.input.nativeDocument);
+  const canonicalIdea = await scoped(() => ideas.getIdea(ideaCreation.creation.globalId));
+  assert.equal(canonicalIdea.label, ideaCreation.input.title); assert.equal(canonicalIdea.statement, ideaCreation.input.contentMarkdown);
+  assert.equal(await scoped(() => manualIndexStatus().state), 'idle', 'Companion creation never starts Desktop-only indexing');
+  assert.equal(await scoped(() => ideas.nextGlobalId()), nextDerivedId, 'Offline authored identity never advances the Mac derived counter');
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', ideaCreation), authored);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM ideas WHERE global_id=?').get(ideaCreation.creation.globalId).n), 1);
+  const visibleInAuto = async () => {
+    const globalId = ideaCreation.creation.globalId;
+    return await scoped(async () => ({
+      picker: ideas.listPickerIdeas().some(idea => idea.global_id === globalId),
+      catalogue: ideas.listIdeasPage({offset:0,limit:200,sort:'label'}).items.some(idea => idea.id === globalId),
+      graph: (await graph.buildIdeaGraph()).nodes.some(idea => idea.id === globalId),
+      stellar: stellar.stellarPage({kind:'corpus',cursor:0,limit:200}).nodes.some(idea => idea.id === globalId),
+    }));
+  };
+  assert.equal(await scoped(() => require('../electron/db/settingsRepo.ts').getSettings().academicMode),'auto');
+  assert.deepEqual(await visibleInAuto(),{picker:true,catalogue:true,graph:true,stellar:true},'A phone-authored idea with no work occurrences remains visible in every Auto consultation');
+  await scoped(() => notes.trashNotes([ideaCreation.noteId]));
+  assert.deepEqual(await visibleInAuto(),{picker:false,catalogue:false,graph:false,stellar:false},'Trashing its owner hides a companion idea from every consultation');
+  await scoped(() => notes.restoreNotes([ideaCreation.noteId]));
+  assert.deepEqual(await visibleInAuto(),{picker:true,catalogue:true,graph:true,stellar:true},'Restoring its owner restores the same graph identity');
+  const ideaCollision = { ...ideaCreation, id: randomUUID(), noteId: randomUUID() };
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', ideaCollision), /identity_conflict/);
+  assert.equal(await scoped(() => notes.getNote(ideaCollision.noteId)), null);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(ideaCollision.id).n), 0);
+  for (const invalid of [
+    { creation: { ...ideaCreation.creation, folderId: randomUUID(), globalId: `manual-${randomUUID()}` } },
+    { input: { ...ideaCreation.input, nativeDocument: [{ id: 'bad-manual', type: 'unsupported-private-block' }] }, creation: { ...ideaCreation.creation, globalId: `manual-${randomUUID()}` } },
+    { creation: { ...ideaCreation.creation, globalId: 'g-0001' } },
+  ]) {
+    const rejected = { ...ideaCreation, ...invalid, id: randomUUID(), noteId: randomUUID() };
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', rejected));
+    assert.equal(await scoped(() => notes.getNote(rejected.noteId)), null);
+    assert.equal(await scoped(() => ideas.getIdea(rejected.creation.globalId)), null, 'The owning note and authored idea roll back together');
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
+  }
+  for (const ownerId of [note.id, ideaCreation.noteId]) {
+    const base = await scoped(() => workspace.getWorkspaceNoteEditorData(ownerId));
+    const annotationId = randomUUID();
+    const packet = (action, expectedAnnotation, patch, revision = base.revision) => ({id: randomUUID(), noteId: ownerId, input: {title: 'Must never replace owner title', contentMarkdown: '', expectedRevision: revision}, command: {action, annotationId, expectedAnnotation, ...(patch ? {patch} : {})}});
+    const create = packet('annotationCreate', null, {from: 0, to: 5, selectedText: 'Exact', comment: 'Offline Scriptor comment', locked: true});
+    const created = await applyWorkspaceEdit(first.id, 'phone-grant', create);
+    assert.equal(created.commandResult.id, annotationId);
+    assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', create), created);
+    assert.equal(created.editorData.revision, base.revision);
+    assert.deepEqual(created.editorData.nativeDocument, base.nativeDocument);
+    assert.deepEqual(created.editorData.academicMetadata, base.academicMetadata);
+    assert.deepEqual(created.editorData.versions, base.versions);
+    assert.equal(created.editorData.documentTitle, base.documentTitle);
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM note_annotations WHERE id=?').get(annotationId).n), 1);
+    const neighbor = await scoped(() => workspace.createWorkspaceAnnotation(ownerId, {from: 0, to: 1, selectedText: 'E', comment: 'Unrelated note annotation'}));
+    const update = packet('annotationUpdate', created.editorData.annotations.find(a => a.id === annotationId), {comment: 'Edited locked Scriptor comment', pinned: true, resolved: true});
+    const updated = await applyWorkspaceEdit(first.id, 'phone-grant', update);
+    assert.equal(updated.commandResult.locked, true); assert.equal(updated.commandResult.pinned, true); assert.ok(updated.commandResult.resolvedAt);
+    assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', update), updated);
+    assert.equal(updated.editorData.annotations.find(a => a.id === neighbor.id).comment, 'Unrelated note annotation');
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', packet('annotationUpdate', created.commandResult, {comment: 'Stale overwrite'})), error => error.code === 'annotation_conflict' && error.remote.annotations.some(a => a.comment === 'Edited locked Scriptor comment'));
+    const removal = packet('annotationDelete', updated.editorData.annotations.find(a => a.id === annotationId));
+    const removed = await applyWorkspaceEdit(first.id, 'phone-grant', removal);
+    assert.equal(removed.commandResult, null); assert.ok(removed.editorData.annotations.some(a => a.id === neighbor.id));
+    assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', removal), removed);
+    const canonical = await scoped(() => workspace.getWorkspaceNoteEditorData(ownerId));
+    await scoped(() => workspace.updateWorkspaceNote(ownerId, {title: canonical.documentTitle + ' Mac', contentMarkdown: canonical.contentMarkdown, nativeDocument: canonical.nativeDocument, schemaVersion: canonical.schemaVersion, academicMetadata: canonical.academicMetadata, style: canonical.style, expectedRevision: canonical.revision}));
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', {...create, id: randomUUID(), command: {...create.command, annotationId: randomUUID()}}), error => error.code === 'revision_conflict');
+    await assert.rejects(applyWorkspaceEdit(other.id, 'phone-grant', {...create, id: randomUUID()}), /document_unavailable/);
+    const malformed = packet('annotationCreate', null, {from: 1.5, to: 8, selectedText: 'Exact', comment: 'Invalid'}, canonical.revision + 1);
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', malformed), /invalid_workspace_annotation/);
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(malformed.id).n), 0);
+    if (ownerId === ideaCreation.noteId) {
+      const actualIdea = await scoped(() => ideas.getIdea(ideaCreation.creation.globalId));
+      assert.equal(actualIdea.label, base.documentTitle + ' Mac');
+      assert.equal(actualIdea.statement, base.contentMarkdown);
+    }
+  }
+  const versionOwner = await scoped(() => notes.createNote({title: 'Version owner', content: 'Initial body'}));
+  const versionInitial = await scoped(() => workspace.getWorkspaceNoteEditorData(versionOwner.id));
+  const versionNative = markdownToBlockNote(markdown);
+  const academicMetadata = {formatVersion: 1, style: 'chicago-author-date', locale: 'en-US', placement: 'endnote', notes: {}, evidence: [{id: 'stable-evidence', blockId: versionNative[0].id, text: 'Original evidence', status: 'checked'}]};
+  const originalVersionPacket = {id: randomUUID(), noteId: versionOwner.id, input: {title: 'Structured original version', contentMarkdown: markdown, nativeDocument: versionNative, schemaVersion: 2, academicMetadata, style: {fontFamily: 'serif'}, expectedRevision: versionInitial.revision}};
+  const originalVersion = await applyWorkspaceEdit(first.id, 'phone-grant', originalVersionPacket);
+  const laterVersion = await applyWorkspaceEdit(first.id, 'phone-grant', {...originalVersionPacket, id: randomUUID(), input: {...originalVersionPacket.input, title: 'Later version', contentMarkdown: 'Changed body', nativeDocument: markdownToBlockNote('Changed body'), academicMetadata: {...academicMetadata, evidence: []}, expectedRevision: originalVersion.editorData.revision}});
+  const actualVersion = laterVersion.editorData.versions.find(item => item.title === 'Structured original version');
+  assert.ok(actualVersion, 'Restoration uses an actual downloaded canonical version');
+  const restorePacket = {id: randomUUID(), noteId: versionOwner.id, input: {title: actualVersion.title, contentMarkdown: actualVersion.contentMarkdown, nativeDocument: actualVersion.nativeDocument, schemaVersion: actualVersion.schemaVersion, academicMetadata: actualVersion.academicMetadata, style: actualVersion.style, reason: 'restore', expectedRevision: laterVersion.editorData.revision}};
+  const restoredVersion = await applyWorkspaceEdit(first.id, 'phone-grant', restorePacket);
+  assert.equal(restoredVersion.editorData.documentTitle, 'Structured original version');
+  assert.deepEqual(restoredVersion.editorData.nativeDocument, actualVersion.nativeDocument);
+  assert.deepEqual(restoredVersion.editorData.academicMetadata, actualVersion.academicMetadata);
+  assert.deepEqual(restoredVersion.editorData.style, actualVersion.style);
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', restorePacket), restoredVersion);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(versionOwner.id))).versions.length, restoredVersion.editorData.versions.length);
+  const commandParent = await scoped(() => notes.createNoteFolder({name: 'Parent actual'}));
+  const commandFolder = await scoped(() => notes.createNoteFolder({name: 'Child actual', parentId: commandParent.id}));
+  const commandOwner = await scoped(() => notes.createNote({title: 'Full native source', content: '', folderId: commandFolder.id, tags: ['Academic', 'Exact']}));
+  const sourceNative = markdownToBlockNote('Protected source quote');
+  sourceNative[0].content.push({type: 'nodusFootnote', props: {noteId: 'private-note', label: '1'}});
+  sourceNative[0].content.push({type: 'nodusCrossReference', props: {targetId: sourceNative[0].id, documentId: commandOwner.id, label: 'Same source block'}});
+  const sourceMetadata = {formatVersion: 1, style: 'apa', locale: 'es-ES', placement: 'footnote', notes: {'private-note': {placement: 'footnote', document: markdownToBlockNote('Private original footnote')}}, evidence: [{id: 'original-evidence', blockId: sourceNative[0].id, text: 'Exact evidence', status: 'checked'}]};
+  const projection = require('../shared/academicProjection.ts').academicMarkdownProjection;
+  const commandInitial = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
+  const fullSource = await applyWorkspaceEdit(first.id, 'phone-grant', {id: randomUUID(), noteId: commandOwner.id, input: {title: commandOwner.title, contentMarkdown: projection(sourceNative, sourceMetadata), nativeDocument: sourceNative, schemaVersion: 2, academicMetadata: sourceMetadata, style: {fontFamily: 'serif'}, spellcheckLanguage: 'fr-FR', customDictionary: ['genealogía'], expectedRevision: commandInitial.revision}});
+  const protectedComment = await scoped(() => workspace.createWorkspaceAnnotation(commandOwner.id, {from: 0, to: 22, selectedText: 'Protected source quote', comment: 'Source comment survives duplication and trash', locked: true, anchor: {blockId: sourceNative[0].id, from: 0, to: 22}}));
+  const sourceForCommand = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
+  const capturedNative = structuredClone(sourceNative); capturedNative.push(...markdownToBlockNote('Captured pending draft paragraph'));
+  const duplicateTarget = randomUUID();
+  const duplicateCommand = {id: randomUUID(), noteId: commandOwner.id, input: {title: 'Captured pending title', contentMarkdown: projection(capturedNative, sourceMetadata), nativeDocument: capturedNative, schemaVersion: 2, academicMetadata: sourceMetadata, style: sourceForCommand.style, spellcheckLanguage: sourceForCommand.spellcheckLanguage, customDictionary: sourceForCommand.customDictionary, expectedRevision: sourceForCommand.revision}, command: {action: 'duplicate', targetId: duplicateTarget, sourceFingerprint: sourceForCommand.mobileCommandSource.fingerprint}};
+  const duplicated = await applyWorkspaceEdit(first.id, 'phone-grant', duplicateCommand);
+  assert.equal(duplicated.commandResult.document.id, duplicateTarget);
+  assert.equal(duplicated.commandResult.document.folderId, commandFolder.id);
+  assert.deepEqual(duplicated.commandResult.document.tags, ['Academic', 'Exact']);
+  assert.equal(duplicated.commandResult.document.title, 'Captured pending title (copia)');
+  assert.deepEqual(duplicated.commandResult.editorData.style, sourceForCommand.style);
+  assert.equal(duplicated.commandResult.editorData.spellcheckLanguage, 'fr-FR');
+  assert.deepEqual(duplicated.commandResult.editorData.customDictionary, ['genealogía']);
+  assert.ok(duplicated.commandResult.editorData.contentMarkdown.includes('Captured pending draft paragraph'));
+  assert.equal(duplicated.editorData.annotations.find(a => a.id === protectedComment.id).comment, protectedComment.comment);
+  assert.equal(duplicated.commandResult.editorData.annotations.length, 0, 'Desktop duplicates content, not source comment ownership');
+  const copiedNative = duplicated.commandResult.editorData.nativeDocument, copiedMetadata = duplicated.commandResult.editorData.academicMetadata;
+  assert.notEqual(copiedNative[0].id, sourceNative[0].id);
+  assert.equal(copiedNative[0].content.find(inline => inline.type === 'nodusCrossReference').props.targetId, copiedNative[0].id);
+  assert.equal(copiedNative[0].content.find(inline => inline.type === 'nodusCrossReference').props.documentId, '');
+  const newFootnoteId = copiedNative[0].content.find(inline => inline.type === 'nodusFootnote').props.noteId;
+  assert.notEqual(newFootnoteId, 'private-note');
+  assert.deepEqual(copiedMetadata.notes[newFootnoteId].document[0].content, sourceMetadata.notes['private-note'].document[0].content);
+  assert.notEqual(copiedMetadata.notes[newFootnoteId].document[0].id, sourceMetadata.notes['private-note'].document[0].id);
+  assert.notEqual(copiedMetadata.evidence[0].id, 'original-evidence'); assert.equal(copiedMetadata.evidence[0].blockId, copiedNative[0].id);
+  assert.equal(copiedMetadata.evidence[0].text, 'Exact evidence');
+  assert.deepEqual(duplicated.editorData.academicMetadata, sourceForCommand.academicMetadata, 'Source metadata remains exact while clone receives independent IDs');
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', duplicateCommand), duplicated);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(duplicateTarget).n), 1);
+  const duplicateFailureTarget = randomUUID(), duplicateFailureId = randomUUID();
+  const fresh = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
+  await scoped(() => notes.renameNoteFolder(commandParent.id, 'Changed parent after download'));
+  const ancestryConflict = {...duplicateCommand, id: duplicateFailureId, input: {...duplicateCommand.input, title: 'Must roll back', expectedRevision: fresh.revision}, command: {action: 'duplicate', targetId: duplicateFailureTarget, sourceFingerprint: fresh.mobileCommandSource.fingerprint}};
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', ancestryConflict), error => error.code === 'source_conflict' && error.remote.mobileCommandSource.fingerprint !== fresh.mobileCommandSource.fingerprint);
+  assert.equal(await scoped(() => notes.getNote(duplicateFailureTarget)), null);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(commandOwner.id))).documentTitle, 'Captured pending title');
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(duplicateFailureId).n), 0);
+  const preCollision = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
+  const identityCollision = {...duplicateCommand, id: randomUUID(), input: {...duplicateCommand.input, title: 'Collision must roll back source', expectedRevision: preCollision.revision}, command: {action: 'duplicate', targetId: duplicateTarget, sourceFingerprint: preCollision.mobileCommandSource.fingerprint}};
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', identityCollision), /identity_conflict/);
+  const afterCollision = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
+  assert.equal(afterCollision.revision, preCollision.revision); assert.deepEqual(afterCollision.nativeDocument, preCollision.nativeDocument);
+  assert.deepEqual(afterCollision.academicMetadata, preCollision.academicMetadata); assert.deepEqual(afterCollision.versions, preCollision.versions);
+  assert.equal(afterCollision.documentTitle, preCollision.documentTitle);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(identityCollision.id).n), 0);
+  await scoped(() => notes.patchNoteTags([commandOwner.id], {add: ['Tag changed after download']}));
+  const tagConflict = {...duplicateCommand, id: randomUUID(), input: {...duplicateCommand.input, expectedRevision: afterCollision.revision}, command: {action: 'duplicate', targetId: randomUUID(), sourceFingerprint: afterCollision.mobileCommandSource.fingerprint}};
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', tagConflict), error => error.code === 'source_conflict' && error.remote.mobileCommandSource.document.tags.includes('Tag changed after download'));
+  const preTrash = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
+  const trashPacket = {id: randomUUID(), noteId: commandOwner.id, input: {...duplicateCommand.input, expectedRevision: preTrash.revision}, command: {action: 'trash', sourceFingerprint: preTrash.mobileCommandSource.fingerprint}};
+  const trashed = await applyWorkspaceEdit(first.id, 'phone-grant', trashPacket);
+  assert.ok(trashed.note.trashedAt); assert.ok(trashed.commandResult.document.trashedAt);
+  assert.equal(trashed.editorData.annotations.find(a => a.id === protectedComment.id).comment, protectedComment.comment);
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', trashPacket), trashed);
+  const manualSource = await scoped(() => mobileWorkspaceEditorData(ideaCreation.noteId));
+  const manualTarget = randomUUID();
+  const manualCopy = await applyWorkspaceEdit(first.id, 'phone-grant', {id: randomUUID(), noteId: ideaCreation.noteId, input: {title: manualSource.documentTitle, contentMarkdown: manualSource.contentMarkdown, nativeDocument: manualSource.nativeDocument, schemaVersion: manualSource.schemaVersion, academicMetadata: manualSource.academicMetadata, expectedRevision: manualSource.revision}, command: {action: 'duplicate', targetId: manualTarget, sourceFingerprint: manualSource.mobileCommandSource.fingerprint}});
+  assert.equal(manualCopy.commandResult.document.kind, 'markdown'); assert.equal(manualCopy.commandResult.document.source, null);
+  assert.equal((await scoped(() => ideas.getIdea(ideaCreation.creation.globalId))).statement, manualSource.contentMarkdown);
+  await assert.rejects(applyWorkspaceEdit(other.id, 'phone-grant', {...duplicateCommand, id: randomUUID(), command: {...duplicateCommand.command, targetId: randomUUID()}}), /document_unavailable/);
+  await scoped(db => db.prepare('UPDATE note_folders SET parent_id=id WHERE id=?').run(commandFolder.id));
+  const bodyWithBrokenPlacement = await scoped(() => mobileWorkspaceEditorData(duplicateTarget));
+  assert.equal(bodyWithBrokenPlacement.mobileCommandSource, null);
+  assert.equal(bodyWithBrokenPlacement.mobileCommandSourceIssue, 'placement_unavailable');
+  assert.deepEqual(bodyWithBrokenPlacement.nativeDocument, copiedNative, 'A damaged folder path cannot remove the existing editor consultation contract');
+  await scoped(db => db.prepare('UPDATE note_folders SET parent_id=? WHERE id=?').run(commandParent.id, commandFolder.id));
+  const organization = require('../electron/desktopBridge/workspaceOrganizationEdits.ts');
+  const orgPacket = operation => ({id:randomUUID(),noteId:operation.id,input:{},command:{action:'workspaceOrganization',operation}});
+  const parentUUID=randomUUID();
+  const parentPacket=orgPacket({type:'folderCreate',id:parentUUID,name:'Offline parent',parentId:null,parentAncestry:[]});
+  const orgParent=await applyWorkspaceEdit(first.id,'phone-grant',parentPacket);
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',parentPacket),orgParent);
+  const orgChildID=randomUUID(),parentAncestry=await scoped(()=>organization.workspaceFolderAncestry(parentUUID));
+  await applyWorkspaceEdit(first.id,'phone-grant',orgPacket({type:'folderCreate',id:orgChildID,name:'Offline child',parentId:parentUUID,parentAncestry}));
+  const orgSource=await scoped(()=>notes.getNote(duplicateTarget));
+  const orgNativeBefore=await scoped(()=>workspace.getWorkspaceNoteEditorData(duplicateTarget));
+  const movePacket=orgPacket({type:'move',id:duplicateTarget,expectedFolderId:orgSource.folderId,targetFolderId:orgChildID,targetAncestry:await scoped(()=>organization.workspaceFolderAncestry(orgChildID))});
+  await applyWorkspaceEdit(first.id,'phone-grant',movePacket);
+  await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',{...movePacket,id:randomUUID()}),e=>{const http=organization.workspaceOrganizationFailureResponse(e);assert.equal(http.status,409);assert.equal(http.body.error,'organization_conflict');assert.ok(http.body.remote);assert.equal(http.body.remote.notes.some(n=>'content' in n||'nativeDocument' in n),false);return true;});
+  await scoped(()=>notes.patchNoteTags([duplicateTarget],{add:['External Mac tag']}));
+  const tagPacket=orgPacket({type:'tags',id:duplicateTarget,add:['Mobile tag'],remove:['Real tag']});
+  await applyWorkspaceEdit(first.id,'phone-grant',tagPacket);
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',tagPacket),(await applyWorkspaceEdit(first.id,'phone-grant',tagPacket)));
+  assert.ok((await scoped(()=>notes.getNote(duplicateTarget))).tags.includes('External Mac tag'));
+  assert.ok((await scoped(()=>notes.getNote(duplicateTarget))).tags.includes('Mobile tag'));
+  assert.deepEqual((await scoped(()=>workspace.getWorkspaceNoteEditorData(duplicateTarget))).nativeDocument,orgNativeBefore.nativeDocument);
+  assert.equal((await scoped(()=>workspace.getWorkspaceNoteEditorData(duplicateTarget))).revision,orgNativeBefore.revision);
+  await applyWorkspaceEdit(first.id,'phone-grant',orgPacket({type:'folderRename',id:orgChildID,expectedName:'Offline child',name:'Renamed child'}));
+  const staleSubtree=await scoped(()=>organization.workspaceFolderSubtree(parentUUID));
+  await scoped(()=>notes.createNote({title:'New Mac note',content:'Never silently trash',folderId:orgChildID}));
+  await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',orgPacket({type:'folderTrash',id:parentUUID,expectedSubtree:staleSubtree})),e=>e.code==='organization_conflict');
+  const trashFolder=orgPacket({type:'folderTrash',id:parentUUID,expectedSubtree:await scoped(()=>organization.workspaceFolderSubtree(parentUUID))});
+  const folderTrashed=await applyWorkspaceEdit(first.id,'phone-grant',trashFolder);
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',trashFolder),folderTrashed);
+  const tombstone=await scoped(()=>notes.getNote(duplicateTarget));
+  const organizationRestorePacket=orgPacket({type:'restore',id:duplicateTarget,expectedTrashedAt:tombstone.trashedAt,expectedFolderId:tombstone.folderId});
+  const restoredOrg=await applyWorkspaceEdit(first.id,'phone-grant',organizationRestorePacket);
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',organizationRestorePacket),restoredOrg);
+  await scoped(()=>notes.trashNotes([duplicateTarget]));
+  await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',{...organizationRestorePacket,id:randomUUID()}),e=>e.code==='organization_conflict');
+  await assert.rejects(applyWorkspaceEdit(other.id,'phone-grant',orgPacket({type:'tags',id:duplicateTarget,add:[],remove:[]})),e=>e.code==='document_unavailable');
+  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,authoredIdeaOwnershipAndIdentity:true,authoredIdeaRollbackAndReplay:true,companionIdeaVisibleInAutoCataloguesAndBothGraphs:true,trashAndRestorePreserveAuthoredIdentity:true,derivedCounterUnaffected:true,durableWorkspaceAnnotations:true,manualIdeaComments:true,downloadedVersionNativeRestore:true,restoreReceiptReplay:true,durableWorkspaceDuplicate:true,durableWorkspaceTrash:true,durableWorkspaceOrganization:true,tagsDeltaPreservesMacChanges:true,folderFIFOIdentityReplay:true,folderSubtreeConflict:true,restoreTombstoneConflict:true,metadataDoesNotTouchNative:true,atomicCapturedDraft:true,completeAcademicClone:true,placementAncestryFingerprint:true,tagsFingerprintConflict:true,atomicIdentityCollisionRollback:true,legacyEditorReadPreservedWithUnavailableCommandMetadata:true,sourceCommentsPreserved:true,manualIdeaCopyIsMarkdown:true,annotationSourceAndTargetConflicts:true,lockedCommentDesktopSemantics:true,unrelatedCommentsPreserved:true,providerCalls: 0, releaseApproved: false }));
+} finally {
+  try { database?.closeDb(); } catch {}
+  fs.rmSync(root, { recursive: true, force: true });
+}

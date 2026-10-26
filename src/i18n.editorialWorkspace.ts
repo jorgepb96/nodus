@@ -156,7 +156,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Close search",
     "Editor Markdown": "Markdown editor",
     "Menú": "Menu",
-    "Documento no disponible.": "Document unavailable."
+    "Documento no disponible.": "Document unavailable.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Saved on this device · waiting to sync",
+    "Guardado en este dispositivo · revisar sincronización": "Saved on this device · review synchronization",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "This document also changed on the Mac. Choose which version to sync; your local copy is kept until you decide.",
+    "Descargar copia local": "Download local copy",
+    "Usar mi versión del móvil": "Use my mobile version",
+    "Usar la versión del Mac": "Use the Mac version",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Your document is saved on this device, but the Mac has not accepted synchronization."
   },
   "fr": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "La ressource sera retirée du document. Vous pouvez annuler cette action.",
@@ -293,7 +300,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Fermer la recherche",
     "Editor Markdown": "Éditeur Markdown",
     "Menú": "Menu",
-    "Documento no disponible.": "Document indisponible."
+    "Documento no disponible.": "Document indisponible.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Enregistré sur cet appareil · en attente de synchronisation",
+    "Guardado en este dispositivo · revisar sincronización": "Enregistré sur cet appareil · vérifier la synchronisation",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "Ce document a aussi été modifié sur le Mac. Choisissez la version à synchroniser ; votre copie locale est conservée jusqu’à votre décision.",
+    "Descargar copia local": "Télécharger la copie locale",
+    "Usar mi versión del móvil": "Utiliser ma version mobile",
+    "Usar la versión del Mac": "Utiliser la version du Mac",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Votre document est enregistré sur cet appareil, mais le Mac n’a pas accepté la synchronisation."
   },
   "de": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "Die Ressource wird aus dem Dokument entfernt. Du kannst diese Aktion rückgängig machen.",
@@ -430,7 +444,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Suche schließen",
     "Editor Markdown": "Markdown-Editor",
     "Menú": "Menü",
-    "Documento no disponible.": "Dokument nicht verfügbar."
+    "Documento no disponible.": "Dokument nicht verfügbar.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Auf diesem Gerät gespeichert · Synchronisierung ausstehend",
+    "Guardado en este dispositivo · revisar sincronización": "Auf diesem Gerät gespeichert · Synchronisierung prüfen",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "Dieses Dokument wurde auch auf dem Mac geändert. Wählen Sie die zu synchronisierende Version; Ihre lokale Kopie bleibt erhalten, bis Sie sich entscheiden.",
+    "Descargar copia local": "Lokale Kopie herunterladen",
+    "Usar mi versión del móvil": "Meine mobile Version verwenden",
+    "Usar la versión del Mac": "Die Mac-Version verwenden",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Ihr Dokument ist auf diesem Gerät gespeichert, aber der Mac hat die Synchronisierung nicht akzeptiert."
   },
   "pt": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "O recurso será removido do documento. Pode anular esta ação.",
@@ -567,7 +588,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Fechar pesquisa",
     "Editor Markdown": "Editor Markdown",
     "Menú": "Menu",
-    "Documento no disponible.": "Documento indisponível."
+    "Documento no disponible.": "Documento indisponível.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Guardado neste dispositivo · a aguardar sincronização",
+    "Guardado en este dispositivo · revisar sincronización": "Guardado neste dispositivo · rever sincronização",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "Este documento também foi alterado no Mac. Escolha a versão a sincronizar; a cópia local é conservada até decidir.",
+    "Descargar copia local": "Descarregar cópia local",
+    "Usar mi versión del móvil": "Usar a minha versão móvel",
+    "Usar la versión del Mac": "Usar a versão do Mac",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "O documento está guardado neste dispositivo, mas o Mac não aceitou a sincronização."
   },
   "pt-BR": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "O recurso será removido do documento. Você pode desfazer esta ação.",
@@ -704,7 +732,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Fechar pesquisa",
     "Editor Markdown": "Editor Markdown",
     "Menú": "Menu",
-    "Documento no disponible.": "Documento indisponível."
+    "Documento no disponible.": "Documento indisponível.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Salvo neste dispositivo · aguardando sincronização",
+    "Guardado en este dispositivo · revisar sincronización": "Salvo neste dispositivo · revisar sincronização",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "Este documento também foi alterado no Mac. Escolha a versão a sincronizar; sua cópia local será mantida até você decidir.",
+    "Descargar copia local": "Baixar cópia local",
+    "Usar mi versión del móvil": "Usar minha versão do celular",
+    "Usar la versión del Mac": "Usar a versão do Mac",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Seu documento está salvo neste dispositivo, mas o Mac não aceitou a sincronização."
   },
   "it": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "La risorsa verrà rimossa dal documento. Puoi annullare questa azione.",
@@ -841,7 +876,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Chiudi ricerca",
     "Editor Markdown": "Editor Markdown",
     "Menú": "Menu",
-    "Documento no disponible.": "Documento non disponibile."
+    "Documento no disponible.": "Documento non disponibile.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Salvato su questo dispositivo · in attesa di sincronizzazione",
+    "Guardado en este dispositivo · revisar sincronización": "Salvato su questo dispositivo · controlla la sincronizzazione",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "Questo documento è stato modificato anche sul Mac. Scegli quale versione sincronizzare; la copia locale viene conservata fino alla tua decisione.",
+    "Descargar copia local": "Scarica copia locale",
+    "Usar mi versión del móvil": "Usa la mia versione mobile",
+    "Usar la versión del Mac": "Usa la versione del Mac",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Il documento è salvato su questo dispositivo, ma il Mac non ha accettato la sincronizzazione."
   },
   "tr": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "Kaynak belgeden kaldırılacak. Bu işlemi geri alabilirsiniz.",
@@ -978,7 +1020,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "Aramayı kapat",
     "Editor Markdown": "Markdown düzenleyicisi",
     "Menú": "Menü",
-    "Documento no disponible.": "Belge kullanılamıyor."
+    "Documento no disponible.": "Belge kullanılamıyor.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "Bu cihazda kaydedildi · eşitleme bekleniyor",
+    "Guardado en este dispositivo · revisar sincronización": "Bu cihazda kaydedildi · eşitlemeyi gözden geçirin",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "Bu belge Mac’te de değiştirildi. Eşitlenecek sürümü seçin; karar verene kadar yerel kopyanız korunur.",
+    "Descargar copia local": "Yerel kopyayı indir",
+    "Usar mi versión del móvil": "Mobil sürümümü kullan",
+    "Usar la versión del Mac": "Mac sürümünü kullan",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "Belgeniz bu cihazda kaydedildi, ancak Mac eşitlemeyi kabul etmedi."
   },
   "zh-CN": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "此资源将从文档中移除。您可以撤销此操作。",
@@ -1115,7 +1164,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "关闭搜索",
     "Editor Markdown": "Markdown 编辑器",
     "Menú": "菜单",
-    "Documento no disponible.": "文档不可用。"
+    "Documento no disponible.": "文档不可用。",
+    "Guardado en este dispositivo · pendiente de sincronizar": "已保存在此设备上 · 等待同步",
+    "Guardado en este dispositivo · revisar sincronización": "已保存在此设备上 · 请检查同步",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "此文档在 Mac 上也发生了更改。请选择要同步的版本；在您决定之前，本地副本会被保留。",
+    "Descargar copia local": "下载本地副本",
+    "Usar mi versión del móvil": "使用我的移动设备版本",
+    "Usar la versión del Mac": "使用 Mac 版本",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "您的文档已保存在此设备上，但 Mac 尚未接受同步。"
   },
   "zh-TW": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "此資源將從文件中移除。您可以復原此操作。",
@@ -1252,7 +1308,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "關閉搜尋",
     "Editor Markdown": "Markdown 編輯器",
     "Menú": "選單",
-    "Documento no disponible.": "文件無法使用。"
+    "Documento no disponible.": "文件無法使用。",
+    "Guardado en este dispositivo · pendiente de sincronizar": "已儲存在此裝置上 · 等待同步",
+    "Guardado en este dispositivo · revisar sincronización": "已儲存在此裝置上 · 請檢查同步",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "此文件在 Mac 上也有變更。請選擇要同步的版本；在您決定之前，本機副本會被保留。",
+    "Descargar copia local": "下載本機副本",
+    "Usar mi versión del móvil": "使用我的行動裝置版本",
+    "Usar la versión del Mac": "使用 Mac 版本",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "您的文件已儲存在此裝置上，但 Mac 尚未接受同步。"
   },
   "ja": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "このリソースを文書から削除します。この操作は元に戻せます。",
@@ -1389,7 +1452,14 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "検索を閉じる",
     "Editor Markdown": "Markdown エディター",
     "Menú": "メニュー",
-    "Documento no disponible.": "文書を利用できません。"
+    "Documento no disponible.": "文書を利用できません。",
+    "Guardado en este dispositivo · pendiente de sincronizar": "このデバイスに保存済み · 同期待ち",
+    "Guardado en este dispositivo · revisar sincronización": "このデバイスに保存済み · 同期を確認",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "この文書は Mac でも変更されています。同期するバージョンを選んでください。選択するまでローカルのコピーは保持されます。",
+    "Descargar copia local": "ローカルのコピーをダウンロード",
+    "Usar mi versión del móvil": "モバイル版を使用",
+    "Usar la versión del Mac": "Mac 版を使用",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "文書はこのデバイスに保存されていますが、Mac は同期を受け付けていません。"
   },
   "ko": {
     "El recurso se eliminará del documento. Puedes deshacer esta acción.": "이 리소스가 문서에서 제거됩니다. 이 작업은 실행 취소할 수 있습니다.",
@@ -1526,6 +1596,13 @@ export const EDITORIAL_WORKSPACE_TRANSLATIONS = {
     "Cerrar búsqueda": "검색 닫기",
     "Editor Markdown": "Markdown 편집기",
     "Menú": "메뉴",
-    "Documento no disponible.": "문서를 사용할 수 없습니다."
+    "Documento no disponible.": "문서를 사용할 수 없습니다.",
+    "Guardado en este dispositivo · pendiente de sincronizar": "이 기기에 저장됨 · 동기화 대기 중",
+    "Guardado en este dispositivo · revisar sincronización": "이 기기에 저장됨 · 동기화 확인",
+    "Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.": "이 문서는 Mac에서도 변경되었습니다. 동기화할 버전을 선택하세요. 결정할 때까지 로컬 사본이 유지됩니다.",
+    "Descargar copia local": "로컬 사본 다운로드",
+    "Usar mi versión del móvil": "내 모바일 버전 사용",
+    "Usar la versión del Mac": "Mac 버전 사용",
+    "Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.": "문서는 이 기기에 저장되어 있지만 Mac에서 동기화를 수락하지 않았습니다."
   }
 };

@@ -1,0 +1,21 @@
+.mobile-database-presentation { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; width:100%; overflow:hidden; }
+.mobile-database-controls { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; padding:.65rem; border-bottom:1px solid color-mix(in srgb,currentColor 12%,transparent); }
+.mobile-database-controls input { flex:1; min-width:10rem; width:0; border-radius:.75rem; padding:.65rem .8rem; min-height:44px; background:color-mix(in srgb,currentColor 7%,transparent); font-size:1rem; }
+.mobile-database-controls select { max-width:100%; min-height:44px; border-radius:.75rem; padding:.5rem; font-size:1rem; }
+.mobile-database-issue { padding:1rem; overflow:auto; overflow-wrap:anywhere; }
+.mobile-database-presentation button { touch-action:manipulation; }
+.mobile-database-presentation [data-testid^="timeline-resize-"]:disabled { display:none; }
+.mobile-database-agenda { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:.75rem; }
+.mobile-database-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.2rem; margin-bottom:.85rem; }
+.mobile-database-days button { position:relative; min-height:44px; border-radius:.65rem; font-size:1rem; }
+.mobile-database-days button[aria-pressed="true"] { background:var(--mobile-accent,#6366f1); color:white; }
+.mobile-database-event-dot { position:absolute; width:4px; height:4px; bottom:5px; left:calc(50% - 2px); border-radius:50%; background:currentColor; }
+.mobile-database-agenda h3 { margin:.5rem 0 .8rem; font-size:1rem; font-weight:600; }
+.mobile-database-event { display:flex; flex-direction:column; gap:.35rem; width:100%; min-width:0; min-height:64px; text-align:left; padding:.9rem; margin:.5rem 0; border:1px solid color-mix(in srgb,currentColor 12%,transparent); border-radius:1rem; background:color-mix(in srgb,currentColor 4%,transparent); overflow-wrap:anywhere; }
+.mobile-database-event span { font-size:.85rem; opacity:.7; }
+.nodus-phone .mobile-database-presentation [data-testid="database-chart-drilldown"] { border-radius:1.1rem 1.1rem 0 0; inset:8% 0 0; max-width:none; border:1px solid color-mix(in srgb,currentColor 14%,transparent); }
+@media (max-width:700px) {
+  .mobile-database-presentation [data-testid="database-chart-view"] > div:first-child { flex-wrap:wrap; padding-block:.4rem; }
+  .mobile-database-presentation button:not(.mobile-database-days button) { min-height:44px; }
+  .mobile-database-presentation [data-testid="database-map-view"] [data-testid="map-marker"] { min-width:44px; }
+}

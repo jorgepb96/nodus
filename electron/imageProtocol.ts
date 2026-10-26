@@ -79,6 +79,17 @@ export function originalImagePayloadFromUrl(source: string): ImagePayload {
   }
 }
 
+/** Scoped native clients also render registered thumbnails, without changing
+ * the full-resolution contract used by exports and downloads. */
+export function internalImagePayloadFromUrl(source: string): ImagePayload {
+  try {
+    const url = new URL(source);
+    if (url.protocol !== `${NODUS_IMAGE_SCHEME}:` || ![...ORIGINAL_IMAGE_ROUTES,'portrait-thumbnail','world-thumbnail','map-thumbnail','character-chat-thumbnail'].includes(url.hostname)) return null;
+    const id = decodeURIComponent(url.pathname.replace(/^\/+/,''));
+    return id && id.length <= 512 ? payloadFor(url.hostname,id) : null;
+  } catch { return null; }
+}
+
 /**
  * Serve database-backed images through Chromium's native image pipeline.
  *

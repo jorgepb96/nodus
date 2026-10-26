@@ -5,7 +5,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSource } from './ipc-channel-census.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -333,7 +333,23 @@ function installRuntimeHooks(userDataPath) {
     return originalLoad.call(this, request, parent, isMain);
   };
   require.extensions['.ts'] = function loadTs(module, filename) {
-    const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+    // This harness compiles real TS modules to CommonJS. Preserve import.meta.url's
+    // actual module URL (used by createRequire), rather than leaving ESM syntax in
+    // the CommonJS output and causing Node 24 to execute it without `exports`.
+    const source = fs.readFileSync(filename, 'utf8');
+    const output = ts.transpileModule(source, {
+      transformers: { before: [(context) => {
+        const visit = (node) => {
+          if (ts.isPropertyAccessExpression(node) && node.name.text === 'url'
+            && ts.isMetaProperty(node.expression)
+            && node.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+            && node.expression.name.text === 'meta') {
+            return ts.factory.createStringLiteral(pathToFileURL(filename).href);
+          }
+          return ts.visitEachChild(node, visit, context);
+        };
+        return (root) => ts.visitNode(root, visit);
+      }] },
       fileName: filename,
       compilerOptions: {
         target: ts.ScriptTarget.ES2022,

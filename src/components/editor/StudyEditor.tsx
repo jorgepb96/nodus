@@ -36,7 +36,9 @@ import type { StudyDocumentKind, StudyTag } from '@shared/studyOrg';
 import { STUDY_DOCUMENT_KINDS } from '@shared/studyOrg';
 import type { EditorDocument, EditorDocumentPort } from './documentPort';
 import { studyDocumentPort } from './documentPort';
+import { refreshSavedEditor, type EditorRefreshSnapshot } from './remoteEditorRefresh';
 import type { StudyImproveScope, StudyStyle } from '@shared/studyImprove';
+import { pendingStudyImprovementRequestId } from '@shared/studyImprove';
 import type { StudySentenceContext, StudySynonymAlternative } from '@shared/studySynonyms';
 import { studySentenceContext } from '@shared/studySynonyms';
 import type { AppSettings } from '@shared/types';
@@ -292,12 +294,15 @@ export function StudyEditor({
   const [dictionaryWord, setDictionaryWord] = useState('');
   const [textDialog, setTextDialog] = useState<{ kind: 'comment' | 'tag'; selectedText?: string; from?: number; anchor?: StudyBlockAnchor } | null>(null);
   const [showImprovePrompts, setShowImprovePrompts] = useState(false);
+  const [documentImprovement, setDocumentImprovement] = useState<{ style: StudyStyle; target: ImproveTarget } | null>(null);
   const [quickImproveStyles, setQuickImproveStyles] = useState<StudyStyle[]>([]);
+  const [quickImproveIssue, setQuickImproveIssue] = useState('');
   const [selectionImprove, setSelectionImprove] = useState<{ x: number; y: number; target: ImproveTarget } | null>(null);
   const [selectionToolbar, setSelectionToolbar] = useState<HTMLElement | null>(null);
   const [synonymPanel, setSynonymPanel] = useState<SynonymPanelState | null>(null);
   const [improveStreamingStyleId, setImproveStreamingStyleId] = useState<string | null>(null);
   const [improveStreamError, setImproveStreamError] = useState('');
+  const [pendingImprovement, setPendingImprovement] = useState<{ requestId: string; sourceId: string } | null>(null);
   const [improvePreview, setImprovePreview] = useState('');
   const [lastImprovement, setLastImprovement] = useState<string | null>(null);
   const improveCancelled = useRef(false);
@@ -381,11 +386,17 @@ export function StudyEditor({
   }, [port]);
 
   const loadQuickImproveStyles = useCallback(async () => {
-    const [settings, styles] = await Promise.all([window.nodus.getSettings(), window.nodus.listStudyStyles()]);
-    const byId = new Map(styles.filter((item) => item.active && !item.archivedAt).map((item) => [item.id, item]));
-    setQuickImproveStyles(settings.studyImproveToolbarStyleIds.slice(0, 4).map((id) => byId.get(id)).filter((item): item is StudyStyle => Boolean(item)));
-    setAllImproveStyles([...byId.values()]);
-    setAiStyleId(byId.has(settings.studyImproveLastStyleId ?? '') ? settings.studyImproveLastStyleId! : 'builtin:clear');
+    try {
+      const [settings, styles] = await Promise.all([window.nodus.getSettings(), window.nodus.listStudyStyles()]);
+      const byId = new Map(styles.filter((item) => item.active && !item.archivedAt).map((item) => [item.id, item]));
+      setQuickImproveStyles(settings.studyImproveToolbarStyleIds.slice(0, 4).map((id) => byId.get(id)).filter((item): item is StudyStyle => Boolean(item)));
+      setAllImproveStyles([...byId.values()]);
+      setAiStyleId(byId.has(settings.studyImproveLastStyleId ?? '') ? settings.studyImproveLastStyleId! : 'builtin:clear');
+      setQuickImproveIssue('');
+    } catch (error) {
+      setQuickImproveStyles([]);
+      setQuickImproveIssue(error instanceof Error ? error.message : String(error));
+    }
   }, []);
 
   useEffect(() => { void loadQuickImproveStyles(); }, [active?.id, loadQuickImproveStyles]);
@@ -447,7 +458,7 @@ export function StudyEditor({
       if (from >= 0 || (!raw && snapshot)) return { from: Math.max(0, from), to: Math.max(0, from) + selection.length, text: selection, scope: 'selection', visual: !raw, range: snapshot?.range };
     }
     if (!allowFallback) return null;
-    return null;
+    return { from: 0, to: draft.length, text: draft, scope: 'document' };
   };
 
   const showSelectionImproveShortcuts = (event?: { clientX?: number; clientY?: number; target?: EventTarget | null }) => {
@@ -551,7 +562,7 @@ export function StudyEditor({
     const flush = () => { frame = 0; if (generation === aiGeneration.current) setImprovePreview(streamed); };
     improveCancelled.current = false;
     improvementRunning.current = true;
-    setImproveStreamingStyleId(style.id); setImprovePreview(''); setLastImprovement(null); setImproveStreamError(''); setSelectionImprove(null);
+    setImproveStreamingStyleId(style.id); setImprovePreview(''); setLastImprovement(null); setImproveStreamError(''); setPendingImprovement(null); setSelectionImprove(null);
     try {
       const result = await window.nodus.improveStudyText({
         ...port.improveTarget(active.id), subjectId, text: target.text, styleId: style.id, scope: target.scope,
@@ -571,7 +582,12 @@ export function StudyEditor({
       resultRef.current = result; setAiResult(result); setImprovePreview(result.text);
     } catch (cause) {
       if (frame) window.cancelAnimationFrame(frame);
-      if (generation === aiGeneration.current && !improveCancelled.current) { setImproveStreamError(aiErrorMessage(cause)); setImprovePreview(''); }
+      if (generation === aiGeneration.current && !improveCancelled.current) {
+        const requestId = pendingStudyImprovementRequestId(cause);
+        if (requestId) setPendingImprovement({ requestId, sourceId: source.id });
+        else setImproveStreamError(aiErrorMessage(cause));
+        setImprovePreview('');
+      }
     } finally { if (generation === aiGeneration.current) { improvementRunning.current = false; setImproveStreamingStyleId(null); } }
   };
 
@@ -748,6 +764,56 @@ export function StudyEditor({
   activeIdRef.current = active?.id ?? '';
   latestSignatureRef.current = currentSignature;
   rawRef.current = raw;
+  const remoteRefreshRef = useRef<EditorRefreshSnapshot>({ documentId: '', revision: 0, signature: '', baseline: '', ready: false, blocked: true });
+  const remoteDocumentRef = useRef(active); remoteDocumentRef.current = active;
+  const savedCallbackRef = useRef(onSaved); savedCallbackRef.current = onSaved;
+  remoteRefreshRef.current = {
+    documentId: active?.id ?? '', revision: revisionRef.current.get(active?.id ?? '') ?? 0,
+    signature: currentSignature, baseline: baselineRef.current,
+    ready: Boolean(active && data && hydratedIdRef.current === active.id),
+    blocked: saveState !== 'saved' || Boolean(saveError) || recoveredDraft || document.activeElement?.getAttribute('data-testid') === 'editor-title',
+  };
+  useEffect(() => {
+    let alive = true, reading = false;
+    const refresh = async () => {
+      if (reading || document.hidden) return;
+      reading = true;
+      try {
+        await refreshSavedEditor(
+          () => ({ ...remoteRefreshRef.current, documentId: activeIdRef.current,
+            revision: revisionRef.current.get(activeIdRef.current) ?? 0,
+            signature: latestSignatureRef.current, baseline: baselineRef.current,
+            blocked: !alive || remoteRefreshRef.current.blocked || improvementRunning.current || document.activeElement?.getAttribute('data-testid') === 'editor-title' }),
+          id => port.loadEditorData(id),
+          next => {
+            if (typeof next.documentTitle !== 'string' || typeof next.contentMarkdown !== 'string') return;
+            const id = activeIdRef.current;
+            const nextTitle = next.documentTitle;
+            const nextContent = next.contentMarkdown;
+            const native = next.nativeDocument ?? markdownToBlockNote(nextContent);
+            const metadata = normalizeAcademicMetadata(next.academicMetadata);
+            revisionRef.current.set(id, next.revision ?? 0);
+            const signature = JSON.stringify({ title: nextTitle, content: nextContent, nativeDocument: native,
+              academicMetadata: metadata, style: next.style, language: next.spellcheckLanguage, dictionary: next.customDictionary });
+            baselineRef.current = signature; latestSignatureRef.current = signature;
+            savedSignaturesRef.current.set(id, signature);
+            nativeRef.current = native; academicRef.current = metadata;
+            setData(next); setTitle(nextTitle); setDraftState(nextContent); setNativeDocument(native);
+            setAcademicMetadata(metadata); setStyle(next.style); setSaveState('saved');
+            setSelectedVersion(null); setLastImprovement(null); setHistoryState({ canUndo: false, canRedo: false });
+            setEditorRevision(value => value + 1);
+            const current = remoteDocumentRef.current;
+            if (current?.id === id) savedCallbackRef.current({ ...current, title: nextTitle, contentMarkdown: nextContent, editorRevision: next.revision });
+          },
+        );
+      } catch { /* Keep the current document and recovery draft when the connection is unavailable. */ }
+      finally { reading = false; }
+    };
+    const timer = window.setInterval(() => void refresh(), 3_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { alive = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [active?.id, port]);
   useEffect(() => {
     if (!active || !data || hydratedIdRef.current !== active.id || improveStreamingStyleId) return;
     if (currentSignature === baselineRef.current) {
@@ -798,7 +864,7 @@ export function StudyEditor({
           reason: snapshot.reason,
         });
         const next = await port.loadEditorData(snapshot.id);
-        revisionRef.current.set(snapshot.id, updated.editorRevision ?? next.revision ?? 0);
+        revisionRef.current.set(snapshot.id, next.revision ?? updated.editorRevision ?? 0);
         savedSignaturesRef.current.set(snapshot.id,snapshot.signature);
         onSaved(updated);
         if (snapshot.id === activeIdRef.current) {
@@ -1077,7 +1143,7 @@ export function StudyEditor({
           }}
         />
       ) : null}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} trailing={<ListenButton bare testId="scriptor-header-listen" size={14} className="editorial-header-action editorial-header-icon" open={listenOpen} onOpenChange={setListen} target={listenTarget} />} onPreserveSelection={preserveSelection} options={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} trailing={<ListenButton bare testId="scriptor-header-listen" size={14} className="editorial-header-action editorial-header-icon" open={listenOpen} onOpenChange={setListen} target={listenTarget} />} onPreserveSelection={preserveSelection} options={<>
         <EditorialActionMenu actions={actions} pins={pinnedActionIds} onPinsChange={setPinnedActionIds} beforeAction={restoreSelection} />
         <div className="study-insert-toolbar" data-testid="study-insert-toolbar">
           <label htmlFor="study-heading-level">{t('Nivel de título')}</label>
@@ -1088,6 +1154,28 @@ export function StudyEditor({
         </div>
       </>} />
       <EditorialActionBar actions={actions} pins={pinnedActionIds} beforeAction={restoreSelection} onPreserveSelection={preserveSelection} status={`${stats.words} ${t('palabras')} · ${stats.readingMinutes} min`} />
+      {data?.mobileSyncState === 'conflict' && <div className="editorial-save-error" role="alert">
+        <span>{t('Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.')}</span>
+        <button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Descargar copia local')}</button>
+        {[true, false].map(keepMobile => <button key={String(keepMobile)} onClick={() => void (async () => {
+          if (!port.resolveMobileConflict || !await save('manual')) return;
+          try {
+            const next = await port.resolveMobileConflict(active.id, keepMobile);
+            if (activeIdRef.current !== active.id) return;
+            const nextTitle = next.documentTitle ?? title, nextContent = next.contentMarkdown ?? draft;
+            const native = next.nativeDocument ?? markdownToBlockNote(nextContent), metadata = normalizeAcademicMetadata(next.academicMetadata);
+            const signature = JSON.stringify({ title: nextTitle, content: nextContent, nativeDocument: native, academicMetadata: metadata,
+              style: next.style, language: next.spellcheckLanguage, dictionary: next.customDictionary });
+            revisionRef.current.set(active.id, next.revision ?? 0); baselineRef.current = signature; latestSignatureRef.current = signature;
+            savedSignaturesRef.current.set(active.id, signature); nativeRef.current = native; academicRef.current = metadata;
+            setData(next); setTitle(nextTitle); setDraftState(nextContent); setNativeDocument(native); setAcademicMetadata(metadata);
+            setStyle(next.style); setSaveState('saved'); setSaveError(''); setRecoveredDraft(false); clearEditorialDraft(draftScope, active.id);
+            setSelectedVersion(null); setHistoryState({ canUndo: false, canRedo: false }); setEditorRevision(value => value + 1);
+            onSaved({ ...active, title: nextTitle, contentMarkdown: nextContent, editorRevision: next.revision });
+          } catch (error) { setSaveError(error instanceof Error ? error.message : String(error)); }
+        })()}>{t(keepMobile ? 'Usar mi versión del móvil' : 'Usar la versión del Mac')}</button>)}
+      </div>}
+      {data?.mobileSyncState === 'blocked' && <div className="editorial-save-error" role="alert"><span>{t('Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.')}{data.mobileSyncIssue && ` ${data.mobileSyncIssue}`}</span><button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Descargar copia local')}</button></div>}
       {(saveError || recoveredDraft) && <div className={`editorial-save-error${saveError ? '' : ' editorial-draft-recovered'}`} role={saveError ? 'alert' : 'status'}><span>{saveError || t('Se ha recuperado tu borrador local.')}</span><button onClick={() => void save('manual')}>{t(saveError ? 'Reintentar' : 'Guardar')}</button><button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Recuperar borrador')}</button><button onClick={() => void (async () => {
         const next = await loadData(active.id,true); const native = next.nativeDocument ?? markdownToBlockNote(next.contentMarkdown ?? active.contentMarkdown);
         setAcademicMetadata(normalizeAcademicMetadata(next.academicMetadata));
@@ -1098,6 +1186,14 @@ export function StudyEditor({
         clearEditorialDraft(draftScope,active.id); setRecoveredDraft(false); setSaveError(''); setSaveState('saved'); setEditorRevision(value => value+1);
       })()}>{t('Cargar versión actual')}</button></div>}
       {improveStreamError && !aiPanel && <div data-testid="study-improve-stream-error" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"><Icon name="alert" size={13} /><span className="min-w-0 flex-1">{improveStreamError}</span><span>{t('El original permanece intacto.')}</span><button onClick={() => setImproveStreamError('')} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {pendingImprovement && pendingImprovement.sourceId === active?.id && <div data-testid="study-improvement-pending" className="flex flex-wrap items-center gap-2 border-b border-stone-200 bg-stone-50 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <span className="min-w-0 flex-1">{t('Mejora guardada en este dispositivo. Se sincronizará al volver a conectar. El original permanece intacto.')}</span>
+        <button type="button" className="btn min-h-[44px]" onClick={() => {
+          const bridge = window.nodus as unknown as { openMobileWritingResult(id: string): Promise<boolean> };
+          void bridge.openMobileWritingResult(pendingImprovement.requestId).catch(cause => setImproveStreamError(cause instanceof Error ? cause.message : String(cause)));
+        }}>{t('Abrir resultado guardado')}</button>
+        <button type="button" className="min-h-[44px] min-w-[44px]" onClick={() => setPendingImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={14} /></button>
+      </div>}
 
 
       {showSearch && (
@@ -1191,7 +1287,7 @@ export function StudyEditor({
         {navigatorContent}
         <div className={`editorial-writing-column relative min-w-0 flex-1 overflow-hidden ${split ? 'grid grid-cols-2 divide-x divide-neutral-800' : ''}`}>
           <div className="editorial-improvement-feedback">
-      {lastImprovement && !aiPanel && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {lastImprovement && !aiPanel && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" aria-label={t('Deshacer mejora')} onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
           </div>
           <ReadAlong rootRef={documentScrollRef} scrollRef={documentScrollRef} matches={(key) => key.startsWith(`scriptor_document:${active.id}:`) || key.startsWith(`scriptor_selection:${active.id}:`) || key === `study_document:${active.id}`} />
           <div ref={documentScrollRef} className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
@@ -1231,7 +1327,7 @@ export function StudyEditor({
             {(contextTab==='checks'||contextTab==='structure')&&<AcademicPanel document={nativeDocument??[]} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef.current} view={contextTab} unresolvedComments={data.annotations.filter(a=>!a.resolvedAt).length} onOpenSource={(href,evidence)=>void navigateReference(href,evidence)} onSettings={()=>academicTools.current?.open('settings')} />}
             {contextTab === 'details' && contextDetails}
             {contextTab === 'outline' && <DocOutline markdown={draft} onJump={jumpToHeading} />}
-            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{studyStyleDisplay(prompt).name}</button>)}</div>}
+            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveIssue && <p role="status" className="text-sm mt-3">{t('No se han podido cargar los prompts de mejora.')} {quickImproveIssue}</p>}{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{studyStyleDisplay(prompt).name}</button>)}</div>}
       {contextTab === 'details' && (
         <div className="grid grid-cols-2 gap-3 p-4">
           {onUpdateMetadata && <label className="text-[10px] text-neutral-500">{t('Tipo de material')}<select data-testid="study-doc-kind" className="input mt-1 w-full" value={active.kind} onChange={(event) => void onUpdateMetadata({ kind: event.target.value as StudyDocumentKind })}>{STUDY_DOCUMENT_KINDS.map((kind) => <option key={kind} value={kind}>{t(STUDY_KIND_LABEL[kind])}</option>)}</select></label>}
@@ -1377,7 +1473,23 @@ export function StudyEditor({
           onCancel={() => setTextDialog(null)}
         />
       )}
-      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => { setShowImprovePrompts(false); void loadQuickImproveStyles(); }} onToolbarChanged={setQuickImproveStyles} onApply={prompt => { setShowImprovePrompts(false); setAllImproveStyles(current => current.some(style => style.id === prompt.id) ? current.map(style => style.id === prompt.id ? prompt : style) : [...current, prompt]); const target = improveTargetRef.current ?? resolveImproveSelection(false); openPolish(target, prompt); }} />, document.body)}
+      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => { setShowImprovePrompts(false); void loadQuickImproveStyles(); }} onToolbarChanged={setQuickImproveStyles} onApply={prompt => {
+        const target = improveTargetRef.current ?? resolveImproveSelection(true);
+        setShowImprovePrompts(false);
+        setAllImproveStyles(current => current.some(style => style.id === prompt.id) ? current.map(style => style.id === prompt.id ? prompt : style) : [...current, prompt]);
+        if (!target) return;
+        // Keep the original selection and text while the dialog closes. Native
+        // WKWebView confirmations can be suppressed during that focus change.
+        if (target.scope === 'document') setDocumentImprovement({ style: prompt, target });
+        else void runQuickImprovement(prompt, target);
+      }} />, document.body)}
+      {documentImprovement && <ConfirmModal title={t('Mejorar documento completo')}
+        message={t('No hay texto seleccionado. ¿Quieres mejorar el documento completo?')}
+        confirmLabel={t('Mejorar documento completo')} autoFocusConfirm={false}
+        onCancel={() => setDocumentImprovement(null)} onConfirm={() => {
+          const pending = documentImprovement; setDocumentImprovement(null);
+          void runQuickImprovement(pending.style, pending.target);
+        }} />}
     </div>
   );
 }

@@ -34,7 +34,7 @@ interface ReaderMark {
   text: string;
 }
 
-interface ReaderAnchor {
+export interface ReaderAnchor {
   startOffset: number;
   endOffset: number;
   selectedText: string;
@@ -178,7 +178,7 @@ interface ReaderTextIndex {
 
 const READER_TEXT_INDICES = new WeakMap<HTMLElement, ReaderTextIndex>();
 
-function readerTextIndex(root: HTMLElement): ReaderTextIndex {
+export function readerTextIndex(root: HTMLElement): ReaderTextIndex {
   const cached = READER_TEXT_INDICES.get(root);
   if (cached) return cached;
   const nodes = textNodes(root);
@@ -216,7 +216,7 @@ function nodeIndexAtOffset(index: ReaderTextIndex, value: number): number {
   return result;
 }
 
-function rangeFromOffsets(
+export function rangeFromOffsets(
   root: HTMLElement,
   start: number,
   end: number,
@@ -246,7 +246,7 @@ function rangeFromOffsets(
   return range;
 }
 
-function findAnchoredText(
+export function findAnchoredText(
   root: HTMLElement,
   anchor: ReaderAnchor,
 ): Range | null {
@@ -364,7 +364,7 @@ function selectionOffsets(
   };
 }
 
-function anchorFromRange(
+export function anchorFromRange(
   root: HTMLElement,
   range: Range,
   selectedText: string,
@@ -378,6 +378,11 @@ function anchorFromRange(
     prefix: content.slice(Math.max(0, start - 64), start),
     suffix: content.slice(end, end + 64),
   };
+}
+
+/** Embedded readers use the same index and anchor contract as Desktop. */
+export function invalidateReaderTextIndex(root: HTMLElement): void {
+  READER_TEXT_INDICES.delete(root);
 }
 
 function wordAtPoint(event: MouseEvent, root: HTMLElement): Range | null {
@@ -750,6 +755,35 @@ export const ReaderSelectionActions = forwardRef<
     },
     [captureSelection, createHighlight, highlighterColor],
   );
+
+  useEffect(() => {
+    const root = targetRef.current;
+    if (!root || !(window as unknown as { nodusMobileConfig?: unknown }).nodusMobileConfig) return;
+    root.dataset.readerManagedSelection = 'true';
+    let frame = 0;
+    const update = () => {
+      const selected = !!selectionInside(root);
+      const host = window as unknown as { nodusMobileCall?: (method: string, selected: boolean) => Promise<unknown> };
+      void host.nodusMobileCall?.('readerSelectionState', selected);
+      cancelAnimationFrame(frame);
+      if (selected) frame = requestAnimationFrame(() => {
+        // Moving iOS selection handles updates one ribbon, without saving a
+        // second highlight for every intermediate selection range.
+        const selection = captureSelection();
+        if (selection) setActive(selection);
+      });
+      else setActive(null);
+    };
+    document.addEventListener('selectionchange', update);
+    document.addEventListener('nodus-reader-selection', update);
+    return () => {
+      cancelAnimationFrame(frame); delete root.dataset.readerManagedSelection;
+      document.removeEventListener('selectionchange', update);
+      document.removeEventListener('nodus-reader-selection', update);
+      const host = window as unknown as { nodusMobileCall?: (method: string, selected: boolean) => Promise<unknown> };
+      void host.nodusMobileCall?.('readerSelectionState', false);
+    };
+  }, [captureSelection, targetRef]);
 
   const updateMarginPositions = useCallback(() => {
     const root = targetRef.current;

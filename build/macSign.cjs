@@ -7,6 +7,7 @@ const { existsSync, readdirSync } = require('node:fs');
 const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 const { signAsync } = require('@electron/osx-sign');
+const { isSigningTarget } = require('./macSigningFiles.cjs');
 
 function parseDeveloperIdIdentities(output) {
   return output
@@ -104,6 +105,7 @@ module.exports = async function signMacApplication(options) {
     // Override only electron-builder's blanket PlugIns exclusion. Every other
     // built-in or project-provided ignore rule remains intact.
     ignore: (filePath) => {
+      if (!isSigningTarget(filePath)) return true;
       if (isDockTilePath(filePath)) return false;
       if (typeof originalIgnore === 'function') return originalIgnore(filePath);
       if (Array.isArray(originalIgnore)) {

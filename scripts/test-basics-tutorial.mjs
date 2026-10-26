@@ -13,7 +13,7 @@ test('essential tutorial is global, seen-once, skippable with confirmation and r
     read('src/views/BasicsTutorial.tsx'),
     read('src/App.tsx'),
     read('@api'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
     read('src/views/Settings.tsx'),
     read('src/components/ConfirmModal.tsx'),

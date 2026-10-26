@@ -437,6 +437,22 @@ export function renderProfessionalReportHtml(input: ProfessionalReportInput): st
     .no-indent, .no-indent p { text-indent: 0 !important; }
     @media print {
       a { color: var(--accent-dark); }
+      /* UIKit's WebKit print formatter still uses the legacy fragmentation
+         properties. Keep them alongside the modern rules used by Chromium. */
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+      tr, .report-figure, blockquote, .outline-list > li,
+      .evidence-card, .term-card, .source-card { page-break-inside: avoid; }
+      .prose h1, .prose h2, .prose h3, .prose h4,
+      .section-heading, .section-body > h3 { page-break-after: avoid; }
+      /* Keep the facts with the title even when a long title needs four lines.
+         The illustration takes the remaining space instead of pushing the footer
+         onto a separate, almost empty page. Both Chromium and WebKit use this. */
+      .cover { height: 245mm; min-height: 0; }
+      .cover > :not(.cover-image) { flex-shrink: 0; }
+      .cover-image { display: flex; flex-direction: column; flex: 1 1 91mm; min-height: 24mm; }
+      .cover-image img { flex: 1 1 auto; height: 0; min-height: 0; }
+      .cover-image figcaption { flex-shrink: 0; }
       .report-section, .source-card, .evidence-card, .term-card { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     }
   </style>

@@ -74,6 +74,7 @@ function toSummary(row: ConversationRow, messageCount: number): ChatConversation
 function toMessage(row: MessageRow): ChatMessageRecord {
   return {
     id: row.id,
+    createdAt: row.created_at,
     role: row.role === 'assistant' ? 'assistant' : 'user',
     content: row.content,
     attachments: parseJson(row.attachments_json) ?? undefined,
@@ -153,6 +154,7 @@ export function saveMessages(
   const tx = db.transaction(() => {
     const exists = db.prepare('SELECT 1 FROM chat_conversations WHERE id = ?').get(id);
     if (!exists) return;
+    const existingTimes = new Map((db.prepare('SELECT id, created_at FROM chat_messages WHERE conversation_id = ?').all(id) as Array<{id:string;created_at:string}>).map(row=>[row.id,row.created_at]));
     db.prepare('DELETE FROM chat_messages WHERE conversation_id = ?').run(id);
     const insert = db.prepare(
       `INSERT INTO chat_messages (id, conversation_id, seq, role, content, selection_key, stats_json, error, created_at, attachments_json, concilium_json, skills_json)
@@ -168,7 +170,7 @@ export function saveMessages(
         message.selectionKey ?? null,
         message.stats ? JSON.stringify(message.stats) : null,
         message.error ? 1 : 0,
-        now,
+        message.createdAt && Number.isFinite(Date.parse(message.createdAt)) ? message.createdAt : existingTimes.get(message.id) ?? now,
         message.attachments?.length ? JSON.stringify(message.attachments) : null,
         message.concilium ? JSON.stringify(message.concilium) : null,
         message.skills?.length ? JSON.stringify(message.skills.slice(0, 8).map(skill => ({ id: String(skill.id), name: String(skill.name).slice(0, 120) }))) : null

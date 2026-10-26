@@ -17,6 +17,7 @@ import { getDb, withDatabaseContext, withoutDatabaseContext } from '../db/databa
 import { activeEmbeddingIndex, withEmbeddingIndexContext } from '../db/embeddingIndexesRepo';
 import { assertNotBrowserIpcSender } from './trust';
 import { isAiModelRequiredError } from '@shared/aiModelRequired';
+import { registerMobileOperation } from '../desktopBridge/operations';
 
 export interface IpcContext {
   /**
@@ -55,7 +56,9 @@ export function localizedForUi<T>(payload: T): T {
 
 /** Build the context handed to every `register*Ipc` function. */
 export function createIpcContext(getWindow: () => BrowserWindow | null): IpcContext {
-  const h: typeof ipcMain.handle = (channel, listener) => ipcMain.handle(channel, async (event, ...args) => {
+  const h: typeof ipcMain.handle = (channel, listener) => {
+    registerMobileOperation(channel, listener);
+    ipcMain.handle(channel, async (event, ...args) => {
     try {
       // Defence in depth for the entire legacy IPC surface. A Browser renderer
       // that somehow gains ipcRenderer still cannot reach vaults, files, AI,
@@ -83,6 +86,7 @@ export function createIpcContext(getWindow: () => BrowserWindow | null): IpcCont
       if (localized === message) throw error;
       throw new Error(localized);
     }
-  });
+    });
+  };
   return { h, getWindow, chatAborters: new Map() };
 }

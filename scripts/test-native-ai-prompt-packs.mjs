@@ -62,7 +62,8 @@ test('non-Spanish runtime prompts do not retain legacy Spanish/English fallback 
 
 test('prompt consumers resolve the explicit request language before calling the native pack', () => {
   assert.match(read('electron/ai/studyImprove.ts'), /request\.promptLanguage \?\? aiSettings\.promptLanguage/);
-  assert.match(read('electron/ai/studyImprove.ts'), /studyImprovePromptPack\(language\)/);
+  assert.match(read('shared/studyImprovementGeneration.ts'), /studyImprovePromptPack\(language\)/);
+  assert.match(read('electron/ai/studyImprove.ts'), /prepareStudyImprovement\(request, style, promptLanguage\)/);
   assert.match(read('electron/ai/tutor.ts'), /tutorPlanPrompt\(language, mode\)/);
   assert.match(read('electron/ai/tutor.ts'), /tutorStepPrompt\(request\.language \?\? getSettings\(\)\.promptLanguage/);
   assert.match(read('electron/ai/argumentMap.ts'), /argumentMapPrompt\(language\)/);
@@ -107,8 +108,9 @@ test('dictionary, document profile, folder and gap prompts are native and preser
     const gap = packs.gapPromptPack(language);
     for (const marker of ['keywords', 'queries']) assert.match(gap.system, new RegExp(marker), `${language} gap contract missing ${marker}`);
   }
-  assert.match(read('electron/ai/dictionary.ts'), /dictionaryPromptPack\(/);
-  assert.match(read('electron/ai/dictionary.ts'), /dictionaryScaffoldPack\(/);
+  assert.match(read('shared/dictionaryGenerationCore.ts'), /dictionaryPromptPack\(/);
+  assert.match(read('electron/ai/dictionary.ts'), /generateDictionaryDefinition\(entry, evidence/);
+  assert.match(read('shared/dictionaryGenerationCore.ts'), /dictionaryScaffoldPack\(/);
   assert.match(read('electron/ai/documentProfile.ts'), /documentProfilePromptPack\(/);
   assert.match(read('electron/ai/folderIdeaSuggestions.ts'), /folderPromptPack\(language\)/);
   assert.match(read('electron/ai/gapSearch.ts'), /gapPromptPack\(language\)/);

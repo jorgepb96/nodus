@@ -8,7 +8,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -183,6 +183,20 @@ function installRuntimeHooks(userDataPath) {
   require.extensions['.ts'] = function loadTs(module, filename) {
     const source = fs.readFileSync(filename, 'utf8');
     const output = ts.transpileModule(source, {
+      // Keep createRequire(import.meta.url) rooted at the real source module while
+      // compiling to CommonJS; residual import.meta would force Node 24 ESM mode.
+      transformers: { before: [(context) => {
+        const visit = (node) => {
+          if (ts.isPropertyAccessExpression(node) && node.name.text === 'url'
+            && ts.isMetaProperty(node.expression)
+            && node.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+            && node.expression.name.text === 'meta') {
+            return ts.factory.createStringLiteral(pathToFileURL(filename).href);
+          }
+          return ts.visitEachChild(node, visit, context);
+        };
+        return (root) => ts.visitNode(root, visit);
+      }] },
       fileName: filename,
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.NodeJs, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX, resolveJsonModule: true, skipLibCheck: true },
     }).outputText;

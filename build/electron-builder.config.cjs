@@ -10,4 +10,5 @@ module.exports = {
   ...pkg.build,
   nsis: {...pkg.build.nsis},
   files: [...pkg.build.files, ...packagedNodeModuleExclusions()],
+  mac: { ...pkg.build.mac, sign: 'build/macLocalSign.cjs' },
 };

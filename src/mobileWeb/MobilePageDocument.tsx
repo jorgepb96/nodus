@@ -34,7 +34,7 @@ export function MobilePageDocument({id,onOpen}:{id:string;onOpen:(id:string)=>vo
     {!document&&!issue&&<div role="status">{t('Cargando página…')}</div>}
     {document&&(document.nativeDocument
       ? <NativePage key={`${id}:${attempt}`} initial={document} onDocument={setDocument} onOpen={onOpen}/>
-      : <PageBlockEditor key={`${id}:${attempt}`} pageId={id} mobileLocalAssets onDocumentChange={value=>setDocument(value)} onNavigatePage={onOpen}/>)}
+      : <PageBlockEditor key={`${id}:${attempt}`} pageId={id} mobileLocalAssets onDocumentChange={setDocument} onNavigatePage={onOpen}/>)}
   </div>;
 }
 function NativePage({initial,onDocument,onOpen}:{initial:MobileDocument;onDocument:(document:MobileDocument)=>void;onOpen:(id:string)=>void}){

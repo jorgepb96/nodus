@@ -245,7 +245,8 @@ const date = (value: string | null) =>
       }).format(new Date(value))
     : "—";
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, group = false }: { label: string; children: ReactNode; group?: boolean }) {
+  if (group) return <fieldset className="min-w-0 border-0 p-0 text-xs text-neutral-600 dark:text-neutral-400"><legend>{label}</legend>{children}</fieldset>;
   return (
     <label className="block text-xs text-neutral-600 dark:text-neutral-400">
       {label}
@@ -984,7 +985,7 @@ function CreationDialog({
                   <option value="detailed">{t("Detallado")}</option>
                 </select>
               </Field>
-              <Field label={t("Modelo de síntesis")}>
+              <Field label={t("Modelo de síntesis")} group>
                 <ModelPicker
                   className="mt-1 w-full"
                   settings={settings}

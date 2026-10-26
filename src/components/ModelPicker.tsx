@@ -372,7 +372,7 @@ export function ModelPicker({
       if (event.target !== searchRef.current && open && event.key === 'Home') { event.preventDefault(); focusOption('first'); }
       if (event.target !== searchRef.current && open && event.key === 'End') { event.preventDefault(); focusOption('last'); }
     }}>
-      <button ref={triggerRef} type="button" className="model-picker-trigger" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel ? `${ariaLabel}: ${currentLabel}` : undefined} onClick={() => {
+      <button ref={triggerRef} type="button" className="model-picker-trigger" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel ? `${ariaLabel}: ${currentLabel}` : currentLabel} onClick={() => {
         if (open) closeAndRestoreFocus();
         else openAndFocusSearch();
       }} title={currentLabel}>

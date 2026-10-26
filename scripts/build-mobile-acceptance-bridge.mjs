@@ -16,6 +16,16 @@ fs.writeFileSync(path.join(folder,'package.json'),JSON.stringify({name:'nodus-mo
 execFileSync(path.join(root,'node_modules/esbuild/bin/esbuild'),[path.join(root,'scripts/mobile-acceptance-bridge.ts'),
   '--bundle','--platform=node','--format=cjs','--packages=external','--tsconfig='+path.join(root,'electron/tsconfig.json'),
   '--define:import.meta.url='+JSON.stringify(pathToFileURL(path.join(root,'electron/export/academicExport.ts')).href),'--outfile='+bundle],{cwd:root,stdio:'inherit'});
+// The headless package has its own __dirname/app path. Its utility bootstrap and
+// retrieval target must be shipped beside the Bridge, using this package's CJS format.
+const workers={};
+for(const name of ['backgroundUtility','documentaryRetrievalWorker']) {
+  const file=name+'.js',output=path.join(folder,file);
+  execFileSync(path.join(root,'node_modules/esbuild/bin/esbuild'),[path.join(root,'electron/workers',name+'.ts'),
+    '--bundle','--platform=node','--format=cjs','--packages=external','--tsconfig='+path.join(root,'electron/tsconfig.json'),
+    '--outfile='+output],{cwd:root,stdio:'inherit'});
+  workers[name]={file,sha256:createHash('sha256').update(fs.readFileSync(output)).digest('hex')};
+}
 if(sourceRevision(root).sourceDigest!==before.sourceDigest)throw new Error('Desktop sources changed during the acceptance build.');
-fs.writeFileSync(metadata,JSON.stringify({...before,desktopVersion:version,builtAt:new Date().toISOString(),bundleSha256:createHash('sha256').update(fs.readFileSync(bundle)).digest('hex')},null,2)+'\n');
+fs.writeFileSync(metadata,JSON.stringify({...before,desktopVersion:version,builtAt:new Date().toISOString(),bundleSha256:createHash('sha256').update(fs.readFileSync(bundle)).digest('hex'),workers},null,2)+'\n');
 console.log(JSON.stringify({built:true,...before}));

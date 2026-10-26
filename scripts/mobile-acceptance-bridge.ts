@@ -7,6 +7,14 @@ const lab = process.env.NODUS_MOBILE_ACCEPTANCE_LAB;
 if (!lab || !fs.existsSync(path.join(lab, '.nodus-mobile-acceptance-lab'))) throw new Error('An isolated acceptance lab is required.');
 const build = JSON.parse(fs.readFileSync(path.join(path.dirname(__filename),'lab-bridge.build.json'),'utf8'));
 if (createHash('sha256').update(fs.readFileSync(__filename)).digest('hex') !== build.bundleSha256) throw new Error('The acceptance Bridge bundle does not match its build receipt.');
+for (const name of ['backgroundUtility', 'documentaryRetrievalWorker']) {
+  const worker = build.workers?.[name];
+  const file = path.join(path.dirname(__filename), `${name}.js`);
+  if (worker?.file !== `${name}.js` || !fs.existsSync(file)
+    || createHash('sha256').update(fs.readFileSync(file)).digest('hex') !== worker.sha256) {
+    throw new Error(`The acceptance worker ${name} does not match its build receipt.`);
+  }
+}
 // Match Desktop's stable Safe Storage identity. A distinct visible test name
 // strands credentials when this same isolated profile is opened by Desktop.
 app.setName('Nodus'); app.setPath('userData', path.resolve(lab));

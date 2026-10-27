@@ -1,0 +1,76 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nodus Reader Privacy | Nodus Research</title>
+<meta name="description" content="How Nodus Reader keeps books, reading data, notes and on-device narration private."/>
+<meta name="robots" content="noindex, follow, noarchive"/>
+<meta property="og:title" content="Nodus Reader Privacy | Nodus Research"/>
+<meta property="og:description" content="Nodus Reader is local-first. Books, reading data, notes and neural narration stay on your device unless you enable your own iCloud sync."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://nodusresearch.com/reader/privacy/"/>
+<meta property="og:site_name" content="Nodus Research"/>
+<meta property="og:locale" content="en_GB"/>
+<meta property="og:image" content="https://nodusresearch.com/favicon.png"/>
+<link rel="canonical" href="https://nodusresearch.com/reader/privacy/"/>
+<link rel="icon" href="../../favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="../../favicon.png" sizes="512x512"/>
+<link rel="icon" type="image/svg+xml" href="../../assets/nodus-logo.svg"/>
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"/>
+<link rel="preload" as="font" type="font/woff2" href="../../assets/fonts/inter-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="../../assets/fonts/fraunces-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="../../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../../assets/css/guide.css?v=20260823a"/>
+<link rel="stylesheet" href="../../assets/css/legal.css?v=20260831"/>
+</head>
+<body class="legal-page">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div data-nodus-site-header data-base="../../"></div>
+<script defer src="../../site-header.js?v=20260927a"></script>
+
+<main id="main">
+<header class="page-hero guide-hero"><div class="wrap"><div class="scrim" style="max-width:850px">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="../../">Nodus Research</a><span class="sep" aria-hidden="true">/</span><a href="../../privacy/">Privacy</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Nodus Reader</span></nav>
+<h1 class="display">Nodus Reader privacy</h1>
+<p class="lead">Nodus Reader is a free, open-source reading and listening app for iPhone, iPad and Mac, maintained by Jorge Pérez Burgueño. It does not create Nodus accounts, collect or transmit personal information to the developer, sell or share app data, or include advertising, tracking, remote analytics, subscriptions or in-app purchases.</p>
+<p class="meta">Effective date: 27 October 2026. Applies to Nodus Reader 0.1.0 (24) and later builds.</p>
+</div></div></header>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">A local library</h2></div><div class="guide-body prose"><p>Nodus Reader copies the documents you import into its private app storage. Library metadata, covers, collections, reading positions, bookmarks, highlights, notes and preferences are stored on your device. Generated narration may be cached there so the same sentence does not need to be generated again. The original file you selected is not modified or deleted by the app.</p><p>Deleting a book from the library removes its local file, metadata and narration cache on that device. Deleting the app removes its container. Device backups may retain app data according to your Apple backup settings.</p></div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">On-device reading and narration</h2></div><div class="guide-body prose"><p>PDF text recognition, PDF reading order, document extraction and neural narration run on your device. Kokoro and Phonon voices are downloaded only when you choose them and execute locally with Core ML. Nodus Research does not operate a server for books, reading data, narration or analytics, and does not receive your documents, notes or generated audio.</p><p>Precise word timing may use Apple's on-device speech recognition on audio the app has just generated, never on recorded sound. The app does not request microphone, camera, contacts, calendar, health or location access.</p></div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Optional iCloud sync</h2></div><div class="guide-body prose"><p>iCloud sync is off by default. When you enable it, Nodus Reader uses your personal iCloud account through Apple frameworks: a CloudKit private database for library metadata, collections, bookmarks, annotations, reading positions and deletions, and iCloud Documents for original files and covers. Nodus Research does not run a sync server and cannot read your library. You can disable sync or delete the book from your iCloud library in the app.</p><p>Model weights, voice embeddings, generated audio, OCR caches, the Hugging Face token and hardware-specific settings are never synced.</p></div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Voice models and Hugging Face</h2></div><div class="guide-body prose"><p>Models are downloaded from pinned revisions hosted by Hugging Face. The model publisher and Hugging Face handle that download under their own terms and privacy policies. Some gated Phonon models require you to accept their terms and sign in with your own Hugging Face account; the app stores an access token only in the device Keychain. Nodus Research does not receive your Hugging Face password, token or model-download history.</p><p>Model licences are published by their authors. Some restrict use to non-commercial purposes. The app links to the applicable licence notices.</p></div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Permissions and other network access</h2></div><div class="guide-body prose"><p>The document picker gives the app access only to files you explicitly select. Photos access is requested only when you choose a custom cover; the selected image is copied into the app's cover directory. The audio session is used for narration and background playback, not recording.</p><p>The app also uses the network to download a model, to let Apple download a speech-recognition model for precise word timing, to let the Share Extension download a web page or file you explicitly share, and to reach Apple's iCloud services when sync is enabled. A website link opens only when you choose it. The app sends no documents, audio, reading data or telemetry to Nodus Research.</p></div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Apple services and beta testing</h2></div><div class="guide-body prose"><p>Apple handles App Store distribution, iCloud, system diagnostics and TestFlight under its own policies. During a TestFlight beta, Apple may provide the developer with crash reports, beta-testing details and feedback you submit through TestFlight. The app contains no analytics, tracking or crash-reporting SDK. If you contact support, the information you choose to send is handled by the service you use.</p></div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Deletion, contact and changes</h2></div><div class="guide-body prose"><p>You can delete individual books, remove downloaded files, delete generated audio or uninstall the app. When sync is enabled, deleting a book also removes it from your iCloud library after confirmation. Nodus Research holds no server-side copy that it could delete for you.</p><p>For support, use the <a href="https://github.com/jorgepb96/nodus-reader/issues">Nodus Reader issue tracker</a>. For a private security or privacy concern, use the project's <a href="https://github.com/jorgepb96/nodus/security/advisories/new">private reporting channel</a>. Material changes to this policy will be published here with a new effective date. The full technical policy remains in <a href="https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md">PRIVACY.md</a>.</p></div></div></section>
+
+<section><div class="wrap"><div class="guide-body prose"><p><b>Related notices:</b> <a href="../../privacy/">website privacy</a> and <a href="../../cookies/">cookies and local storage</a> apply when you visit this website. Nodus Drift and Nodus Presenter have separate app privacy policies.</p></div></div></section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand"><a class="logo" href="../../"><img src="../../assets/nodus-logo.svg" alt=""/> Nodus Research</a><p>A personal, independent open-source project. Nodus is its local-first desktop application.</p></div>
+      <div class="foot-col"><h3>Research</h3><a href="../../research/">Academic research</a><a href="../../zotero/">Nodus and Zotero</a><a href="../../apps/">Nodus Apps</a></div>
+      <div class="foot-col"><h3>Learn</h3><a href="../../wiki/">Wiki</a><a href="../../blog/">Blog</a><a href="../../faq/">FAQ</a></div>
+      <div class="foot-col"><h3>Project</h3><a href="../../about/">About</a><a href="../../legal/">Legal notice</a><a href="../../privacy/">Website privacy</a><a href="../../cookies/">Cookies</a><a href="https://github.com/jorgepb96/nodus" target="_blank" rel="noopener">GitHub</a></div>
+    </div>
+    <div class="foot-base"><span>© 2026 Jorge Pérez Burgueño and Nodus contributors.</span><a href="../../privacy/">Website privacy</a><a href="../../cookies/">Cookies</a><a href="https://github.com/jorgepb96/nodus-reader/blob/main/PRIVACY.md" target="_blank" rel="noopener">App privacy</a><a href="https://github.com/jorgepb96/nodus-reader/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0-only</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

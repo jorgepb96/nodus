@@ -2,6 +2,74 @@
   "version": 1,
   "notices": [
     {
+      "id": "2026-10-27-nodus-drift-ios",
+      "date": "2026-10-27",
+      "severity": "info",
+      "url": "https://testflight.apple.com/join/kAXnsjJS",
+      "copy": {
+        "es": {
+          "title": "Nodus Drift ya está en beta pública para iPhone y iPad",
+          "body": "Nodus Drift, nuestra mezcladora de sonidos ambientales gratuita para iPhone y iPad, ya está en beta pública en TestFlight. Es una app complementaria de Nodus: combina hasta seis de sus 89 sonidos, todos disponibles sin conexión, programa un temporizador de sueño y relájate en una escena de meditación a pantalla completa con Nodi. Sin cuenta, anuncios, seguimiento ni compras. La beta está solo en inglés por ahora; tus comentarios en TestFlight definirán lo que viene.",
+          "linkLabel": "Probar la beta en TestFlight"
+        },
+        "en": {
+          "title": "Nodus Drift is now in public beta on iPhone and iPad",
+          "body": "Nodus Drift, our free ambient sound mixer for iPhone and iPad, is now in public beta on TestFlight. It's a companion app to Nodus: blend up to six of its 89 sounds, all of which work entirely offline, set a sleep timer and unwind in a full-screen meditation scene with Nodi. No account, ads, tracking or purchases. The beta is in English only for now; feedback sent through TestFlight shapes what comes next.",
+          "linkLabel": "Join the beta on TestFlight"
+        },
+        "fr": {
+          "title": "Nodus Drift est en bêta publique sur iPhone et iPad",
+          "body": "Nodus Drift, notre mixeur de sons d’ambiance gratuit pour iPhone et iPad, est désormais en bêta publique sur TestFlight. C’est une app complémentaire de Nodus : mixez jusqu’à six de ses 89 sons, tous utilisables hors ligne, programmez une minuterie de sommeil et détendez-vous dans une scène de méditation plein écran avec Nodi. Sans compte, publicité, suivi ni achat. La bêta est uniquement en anglais pour l’instant ; vos retours via TestFlight orienteront la suite.",
+          "linkLabel": "Rejoindre la bêta sur TestFlight"
+        },
+        "de": {
+          "title": "Nodus Drift ist jetzt als öffentliche Beta für iPhone und iPad verfügbar",
+          "body": "Nodus Drift, unser kostenloser Ambient-Sound-Mixer für iPhone und iPad, ist jetzt als öffentliche Beta in TestFlight verfügbar. Es ist eine Begleitapp zu Nodus: Mische bis zu sechs seiner 89 Sounds (alle funktionieren vollständig offline), stelle einen Einschlaftimer ein und entspanne in einer bildschirmfüllenden Meditationsszene mit Nodi. Ohne Konto, Werbung, Tracking oder Käufe. Die Beta ist vorerst nur auf Englisch; dein Feedback über TestFlight bestimmt, wie es weitergeht.",
+          "linkLabel": "Beta in TestFlight testen"
+        },
+        "pt": {
+          "title": "O Nodus Drift já está em beta pública para iPhone e iPad",
+          "body": "O Nodus Drift, o nosso misturador de sons ambiente gratuito para iPhone e iPad, já está em beta pública no TestFlight. É uma aplicação complementar do Nodus: combina até seis dos seus 89 sons, todos disponíveis sem ligação à internet, define um temporizador de sono e relaxa numa cena de meditação em ecrã inteiro com o Nodi. Sem conta, anúncios, rastreio nem compras. A beta está apenas em inglês por agora; os teus comentários no TestFlight vão definir o que vem a seguir.",
+          "linkLabel": "Experimentar a beta no TestFlight"
+        },
+        "pt-BR": {
+          "title": "Nodus Drift já está em beta pública para iPhone e iPad",
+          "body": "Nodus Drift, nosso mixer de sons ambiente gratuito para iPhone e iPad, já está em beta pública no TestFlight. É um app complementar do Nodus: misture até seis dos seus 89 sons, todos disponíveis sem internet, programe um timer de sono e relaxe em uma cena de meditação em tela cheia com o Nodi. Sem conta, anúncios, rastreamento ou compras. A beta está apenas em inglês por enquanto; seus comentários no TestFlight vão definir o que vem a seguir.",
+          "linkLabel": "Testar a beta no TestFlight"
+        },
+        "it": {
+          "title": "Nodus Drift è ora in beta pubblica su iPhone e iPad",
+          "body": "Nodus Drift, il nostro mixer di suoni d’ambiente gratuito per iPhone e iPad, è ora in beta pubblica su TestFlight. È un’app complementare di Nodus: combina fino a sei dei suoi 89 suoni, tutti utilizzabili offline, imposta un timer per il sonno e rilassati in una scena di meditazione a schermo intero con Nodi. Senza account, pubblicità, tracciamento né acquisti. La beta è solo in inglese per ora; i tuoi commenti su TestFlight definiranno ciò che arriverà.",
+          "linkLabel": "Prova la beta su TestFlight"
+        },
+        "tr": {
+          "title": "Nodus Drift artık iPhone ve iPad’de herkese açık beta olarak yayında",
+          "body": "Nodus Drift, iPhone ve iPad için ücretsiz ortam sesi karıştırıcımız, artık TestFlight’ta herkese açık beta olarak yayında. Nodus’a eşlik eden bir uygulama: tamamen çevrimdışı çalışan 89 sesten en fazla altısını karıştır, uyku zamanlayıcısı kur ve Nodi ile tam ekran meditasyon sahnesinde rahatla. Hesap, reklam, izleme veya satın alma yok. Beta şimdilik yalnızca İngilizce; TestFlight üzerinden gönderdiğin geri bildirimler bundan sonrasını şekillendirecek.",
+          "linkLabel": "TestFlight’ta betayı dene"
+        },
+        "zh-CN": {
+          "title": "Nodus Drift 现已在 iPhone 和 iPad 上开启公测",
+          "body": "Nodus Drift 是我们为 iPhone 和 iPad 打造的自由环境音混音器，现已在 TestFlight 开启公测。它是 Nodus 的配套应用：可从 89 种完全离线可用的声音中混合最多六种，设置睡眠定时器，并与 Nodi 一起进入全屏冥想场景。无账户、广告、追踪或购买。目前测试版仅提供英文；你在 TestFlight 中的反馈将决定接下来的方向。",
+          "linkLabel": "通过 TestFlight 加入测试"
+        },
+        "zh-TW": {
+          "title": "Nodus Drift 現已在 iPhone 和 iPad 上展開公測",
+          "body": "Nodus Drift 是我們為 iPhone 和 iPad 打造的自由環境音混音器，現已在 TestFlight 展開公測。它是 Nodus 的配套應用程式：可從 89 種完全離線可用的聲音中混合最多六種，設定睡眠計時器，並與 Nodi 一起進入全螢幕冥想場景。無帳號、廣告、追蹤或購買。目前測試版僅提供英文；你在 TestFlight 中的回饋將決定接下來的方向。",
+          "linkLabel": "透過 TestFlight 加入測試"
+        },
+        "ja": {
+          "title": "Nodus Drift、iPhone と iPad でパブリックベータ公開",
+          "body": "Nodus Drift は、iPhone と iPad 向けの無料の環境音ミキサーで、TestFlight でパブリックベータを公開しました。Nodus のコンパニオンアプリです。完全オフラインで使える 89 種類のサウンドから最大 6 つを重ね、スリープタイマーを設定し、Nodi と一緒に全画面の瞑想シーンでくつろげます。アカウント、広告、トラッキング、購入はありません。ベータ版は今のところ英語のみです。TestFlight で送ったフィードバックが今後の開発に反映されます。",
+          "linkLabel": "TestFlight でベータに参加"
+        },
+        "ko": {
+          "title": "Nodus Drift, iPhone과 iPad에서 공개 베타 시작",
+          "body": "Nodus Drift는 iPhone과 iPad용 무료 환경음 믹서로, 이제 TestFlight에서 공개 베타를 시작합니다. Nodus의 컴패니언 앱입니다. 완전히 오프라인으로 작동하는 89가지 사운드 중 최대 6가지를 섞고, 수면 타이머를 설정하고, Nodi와 함께 전체 화면 명상 장면에서 쉬어 보세요. 계정, 광고, 추적, 구매가 없습니다. 베타는 당분간 영어로만 제공됩니다. TestFlight로 보내 주신 피드백이 앞으로의 방향을 결정합니다.",
+          "linkLabel": "TestFlight에서 베타 참여"
+        }
+      }
+    },
+    {
       "id": "2026-10-19-model-guide",
       "date": "2026-10-19",
       "severity": "info",

@@ -2,6 +2,74 @@
   "version": 1,
   "notices": [
     {
+      "id": "2026-10-29-nodus-reader-ios",
+      "date": "2026-10-29",
+      "severity": "info",
+      "url": "https://testflight.apple.com/join/SjCk8AZ1",
+      "copy": {
+        "es": {
+          "title": "Lee tus libros y artículos desde el móvil: Nodus Reader ya está en beta",
+          "body": "Nodus Reader, nuestra app gratuita y de código abierto para leer y escuchar tu biblioteca, ya está en beta pública en TestFlight para iPhone, iPad y Mac. Abre EPUB, PDF, TXT, Markdown, HTML y RTF, añade marcadores, subrayados y notas, y escucha la narración con voces generadas por completo en tu dispositivo. La lectura inteligente de PDF reconstruye el orden de lectura y aplica OCR en el dispositivo. Sin cuenta, anuncios, seguimiento ni compras. La interfaz está en inglés y español por ahora; tus comentarios en TestFlight definirán lo que viene.",
+          "linkLabel": "Probar la beta en TestFlight"
+        },
+        "en": {
+          "title": "Read your books and papers from your phone: Nodus Reader is in beta",
+          "body": "Nodus Reader, our free, open-source app for reading and listening to your library, is now in public beta on TestFlight for iPhone, iPad and Mac. Open EPUB, PDF, TXT, Markdown, HTML and RTF, add bookmarks, highlights and notes, and listen with voices generated entirely on your device. Intelligent Reading for PDF rebuilds the reading order and runs OCR on your device. No account, ads, tracking or purchases. The interface is in English and Spanish for now; feedback sent through TestFlight shapes what comes next.",
+          "linkLabel": "Join the beta on TestFlight"
+        },
+        "fr": {
+          "title": "Lisez vos livres et vos articles depuis votre téléphone : Nodus Reader est en bêta",
+          "body": "Nodus Reader, notre application gratuite et open source pour lire et écouter votre bibliothèque, est en bêta publique sur TestFlight pour iPhone, iPad et Mac. Ouvrez des fichiers EPUB, PDF, TXT, Markdown, HTML et RTF, ajoutez des signets, des surlignages et des notes, et écoutez la narration avec des voix générées entièrement sur votre appareil. La lecture intelligente des PDF reconstruit l’ordre de lecture et exécute l’OCR sur l’appareil. Sans compte, publicité, suivi ni achat. L’interface est en anglais et en espagnol pour l’instant ; vos retours via TestFlight orienteront la suite.",
+          "linkLabel": "Rejoindre la bêta sur TestFlight"
+        },
+        "de": {
+          "title": "Lies deine Bücher und Artikel auf dem Handy: Nodus Reader ist jetzt in der Beta",
+          "body": "Nodus Reader, unsere kostenlose Open-Source-App zum Lesen und Hören deiner Bibliothek, ist als öffentliche Beta in TestFlight für iPhone, iPad und Mac verfügbar. Öffne EPUB-, PDF-, TXT-, Markdown-, HTML- und RTF-Dateien, setze Lesezeichen, Markierungen und Notizen und höre die Erzählung mit Stimmen, die vollständig auf deinem Gerät entstehen. Intelligentes Lesen rekonstruiert die Lesereihenfolge von PDFs und führt OCR auf deinem Gerät aus. Ohne Konto, Werbung, Tracking oder Käufe. Die Oberfläche ist vorerst auf Englisch und Spanisch; dein Feedback über TestFlight bestimmt, wie es weitergeht.",
+          "linkLabel": "Beta in TestFlight testen"
+        },
+        "pt": {
+          "title": "Lê os teus livros e artigos no telemóvel: o Nodus Reader está em beta",
+          "body": "O Nodus Reader, a nossa aplicação gratuita e de código aberto para ler e ouvir a tua biblioteca, já está em beta pública no TestFlight para iPhone, iPad e Mac. Abre ficheiros EPUB, PDF, TXT, Markdown, HTML e RTF, adiciona marcadores, realces e notas, e ouve a narração com vozes geradas inteiramente no teu dispositivo. A leitura inteligente de PDF reconstrói a ordem de leitura e aplica OCR no dispositivo. Sem conta, anúncios, rastreio nem compras. A interface está em inglês e espanhol por agora; os teus comentários no TestFlight vão definir o que vem a seguir.",
+          "linkLabel": "Experimentar a beta no TestFlight"
+        },
+        "pt-BR": {
+          "title": "Leia seus livros e artigos no celular: o Nodus Reader está em beta",
+          "body": "O Nodus Reader, nosso app gratuito e de código aberto para ler e ouvir sua biblioteca, já está em beta pública no TestFlight para iPhone, iPad e Mac. Abra arquivos EPUB, PDF, TXT, Markdown, HTML e RTF, adicione marcadores, destaques e notas, e ouça a narração com vozes geradas inteiramente no seu dispositivo. A leitura inteligente de PDF reconstrói a ordem de leitura e aplica OCR no dispositivo. Sem conta, anúncios, rastreamento ou compras. A interface está em inglês e espanhol por enquanto; seus comentários no TestFlight vão definir o que vem a seguir.",
+          "linkLabel": "Testar a beta no TestFlight"
+        },
+        "it": {
+          "title": "Leggi i tuoi libri e articoli dal telefono: Nodus Reader è in beta",
+          "body": "Nodus Reader, la nostra app gratuita e open source per leggere e ascoltare la tua biblioteca, è ora in beta pubblica su TestFlight per iPhone, iPad e Mac. Apri file EPUB, PDF, TXT, Markdown, HTML e RTF, aggiungi segnalibri, evidenziazioni e note, e ascolta la narrazione con voci generate interamente sul tuo dispositivo. La lettura intelligente dei PDF ricostruisce l’ordine di lettura ed esegue l’OCR sul dispositivo. Senza account, pubblicità, tracciamento né acquisti. L’interfaccia è in inglese e spagnolo per ora; i tuoi commenti su TestFlight definiranno ciò che arriverà.",
+          "linkLabel": "Prova la beta su TestFlight"
+        },
+        "tr": {
+          "title": "Kitaplarını ve makalelerini telefondan oku: Nodus Reader beta yayında",
+          "body": "Kütüphaneni okumak ve dinlemek için ücretsiz, açık kaynaklı uygulamamız Nodus Reader, iPhone, iPad ve Mac için TestFlight’ta herkese açık beta olarak yayında. EPUB, PDF, TXT, Markdown, HTML ve RTF dosyalarını aç; yer imi, vurgu ve not ekle; tamamen cihazında oluşturulan seslerle dinle. PDF için Akıllı Okuma okuma sırasını yeniden kurar ve OCR’ı cihazında çalıştırır. Hesap, reklam, izleme veya satın alma yok. Arayüz şimdilik İngilizce ve İspanyolca; TestFlight üzerinden gönderdiğin geri bildirimler bundan sonrasını şekillendirecek.",
+          "linkLabel": "TestFlight’ta betayı dene"
+        },
+        "zh-CN": {
+          "title": "在手机上读你的书和论文：Nodus Reader 开启公测",
+          "body": "Nodus Reader 是我们为阅读和聆听你的藏书而打造的免费开源应用，现已在 TestFlight 面向 iPhone、iPad 和 Mac 开启公测。打开 EPUB、PDF、TXT、Markdown、HTML 和 RTF 文件，添加书签、高亮和笔记，并用完全在你设备上生成的语音聆听。PDF 智能阅读会重建阅读顺序，并在设备上运行 OCR。无账户、广告、追踪或购买。目前界面仅提供英文和西班牙文；你在 TestFlight 中的反馈将决定接下来的方向。",
+          "linkLabel": "通过 TestFlight 加入测试"
+        },
+        "zh-TW": {
+          "title": "在手機上讀你的書和論文：Nodus Reader 展開公測",
+          "body": "Nodus Reader 是我們為閱讀和聆聽你的藏書而打造的免費開源應用程式，現已在 TestFlight 為 iPhone、iPad 和 Mac 展開公測。開啟 EPUB、PDF、TXT、Markdown、HTML 和 RTF 檔案，加入書籤、螢光標記和筆記，並用完全在你裝置上產生的語音聆聽。PDF 智慧閱讀會重建閱讀順序，並在裝置上執行 OCR。無帳號、廣告、追蹤或購買。目前介面僅提供英文和西班牙文；你在 TestFlight 中的回饋將決定接下來的方向。",
+          "linkLabel": "透過 TestFlight 加入測試"
+        },
+        "ja": {
+          "title": "スマホで本や論文を読む：Nodus Reader のベータを公開",
+          "body": "Nodus Reader は、蔵書を読んで聴くための無料のオープンソースアプリです。iPhone、iPad、Mac 向けのパブリックベータを TestFlight で公開しました。EPUB、PDF、TXT、Markdown、HTML、RTF を開き、ブックマーク、ハイライト、ノートを追加し、デバイス上で生成される音声で聴けます。PDF のインテリジェントリーディングは読み順を再構築し、デバイス上で OCR を実行します。アカウント、広告、トラッキング、購入はありません。インターフェースは今のところ英語とスペイン語のみです。TestFlight で送ったフィードバックが今後の開発に反映されます。",
+          "linkLabel": "TestFlight でベータに参加"
+        },
+        "ko": {
+          "title": "휴대폰으로 책과 논문을 읽으세요: Nodus Reader 베타 공개",
+          "body": "Nodus Reader는 서재를 읽고 듣기 위한 무료 오픈 소스 앱으로, iPhone, iPad, Mac용 공개 베타를 TestFlight에서 시작합니다. EPUB, PDF, TXT, Markdown, HTML, RTF 파일을 열고 북마크, 하이라이트, 노트를 추가하며, 기기에서 생성되는 음성으로 들을 수 있습니다. PDF 지능형 읽기는 읽기 순서를 재구성하고 기기에서 OCR을 실행합니다. 계정, 광고, 추적, 구매가 없습니다. 인터페이스는 당분간 영어와 스페인어로만 제공됩니다. TestFlight로 보내 주신 피드백이 앞으로의 방향을 결정합니다.",
+          "linkLabel": "TestFlight에서 베타 참여"
+        }
+      }
+    },
+    {
       "id": "2026-10-27-nodus-drift-ios",
       "date": "2026-10-27",
       "severity": "info",

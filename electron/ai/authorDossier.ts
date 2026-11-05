@@ -539,11 +539,10 @@ function isSynthesisResponse(v: unknown): v is SynthesisResponse {
 }
 
 /** Generate and cache the narrated synthesis for one author. */
-export async function synthesizeAuthorDossier(
+export function prepareAuthorDossierSynthesis(
   authorId: string,
-  model?: ModelRef | null,
   language?: PromptLanguage
-): Promise<AuthorDossierSynthesis> {
+) {
   const dossier = buildAuthorDossier(authorId);
   if (!dossier) throw new Error('Autor no encontrado');
   const promptLanguage = language ?? getSettings().promptLanguage ?? 'es';
@@ -586,12 +585,16 @@ export async function synthesizeAuthorDossier(
     `${copy.relations}:\n${relBlock}\n\n` +
     copy.returnJson;
 
-  const chosen = model ?? getSettings().synthesisModel ?? null;
-  const result = await completeJson<SynthesisResponse>({ system, user, temperature: 0.2 }, isSynthesisResponse, chosen);
+  return {authorId,fingerprint:dossierFingerprint(dossier.ideas,dossier.relations),prompt:{system,user,temperature:0.2},language:promptLanguage};
+}
+
+export function saveAuthorDossierSynthesisResponse(authorId:string,response:unknown,chosen:ModelRef|null,fingerprint:string,generatedAt=new Date().toISOString()):AuthorDossierSynthesis {
+  if(!isSynthesisResponse(response))throw new Error('invalid_author_synthesis');
+  const result=response,dossier=buildAuthorDossier(authorId);
+  if(!dossier)throw new Error('author_not_found');
+  if(dossierFingerprint(dossier.ideas,dossier.relations)!==fingerprint)throw new Error('stale_author_synthesis');
 
   const remember = result.remember.map((r) => r.trim()).filter(Boolean).slice(0, MAX_REMEMBER);
-  const fingerprint = dossierFingerprint(dossier.ideas, dossier.relations);
-  const generatedAt = new Date().toISOString();
 
   getDb()
     .prepare(
@@ -623,4 +626,10 @@ export async function synthesizeAuthorDossier(
     generatedAt,
     stale: false,
   };
+}
+
+export async function synthesizeAuthorDossier(authorId:string,model?:ModelRef|null,language?:PromptLanguage):Promise<AuthorDossierSynthesis>{
+  const source=prepareAuthorDossierSynthesis(authorId,language),chosen=model??getSettings().synthesisModel??null;
+  const result=await completeJson<SynthesisResponse>(source.prompt,isSynthesisResponse,chosen);
+  return saveAuthorDossierSynthesisResponse(authorId,result,chosen,source.fingerprint);
 }

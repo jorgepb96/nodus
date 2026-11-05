@@ -74,6 +74,15 @@ function publishedWorldImages(snapshot, entityKind, entityId) {
     .map((image) => ({ ...image, asset: assets.get(String(image.image_id)) ?? null }));
 }
 
+function genealogyRecordEvidence(snapshot, targetKind, targetId) {
+  if (snapshot?.capabilities?.genealogyEvidenceAccess === 'requires-primary-source-files') {
+    return { evidenceAccess: { state: 'requires-primary-source-files' } };
+  }
+  return { evidence: rows(snapshot, 'record_evidence')
+    .filter(entry => String(entry.target_kind) === targetKind && String(entry.target_id) === String(targetId))
+    .map(({ created_by: _createdBy, ...entry }) => entry) };
+}
+
 function publishedPersons(snapshot) {
   const portraits = new Map(
     (Array.isArray(snapshot?.assets) ? snapshot.assets : [])
@@ -596,11 +605,15 @@ function folderSubtree(folders, rootId) {
 }
 
 function isDeepResearchDraft(row) {
-  try {
-    return JSON.parse(row.brief_json || '{}')?.kind === 'deep_research';
-  } catch {
-    return false;
-  }
+  const brief = JSON.parse(row.brief_json || '{}');
+  if (!brief || typeof brief !== 'object' || Array.isArray(brief)) throw new Error('invalid_saved_report');
+  return brief.kind === 'deep_research';
+}
+
+function readResearchDraft(row) {
+  const draft = JSON.parse(row.draft_json || 'null');
+  if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('invalid_saved_report');
+  return draft;
 }
 
 function draftSummary(row) {
@@ -1652,6 +1665,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         return send(res, json, {
           person: row,
           names: involved('person_names', 'person_id'),
+          ...genealogyRecordEvidence(snapshot, 'person', personId),
           places: rows(snapshot, 'places').filter((entry) => placeIds.has(String(entry.place_id))),
           placeLinks,
           // `from_person`/`to_person`, which is what migration 1154 actually creates. Filtering
@@ -1678,6 +1692,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         const personIds = new Set(personLinks.map((entry) => String(entry.person_id)));
         return send(res, json, {
           place: row,
+          ...genealogyRecordEvidence(snapshot, 'place', placeId),
           profile: rows(snapshot, 'place_profiles').find((entry) => String(entry.place_id) === placeId) ?? null,
           parent: rows(snapshot, 'places').find((entry) => String(entry.place_id) === String(row.parent_id ?? '')) ?? null,
           children: rows(snapshot, 'places').filter((entry) => String(entry.parent_id ?? '') === placeId),
@@ -1696,6 +1711,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         const personIds = new Set(participantRows.map((entry) => String(entry.person_id)));
         return send(res, json, {
           event: row,
+          ...genealogyRecordEvidence(snapshot, 'event', eventId),
           participants: rows(snapshot, 'persons').filter((entry) => personIds.has(String(entry.person_id))),
           participantRows,
           place: rows(snapshot, 'places').find((entry) => String(entry.place_id) === String(row.place_id)) ?? null,
@@ -1707,6 +1723,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         if (notModified(req, res, json, space, url, key)) return true;
         return send(res, json, {
           relationship: row,
+          ...genealogyRecordEvidence(snapshot, 'relationship', row.rel_id),
           from: rows(snapshot, 'persons').find((entry) => String(entry.person_id) === String(row.from_person)) ?? null,
           to: rows(snapshot, 'persons').find((entry) => String(entry.person_id) === String(row.to_person)) ?? null,
           revision: space.revision,
@@ -2244,7 +2261,19 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
     if (head === 'deep-research') {
       const snapshot = requireSnapshot(res, json, space.id);
       if (!snapshot) return true;
-      const drafts = rows(snapshot, 'writing_saved_drafts').filter(isDeepResearchDraft);
+      let drafts;
+      try {
+        drafts = rows(snapshot, 'writing_saved_drafts').filter(isDeepResearchDraft);
+        // Validate before pagination or ETag handling: an unreadable row must never
+        // disappear from a supposedly complete catalogue, including later pages.
+        for (const row of drafts) readResearchDraft(row);
+      } catch {
+        json(res, 422, {
+          error: 'invalid_saved_reports',
+          error_description: 'Some saved reports have an invalid format. Their original contents are preserved; the catalogue could not be loaded completely.',
+        });
+        return true;
+      }
       const readAt = new Map(rows(snapshot, 'writing_draft_reads')
         .map((entry) => [String(entry.draft_id), entry.updated_at ?? null]));
       const assets = new Map(
@@ -2260,8 +2289,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
       const wanted = decodeURIComponent(rest[0]);
       const row = drafts.find((candidate) => String(candidate.id) === wanted);
       if (!row) return missing(res, json);
-      let draft = null;
-      try { draft = JSON.parse(row.draft_json || 'null'); } catch { draft = null; }
+      const draft = readResearchDraft(row);
 
       // ── The styled document ───────────────────────────────────────────────
       //
@@ -2408,8 +2436,8 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
       if (notModified(req, res, json, space, url, key)) return true;
       let plan = null;
       try { plan = JSON.parse(row.plan_json || 'null'); } catch { plan = null; }
-      // `progress_json` is the reader's own position in their own copy; it is never
-      // meaningful across devices, so the server does not pretend to serve it.
+      // Public plans exclude private answers. Paired devices synchronize their
+      // own progress separately through the scoped Desktop writing bridge.
       return send(res, json, { session: { id: row.id, topic: row.topic, title: row.title, language: row.language, minutes: row.minutes, plan }, revision: space.revision });
     }
 

@@ -117,10 +117,13 @@ test('specialized Genealogy repairs only malformed citations to allowed sources'
 });
 
 test('Academic Deep Research binds both engines to a scoped cancellable corpus', async () => {
-  const [source, workshop] = await Promise.all([
+  const [desktop, workshop, portable] = await Promise.all([
     readFile(path.join(repoRoot, 'electron/ai/deepResearch.ts'), 'utf8'),
     readFile(path.join(repoRoot, 'electron/ai/writingWorkshop.ts'), 'utf8'),
+    readFile(path.join(repoRoot, 'shared/portableAcademicDeepResearch.ts'), 'utf8'),
   ]);
+  assert.match(desktop, /portableAcademicDeepResearch\(\{ai:canonicalAcademicAI,buildHistoricalWritingWorkshopSnapshot,buildIdeaFirstWritingWorkshopSnapshot,retrieveSectionMaterial,retrieveSectionMaterialLegacy/,'Desktop binds the actual canonical AI and source repositories');
+  const source=desktop+'\n'+portable;
   assert.match(source, /deepResearchEnginePath\(deepResearchVersion, approach\) === 'v1-general'[\s\S]*legacyAcademicDeps\(model(?:, signal)?\)/, 'v1 retains the historical dependency route');
   assert.match(source, /deepResearchEnginePath\(deepResearchVersion, approach\) === 'v2-general'[\s\S]*realDeps\(model(?:, signal)?\)/, 'v2 retains the idea-first document-enrichment route');
   assert.match(source, /orchestrateDeepResearch\(\{ \.\.\.versionedRequest, model \}, bindAcademicCorpusRun\(baseDeps, versionedRequest, signal\), onProgress, signal\)/, 'both routes share the scoped versioned cancellable orchestration boundary');
@@ -180,7 +183,9 @@ test('UI, gallery, reader, queue and MCP carry the approach metadata', async () 
 });
 
 test('Teaching keeps the teacher outline and focus after approach rules', async () => {
-  const source = await readFile(path.join(repoRoot, 'electron/ai/studyDeepResearch.ts'), 'utf8');
+  const desktop = await readFile(path.join(repoRoot, 'electron/ai/studyDeepResearch.ts'), 'utf8');
+  assert.match(desktop,/portableStudyDeepResearch\(/);
+  const source=desktop+'\n'+await readFile(path.join(repoRoot,'shared/portableStudyDeepResearch.ts'),'utf8');
   assert.match(source, /\.\.\.\(approachContext\?\.rules\.planner \?\? \[\]\),[\s\S]*\.\.\.\(requestedOutline\.length \? \[FIXED_OUTLINE_RULE\]/);
   assert.match(source, /\.\.\.\(approachContext\?\.rules\.writer \?\? \[\]\),[\s\S]*\.\.\.\(section\.focus \? \[SECTION_FOCUS_RULE\]/);
   assert.match(source, /resolveStudySections\(\{[\s\S]*outline: request\.outline/);
@@ -188,12 +193,14 @@ test('Teaching keeps the teacher outline and focus after approach rules', async 
 });
 
 test('Genealogy keeps its evidence-first and unproven-kinship rules', async () => {
-  const source = await readFile(path.join(repoRoot, 'electron/ai/genealogyDeepResearch.ts'), 'utf8');
+  const desktop = await readFile(path.join(repoRoot, 'electron/ai/genealogyDeepResearch.ts'), 'utf8');
+  assert.match(desktop,/const genealogyEngine=portableGenealogyDeepResearch\(/);
+  const source=desktop+'\n'+await readFile(path.join(repoRoot,'shared/portableGenealogyDeepResearch.ts'),'utf8');
   const promptPacks = await readFile(path.join(repoRoot, 'shared/genealogyDeepResearchPromptPacks.ts'), 'utf8');
   assert.match(source, /genealogyDeepResearchPromptPack/);
   assert.match(promptPacks, /Sigue el estándar de prueba genealógico/);
   assert.match(promptPacks, /nunca afirmes una identidad o un parentesco sin apoyo documental/);
-  assert.match(source, /if \(approach === 'general'\)[\s\S]*orchestrateGenealogyDeepResearch\(request, ordinarySources, family, realDeps\(model, signal\)/);
+  assert.match(source, /if \(approach === 'general'\)[\s\S]*orchestrateGenealogyDeepResearch\(request, ordinarySources, family, realDeps\(model, signal, companion\)/);
 });
 
 test('all supported UI languages include every approach string', async () => {

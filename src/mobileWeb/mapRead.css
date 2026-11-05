@@ -1,0 +1,13 @@
+html,body,#root{width:100%;height:100%;margin:0;overflow:hidden;background:transparent;color:#171717}
+html[data-theme=dark]{color-scheme:dark;color:#eee}
+.nodus-map-read-stage{position:relative;width:100%;height:100%;min-width:0;min-height:0}
+.nodus-map-read-stage>.relative{height:100%}
+.leaflet-container{width:100%;height:100%;background:#ecebe8;touch-action:none;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+html[data-theme=dark] .leaflet-container{background:#151519}
+.leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important;font-size:24px!important}
+.leaflet-tooltip{max-width:min(280px,80vw);white-space:normal;overflow-wrap:anywhere}
+.world-map-pin-label,.leaflet-tooltip{font-size:var(--nodus-map-font,14px)}
+.world-map-pin-dot::after,.world-map-scene-badge::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%);background:transparent;pointer-events:auto}
+.nodus-map-read-instruction{position:absolute;bottom:12px;left:12px;right:12px;z-index:600;padding:10px 14px;border-radius:12px;background:#18181bec;color:white;font-size:14px;text-align:center;pointer-events:none}
+.nodus-map-read-error{padding:16px;color:#c53030;overflow-wrap:anywhere}
+@media(max-width:599px){[data-testid=map-ruler-panel]{width:min(288px,calc(100% - 24px))!important;max-height:calc(100% - 90px);overflow-y:auto}}

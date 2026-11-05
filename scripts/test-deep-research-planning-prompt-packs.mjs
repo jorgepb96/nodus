@@ -16,7 +16,8 @@ execFileSync(path.join(root, 'node_modules/.bin/esbuild'), [
 ], { cwd: root, stdio: 'ignore' });
 
 const packsModule = await import(pathToFileURL(bundle).href);
-const deepResearchSource = fs.readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
+const desktopSource = fs.readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
+const deepResearchSource = fs.readFileSync(path.join(root, 'shared/portableDeepResearchAI.ts'), 'utf8');
 const languages = ['es', 'en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr'];
 const stages = ['decomposeObjective', 'auditPlanCoverage', 'planReport', 'reviewPlan', 'adversarialReview'];
 test('plan reviews specify a root plan instead of echoing the input evidence envelope', () => {
@@ -127,9 +128,11 @@ test('planning schema enums and limits remain invariant across translations', ()
 });
 
 test('the five production planning stages are wired to the native pack, with no active Spanish arrays', () => {
-  assert.match(deepResearchSource, /from '@shared\/deepResearchPlanningPromptPacks';/);
+  assert.match(deepResearchSource, /from '\.\/deepResearchPlanningPromptPacks';/);
+  assert.match(desktopSource, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/);
+  assert.match(desktopSource, /portableDeepResearchAI\(\{get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
   const ranges = [
-    ['aiDecomposeObjective', 'export const __decomposeObjectiveForTesting'],
+    ['aiDecomposeObjective', 'const VERIFY_BATCH'],
     ['aiAuditPlanCoverage', 'async function aiPlanReport'],
     ['aiPlanReport', 'function planFromAi'],
   ];
@@ -149,4 +152,25 @@ test('the five production planning stages are wired to the native pack, with no 
   assert.match(deepResearchSource, /deepResearchPlanningPromptPack\(input\.language\)\.auditPlanCoverage/);
 });
 
-rmSync(scratch, { recursive: true, force: true });
+test('portable decomposition forwards language and enforces the canonical question budget', async () => {
+  const aiBundle = path.join(scratch, 'portable-planning.mjs');
+  execFileSync(path.join(root, 'node_modules/.bin/esbuild'), [path.join(root, 'shared/portableDeepResearchAI.ts'), '--bundle', '--platform=node', '--format=esm', `--outfile=${aiBundle}`], {cwd: root, stdio: 'ignore'});
+  const {portableDeepResearchAI} = await import(pathToFileURL(aiBundle).href);
+  for (const language of [...languages, 'zh-Hans', 'zh-Hant', 'vi', 'ja', 'ru', 'uk', 'ko']) {
+    let captured;
+    const model = {provider:'openai', model:'fixture-only'};
+    const ai = portableDeepResearchAI({documentaryEvidence:true, completeText: async () => { throw new Error('unexpected text call'); }, completeJson: async (request, guard, receivedModel) => {
+      captured = {request, receivedModel};
+      const value = {subpreguntas:Array.from({length:30}, (_, index) => `Documented question number ${index}?`)};
+      assert.equal(guard(value), true);
+      return value;
+    }});
+    const result = await ai.aiDecomposeObjective('Fixture objective', language, model);
+    assert.equal(captured.request.system, packsModule.deepResearchPlanningPromptPack(language, {maxCoverageQuestions:16}).decomposeObjective);
+    assert.equal(JSON.parse(captured.request.user).idioma, language);
+    assert.equal(captured.receivedModel, model);
+    assert.equal(result.length, 16, 'the canonical maximum remains enforced after extraction');
+  }
+});
+
+test.after(() => rmSync(scratch, { recursive: true, force: true }));

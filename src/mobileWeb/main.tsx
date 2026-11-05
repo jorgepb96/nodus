@@ -1,0 +1,542 @@
+import { requireMobileAudioMethod } from '@shared/mobileAudioBeta';
+import {LiveDocumentVisuals} from './liveDocumentVisuals';
+import {MobileLiveDocumentVisualEditor} from './MobileLiveDocumentVisualEditor';
+import {MobileDocumentVisualEditor} from './MobileDocumentVisualEditor';
+import {AutonomousDocumentVisuals} from './autonomousDocumentVisuals';
+import {seedWorkspaceNote} from './workspaceNotes';
+import {studyKnowledgeCopies} from './studyKnowledgeCopy';
+import {selectedStudyOffline} from './studyKnowledgeOffline';
+import {MobileStudyIdeas} from './MobileStudyIdeas';
+import {seedStudyKnowledgeNote} from './studyKnowledgeNotes';
+import {autonomousDocumentSkillCatalog} from './autonomousResearchVisuals';
+import {previewMobileCompleteGuide,type MobileCompleteGuideActions} from '@shared/mobileCompleteGuide';
+import {mergeMobileDeepResearchReports} from '@shared/mobileDeepResearchCatalogue';
+import {enqueueAutonomousDeepResearch,localDeepResearchJobs,localDeepResearchReports,cancelAutonomousDeepResearch,clearLocalDeepResearchJobs,retryLocalDeepResearch} from './autonomousDeepResearch';
+import { autonomousDictionary } from './autonomousDictionary';
+import { autonomousImmersion, autonomousImmersionContext } from './autonomousImmersion';
+import { autonomousTranslation } from './autonomousTranslation';
+import {autonomousWriting, cancelAutonomousWriting} from './autonomousWriting';
+import {autonomousArgument,cancelAutonomousArgument} from './autonomousArgument';
+import {StudyGraphView} from '../views/StudyGraphView';
+import {MobileDatabasePresentation,databasePresentationAction,readMobileDatabasePresentation,exportMobileDatabaseChart,type MobileDatabasePresentationTarget} from './databasePresentation';
+import {mobileModelInformation} from './structuredPrompt';
+import '../index.css';
+import './mobile.css';
+import './phone.css';
+import './workspaceTabs.css';
+import './page.css';
+import './database.css';
+import { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { StellarWorkspace } from '../stellarGraph/StellarWorkspace';
+import { memorySource, type StellarGraphSource } from '../stellarGraph/source';
+import { DictionaryView } from '../views/DictionaryView';
+import { WorkspaceView } from '../views/WorkspaceView';
+import {MobileStudyDocument} from './MobileStudyDocument';
+import { ArgumentMapView } from '../views/ArgumentMapView';
+import { DeepResearchView } from '../views/DeepResearchView';
+import { DatabaseDeepResearchView } from '../views/DatabaseDeepResearchView';
+import {loadMobileDatabaseResearchReports} from './databaseResearchCatalogue';
+import { ImmersionView } from '../views/ImmersionView';
+import { ResearchAssistantModal } from '../views/ResearchAssistantModal';
+import {WorldChatView} from '../views/WorldChatView';
+import {StudyChatView} from '../views/StudyChatView';
+import {DatabasesChatView} from '../views/DatabasesChatView';
+import {mobileChatSurface,mobileStudyCitation,MOBILE_CHAT_STREAM_METHODS,MOBILE_CHAT_CANCEL_METHODS,MOBILE_CHAT_STREAM_EVENTS} from './mobileChat';
+import { setActiveLang, t } from '../i18n';
+import type { AppSettings, GraphData, ArgumentMapRequest } from '@shared/types';
+import type {DatabaseDeepResearchJobInput} from '@shared/databaseDeepResearch';
+import {enqueueAutonomousDatabaseResearch,localDatabaseResearchJobs,localDatabaseResearchReports,cancelLocalDatabaseResearch,retryLocalDatabaseResearch,clearLocalDatabaseResearchJobs} from './autonomousDatabaseResearch';
+import {databaseOfflineComposerMethods,databaseOfflineComposer} from './databaseResearchOffline';
+import {exportDeviceDatabaseResearch} from './databaseResearchExport';
+import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
+import {PROVIDER_LABELS} from '@shared/providers';
+import {normalizePromptLanguage} from '@shared/promptLanguageOptions';
+import type {DatabaseDeepResearchSnapshot} from '../app/viewSnapshots';
+import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
+import { studyKnowledgeProjection } from '@shared/studyKnowledgeProjection';
+import { dictionarySnapshot } from '@shared/dictionarySnapshot';
+import {companionDictionary, companionDictionaryMethods, type CompanionDictionaryCopy} from '@shared/dictionaryCompanion';
+import { localCatalogue } from './localCatalogue';
+import { snapshotCitations } from '@shared/snapshotCitations';
+import { snapshotSourceDetails } from '@shared/snapshotSourceDetails';
+import { OPEN_LIBRARY_DOCUMENT_EVENT, requestLibraryDocumentOpen, type OpenLibraryDocumentDetail } from '../evidenceJump';
+import { parsePageNumber } from '@shared/pageLocation';
+import { installMobileKeyboard } from './mobileKeyboard';
+import { FeedbackHost } from '../components/feedback';
+import {COMPANION_CONTENT_CHANGED} from '../companionEvents';
+import {MobilePageDocument} from './MobilePageDocument';
+import {pageBlocksToMarkdown} from '@shared/pages';
+import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
+
+type Configuration = { visualCanWrite?:boolean; visualCanGenerate?:boolean; initialResearchVisualLocalOnly?:boolean; initialResearchVisualReportId?:string; initialStudyDocumentId?:string; documentDraftScope?:string; initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; vaultId?:string; surface: 'studyIdeas' | 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'studyDocument' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+const native = window as unknown as {
+  nodusMobileConfig: Configuration;
+  webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
+  nodusMobileReply(id: string, result: unknown, error: string | { code: string; message: string } | null): void;
+  nodusMobileCall(method: string, ...args: unknown[]): Promise<any>;
+  nodusMobileSubscriptions: Map<string, Set<(...args: unknown[]) => void>>;
+};
+let localStudySnapshot: Promise<Record<string, StudyProjectionRow[]>> | undefined;
+const activeArgumentJobs=new Map<string,{id:string;request:ArgumentMapRequest}>();
+let localDictionaryTables: Promise<Record<string, StudyProjectionRow[]>> | undefined;
+let localDictionary: ReturnType<typeof dictionarySnapshot> | undefined;
+let localSources: Promise<ReturnType<typeof snapshotSourceDetails>> | undefined;
+function sources() {
+  if (!localSources) localSources = native.nodusMobileCall('sourceConsultationTables').then(snapshotSourceDetails).catch(error => { localSources = undefined; throw error; });
+  return localSources;
+}
+function dictionaryTables() {
+  if (!localDictionaryTables) localDictionaryTables = native.nodusMobileCall('dictionarySnapshotTables').catch(error => { localDictionaryTables = undefined; throw error; });
+  return localDictionaryTables!;
+}
+function dictionary() {
+  if (!localDictionary) localDictionary = dictionaryTables().then(dictionarySnapshot).catch(error => { localDictionary = undefined; throw error; });
+  return localDictionary;
+}
+function studyTables() {
+  if (!localStudySnapshot) localStudySnapshot = native.nodusMobileCall('snapshot').then(snapshot => {
+    if (!snapshot || typeof snapshot.tables !== 'object' || Array.isArray(snapshot.tables)) throw new Error('La copia publicada no contiene un corpus compatible.');
+    return snapshot.tables;
+  }).catch(error => { localStudySnapshot = undefined; throw error; });
+  return localStudySnapshot;
+}
+const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  requireMobileAudioMethod(method);
+  if(method==='createNote'){if(args.length!==1)throw new Error('Nota no válida.');return native.nodusMobileCall(method,seedWorkspaceNote(args[0]));}
+  if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId&&native.nodusMobileConfig.executionMode==='live'&&(native.nodusMobileConfig.pageDownloadedOnly||native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.initialResearchVisualReportId.startsWith('mobile-dr-')))return Promise.resolve({...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language});
+  if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId&&native.nodusMobileConfig.executionMode==='autonomous')return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
+  if(method==='getSettings'&&native.nodusMobileConfig.executionMode==='autonomous'&&(native.nodusMobileConfig.initialResearchVisualReportId||(native.nodusMobileConfig.live&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType))))))return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
+  if(native.nodusMobileConfig.live&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType)))&&native.nodusMobileConfig.executionMode==='autonomous'&&['getStudyWorkspace','listStudyIdeas','getStudyIdeaDetail','getStudyKnowledgeGraph'].includes(method)) {
+    const copy=studyKnowledgeCopies(await native.nodusMobileCall('studyKnowledgeCopy','load'),native.nodusMobileConfig.vaultId??'');
+    if(method==='getStudyWorkspace')return copy.workspace;
+    if(method==='listStudyIdeas')return copy.list(String(args[0]),args[1] as string|undefined);
+    if(method==='getStudyIdeaDetail')return copy.detail(String(args[0]));
+    return copy.graph(String(args[0]));
+  }
+  if(method==='createStudyDocument'&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType)))) {
+    window.dispatchEvent(new Event('nodus:mobile-study-note-saving'));
+    let result;
+    try {result=await native.nodusMobileCall(method,seedStudyKnowledgeNote(args[0]));}
+    catch(error){window.dispatchEvent(new CustomEvent('nodus:mobile-study-note-error',{detail:String(error)}));throw error;}
+    window.dispatchEvent(new CustomEvent('nodus:mobile-study-note-saved',{detail:result}));return result;
+  }
+
+  const databaseAction=databasePresentationAction(method);
+  if(databaseAction){
+    if(args.length!==1||!args[0]||typeof args[0]!=='object'||Array.isArray(args[0]))throw new Error('Consulta de base de datos no válida.');
+    return readMobileDatabasePresentation(native.nodusMobileCall,databaseAction,args[0] as Record<string,any>,Boolean(native.nodusMobileConfig.pageDownloadedOnly));
+  }
+  if(method==='exportDatabaseChart')return exportMobileDatabaseChart(native.nodusMobileCall,args[0] as Parameters<typeof exportMobileDatabaseChart>[1]);
+  if(method==='listSavedCompanionArgumentMaps'&&native.nodusMobileConfig.live){
+    const cursor=typeof args[0]==='string'?args[0]:null,limit=typeof args[1]==='number'?args[1]:20;
+    const local=await native.nodusMobileCall('mobileArgumentMaps') as Array<{id:string;map:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>}>;
+    let remote:Awaited<ReturnType<Window['nodus']['listSavedCompanionArgumentMaps']>>;
+    try{remote=await native.nodusMobileCall(method,...args);}catch(error){
+      if((error as {code?:string})?.code!=='offline'||!local.length)throw error;
+      remote={items:[],cursor:null,hasMore:false,revision:'device-only'};
+      native.webkit.messageHandlers.nodus.postMessage({id:'device-arguments',method:'surfaceOfflineCopy',args:[]});
+    }
+    const merged=new Map(remote.items.map(item=>[item.id,item]));for(const item of local)if(!cursor||item.id>cursor)if(!merged.has(item.id))merged.set(item.id,item);
+    const ordered=[...merged.values()].sort((a,b)=>a.id.localeCompare(b.id)),items=ordered.slice(0,limit),hasMore=remote.hasMore||ordered.length>limit;
+    const revision=remote.revision+':'+local.map(item=>item.id).join(',');
+    return {items,hasMore,cursor:hasMore?items.at(-1)?.id??null:null,revision};
+  }
+  if(method==='buildArgumentMap'){
+    const request=args[0] as Parameters<Window['nodus']['buildArgumentMap']>[0];
+    if(request.mode==='auto')return native.nodusMobileCall('getMobileStructuralArgumentMap',{seedIdeaId:request.seedIdeaId,language:request.language??native.nodusMobileConfig.language});
+    if(native.nodusMobileConfig.executionMode==='autonomous')return autonomousArgument(call,request);
+    const id=crypto.randomUUID();activeArgumentJobs.set(request.seedIdeaId,{id,request});
+    try{return await native.nodusMobileCall(method,id,request);}finally{if(activeArgumentJobs.get(request.seedIdeaId)?.id===id)activeArgumentJobs.delete(request.seedIdeaId);}
+  }
+  if(['getPageDocument','getSyncedBlockSource','getDatabaseContainer','queryDatabaseContainerRows'].includes(method))return native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));
+  if(method==='getPageAsset'){
+    const result=await native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));return Uint8Array.from(atob(result.base64),(value:string)=>value.charCodeAt(0));
+  }
+  if(method==='savePageDocument'){
+    const input=args[0] as Parameters<Window['nodus']['savePageDocument']>[0];
+    const markdown=input.nativeDocument?blockNoteToMarkdown(input.nativeDocument):pageBlocksToMarkdown(input.blocks);
+    return native.nodusMobileCall(method,{...input,markdown});
+  }
+  if(method==='exportDatabaseDeepResearchReport')return exportDeviceDatabaseResearch(call,String(args[0]),args[1] as Parameters<typeof exportDeviceDatabaseResearch>[2]);
+  if(method==='listDatabaseDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous') {
+    const local=await localDatabaseResearchJobs(call);let remote:any[]=[];
+    try {remote=await native.nodusMobileCall(method,...args);}catch(error){if((error as {code?:string})?.code!=='offline'||!local.length)throw error;}
+    return [...local,...remote.filter(job=>!local.some(own=>own.id===job.id))];
+  }
+  if(method==='cancelDatabaseDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous'&&await cancelLocalDatabaseResearch(call,String(args[0])))return true;
+  if(method==='clearFinishedDatabaseDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous') {
+    const local=await clearLocalDatabaseResearchJobs(call);
+    try{return local+await native.nodusMobileCall(method,...args);}catch(error){if((error as {code?:string})?.code==='offline'&&local>0)return local;throw error;}
+  }
+  if (method === 'getActiveVault') return native.nodusMobileCall('surfaceVaultContext');
+  if (method === 'listDictionaryGenerationJobs' && native.nodusMobileConfig.live && native.nodusMobileConfig.executionMode === 'autonomous') return native.nodusMobileCall('mobileDictionaryGenerationJobs');
+  if (!native.nodusMobileConfig.live) {
+    if (method === 'getGlobalLibraryItem' || method === 'getLibraryReaderDocument') return native.nodusMobileCall('publishedSourceDocument', String(args[0]), method);
+    if (method === 'getSettings') return native.nodusMobileCall('mobileSettings', {...DEFAULT_APP_SETTINGS,
+      theme:native.nodusMobileConfig.theme, uiLanguage:native.nodusMobileConfig.language, promptLanguage:native.nodusMobileConfig.language});
+    if (['getWork','getWorkMeta','getWorkSummary','getWorkIdeaSynthesis','getIdeasByWork','getIdeaDetail','getIdeaEdges','getEdgeDetail','getGapDetail','getAuthorDossier'].includes(method)) {
+      const source = await sources(), id = String(args[0]);
+      switch (method) {
+        case 'getWork': return source.work(id);
+        case 'getWorkMeta': return source.workMeta(id);
+        case 'getWorkSummary': return source.workSummary(id);
+        case 'getWorkIdeaSynthesis': return source.workSynthesis(id);
+        case 'getIdeasByWork': return source.ideasByWork(id, Number(args[1]), Number(args[2]));
+        case 'getIdeaDetail': return source.ideaDetail(id);
+        case 'getIdeaEdges': return source.ideaEdges(id);
+        case 'getEdgeDetail': return source.edgeDetail(id);
+        case 'getGapDetail': return source.gapDetail(id);
+        case 'getAuthorDossier': return source.authorDossier(id);
+      }
+    }
+    if (['verifyCitations','getCitationPreview','getPassage'].includes(method)) {
+      const citations = snapshotCitations(config.surface === 'dictionary' ? await dictionaryTables() : await studyTables());
+      if (method === 'getPassage') return citations.passage(String(args[0]));
+      return method === 'verifyCitations' ? citations.verify(args[0] as Parameters<typeof citations.verify>[0]) : citations.preview(args[0] as Parameters<typeof citations.preview>[0]);
+    }
+    if (['listDictionaryEntries','listDictionaryFacets','getDictionaryEntry','listDictionaryEvidence','listDictionaryVersions'].includes(method)) {
+      const projection = await dictionary();
+      if (method === 'listDictionaryEntries') return projection.list(args[0] as Parameters<typeof projection.list>[0]);
+      if (method === 'listDictionaryFacets') return projection.facets();
+      if (method === 'getDictionaryEntry') return projection.detail(String(args[0]));
+      if (method === 'listDictionaryVersions') return projection.listVersions(String(args[0]));
+      return projection.listEvidence(args[0] as Parameters<typeof projection.listEvidence>[0]);
+    }
+    if (['listAuthors','listWorks','listZoteroTags','listCollectionFacets'].includes(method)) {
+      if (args.length) throw new Error('Esta consulta local necesita filtros compatibles con el corpus descargado.');
+      const catalogue = localCatalogue(config.surface === 'dictionary' ? await dictionaryTables() : await studyTables());
+      if (method === 'listAuthors') return catalogue.authors();
+      if (method === 'listWorks') return catalogue.workList();
+      if (method === 'listZoteroTags') return catalogue.tags();
+      return catalogue.collections();
+    }
+    if (method === 'scanChangedDictionaryEntries') return []; // A downloaded publication is immutable.
+    if (method === 'listDictionaryGenerationJobs') {
+      const projection = await dictionary(), entries = projection.list({offset:0,limit:Number.MAX_SAFE_INTEGER}).items;
+      return (await Promise.all(entries.map(async entry => {
+        const checkpoint = await native.nodusMobileCall('mobileDictionaryCheckpoint','load',entry.id);
+        if (!checkpoint || checkpoint.state === 'available') return null;
+        return {entryId:entry.id,mode:checkpoint.request.mode,phase:checkpoint.state === 'failed' ? 'failed' : checkpoint.state === 'running' ? 'generating' : 'retrieving',message:checkpoint.error ?? 'Solicitud guardada en este dispositivo',...(checkpoint.error ? {error:checkpoint.error} : {})};
+      }))).filter(Boolean);
+    }
+    if (['estudio','docencia'].includes(native.nodusMobileConfig.vaultType)) {
+      if (method === 'getStudyWorkspace') return projectStudyWorkspace(await studyTables(), args[0] as Parameters<typeof projectStudyWorkspace>[1]);
+      if (['listStudyIdeas','getStudyIdeaDetail','getStudyKnowledgeGraph'].includes(method)) {
+        const projection = studyKnowledgeProjection(await studyTables());
+        if (method === 'listStudyIdeas') return projection.list(String(args[0]), args[1] as string|undefined);
+        if (method === 'getStudyIdeaDetail') return projection.detail(String(args[0]));
+        return projection.graph(String(args[0]));
+      }
+    }
+  }
+  if(method==='listDeepResearchJobs'&&config.executionMode==='autonomous')return localDeepResearchJobs(call);
+  try { return await native.nodusMobileCall(method, ...args); }
+  catch (error) {
+    const studyCopy=await selectedStudyOffline(native.nodusMobileCall,native.nodusMobileConfig,method,args,error);
+    if(studyCopy.handled){
+      native.webkit.messageHandlers.nodus.postMessage({id:'downloaded-study',method:'surfaceOfflineCopy',args:[]});
+      return studyCopy.value;
+    }
+    if((error as {code?:string})?.code==='offline'&&config.surface==='databaseResearch'&&databaseOfflineComposerMethods.has(method)) {
+      native.webkit.messageHandlers.nodus.postMessage({id:'downloaded-databases',method:'surfaceOfflineCopy',args:[]});
+      return databaseOfflineComposer(call,method,args);
+    }
+    // Only the native transport can declare a disconnection. Permission,
+    // certificate, format and server errors must never become a local catalogue.
+    if ((error as {code?: string})?.code === 'offline' && companionDictionaryMethods.has(method)) {
+      const copy = await native.nodusMobileCall('companionDictionaryCopy') as CompanionDictionaryCopy | null;
+      if (!copy) throw error;
+      const projection = companionDictionary(copy);
+      native.webkit.messageHandlers.nodus.postMessage({id: 'downloaded-dictionary', method: 'surfaceOfflineCopy', args: []});
+      if (method === 'listDictionaryEntries') return projection.list(args[0] as Parameters<typeof projection.list>[0]);
+      if (method === 'listDictionaryFacets') return projection.facets();
+      if (method === 'getDictionaryEntry') return projection.detail(String(args[0]));
+      if (method === 'listDictionaryVersions') return projection.listVersions(String(args[0]));
+      return projection.listEvidence(args[0] as Parameters<typeof projection.listEvidence>[0]);
+    }
+    throw error;
+  }
+};
+const subscriptions = native.nodusMobileSubscriptions;
+const localVisualEditor=!!native.nodusMobileConfig.pageDownloadedOnly||!!native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.executionMode==='autonomous'||native.nodusMobileConfig.initialResearchVisualReportId?.startsWith('mobile-dr-');
+const liveVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&!localVisualEditor?new LiveDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,()=>window.dispatchEvent(new Event('nodus:live-visual-state'))):null;
+const documentVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&localVisualEditor?new AutonomousDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,native.nodusMobileConfig.vaultId??'',()=>{const target=documentVisualEditor?.checkpoint?.target;if(target)for(const listener of subscriptions.get('onDocumentVisualsChanged')??[])listener(target);},native.nodusMobileConfig.executionMode==='live'):null;
+const streamHandlers = new Map<string, Record<string, (...args: any[]) => void>>();
+const streamMethods = new Set(['generateImmersionSession', ...MOBILE_CHAT_STREAM_METHODS, 'improveStudyText']);
+const streamEvents: Record<string, string> = {
+  'immersion:generate:progress': 'onProgress', 'study:improve:delta': 'onDelta',
+  ...MOBILE_CHAT_STREAM_EVENTS, 'mobile:export:progress': 'onProgress',
+};
+let activeChat: string | undefined, activeImprove: string | undefined;
+(window as any).nodusMobileEvent = (event: { channel: string; args: unknown[] }) => {
+  if(event.channel==='mobile:databaseReading:changed') {
+    for(const listener of subscriptions.get('onDatabaseDeepResearchReportAnnotationsChanged')??[]) listener(null);
+    window.dispatchEvent(new Event('nodus:mobile-database-reading-changed')); return;
+  }
+  if (event.channel === 'mobile:corpus:changed') {
+    window.dispatchEvent(new Event(COMPANION_CONTENT_CHANGED));
+    for(const name of ['onDictionaryChanged','onWritingDraftsChanged']) for(const listener of subscriptions.get(name)??[])listener(null);
+    return;
+  }
+  if (event.channel === 'mobile:publication:changed') {
+    if(native.nodusMobileConfig.surface==='page')window.dispatchEvent(new Event('nodus:mobile-pages-changed'));
+    for (const update of (Array.isArray(event.args[0]) ? event.args[0] : []) as Array<{method:string;state:string;entryId?:string;mode?:string;degraded?:boolean;entityKind?:string;entityId?:string;error?:string}>) {
+      if (update.method === 'saveDictionaryGeneratedVersion' && update.entryId) {
+        const phase = update.state === 'available' ? update.degraded ? 'degraded' : 'done'
+          : ['failed','interrupted','cancelled'].includes(update.state) ? 'failed' : 'saving';
+        for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener({entryId:update.entryId,mode:update.mode,phase,
+          message:update.error ?? (update.state === 'available' ? 'Definición sincronizada con Nodus' : 'Guardado en este dispositivo · pendiente de sincronizar'),
+          ...(update.error ? {error:update.error} : {})});
+        if (update.state === 'available') for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(update.entryId);
+      }
+      if (update.method === 'saveContentTranslationFromMobile' && update.state === 'available') {
+        for (const listener of subscriptions.get('onContentTranslationsChanged') ?? []) listener(update.entityKind,update.entityId);
+      }
+      if (update.state === 'available') {
+        if (['enqueueDeepResearchJob','generateWritingWorkshopDraft'].includes(update.method)) for (const listener of subscriptions.get('onWritingDraftsChanged') ?? []) listener(null);
+        if (update.method === 'saveImmersionGeneratedSession') window.dispatchEvent(new Event('nodus:mobile-immersion-changed'));
+      }
+    }
+    return;
+  }
+  if(event.channel==='mobile:documentVisuals:progress'){for(const listener of subscriptions.get('onDocumentVisualsChanged')??[])listener((event.args[0] as {target?:unknown}|undefined)?.target);return;}
+  if (event.channel === 'mobile:dictionary:progress') {
+    for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(event.args[0]);
+    if (['done', 'degraded'].includes((event.args[0] as { phase?: string })?.phase ?? '')) for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null);
+    return;
+  }
+  const [requestId, ...payload] = event.args;
+  const name = streamEvents[event.channel];
+  if (name) streamHandlers.get(String(requestId))?.[name]?.(...payload);
+};
+window.nodus = new Proxy({}, { get: (_, method: string) => {
+  if(method==='cancelMobileArgumentMap')return async(seedIdeaId:string)=>{
+    if(await cancelAutonomousArgument(call,seedIdeaId))return;
+    const job=activeArgumentJobs.get(seedIdeaId);if(job)await native.nodusMobileCall('cancelLiveJob',job.id,'buildArgumentMap',[job.request]);
+  };
+  // A source citation opens on this device. It must never launch Zotero on the
+  // Mac or lose its page while substituting the work's metadata dossier.
+  if (method === 'openEvidenceAtPage') return async (id: string, locator: string | {pageNumber?: number | null; location?: string | null; sourceRef?: string | null} | null) => {
+    const page = typeof locator === 'string' ? parsePageNumber(locator) : locator?.pageNumber ?? parsePageNumber(locator?.location ?? locator?.sourceRef ?? '');
+    return {ok:true,mode:'local',page,local:{itemId:id,scope:'vault'}};
+  };
+  if (method.startsWith('on')) return (listener: (...args: unknown[]) => void) => {
+    const bucket = subscriptions.get(method) ?? new Set(); bucket.add(listener); subscriptions.set(method, bucket);
+    return () => bucket.delete(listener);
+  };
+  if((liveVisualEditor||documentVisualEditor)&&method==='openExternal')return (source:string)=>call('mobileDocumentVisualOpenSource',source);
+  if(liveVisualEditor&&method==='readCapabilityMedia')return (source:string)=>liveVisualEditor.bytes(source);
+  if(liveVisualEditor&&['getDocumentVisuals','enrichDocumentVisuals','cancelDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method))return async(target:{kind:string;id:string},...args:any[])=>{
+    if(target.kind!=='deep-research'||target.id!==liveVisualEditor.target.id)throw new Error('document_visual_target_conflict');
+    if(method==='getDocumentVisuals')return liveVisualEditor.manifest;
+    if(method==='enrichDocumentVisuals')return liveVisualEditor.enrich(args[0],args[1]);
+    if(method==='cancelDocumentVisuals')return liveVisualEditor.cancel();
+    if(method==='undoDocumentVisuals')return liveVisualEditor.undo();
+    return liveVisualEditor.remove(args[0]);
+  };
+  if(documentVisualEditor&&['getDocumentVisuals','enrichDocumentVisuals','cancelDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method))return async(target:{kind:string;id:string},...args:any[])=>{
+    if(native.nodusMobileConfig.executionMode!=='autonomous'&&['enrichDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method))throw new Error('Este informe se consulta desde su fuente local. Sincronízalo con el Mac o elige explícitamente el modo autónomo para editar sus figuras.');
+    if(target.kind!=='deep-research'||target.id!==documentVisualEditor.checkpoint?.target.id)throw new Error('document_visual_target_conflict');
+    if(method==='getDocumentVisuals')return documentVisualEditor.checkpoint?.manifest??null;
+    if(method==='enrichDocumentVisuals')return documentVisualEditor.enrich(args[0],args[1]);
+    if(method==='cancelDocumentVisuals'){documentVisualEditor.cancel();return null;}
+    if(method==='undoDocumentVisuals')return documentVisualEditor.undo();
+    return documentVisualEditor.remove(args[0]);
+  };
+  if(method==='listDocumentSkills'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>autonomousDocumentSkillCatalog(call);
+  if(method==='enqueueDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous') return (request:Parameters<typeof enqueueAutonomousDeepResearch>[1])=>enqueueAutonomousDeepResearch(call,request,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);for(const listener of subscriptions.get('onWritingDraftsChanged')??[])listener(null);});
+  if(method==='listDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>localDeepResearchJobs(call);
+  if(method==='cancelDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous')return (id:string)=>cancelAutonomousDeepResearch(call,id);
+  if(method==='clearFinishedDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>clearLocalDeepResearchJobs(call);
+  if(method==='listWritingWorkshopDrafts'&&config.surface==='deepResearch') return async()=>{
+    const own=await localDeepResearchReports(call);
+    try {const remote=await call(method);return mergeMobileDeepResearchReports(own,remote);}
+    catch(error){if((error as {code?:string})?.code!=='offline')throw error;return own;}
+  };
+  if (method === 'startDictionaryGeneration' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousDictionary>[2]) => autonomousDictionary(call, progress => { for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(progress); if (['done','degraded'].includes(progress.phase)) for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null); }, request);
+  if (method === 'generateContentTranslation' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousTranslation>[1]) => autonomousTranslation(call, request, () => {for (const listener of subscriptions.get('onContentTranslationsChanged') ?? []) listener(request.entityKind,request.entityId);});
+  if (method === 'scanDictionaryNewEvidence' && native.nodusMobileConfig.executionMode === 'autonomous') return async (entryId: string) => {
+    const detail = await call('scanDictionaryMobileEvidence', entryId);
+    for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(entryId);
+    return detail;
+  };
+  if (method === 'buildImmersionScope' && native.nodusMobileConfig.executionMode === 'autonomous') return async (request: {topic:string;minutes?:number;language?:Parameters<typeof autonomousImmersionContext>[1]['language']}) =>
+    (await autonomousImmersionContext(call,{...request,minutes:request.minutes ?? 150})).scope;
+  if (method === 'generateImmersionSession' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousImmersion>[1], handlers: {onProgress?: Parameters<typeof autonomousImmersion>[2]} = {}) => autonomousImmersion(call, request, handlers.onProgress ?? (()=>{}));
+  if (native.nodusMobileConfig.executionMode === 'autonomous' && ['listModels','getModelCatalog'].includes(method)) return async (provider: Parameters<typeof mobileModelInformation>[0]) => {
+    const result=await call(method,provider);
+    return Array.isArray(result)?mobileModelInformation(provider,result):{...result,models:mobileModelInformation(provider,result.models??[]),selectableModels:mobileModelInformation(provider,result.selectableModels??[])};
+  };
+  if ((MOBILE_CHAT_CANCEL_METHODS as readonly string[]).includes(method)) return async () => activeChat ? call('cancelLiveJob', activeChat) : undefined;
+  if (method === 'improveStudyText' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousWriting>[1], handlers: {onDelta?:(text:string)=>void} = {}) => autonomousWriting(call,request,handlers.onDelta ?? (()=>{}));
+  if (method === 'cancelStudyImprove') return () => native.nodusMobileConfig.executionMode === 'autonomous' ? cancelAutonomousWriting(call) : activeImprove && call('cancelLiveJob', activeImprove);
+  if (method === 'exportDeepResearchArchive') return async (request: unknown, onProgress?: (done: number, total: number) => void) => {
+    const id = crypto.randomUUID(); streamHandlers.set(id, { onProgress: onProgress ?? (() => {}) });
+    try { return await call(method, id, request); } finally { streamHandlers.delete(id); }
+  };
+  if (streamMethods.has(method)) return async (request: unknown, handlers: Record<string, (...args: any[]) => void> = {}) => {
+    const id = crypto.randomUUID(); streamHandlers.set(id, handlers);
+    if ((MOBILE_CHAT_STREAM_METHODS as readonly string[]).includes(method)) activeChat = id;
+    if (method === 'improveStudyText') activeImprove = id;
+    try { const result = await call(method, id, request); handlers.onStats?.(result?.stats); return result; }
+    finally { streamHandlers.delete(id); if (activeChat === id) activeChat = undefined; if (activeImprove === id) activeImprove = undefined; }
+  };
+  return (...args: unknown[]) => call(method, ...args);
+} }) as typeof window.nodus;
+function navigate(kind: string, id: string, location?: string | null, quote?: string) {
+  void call('navigate', kind, id, {location:location ?? null,quote:quote ?? null}).catch(error => window.dispatchEvent(new ErrorEvent('error', { message: String(error) })));
+}
+window.addEventListener(OPEN_LIBRARY_DOCUMENT_EVENT, event => {
+  const detail = (event as CustomEvent<OpenLibraryDocumentDetail>).detail;
+  void call('openSourceDocument', detail).catch(error => window.dispatchEvent(new ErrorEvent('error', {message:String(error)})));
+});
+const openLibraryWork = (itemId: string, scope: 'global' | 'vault', page: number | null = null) => requestLibraryDocumentOpen({itemId,scope,page});
+const config = native.nodusMobileConfig;
+const databaseReportSummaries = async() => {
+  const local=await localDatabaseResearchReports(call);let remote:Awaited<ReturnType<typeof loadMobileDatabaseResearchReports>>=[];
+  try {remote=await loadMobileDatabaseResearchReports(call);}catch(error){if((error as {code?:string})?.code!=='offline'||!local.length)throw error;}
+  return [...local.filter(report=>!remote.some(item=>item.id===report.id)),...remote];
+};
+const enqueueMobileDatabaseResearch = async(input:DatabaseDeepResearchJobInput):Promise<'accepted'|'pending'> => {
+  if(native.nodusMobileConfig.executionMode==='autonomous')return enqueueAutonomousDatabaseResearch(call,input,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);});
+  const value=await call('enqueueDatabaseDeepResearch',input) as {version:number;requestId:string;bridgeJobId:string|null;state:string};
+  if(!value||value.version!==1||typeof value.requestId!=='string'||!value.requestId||!['pending','accepted','running','saved','available'].includes(value.state)||value.state!=='pending'&&(!value.bridgeJobId||typeof value.bridgeJobId!=='string')) throw new Error('Nodus no pudo confirmar la solicitud de investigación.');
+  return value.state==='pending'?'pending':'accepted';
+};
+setActiveLang(config.language);
+document.documentElement.classList.toggle('dark', config.theme === 'dark');
+document.documentElement.classList.toggle('light', config.theme !== 'dark');
+document.documentElement.classList.add(config.vaultType);
+document.documentElement.classList.toggle('nodus-phone', config.device === 'phone');
+document.documentElement.style.setProperty('--mobile-accent', config.accent);
+document.documentElement.style.setProperty('--vault-accent', config.accent);
+document.documentElement.style.fontSize = `${16 * config.textScale}px`;
+document.documentElement.style.setProperty('--nodus-mobile-text-scale', String(config.textScale));
+installMobileKeyboard(document);
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && event.target instanceof HTMLInputElement) event.target.blur();
+});
+
+async function offlineGraph(): Promise<GraphData> {
+  const snapshot = await call('snapshot');
+  const tables = snapshot.tables;
+  const themes = new Map((tables.themes ?? []).map((row: any) => [row.theme_id, row.name ?? row.label]));
+  const works = new Map<string, Set<string>>(), labels = new Map<string, Set<string>>();
+  for (const occurrence of tables.idea_occurrences ?? []) {
+    const group = works.get(occurrence.global_id) ?? new Set<string>(); group.add(occurrence.nodus_id); works.set(occurrence.global_id, group);
+  }
+  for (const link of tables.idea_theme_links ?? []) {
+    const group = labels.get(link.global_id) ?? new Set<string>(); group.add(String(themes.get(link.theme_id) ?? link.theme_id)); labels.set(link.global_id, group);
+  }
+  return { nodes: (tables.ideas ?? []).map((idea: any) => ({ id: idea.global_id, label: idea.label ?? idea.statement, statement: idea.statement, type: idea.type,
+    workIds: [...(works.get(idea.global_id) ?? [])], workCount: works.get(idea.global_id)?.size ?? 0, themes: [...(labels.get(idea.global_id) ?? [])], read: false, years: [], authors: [], maxConfidence: Number(idea.confidence ?? 0) })),
+    edges: (tables.edges ?? []).map((edge: any) => ({ id: edge.id, source: edge.from_id, target: edge.to_id, type: edge.type, basis: edge.basis, confidence: edge.confidence })) };
+}
+const source: StellarGraphSource = config.live ? {
+  key: 'mobile-live', readOnly: true, page: request => call('stellarPage', request), themes: () => call('stellarThemes'),
+  idea: id => call('getIdeaDetail', id), edge: id => call('getEdgeDetail', id),
+} : { ...memorySource('mobile-local', offlineGraph), readOnly: true };
+
+function SurfaceIssue({issue,title}: {issue: string; title?: string}) {
+  const denied = /permission_denied|operation_forbidden|does not grant access/i.test(issue);
+  return <div role="alert" className="mobile-error"><div>{title && <strong>{title}</strong>}<p>{denied ? t('La conexión actual no permite acceder a este vault. Renueva la vinculación en Ajustes.') : issue}</p>
+    {denied && <details><summary>{t('Detalles')}</summary><p>{issue}</p></details>}</div><button onClick={() => location.reload()}>{t('Reintentar')}</button></div>;
+}
+
+const mobileCompleteGuideActions:MobileCompleteGuideActions = {
+ catalog:scope=>scope==='device_downloads'?call('mobileCompleteGuideCatalog'):call('listCompleteGuideCatalog'),
+ preview:async(scope,request)=>{
+  if(scope==='linked_corpus')return call('previewCompleteGuide',request);
+  const copies=await call('mobileCompleteGuideSource',{objective:'Guía de estudio completa',model:request.model,completeGuide:request.completeGuide,mobileSourceScope:'device_downloads'});
+  return previewMobileCompleteGuide(copies,request);
+ },
+ download:(request,days)=>call('mobileCompleteGuideDownload',request,days),
+ downloadGenealogy:(request,days)=>call('mobileGenealogyResearchDownload',request,days),
+ downloadAcademic:(request,days)=>call('mobileAcademicResearchDownload',request,days),
+ academicDownloads:()=>call('mobileAcademicResearchCatalog'),
+};
+function App() {
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [offlineReadSettings]=useState<AppSettings>(()=>({...DEFAULT_APP_SETTINGS,
+    providerKeys:Object.fromEntries(Object.keys(PROVIDER_LABELS).map(provider=>[provider,false])) as AppSettings['providerKeys'],
+    lockedProviderKeys:[],uiLanguage:config.language,promptLanguage:normalizePromptLanguage(config.language)}));
+  const [databaseSnapshot,setDatabaseSnapshot]=useState<DatabaseDeepResearchSnapshot>({selectedDatabaseIds:[],selectedViewIds:[],openReportId:config.initialDatabaseReportId||null});
+  const [error, setError] = useState('');
+  const [jobError, setJobError] = useState('');
+  useEffect(() => {
+    void native.nodusMobileCall('surfaceMounted');
+    if (config.surface !== 'databasePresentation' && (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType))) void call('getSettings').then(setSettings).catch(error => {
+      if((config.initialArgumentMap||config.surface==='studyDocument')&&(error as {code?:string})?.code==='offline')setSettings(offlineReadSettings);
+      else setError(String(error));
+    });
+    const listener = (event: ErrorEvent) => setError(event.message);
+    window.addEventListener('error', listener); return () => window.removeEventListener('error', listener);
+  }, []);
+  useEffect(() => {
+    if (!config.live || !['dictionary', 'deepResearch','databaseResearch'].includes(config.surface)) return;
+    let active = true;
+    let revision: string | undefined;
+    let polling = false;
+    const method = config.surface === 'dictionary' ? 'listDictionaryGenerationJobs' : config.surface === 'databaseResearch' ? 'listDatabaseDeepResearchJobs' : 'listDeepResearchJobs';
+    const timer = window.setInterval(() => {
+      if (polling) return;
+      polling = true;
+      void call(method).then(jobs => {
+      if (!active) return;
+      setJobError('');
+      const nextRevision = JSON.stringify(jobs);
+      if (revision === nextRevision) return;
+      revision = nextRevision;
+      if (config.surface === 'dictionary') {
+        for (const job of jobs) for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(job);
+        for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null);
+      } else if (config.surface === 'databaseResearch') {
+        for (const job of jobs) for (const listener of subscriptions.get('onDatabaseDeepResearchProgress') ?? []) {
+          listener({runId:job.id,status:job.status,progress:job.progress,phase:job.phase,step:null,message:job.error ?? null});
+        }
+      } else {
+        for (const listener of subscriptions.get('onDeepResearchQueue') ?? []) listener(jobs);
+        for (const listener of subscriptions.get('onWritingDraftsChanged') ?? []) listener(null);
+      }
+    }).catch(error => { if (active) setJobError(String(error)); }).finally(() => { polling = false; }); }, 2000);
+    return () => { active = false; clearInterval(timer); };
+  }, []);
+  return <main className="mobile-surface" data-surface={config.surface}>
+    {error && <SurfaceIssue issue={error} />}
+    {jobError && <SurfaceIssue issue={jobError} title={t('Estado de los trabajos')} />}
+    <div className="mobile-surface-content">
+    {liveVisualEditor ? <MobileLiveDocumentVisualEditor controller={liveVisualEditor} canWrite={config.visualCanWrite===true} canGenerate={config.visualCanGenerate===true}/> : documentVisualEditor ? <MobileDocumentVisualEditor controller={documentVisualEditor} call={call} canGenerate={config.executionMode==='autonomous'}/> : config.surface === 'studyIdeas' ? <MobileStudyIdeas paired={config.live} onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)} vaultId={config.vaultId??null} settings={settings??offlineReadSettings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}} download={(subjectId,days)=>native.nodusMobileCall('studyKnowledgeCopy','download',{subjectId,days})} autonomous={config.executionMode==='autonomous'} navigate={navigate}/> : config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
+      ? !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
+        : <StudyGraphView mobile settings={settings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}}
+            onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)}
+            onOpenMaterial={id=>navigate('studyMaterial',id)} onOpenDocument={id=>navigate('studyDocument',id)}
+            onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
+      : config.surface === 'graph' ? <StellarWorkspace allowNoteCopy source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
+      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap}/>
+      : config.surface==='databasePresentation'&&config.initialDatabasePresentation?<MobileDatabasePresentation target={config.initialDatabasePresentation} call={native.nodusMobileCall} downloadedOnly={Boolean(config.pageDownloadedOnly)} phone={config.device==='phone'} onOpen={id=>navigate('databaseRow',id)}/>
+      : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
+      : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
+      : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
+      : config.surface === 'studyDocument' ? <MobileStudyDocument id={config.initialStudyDocumentId??''} settings={settings} draftScope={config.documentDraftScope??''} call={call} onOpen={(kind,id)=>navigate(kind,id)}/>
+      : config.surface === 'page' ? <MobilePageDocument id={config.initialPageId??''} onOpen={id=>navigate('page',id)}/>
+      : config.surface === 'deepResearch' ? <DeepResearchView mobile onLegacyReports={()=>navigate('legacyResearchReports','all')} mobileGuideSources={config.executionMode==='autonomous'?mobileCompleteGuideActions:undefined} settings={settings} onRetryResearch={config.executionMode==='autonomous'?id=>retryLocalDeepResearch(call,id,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);}):undefined} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
+      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} retryMobileResearch={config.executionMode==='autonomous'?id=>retryLocalDatabaseResearch(call,id,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);}):undefined} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
+      : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
+      : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'
+        ? <WorldChatView settings={settings} onNavigate={view=>navigate('section',view)} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+        : ['study','teaching'].includes(mobileChatSurface(config.vaultType))
+          ? <StudyChatView settings={settings} variant={config.vaultType==='docencia'?'teaching':'study'}
+              onOpenDocument={(id,location)=>navigate('citation',mobileStudyCitation('doc',id,location))}
+              onOpenMaterial={(id,location)=>navigate('citation',mobileStudyCitation('material',id,location??{}))}
+              onOpenRecording={(id,timestamp,location)=>navigate('citation',mobileStudyCitation('recording',id,{...location,timestampSeconds:timestamp}))}
+              onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+          : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId={null} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+          : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
+      : <ArgumentMapView settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
+    </div>
+    <FeedbackHost/>
+  </main>;
+}
+createRoot(document.getElementById('root')!).render(<App/>);

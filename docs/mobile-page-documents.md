@@ -1,0 +1,11 @@
+# Companion: documentos universales de Pages
+
+La consulta privada usa `getMobilePageDocument`: documento Yjs proyectado sin los binarios de transporte, bloques completos, documento BlockNote, metadatos académicos, archivos y dependencias. No inicializa documentos antiguos ni historial al leer. El editor compartido conserva el formato real: BlockNote para documentos nativos y el editor completo de bloques para páginas anteriores.
+
+`POST /bridge/v2/vaults/:vault/page-edits` requiere acceso a corpus y escritura en el vault exacto. El documento, el título y el recibo se guardan en una transacción. Se comprueban la revisión del documento y la de la página. Repetir el mismo identificador devuelve el mismo resultado; reutilizarlo con otro contenido falla. Una revisión ajena devuelve la versión remota para resolver el conflicto expresamente.
+
+Los bloques sincronizados usan su identidad original. Las vistas enlazadas usan el motor real de filtros, fuentes y cursores de Desktop en modo de lectura sin inicializar fuentes ni materializar fórmulas. Las páginas de resultados y las fuentes necesarias se incluyen en la descarga seleccionada, con límite global de 50 MiB y caducidad. Los bloques sincronizados siguen hasta 256 páginas referenciadas y verifican sus revisiones antes de guardar. Las filas enlazadas incluyen el dossier real de su base de datos; no se descargan archivos pesados implícitamente. Si el conjunto excede el límite, no se guarda una copia incompleta.
+
+El borrador móvil completo se cifra como escritura propia y queda fuera del presupuesto y la caducidad de copias temporales. Una petición enviada conserva su identificador y contenido aunque se pierda la respuesta. Los cambios posteriores permanecen pendientes hasta recibir su propio acuse. La pérdida de red nunca inicia un proveedor ni cambia el modo de IA.
+
+Validación pendiente: `scripts/test-mobile-page-documents.mjs`, `CompanionPageDocumentsTests`, compilaciones locales y aceptación visual/de dispositivo. La presencia de estos contratos no acredita su ejecución. Deben verificarse los controles de edición, teclado, formatos académicos, archivos, reapertura, conflictos, descarga caducada y reconexión en iPhone e iPad antes de cerrar la beta.

@@ -4,6 +4,9 @@ import { databaseChatOrganizer, renameDatabaseChatConversation, setDatabaseChatC
 import { renameWorldChatConversation, setWorldChatConversationArchived, worldChatOrganizer } from '../db/worldChatRepo';
 import * as study from '../ai/studyChatHistory';
 import { updateStudyAssistantConversation } from '../ai/studyAssistant';
+import {getMobileChatResultArtifact,getMobileChatReadResource} from '../desktopBridge/chatResultAssets';
+import {streamMobileCompanionChat,mobileLiveChatConfiguration} from '../desktopBridge/nativeLiveChat';
+import {generationSignal} from '../ai/generationSignal';
 
 /*
  * The chat-history channels of the Databases, Worldbuilding and Study (Teaching) chats.
@@ -64,6 +67,14 @@ function notebookOrganizer(surface: unknown): typeof databaseChatOrganizer {
 }
 
 export function registerChatHistoryIpc({ h }: IpcContext): void {
+  h('chatHistory:mobileLiveConfiguration',async (_event,kind:string,model?:Parameters<typeof mobileLiveChatConfiguration>[1])=>mobileLiveChatConfiguration(kind,model));
+  h('chatHistory:mobileLiveStream',async (event,request:unknown)=>{
+    const host=event as unknown as {mobileBridgeJobId?:string;mobileBridgeDeviceGrant?:string;mobileBridgeIdempotencyKey?:string};
+    if(!host.mobileBridgeJobId||!host.mobileBridgeDeviceGrant||!host.mobileBridgeIdempotencyKey)throw new Error('live_chat_job_required');
+    return streamMobileCompanionChat(request,{jobId:host.mobileBridgeJobId,deviceGrant:host.mobileBridgeDeviceGrant,idempotencyKey:host.mobileBridgeIdempotencyKey},(channel,...args)=>event.sender.send(channel,...args),generationSignal());
+  });
+  h('chatHistory:mobileResultArtifact',async (_event,request:unknown,locale?:string)=>getMobileChatResultArtifact(request,locale));
+  h('chatHistory:mobileReadResource',async (_event,request:unknown,locale?:string)=>getMobileChatReadResource(request,locale));
   h('chatHistory:projects:list', async (_e, surface: ChatHistorySurface) => organizer(surface).listProjects());
   h('chatHistory:projects:create', async (_e, surface: ChatHistorySurface, input: { name: string; icon?: string | null; color?: string | null; instructions?: string }) => organizer(surface).createProject(input));
   h('chatHistory:projects:update', async (_e, surface: ChatHistorySurface, id: string, patch: { name?: string; icon?: string | null; color?: string | null; instructions?: string }) => organizer(surface).updateProject(id, patch));

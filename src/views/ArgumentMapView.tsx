@@ -24,6 +24,7 @@ import { useFeatureModel } from '../hooks/useFeatureModel';
 import { expandableIdsByDepth } from '../argumentMapTree';
 import { t, tx } from '../i18n';
 import { ArgumentMapCanvas } from '../components/argumentMap/ArgumentMapCanvas';
+import {useCompanionContentRefresh} from '../companionEvents';
 
 const RELATION_LABELS: Record<string, string> = {
   ...EDGE_LABELS,
@@ -74,23 +75,45 @@ export function ArgumentMapView({
   settings,
   snapshot,
   onSnapshotChange,
+  mobile=false,
+  initialMap,
+  initialSeed,
 }: {
   settings: AppSettings;
+  mobile?:boolean;
+  initialMap?:ArgumentMap;
+  initialSeed?:string;
   /** Where this section was last left. Read once, at mount, and never again. */
   snapshot?: ArgumentSnapshot;
   onSnapshotChange?: (patch: Partial<ArgumentSnapshot>) => void;
 }) {
-  // The catalogue is where a returning reader lands, always. The open map holds no
-  // data of its own — redrawing it means rebuilding it, and in AI mode that would
-  // spend a model call on the act of walking back into the section.
-  const [surface, setSurface] = useState<ArgumentMapSurface>('catalog');
-  const [openArgumentMaps, setOpenArgumentMaps] = useState<ArgumentMapTabState[]>([]);
-  const [activeMapKey, setActiveMapKey] = useState<string | null>(null);
+  // Opening a saved map reuses its content and never invokes a model.
+  const [surface, setSurface] = useState<ArgumentMapSurface>(initialMap?'map':'catalog');
+  const [openArgumentMaps, setOpenArgumentMaps] = useState<ArgumentMapTabState[]>(initialMap?[{key:`saved:${initialMap.root.id}`,ideaId:initialMap.seedIdeaId,label:initialMap.seedLabel,mode:'ai',map:initialMap,building:false,error:null}]:[]);
+  const [activeMapKey, setActiveMapKey] = useState<string | null>(initialMap?`saved:${initialMap.root.id}`:null);
+  const [downloadMessage,setDownloadMessage]=useState('');
+  const [downloading,setDownloading]=useState(false);
+  const [savedMaps,setSavedMaps]=useState<Array<{id:string;map:ArgumentMap}>>([]);
+  const [savedError,setSavedError]=useState('');
+  const [savedCursor,setSavedCursor]=useState<string|null>(null);
+  const [savedRevision,setSavedRevision]=useState<string|null>(null);
+  const [loadingSaved,setLoadingSaved]=useState(false);
+  const loadSaved=async(cursor:string|null=null)=>{
+    if(loadingSaved)return;setLoadingSaved(true);
+    try{
+      const page=await window.nodus.listSavedCompanionArgumentMaps(cursor,20);
+      if(cursor&&savedRevision&&savedRevision!==page.revision)throw new Error(t('Los mapas guardados han cambiado. Vuelve a abrir el catálogo.'));
+      setSavedMaps(current=>cursor?[...current,...page.items.filter(item=>!current.some(existing=>existing.id===item.id))]:page.items);
+      setSavedRevision(page.revision);setSavedCursor(page.hasMore?page.cursor:null);setSavedError('');
+    }catch(error){setSavedError(String(error));}finally{setLoadingSaved(false);}
+  };
+  useEffect(()=>{if(!initialMap)void loadSaved();},[]);
   const [ideaNodes, setIdeaNodes] = useState<IdeaPickerItem[]>([]);
   const [graphLoaded, setGraphLoaded] = useState(false);
   const [mode, setMode] = useState<'auto' | 'ai'>(() => snapshot?.mode ?? 'auto');
   const [suggestions, setSuggestions] = useState<ArgumentRouteSuggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [routesRequested,setRoutesRequested]=useState(false);
   // Only a click on «Actualizar» spins that button's icon. The automatic discovery
   // on entering the section has its own indicator, and spinning both at once read
   // as if the app were refreshing on its own.
@@ -138,6 +161,8 @@ export function ArgumentMapView({
   // Discover ranked idea hubs for the automatic mode. Cheap (local DB, no AI),
   // so we run it on mount and whenever the user (re)enters automatic mode.
   const discoverRoutes = useCallback(async (manual = false) => {
+    if(initialMap&&surface==='map')return;
+    setRoutesRequested(true);
     setSuggestionsLoading(true);
     if (manual) setRefreshing(true);
     setCatalogError(null);
@@ -150,13 +175,17 @@ export function ArgumentMapView({
       setSuggestionsLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [initialMap,surface]);
 
+  useCompanionContentRefresh(async () => {
+    if (mode === 'auto') await discoverRoutes();
+    else {setIdeaNodes(await window.nodus.listPickerIdeas());setGraphLoaded(true);}
+  });
   useEffect(() => {
-    if (mode === 'auto' && suggestions.length === 0 && !suggestionsLoading) {
+    if (mode === 'auto' && !routesRequested && !suggestionsLoading) {
       void discoverRoutes();
     }
-  }, [mode, suggestions.length, suggestionsLoading, discoverRoutes]);
+  }, [mode, routesRequested, suggestionsLoading, discoverRoutes]);
 
   // Switching the catalogue mode resets only its picker. An already-open map
   // remains mounted in its tab, just like an author dossier does.
@@ -244,6 +273,7 @@ export function ArgumentMapView({
       )));
     }
   }, [ideaNodes, mode, model, openArgumentMaps, search, seedId, settings.promptLanguage, suggestions]);
+  useEffect(()=>{if(initialSeed&&!initialMap)void build(initialSeed);},[]);
 
   const closeMapTab = useCallback((key: string) => {
     const closingIndex = openArgumentMaps.findIndex((tab) => tab.key === key);
@@ -399,10 +429,20 @@ export function ArgumentMapView({
                   <button className="btn btn-primary gap-1.5" onClick={() => build()} disabled={!seedId || selectedMapBuilding || !hasModel} title={!hasModel ? t('Configura un modelo de IA en Ajustes') : t('Trazar el mapa de argumentos')}>
                     <Icon name="map" /> {selectedMapBuilding ? t('Trazando…') : t('Trazar mapa')}
                   </button>
+                  {mobile&&seedId&&<select aria-label={t('Fuentes para llevar')} disabled={downloading} className="select" value="" onChange={event=>{
+                    const days=Number(event.target.value);if(![7,30].includes(days))return;setDownloading(true);
+                    void (window as any).nodusMobileCall('mobileAcademicDownload',{kind:'argument',seedIdeaId:seedId,language:settings.promptLanguage??'es'},days)
+                      .then(()=>setDownloadMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch((error:unknown)=>setDownloadMessage(String(error))).finally(()=>setDownloading(false));
+                  }}><option value="">{downloading?t('Guardando fuentes…'):t('Fuentes para llevar')}</option><option value="7">{t('Guardar 7 días')}</option><option value="30">{t('Guardar 30 días')}</option></select>}
                 </>
               )}
             </div>
             {!isAuto && seedId && <div className="mt-1 flex items-center gap-1 text-[11px] text-indigo-500 dark:text-indigo-400"><Icon name="check" size={12} /> {t('Idea seleccionada')}</div>}
+            {downloadMessage&&<p role="status" className="mt-2 text-sm text-neutral-500">{downloadMessage}</p>}
+            {!!savedMaps.length&&<details className="mt-3"><summary className="min-h-11 cursor-pointer py-2">{t('Mapas del móvil')} ({savedMaps.length})</summary><div className="flex flex-col gap-2 py-2">{savedMaps.map(item=><button key={item.id} className="btn justify-start text-left" onClick={()=>{
+              const key=`saved:${item.id}`;setOpenArgumentMaps(current=>current.some(tab=>tab.key===key)?current:[...current,{key,ideaId:item.map.seedIdeaId,label:item.map.seedLabel,mode:'ai',map:item.map,building:false,error:null}]);setActiveMapKey(key);setSurface('map');
+            }}>{item.map.seedLabel}</button>)}{savedCursor&&<button className="btn" disabled={loadingSaved} onClick={()=>loadSaved(savedCursor)}>{t('Cargar más')}</button>}</div></details>}
+            {savedError&&<div role="alert" className="mt-2 text-sm text-red-500">{savedError}<button className="btn ml-2" onClick={()=>loadSaved()}>{t('Reintentar')}</button></div>}
           </div>
 
           {!isAuto ? (
@@ -421,8 +461,8 @@ export function ArgumentMapView({
               ) : suggestions.length === 0 && !catalogError ? (
                 <div className="grid h-48 place-items-center p-8 text-center text-sm text-neutral-500"><div><Icon name="map" size={32} className="mx-auto text-neutral-300 dark:text-neutral-700" /><p className="mt-3">{t('No hay ideas conectadas todavía. Analiza tus obras (escaneo profundo) para que el grafo genere conexiones entre ideas.')}</p></div></div>
               ) : (
-                <div className="min-w-[1120px]">
-                  <div className="grid h-10 items-center border-b border-neutral-200 px-4 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:text-neutral-600" style={{ gridTemplateColumns: 'minmax(260px,2fr) 7rem 7rem 6rem 7rem minmax(190px,1.25fr) minmax(230px,1.5fr) 2.5rem' }}>
+                <div className="argument-routes-list min-w-[1120px]">
+                  <div className="argument-route-sorting grid h-10 items-center border-b border-neutral-200 px-4 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:text-neutral-600" style={{ gridTemplateColumns: 'minmax(260px,2fr) 7rem 7rem 6rem 7rem minmax(190px,1.25fr) minmax(230px,1.5fr) 2.5rem' }}>
                     <RouteSortHeader label="Idea" sort="label" active={routeSort} onSort={setRouteSort} />
                     <RouteSortHeader label="Tipo" sort="type" active={routeSort} onSort={setRouteSort} />
                     <RouteSortHeader label="Nº de conexiones" sort="connections" active={routeSort} onSort={setRouteSort} />
@@ -439,7 +479,7 @@ export function ArgumentMapView({
                           key={s.ideaId}
                           data-testid={`argument-route-${s.ideaId}`}
                           data-anchor-id={s.ideaId}
-                          className="grid min-h-[76px] w-full items-center border-b border-neutral-100 px-4 text-left text-xs transition-colors hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55"
+                          className="argument-route-row grid min-h-[76px] w-full items-center border-b border-neutral-100 px-4 text-left text-xs transition-colors hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55"
                           style={{ gridTemplateColumns: 'minmax(260px,2fr) 7rem 7rem 6rem 7rem minmax(190px,1.25fr) minmax(230px,1.5fr) 2.5rem' }}
                           onClick={() => build(s.ideaId)}
                           title={t('Trazar el esquema desde esta idea')}
@@ -451,10 +491,10 @@ export function ArgumentMapView({
                               {s.statement && <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-neutral-500">{s.statement}</p>}
                             </div>
                           </div>
-                          <span className="text-neutral-600 dark:text-neutral-400">{t(NODE_LABELS[s.type as IdeaType]) ?? s.type}</span>
-                          <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.degree}</span>
-                          <span className={s.debateCount > 0 ? 'font-medium tabular-nums text-red-600 dark:text-red-400' : 'tabular-nums text-neutral-400 dark:text-neutral-600'}>{s.debateCount}</span>
-                          <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.avgConfidence.toFixed(2)}</span>
+                          <span data-label={t('Tipo')} className="text-neutral-600 dark:text-neutral-400">{t(NODE_LABELS[s.type as IdeaType]) ?? s.type}</span>
+                          <span data-label={t('Nº de conexiones')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.degree}</span>
+                          <span data-label={t('Debates')} className={s.debateCount > 0 ? 'font-medium tabular-nums text-red-600 dark:text-red-400' : 'tabular-nums text-neutral-400 dark:text-neutral-600'}>{s.debateCount}</span>
+                          <span data-label={t('Confianza')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.avgConfidence.toFixed(2)}</span>
                           <div className="flex min-w-0 flex-wrap gap-1 pr-3">{s.topRelations.slice(0, 3).map((relation) => <span key={relation.type} className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t(EDGE_LABELS[relation.type as EdgeType]) ?? relation.type} ×{relation.count}</span>)}</div>
                           <span className="truncate pr-3 text-[11px] text-neutral-500">{s.neighborLabels.join(' · ') || '—'}</span>
                           <Icon name="chevronRight" size={15} className="text-neutral-400 dark:text-neutral-600" />
@@ -470,14 +510,17 @@ export function ArgumentMapView({
         </section>
 
         {openArgumentMaps.map((tab) => (
-          <ArgumentMapTab key={tab.key} tab={tab} active={surface === 'map' && activeMapKey === tab.key} />
+          <ArgumentMapTab key={tab.key} tab={tab} active={surface === 'map' && activeMapKey === tab.key} onCancel={mobile && tab.mode !== 'auto' ? () => {
+            void (window.nodus as unknown as {cancelMobileArgumentMap(seedId:string):Promise<void>}).cancelMobileArgumentMap(tab.ideaId)
+              .catch(error=>setOpenArgumentMaps(current=>current.map(item=>item.key===tab.key?{...item,error:String(error)}:item)));
+          } : undefined} />
         ))}
       </main>
     </div>
   );
 }
 
-function ArgumentMapTab({ tab, active }: { tab: ArgumentMapTabState; active: boolean }) {
+function ArgumentMapTab({ tab, active, onCancel }: { tab: ArgumentMapTabState; active: boolean; onCancel?:()=>void }) {
   // Every open map owns its reveal and detail state. Keeping this inside the tab is
   // what makes switching maps preserve the exact branches and side panel the reader
   // was using in each one.
@@ -618,7 +661,7 @@ function ArgumentMapTab({ tab, active }: { tab: ArgumentMapTabState; active: boo
         <div className={presentation === 'map' ? 'min-h-0 flex-1' : 'min-h-0 flex-1 overflow-y-auto p-4'}>
           {tab.map && <div className={presentation === 'map' ? 'h-full' : 'hidden'}><ArgumentMapCanvas map={tab.map} onSelect={selectBlock} fullscreen={fullscreen} onToggleFullscreen={toggleFullscreen} fullscreenError={fullscreenError} /></div>}
           {tab.error && <div className="card flex items-start gap-2 p-4 text-sm text-red-400"><Icon name="alert" /> <span>{tab.error}</span></div>}
-          {tab.building && !tab.map && <div className="flex h-full flex-col items-center justify-center gap-3 text-neutral-500"><Spinner label={tab.mode === 'auto' ? t('Construyendo el esquema…') : t('El modelo está trazando el esquema de argumentos…')} /></div>}
+          {tab.building && !tab.map && <div className="flex h-full flex-col items-center justify-center gap-3 text-neutral-500"><Spinner label={tab.mode === 'auto' ? t('Construyendo el esquema…') : t('El modelo está trazando el esquema de argumentos…')} />{onCancel && <button className="btn-ghost min-h-11" onClick={onCancel}>{t('Cancelar')}</button>}</div>}
           {tab.map && presentation === 'outline' && (
             <div className="mx-auto max-w-4xl">
               <div className="card mb-4 bg-neutral-900/60 p-4">

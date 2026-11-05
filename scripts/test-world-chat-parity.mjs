@@ -36,7 +36,8 @@ test('world chat has the same conversation, model, context and streaming control
   assert.match(view, /entrySearch/);
   assert.match(view, /selection\.keepFocus/);
   assert.match(view, /cancelWorldChat/);
-  assert.match(shared, /e\.key === 'Enter' && !e\.shiftKey/);
+  assert.match(shared, /e\.key === 'Enter' && !phone && !e\.shiftKey/);
+  assert.match(shared, /const phone = isPhoneSurface\(\)/);
   assert.match(shared, /<textarea/);
 });
 

@@ -15,7 +15,8 @@ execFileSync(path.join(root, 'node_modules/.bin/esbuild'), [
   '--bundle', '--platform=node', '--format=esm', `--outfile=${bundle}`,
 ], { cwd: root, stdio: 'ignore' });
 const packsModule = await import(pathToFileURL(bundle).href);
-const source = fs.readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
+const desktopSource = fs.readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
+const source = fs.readFileSync(path.join(root, 'shared/portableDeepResearchAI.ts'), 'utf8');
 const languages = ['es', 'en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr'];
 const stages = ['editorialReview', 'coherenceCheck', 'citationVerifier', 'candidateJudge', 'claimsAudit'];
 const SpanishProse = [
@@ -64,11 +65,13 @@ test('non-Spanish quality packs are native and preserve invariant JSON vocabular
 });
 
 test('production quality stages call the native pack and no longer own Spanish arrays', () => {
-  assert.match(source, /from '@shared\/deepResearchQualityPromptPacks';/);
+  assert.match(source, /from '\.\/deepResearchQualityPromptPacks';/);
+  assert.match(desktopSource, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/);
+  assert.match(desktopSource, /portableDeepResearchAI\(\{get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
   const ranges = [
     ['async function aiReviewReport', 'function isAiCoherence'],
     ['async function aiCheckCoherence', 'interface AiProbes'],
-    ['export async function aiVerifyCitations', 'async function aiReviseSection'],
+    ['async function aiVerifyCitations', 'async function aiReviseSection'],
     ['async function aiJudgeSectionRevision', 'interface AiPlan'],
     ['async function aiAuditSectionClaims', 'function isAiSectionEvidencePlan'],
   ];
@@ -85,4 +88,27 @@ test('production quality stages call the native pack and no longer own Spanish a
   assert.match(source, /deepResearchQualityPromptPack\(language\)\.citationVerifier/);
 });
 
-rmSync(scratch, { recursive: true, force: true });
+test('portable citation verifier sends the localized prompt with exact source evidence and no nested retries', async () => {
+  const aiBundle = path.join(scratch, 'portable-quality.mjs');
+  execFileSync(path.join(root, 'node_modules/.bin/esbuild'), [path.join(root, 'shared/portableDeepResearchAI.ts'), '--bundle', '--platform=node', '--format=esm', `--outfile=${aiBundle}`], {cwd: root, stdio: 'ignore'});
+  const {portableDeepResearchAI} = await import(pathToFileURL(aiBundle).href);
+  for (const language of [...languages, 'zh-Hans', 'zh-Hant', 'vi', 'ja', 'ru', 'uk', 'ko']) {
+    const calls = [];
+    const model = {provider:'openai', model:'fixture-only'};
+    const ai = portableDeepResearchAI({documentaryEvidence:true, completeText: async () => { throw new Error('unexpected text call'); }, completeJson: async (request, guard, receivedModel) => {
+      calls.push({request, receivedModel});
+      const value = {veredictos:[{i:0, veredicto:'unsupported'}]};
+      assert.equal(guard(value), true);
+      return value;
+    }});
+    const result = await ai.aiVerifyCitations([{sentence:'Claim to check.',kind:'passage',content:'Exact source evidence.'}], model, language);
+    assert.deepEqual(result, ['unsupported'], 'unsupported evidence cannot become a successful citation');
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].request.system, packsModule.deepResearchQualityPromptPack(language).citationVerifier);
+    assert.equal(calls[0].request.noRetry, true);
+    assert.equal(calls[0].receivedModel, model);
+    assert.deepEqual(JSON.parse(calls[0].request.user).pares, [{i:0, afirmacion:'Claim to check.',tipo_de_fuente:'passage',contenido_de_la_fuente:'Exact source evidence.'}]);
+  }
+});
+
+test.after(() => rmSync(scratch, { recursive: true, force: true }));

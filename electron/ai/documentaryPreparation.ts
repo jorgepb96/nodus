@@ -1,6 +1,7 @@
 import { isEmbeddingGemma2, embeddingGemma2Contract } from '@shared/embeddingGemma2';
 import { canonicalizeEmbeddingContract } from '@shared/embeddingContract';
 import { listResearchNotebooks } from '../db/researchNotebooksRepo';
+import { assertDesktopPreparation } from '../desktopBridge/executionBoundary';
 import { recordEmbeddingTrace } from '../qa/embeddingTrace';
 import { researchTestEmbeddingEndpointIdentity } from '../qa/researchProviderProxy';
 import { selectResearchDocuments } from './researchCorpusScope';
@@ -555,6 +556,7 @@ export function embeddingConfigurationUsable(config: Pick<EmbeddingExecutionConf
   return ['ollama', 'lmstudio', 'nodus'].includes(config.provider) || !!getSettings().providerKeys[config.provider];
 }
 export async function prepareResearchDocuments(documentIds: string[], mode: 'embeddings' | 'text' = 'embeddings', reason: EmbeddingRunReason = 'manual'): Promise<void> {
+  assertDesktopPreparation();
   // Callers rely on the queue being written synchronously; only a running maintenance defers it.
   if (maintenance) await maintenance;
   const store = documentaryStore();

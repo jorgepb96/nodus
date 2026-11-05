@@ -290,7 +290,7 @@ test('the workspace keeps its collection, its filters, its expanded folders and 
   assert.match(registry, /snapshots\.read\('notes'\)/);
 });
 
-test('the argument map keeps its route filters but never reopens a built map', async () => {
+test('the argument map keeps route filters without restoring a built map from snapshots', async () => {
   const [view, types] = await Promise.all([
     readSource('src/views/ArgumentMapView.tsx'),
     readSource('src/app/viewSnapshots.ts'),
@@ -298,11 +298,57 @@ test('the argument map keeps its route filters but never reopens a built map', a
   for (const restored of ['mode', 'seedId', 'suggestionSearch', 'minConnections', 'routeSort']) {
     assert.match(view, new RegExp(`useState[^\\n]*\\(\\) => snapshot\\?\\.${restored}`), `${restored} survives leaving the section`);
   }
-  // Redrawing the map means rebuilding it, and in AI mode that is a model call spent
-  // on the act of walking back into the section.
+  // Ordinary section navigation restores filters, never a built map. An explicit
+  // saved-map prop is a separate path that reuses its already generated content.
   assert.doesNotMatch(view, /useState[^\n]*snapshot\?\.openArgumentMap/, 'the open map is not restored');
   assert.doesNotMatch(types, /openArgumentMap/, 'and it is not even stored');
-  assert.match(view, /const \[surface, setSurface\] = useState<ArgumentMapSurface>\('catalog'\)/, 'a returning reader lands on the catalogue');
+  assert.match(view, /const \[surface, setSurface\] = useState<ArgumentMapSurface>\(initialMap\s*\?\s*'map'\s*:\s*'catalog'\)/, 'only an explicit saved map changes the initial surface');
+});
+
+test('actual argument-map initializers reuse explicit saved content and normal navigation never generates', async () => {
+  const ts = require('typescript');
+  const view = await readSource('src/views/ArgumentMapView.tsx');
+  const parsed = ts.createSourceFile('ArgumentMapView.tsx', view, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const initializers = [];
+  const automaticBuilds = [];
+  const wanted = new Set(['surface', 'openArgumentMaps', 'activeMapKey']);
+  const visit = (node) => {
+    if (ts.isVariableStatement(node)) {
+      const name = node.declarationList.declarations[0]?.name;
+      if (name && ts.isArrayBindingPattern(name) && wanted.has(name.elements[0]?.getText(parsed))) initializers.push(node.getText(parsed));
+    }
+    if (ts.isCallExpression(node) && node.expression.getText(parsed) === 'useEffect') {
+      const callback = node.arguments[0];
+      if (callback && /\bbuild\(/.test(callback.getText(parsed))) automaticBuilds.push(callback.getText(parsed));
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(parsed);
+  assert.equal(initializers.length, 3, 'execute all three real map-state initializers');
+  assert.equal(automaticBuilds.length, 1, 'account for the automatic build effect');
+  // Transpile and execute source expressions, rather than duplicating their logic
+  // in a test-only component. A provider-triggering build is observed but never run.
+  const javascript = ts.transpileModule(`${initializers.join('\n')}\n(${automaticBuilds[0]})();\nreturn {surface,openArgumentMaps,activeMapKey};`, {compilerOptions: {target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None}}).outputText;
+  const initialize = new Function('initialMap', 'initialSeed', 'snapshot', 'useState', 'build', javascript);
+  const builds = [];
+  const useState = (value) => [typeof value === 'function' ? value() : value, () => {}];
+  const snapshot = {seedId: 'previous-seed', mode: 'ai', openArgumentMap: {id: 'obsolete'}};
+  const normal = initialize(undefined, undefined, snapshot, useState, (seed) => builds.push(seed));
+  assert.deepEqual(normal, {surface: 'catalog', openArgumentMaps: [], activeMapKey: null});
+  assert.deepEqual(builds, [], 'returning with a remembered AI seed spends no generation');
+  const saved = {root: {id: 'saved-root'}, seedIdeaId: 'saved-seed', seedLabel: 'Saved content'};
+  const explicit = initialize(saved, 'saved-seed', snapshot, useState, (seed) => builds.push(seed));
+  assert.equal(explicit.surface, 'map');
+  assert.equal(explicit.activeMapKey, 'saved:saved-root');
+  assert.equal(explicit.openArgumentMaps.length, 1);
+  assert.equal(explicit.openArgumentMaps[0].map, saved, 'reuse the exact saved map, not a rebuilt copy');
+  assert.equal(explicit.openArgumentMaps[0].building, false);
+  assert.equal(explicit.openArgumentMaps[0].error, null);
+  assert.deepEqual(builds, [], 'an explicit saved map suppresses seed regeneration');
+  const registry = await readSource('src/app/views/corpus.tsx');
+  const ordinaryEntry = registry.match(/<ArgumentMapView[\s\S]*?\/>/);
+  assert.ok(ordinaryEntry, 'normal section entry remains wired');
+  assert.doesNotMatch(ordinaryEntry[0], /initialMap=|initialSeed=/, 'ordinary navigation passes neither a saved map nor a build request');
 });
 
 test('the snapshot store lives above the single render point and outside React state', async () => {
@@ -683,7 +729,8 @@ test('a section walking back into what it had open never paints its gallery on t
   // Reopening means reading the report or the session back, which takes frames. What
   // is painted in those frames used to be the gallery, and a gallery that appears and
   // is replaced by the item it lists looks like the app clicking that item itself.
-  assert.match(deep, /if \(mode === 'reader' && !openDraft\) return <RestoringPane \/>;/);
+  assert.match(deep, /if \(mode === 'reader' && !openDraft\) \{[\s\S]*return galleryFailure[\s\S]*: <RestoringPane \/>;/);
+  assert.match(deep, /data-testid="deep-research-catalog-error"/);
   // Inmersión decides at mount, not in an effect: an effect runs after the first
   // paint, and the first paint is the one that must not be the gallery.
   assert.match(immersion, /useState<'home' \| 'scope' \| 'player'>\(\(\) => \(resumeTarget \? 'player' : 'home'\)\)/);

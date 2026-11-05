@@ -17,7 +17,7 @@ const root = path.resolve(import.meta.dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('the planner is handed the links each block may cite', () => {
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('shared/portableDocumentVisuals.ts');
   assert.match(source, /blocks: blocks\.map\(block => \(\{ \.\.\.block, sources: blockSources\(block\) \}\)\)/,
     'the payload must carry the exact links per block');
   assert.match(source, /Each block lists in sources the exact nodus:\/\/ links it may cite/,
@@ -29,7 +29,7 @@ test('the planner is handed the links each block may cite', () => {
 });
 
 test('every refusal is named, and none is an anonymous continue', () => {
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('shared/portableDocumentVisuals.ts');
   for (const reason of ['unknown-block', 'heading-block', 'skill-not-enabled', 'ceiling-reached', 'source-not-in-block', 'block-already-has-figure']) {
     assert.ok(source.includes(`refuse(item, refused, '${reason}')`), `the ${reason} refusal must be named`);
   }
@@ -39,11 +39,11 @@ test('every refusal is named, and none is an anonymous continue', () => {
 });
 
 test('refusals reach the log with their motive and their count', () => {
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('shared/portableDocumentVisuals.ts');
   assert.match(source, /code: 'figure_skipped'/);
   assert.match(source, /message: pipelineLogText\('figuresDiscarded', \{ count, reason: \{ id: DOCUMENT_VISUAL_DISCARD_REASONS\[reason\] \} \}\)/,
     'the line must interpolate the catalogue id, so the log renders in its reader’s language');
-  assert.match(source, /const record = figures > 0 \? logPipelineInfo : logPipelineWarning/,
+  assert.match(source, /const record = figures > 0 \? host\.logPipelineInfo : host\.logPipelineWarning/,
     'a run that kept no figure is a warning; one that kept some is quiet');
   const codes = read('electron/logging/pipelineLogCore.ts');
   assert.match(codes, /figure_skipped: \{ category: 'extraction', level: 'warning' \}/, 'the code must exist and be filterable');
@@ -55,13 +55,13 @@ test('the refusals travel with the manifest and survive its validation', () => {
   const store = read('electron/capabilities/documentStore.ts');
   assert.match(store, /value\.discarded !== undefined && \(!Array\.isArray\(value\.discarded\) \|\| value\.discarded\.some\(item => !item \|\| typeof item\.blockId !== 'string' \|\| typeof item\.skillId !== 'string' \|\| !\(item\.reason in DOCUMENT_VISUAL_DISCARD_REASONS\)\)\)/,
     'a manifest whose refusals are corrupt is treated as absent, not shown blank');
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('shared/portableDocumentVisuals.ts');
   assert.match(source, /discarded: request\.retry \? structuredClone\(previous\?\.discarded \?\? \[\]\) : \[\]/,
     'a retry keeps the refusals that still explain the document');
 });
 
 test('one repaired attempt, only when the document would otherwise keep nothing', () => {
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('shared/portableDocumentVisuals.ts');
   assert.match(source, /if \(!proposals\.length && discarded\.some\(item => repairableDocumentVisualDiscard\(item\.reason\)\)\)/,
     'the round fires on an otherwise empty document, never on one that already has figures');
   assert.match(source, /await planBatch\(blocks, discarded, refused\)/, 'and the planner is handed back what it got wrong');
@@ -79,7 +79,7 @@ test('one repaired attempt, only when the document would otherwise keep nothing'
 });
 
 test('a retry plans again only when there is nothing to preserve', () => {
-  assert.match(read('electron/ai/documentVisuals.ts'), /if \(\(!request\.retry \|\| !manifest\.figures\.length\) && skills\.length\)/,
+  assert.match(read('shared/portableDocumentVisuals.ts'), /if \(\(!request\.retry \|\| !manifest\.figures\.length\) && skills\.length\)/,
     'a retry of a document that kept nothing must plan again, and one with figures must not');
 });
 

@@ -5,6 +5,8 @@ import { t, tx } from '../i18n';
 import nodusMark from '../assets/nodus-logo-violet.svg';
 import zoteroMark from '../assets/nodus-logo-zotero.svg';
 import './researchActivity.css';
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
+import { MobileSheet } from './MobileSheet';
 
 const layers: Record<ResearchActivityLayer, [string, string]> = {
   scope: ['Fuentes autorizadas', 'filter'], ideas: ['Ideas', 'bulb'],
@@ -95,21 +97,25 @@ function LayerIcon({ layer }: { layer: ResearchActivityLayer }) {
 export function ResearchActivityPanel({ activities, outcome, webDisabled = false, disabledLayers = [] }: {
   activities: ResearchActivity[]; outcome: ResearchActivityStatus; webDisabled?: boolean; disabledLayers?: readonly ResearchActivityLayer[];
 }) {
-  const [minimized, setMinimized] = useState(() => localStorage.getItem('nodus.researchActivityMinimized') === '1');
+  const phone = isPhoneSurface();
+  const [minimized, setMinimized] = useState(() => phone || localStorage.getItem('nodus.researchActivityMinimized') === '1');
   const toggleRef = useRef<HTMLButtonElement>(null);
   const rows = useMemo(() => summarizeResearchActivity(activities), [activities]);
   const web = useMemo(() => summarizeWebActivity(activities), [activities]);
   const active = activities.filter(item => item.status === 'active');
   const current = active.at(-1) ?? activities.at(-1);
   const toggle = () => {
-    setMinimized(value => { localStorage.setItem('nodus.researchActivityMinimized', value ? '0' : '1'); return !value; });
+    setMinimized(value => {
+      if (!phone) localStorage.setItem('nodus.researchActivityMinimized', value ? '0' : '1');
+      return !value;
+    });
     requestAnimationFrame(() => toggleRef.current?.focus());
   };
   const off = (layer: ResearchActivityLayer) => layer === 'web' ? webDisabled : disabledLayers.includes(layer);
   if (!activities.length) return null;
   const status = outcome === 'active' ? tx('{n} operaciones activas', { n: active.length }) : t(statuses[outcome]);
   const announcement = `${status}${current ? ` · ${t(layers[current.layer][0])} · ${t(operations[current.operation])}` : ''}`;
-  return <section className={`research-activity ${minimized ? 'is-minimized' : ''} ${web && !minimized ? 'has-web' : ''}`} aria-label={t('Actividad del Research chat')} data-testid="research-activity" data-outcome={outcome} onKeyDown={event => {
+  const panel = <section className={`research-activity ${minimized ? 'is-minimized' : ''} ${web && !minimized ? 'has-web' : ''}`} aria-label={t('Actividad del Research chat')} data-testid="research-activity" data-outcome={outcome} onKeyDown={event => {
     if (event.key === 'Escape' && !minimized) { event.stopPropagation(); toggle(); }
   }}>
     <span className="sr-only" role="status" aria-live="polite">{announcement}</span>
@@ -141,4 +147,7 @@ export function ResearchActivityPanel({ activities, outcome, webDisabled = false
       </ol>
     </>}
   </section>;
+  return phone && !minimized
+    ? <MobileSheet title={t('Actividad del Research chat')} className="research-activity-sheet" onClose={() => setMinimized(true)}>{panel}</MobileSheet>
+    : panel;
 }

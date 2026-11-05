@@ -259,7 +259,7 @@ test('the language selector offers every supported language, ordered like Settin
   assert.equal(fromSelect.length, 12, 'the Settings selector must offer all twelve languages');
   assert.deepEqual(fromList, fromSelect, 'the order and the labels must match the Settings selector');
   // English is the default, so a log is shareable on GitHub without touching the selector.
-  const defaults = readFileSync(path.join(repoRoot, 'electron/db/settingsRepo.ts'), 'utf8');
+  const defaults = readFileSync(path.join(repoRoot, 'shared/defaultAppSettings.ts'), 'utf8');
   assert.match(defaults, /pipelineLogLanguage: 'en'/, 'the log defaults to English');
   assert.match(defaults, /pipelineLogRetention: '10d'/, 'ten days of log by default');
 });

@@ -24,10 +24,10 @@ export function readDocumentVisuals(vaultId: string, target: DocumentVisualTarge
     return value;
   } catch { return null; }
 }
-export function writeDocumentVisuals(manifest: DocumentVisualManifest): void {
+export function writeDocumentVisuals(manifest: DocumentVisualManifest, updatedAt = new Date().toISOString()): void {
   const dir = directory(manifest.vaultId, manifest.target);
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  manifest.updatedAt = new Date().toISOString();
+  manifest.updatedAt = updatedAt;
   const usage = readDocumentVisualUsage(manifest.vaultId, manifest.target);
   for (const [id, value] of Object.entries(manifest.usage)) {
     const old = usage[id] ?? { attempts: 0, paidCalls: 0 };

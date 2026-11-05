@@ -229,6 +229,8 @@ export function buildDbChatContext(parts: DbChatPart[], language: PromptLanguage
 }
 
 export interface DbChatTurn {
+  /** Portable authored histories retain per-turn time; older turns omit it. */
+  createdAt?: string;
   attachments?: import('./researchAttachments').ResearchAttachment[];
   /** Scope used for this turn; legacy chats inherit their saved conversation scope. */
   selectionKey?: string | null;

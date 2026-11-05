@@ -48,7 +48,8 @@ export function listStudyRubrics(includeArchived = false): StudyRubric[] {
   ensureBuiltIns(); return (getDb().prepare(`SELECT * FROM study_rubrics ${includeArchived ? '' : 'WHERE archived_at IS NULL'} ORDER BY favorite DESC, built_in DESC, name`).all() as Row[]).map(toRubric);
 }
 
-export function getStudyRubric(id: string): StudyRubric | null { ensureBuiltIns(); const row = getDb().prepare('SELECT * FROM study_rubrics WHERE id=?').get(id) as Row | undefined; return row ? toRubric(row) : null; }
+export function getStoredStudyRubric(id: string): StudyRubric | null { const row = getDb().prepare('SELECT * FROM study_rubrics WHERE id=?').get(id) as Row | undefined; return row ? toRubric(row) : null; }
+export function getStudyRubric(id: string): StudyRubric | null { ensureBuiltIns(); return getStoredStudyRubric(id); }
 
 export function createStudyRubric(input: StudyRubricInput, builtIn = false): StudyRubric {
   const key = ids('RUB'); const timestamp = now(); const criteria = normalizeStudyRubricCriteria(input.criteria); const name = normalizeStudyName(input.name);

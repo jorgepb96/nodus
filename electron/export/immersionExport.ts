@@ -52,7 +52,9 @@ interface ImmersionReportLabels {
   saveTitle: string;
 }
 
-const LABELS: Record<ImmersionSession['language'], ImmersionReportLabels> = {
+// PDF scaffolding currently has Spanish and English copy; the authored content
+// and the document's language tag retain the session's actual prompt language.
+const LABELS: Record<'es' | 'en', ImmersionReportLabels> = {
   es: {
     kind: 'Dossier profesional · Inmersión',
     contents: 'Contenido',
@@ -237,7 +239,7 @@ function sourcesHtml(session: ImmersionSession, labels: ImmersionReportLabels): 
 export function buildImmersionPdfInput(session: ImmersionSession, imageOverride?: { dataUrl: string | null; credit: string | null }): ProfessionalReportInput {
   let visuals: DocumentVisualManifest | null = null;
   try { visuals = getDocumentVisuals({ kind: 'immersion', id: session.id }); } catch { /* Unsaved export fixtures have no local manifest. */ }
-  const labels = LABELS[session.language];
+  const labels = LABELS[session.language === 'es' ? 'es' : 'en'];
   const image = imageOverride ?? reportImage(session, labels);
   const overview = anchoredMarkdown(researchSourcePresentation(session.plan.overview).content, 'overview', documentFigureInsertions(session.plan.overview, 'overview', visuals));
   const sections: ProfessionalReportSection[] = [
@@ -336,7 +338,7 @@ export function buildImmersionPdfInput(session: ImmersionSession, imageOverride?
 }
 
 export async function exportImmersionSessionPdf(session: ImmersionSession): Promise<{ path: string } | null> {
-  const labels = LABELS[session.language];
+  const labels = LABELS[session.language === 'es' ? 'es' : 'en'];
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: labels.saveTitle,
     defaultPath: path.join(app.getPath('documents'), `${slug(session.plan.title)}.pdf`),

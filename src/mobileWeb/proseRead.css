@@ -1,0 +1,25 @@
+:root{color-scheme:light;--prose-accent:#6366f1} :root.dark{color-scheme:dark}
+html,body,#root{margin:0;padding:0;width:100%;min-width:0;background:transparent;color:CanvasText;overflow-x:hidden;-webkit-text-size-adjust:100%}
+.prose-document{position:relative;box-sizing:border-box;width:100%;padding:0 46px 12px 0;line-height:1.65;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow-wrap:anywhere;user-select:text;-webkit-user-select:text}
+.prose-document .md{font-size:inherit;line-height:inherit;max-width:100%}
+.prose-document .md p,.prose-document .md li{font-size:inherit;line-height:inherit}
+.prose-document p{margin:0 0 20px}.prose-document h1,.prose-document h2,.prose-document h3{overflow-wrap:anywhere;line-height:1.3;margin:24px 0 14px}
+.prose-document a,.prose-document .md button{white-space:normal;overflow-wrap:anywhere;max-width:100%;color:var(--prose-accent)}
+/* Adjacent source chips break between citations instead of inheriting the
+   Desktop's indivisible parenthesised citation group on a phone paragraph. */
+.prose-document .md .citation-group{display:inline;white-space:normal}
+.prose-document .md .citation-wrap{display:inline;max-width:100%}
+.prose-document .md .citation-link{width:fit-content;max-width:100%;flex:0 1 auto;white-space:normal;overflow-wrap:anywhere}
+.prose-document img{max-width:100%;height:auto;object-fit:contain;cursor:zoom-in}.prose-document figure{max-width:100%}
+.prose-document pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}.prose-document code{white-space:pre-wrap}
+.prose-document table{table-layout:fixed;width:100%;max-width:100%;border-collapse:collapse}.prose-document th,.prose-document td{overflow-wrap:anywhere;white-space:normal;padding:8px;vertical-align:top}
+.prose-document .katex-display{max-width:100%;overflow-x:hidden;overflow-y:hidden;text-align:start}
+.prose-document .katex-display>.katex{white-space:normal;text-align:start}
+.prose-document .katex-display .katex-html{white-space:normal}
+.prose-formula-expand{display:inline-flex;align-items:center;width:fit-content;max-width:100%;min-height:44px;padding:8px 12px;margin:0 0 16px;border:1px solid color-mix(in srgb,var(--prose-accent) 35%,transparent);border-radius:9px;color:var(--prose-accent);font:inherit;white-space:normal;user-select:none;-webkit-user-select:none}.prose-document .katex{font-size:1.1em}.prose-document .katex-html{user-select:text}
+.prose-document [data-prose-marker]{position:absolute;right:0;width:44px;min-height:44px;padding:0;user-select:none;-webkit-user-select:none;color:var(--prose-accent);display:grid;place-items:center;border-radius:8px;background:color-mix(in srgb,var(--prose-accent) 10%,transparent)}
+.prose-image-error{display:block;max-width:100%;padding:12px;text-align:start;min-height:44px;overflow-wrap:anywhere;color:#dc2626}
+::highlight(prose-yellow){background:#fde68a;color:#171717}::highlight(prose-rose){background:#fecdd3;color:#171717}::highlight(prose-blue){background:#bfdbfe;color:#171717}::highlight(prose-mint){background:#bbf7d0;color:#171717}::highlight(prose-lavender){background:#ddd6fe;color:#171717}::highlight(prose-peach){background:#fed7aa;color:#171717}
+::highlight(prose-marks){text-decoration:underline;text-decoration-color:var(--prose-accent)}::highlight(prose-search){background:#fef08a;color:#171717}::highlight(prose-active){background:#fb923c;color:#171717}
+@media(min-width:700px){.prose-document{padding:0 46px 12px}}
+@media(max-width:599px){.prose-document table[data-mobile-columns],.prose-document table[data-mobile-columns] tbody{display:block}.prose-document table[data-mobile-columns] thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.prose-document table[data-mobile-columns] tr{display:block;border:1px solid color-mix(in srgb,CanvasText 18%,transparent);border-radius:12px;margin:12px 0;padding:8px}.prose-document table[data-mobile-columns] td{display:grid;grid-template-columns:minmax(64px,32%) minmax(0,1fr);gap:10px;border:0;padding:8px 4px}.prose-document table[data-mobile-columns] td::before{content:attr(data-column-label);font-weight:600;overflow-wrap:anywhere}}

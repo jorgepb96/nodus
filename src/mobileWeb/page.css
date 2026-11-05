@@ -1,0 +1,13 @@
+.mobile-surface[data-surface="page"]{overflow:auto;overscroll-behavior:contain;min-width:0}
+.mobile-page-document{max-width:960px;width:100%;min-width:0;margin:0 auto;padding:16px;box-sizing:border-box;overflow-wrap:anywhere}
+.mobile-page-title{width:100%;min-width:0;min-height:44px;font-size:1.3rem;font-weight:650;background:transparent;border:0;outline-offset:4px;padding:8px 0}
+.mobile-page-notice{padding:12px;margin:8px 0;border:1px solid var(--accent-color,#6366f1);border-radius:12px;font-size:.875rem}
+.mobile-page-notice p{margin:0 0 8px;line-height:1.5}
+.mobile-page-tools,.mobile-page-notice>div{display:flex;gap:8px;flex-wrap:wrap}
+.mobile-page-tools button,.mobile-page-notice button{min-height:44px;padding:8px 12px;border:1px solid currentColor;border-radius:10px;font-size:.875rem}
+.mobile-page-document table{max-width:100%;display:block;overflow-x:auto}
+.mobile-page-document img,.mobile-page-document video{max-width:100%;height:auto}
+.mobile-page-document .page-block-editor button{min-height:44px;min-width:44px}
+.nodus-phone .mobile-page-document{padding:12px}
+.nodus-phone .mobile-page-document [data-testid^="page-block-"]{padding-left:8px;padding-right:44px}
+.nodus-phone .mobile-page-document input,.nodus-phone .mobile-page-document textarea{font-size:1rem}

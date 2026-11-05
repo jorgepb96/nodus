@@ -1,5 +1,17 @@
 export const RESEARCH_SOURCE_TRANSLATIONS = {
   "en": {
+    "Informes de versiones anteriores": "Reports from earlier versions",
+    "Fuentes de esta investigación": "Sources for this research",
+    "Fuentes preparadas del Mac": "Prepared sources from the Mac",
+    "Fuentes elegidas en Descargas": "Sources selected in Downloads",
+    "Cuaderno descargado": "Downloaded notebook",
+    "Elige una copia descargada": "Choose a downloaded copy",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "The prepared passages and the authorized graph for this notebook are preserved. Research uses local lexical retrieval, without extracting or indexing documents on the phone.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "The copy preserves the prepared documents and texts selected for this objective and person, their family facts and citations. Selection is lexical and bounded; it does not represent the entire archive.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Only the materials, notes and classes you selected in Downloads → Study sources will be used, with local lexical retrieval. The Mac is not needed during research.",
+    "Fuentes del Mac": "Sources from the Mac",
+    "Fuentes descargadas": "Downloaded sources",
+
     "Filtrar contexto": "Filter context",
     "Fuentes": "Sources",
     "Fuentes adicionales resumidas: {n}": "Additional sources summarized: {n}",
@@ -18,6 +30,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "The assistant will only consult this work."
   },
   "fr": {
+    "Informes de versiones anteriores": "Rapports de versions antérieures",
+    "Fuentes de esta investigación": "Sources de cette recherche",
+    "Fuentes preparadas del Mac": "Sources préparées sur le Mac",
+    "Fuentes elegidas en Descargas": "Sources sélectionnées dans Téléchargements",
+    "Cuaderno descargado": "Carnet téléchargé",
+    "Elige una copia descargada": "Choisir une copie téléchargée",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "Les passages déjà préparés et le graphe autorisé de ce carnet sont conservés. La recherche utilise une recherche lexicale locale, sans extraire ni indexer de documents sur le mobile.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "La copie conserve les documents et textes déjà préparés sélectionnés pour cet objectif et cette personne, ses faits familiaux et leurs citations. La sélection est lexicale et limitée ; elle ne représente pas toute l’archive.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Seuls les supports, notes et cours que vous avez sélectionnés dans Téléchargements → Sources d’étude seront utilisés, avec une recherche lexicale locale. Le Mac n’est pas nécessaire pendant la recherche.",
+    "Fuentes del Mac": "Sources du Mac",
+    "Fuentes descargadas": "Sources téléchargées",
+
     "Filtrar contexto": "Filtrer le contexte",
     "Fuentes": "Sources",
     "Fuentes adicionales resumidas: {n}": "Sources supplémentaires résumées : {n}",
@@ -36,6 +60,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "L’assistant ne consultera que cette œuvre."
   },
   "de": {
+    "Informes de versiones anteriores": "Berichte aus früheren Versionen",
+    "Fuentes de esta investigación": "Quellen für diese Recherche",
+    "Fuentes preparadas del Mac": "Auf dem Mac vorbereitete Quellen",
+    "Fuentes elegidas en Descargas": "Unter Downloads ausgewählte Quellen",
+    "Cuaderno descargado": "Heruntergeladenes Notizbuch",
+    "Elige una copia descargada": "Heruntergeladene Kopie auswählen",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "Die bereits vorbereiteten Textstellen und der freigegebene Graph dieses Notizbuchs bleiben erhalten. Die Recherche verwendet eine lokale lexikalische Suche, ohne Dokumente auf dem Mobilgerät zu extrahieren oder zu indexieren.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "Die Kopie enthält die bereits vorbereiteten Dokumente und Texte, die für dieses Ziel und diese Person ausgewählt wurden, sowie ihre Familienfakten und Belege. Die Auswahl erfolgt lexikalisch und ist begrenzt; sie bildet nicht das gesamte Archiv ab.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Verwendet werden nur die Materialien, Notizen und Lehrveranstaltungen, die du unter Downloads → Lernquellen ausgewählt hast, mit lokaler lexikalischer Suche. Während der Recherche wird der Mac nicht benötigt.",
+    "Fuentes del Mac": "Quellen vom Mac",
+    "Fuentes descargadas": "Heruntergeladene Quellen",
+
     "Filtrar contexto": "Kontext filtern",
     "Fuentes": "Quellen",
     "Fuentes adicionales resumidas: {n}": "Weitere zusammengefasste Quellen: {n}",
@@ -54,6 +90,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "Der Assistent wird nur dieses Werk verwenden."
   },
   "it": {
+    "Informes de versiones anteriores": "Rapporti di versioni precedenti",
+    "Fuentes de esta investigación": "Fonti di questa ricerca",
+    "Fuentes preparadas del Mac": "Fonti preparate sul Mac",
+    "Fuentes elegidas en Descargas": "Fonti selezionate in Download",
+    "Cuaderno descargado": "Quaderno scaricato",
+    "Elige una copia descargada": "Scegli una copia scaricata",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "Vengono conservati i passaggi già preparati e il grafo autorizzato di questo quaderno. La ricerca usa il recupero lessicale locale, senza estrarre né indicizzare documenti sul dispositivo mobile.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "La copia conserva i documenti e i testi già preparati selezionati per questo obiettivo e questa persona, i suoi fatti familiari e le relative citazioni. La selezione è lessicale e limitata; non rappresenta l’intero archivio.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Verranno usati solo i materiali, gli appunti e le lezioni che hai selezionato in Download → Fonti di studio, con recupero lessicale locale. Il Mac non è necessario durante la ricerca.",
+    "Fuentes del Mac": "Fonti del Mac",
+    "Fuentes descargadas": "Fonti scaricate",
+
     "Filtrar contexto": "Filtra contesto",
     "Fuentes": "Fonti",
     "Fuentes adicionales resumidas: {n}": "Fonti aggiuntive riepilogate: {n}",
@@ -72,6 +120,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "L’assistente consulterà solo questa opera."
   },
   "pt": {
+    "Informes de versiones anteriores": "Relatórios de versões anteriores",
+    "Fuentes de esta investigación": "Fontes desta investigação",
+    "Fuentes preparadas del Mac": "Fontes preparadas no Mac",
+    "Fuentes elegidas en Descargas": "Fontes escolhidas em Transferências",
+    "Cuaderno descargado": "Caderno transferido",
+    "Elige una copia descargada": "Escolhe uma cópia transferida",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "São conservadas as passagens já preparadas e o grafo autorizado deste caderno. A investigação utiliza recuperação lexical local, sem extrair nem indexar documentos no telemóvel.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "A cópia conserva os documentos e textos já preparados escolhidos para este objetivo e esta pessoa, os seus factos familiares e as respetivas citações. A seleção é lexical e limitada; não representa todo o arquivo.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Serão utilizados apenas os materiais, apontamentos e aulas que escolheste em Transferências → Fontes de estudo, com recuperação lexical local. Não é necessário o Mac durante a investigação.",
+    "Fuentes del Mac": "Fontes do Mac",
+    "Fuentes descargadas": "Fontes transferidas",
+
     "Filtrar contexto": "Filtrar contexto",
     "Fuentes": "Fontes",
     "Fuentes adicionales resumidas: {n}": "Fontes adicionais resumidas: {n}",
@@ -90,6 +150,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "O assistente só consultará esta obra."
   },
   "pt-BR": {
+    "Informes de versiones anteriores": "Relatórios de versões anteriores",
+    "Fuentes de esta investigación": "Fontes desta pesquisa",
+    "Fuentes preparadas del Mac": "Fontes preparadas no Mac",
+    "Fuentes elegidas en Descargas": "Fontes escolhidas em Downloads",
+    "Cuaderno descargado": "Caderno baixado",
+    "Elige una copia descargada": "Escolha uma cópia baixada",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "São preservados os trechos já preparados e o grafo autorizado deste caderno. A pesquisa usa recuperação lexical local, sem extrair nem indexar documentos no celular.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "A cópia preserva os documentos e textos já preparados escolhidos para este objetivo e esta pessoa, seus fatos familiares e as respectivas citações. A seleção é lexical e limitada; não representa todo o arquivo.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Serão usados apenas os materiais, as notas e as aulas que você escolheu em Downloads → Fontes de estudo, com recuperação lexical local. O Mac não é necessário durante a pesquisa.",
+    "Fuentes del Mac": "Fontes do Mac",
+    "Fuentes descargadas": "Fontes baixadas",
+
     "Filtrar contexto": "Filtrar contexto",
     "Fuentes": "Fontes",
     "Fuentes adicionales resumidas: {n}": "Fontes adicionais resumidas: {n}",
@@ -108,6 +180,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "O assistente só consultará esta obra."
   },
   "tr": {
+    "Informes de versiones anteriores": "Önceki sürümlere ait raporlar",
+    "Fuentes de esta investigación": "Bu araştırmanın kaynakları",
+    "Fuentes preparadas del Mac": "Mac’te hazırlanmış kaynaklar",
+    "Fuentes elegidas en Descargas": "İndirilenler’de seçilen kaynaklar",
+    "Cuaderno descargado": "İndirilen defter",
+    "Elige una copia descargada": "İndirilmiş bir kopya seçin",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "Bu defterin önceden hazırlanmış pasajları ve izin verilen grafiği korunur. Araştırma, telefonda belge çıkarımı veya dizinleme yapmadan yerel sözcüksel erişimi kullanır.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "Kopya, bu amaç ve kişi için seçilen önceden hazırlanmış belge ve metinleri, kişinin ailevi olgularını ve bunların kaynak atıflarını korur. Seçim sözcüksel ve sınırlıdır; arşivin tamamını temsil etmez.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "Yalnızca İndirilenler → Çalışma kaynakları bölümünde seçtiğiniz materyaller, notlar ve dersler, yerel sözcüksel erişimle kullanılacaktır. Araştırma sırasında Mac gerekmez.",
+    "Fuentes del Mac": "Mac’teki kaynaklar",
+    "Fuentes descargadas": "İndirilen kaynaklar",
+
     "Filtrar contexto": "Bağlamı filtrele",
     "Fuentes": "Kaynaklar",
     "Fuentes adicionales resumidas: {n}": "Özetlenen ek kaynaklar: {n}",
@@ -126,6 +210,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "Asistan yalnızca bu esere başvuracak."
   },
   "zh-CN": {
+    "Informes de versiones anteriores": "旧版本的报告",
+    "Fuentes de esta investigación": "本次研究的来源",
+    "Fuentes preparadas del Mac": "Mac 上已准备好的来源",
+    "Fuentes elegidas en Descargas": "在“下载”中选择的来源",
+    "Cuaderno descargado": "已下载的笔记本",
+    "Elige una copia descargada": "选择已下载的副本",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "保留此笔记本中已准备好的段落和获授权的关系图。研究使用本地词汇检索，不在手机上提取文档或建立索引。",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "副本保留为此目标和人物选择的已准备好的文档和文本，以及该人物的家庭事实和相关引文。选择基于词汇检索且范围有限，不代表整个档案。",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "仅使用你在“下载 → 学习来源”中选择携带的材料、笔记和课程，并采用本地词汇检索。研究期间无需 Mac。",
+    "Fuentes del Mac": "Mac 上的来源",
+    "Fuentes descargadas": "已下载的来源",
+
     "Filtrar contexto": "筛选上下文",
     "Fuentes": "来源",
     "Fuentes adicionales resumidas: {n}": "已汇总的其他来源：{n}",
@@ -144,6 +240,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "助手只会查阅此文献。"
   },
   'zh-TW': {
+    "Informes de versiones anteriores": "舊版本的報告",
+    "Fuentes de esta investigación": "本次研究的來源",
+    "Fuentes preparadas del Mac": "Mac 上已準備好的來源",
+    "Fuentes elegidas en Descargas": "在「下載」中選擇的來源",
+    "Cuaderno descargado": "已下載的筆記本",
+    "Elige una copia descargada": "選擇已下載的副本",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "保留此筆記本中已準備好的段落與獲授權的關係圖。研究使用本機詞彙檢索，不在手機上擷取文件或建立索引。",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "副本保留為此目標與人物選擇的已準備好的文件和文字，以及該人物的家庭事實與相關引文。選擇以詞彙檢索為基礎且範圍有限，不代表整個檔案。",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "僅使用你在「下載 → 學習來源」中選擇攜帶的教材、筆記與課程，並採用本機詞彙檢索。研究期間不需要 Mac。",
+    "Fuentes del Mac": "Mac 上的來源",
+    "Fuentes descargadas": "已下載的來源",
+
     "Filtrar contexto": "篩選上下文",
     "Fuentes": "來源",
     "Fuentes adicionales resumidas: {n}": "已彙總的其他來源：{n}",
@@ -162,6 +270,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "助手只會查閱此文獻。"
   },
   ko: {
+    "Informes de versiones anteriores": "이전 버전의 보고서",
+    "Fuentes de esta investigación": "이 연구의 자료",
+    "Fuentes preparadas del Mac": "Mac에서 준비된 자료",
+    "Fuentes elegidas en Descargas": "다운로드에서 선택한 자료",
+    "Cuaderno descargado": "다운로드한 노트북",
+    "Elige una copia descargada": "다운로드한 사본 선택",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "이 노트북에서 이미 준비된 구절과 접근이 허용된 그래프가 보존됩니다. 연구는 로컬 어휘 검색을 사용하며, 모바일 기기에서 문서를 추출하거나 색인하지 않습니다.",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "사본에는 이 목표와 인물을 위해 선택한 준비된 문서와 텍스트, 해당 인물의 가족 관련 사실과 인용이 보존됩니다. 선택은 어휘 검색에 기반하며 범위가 제한되므로 전체 아카이브를 대표하지 않습니다.",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "다운로드 → 학습 자료에서 선택한 자료, 노트, 수업만 로컬 어휘 검색으로 사용합니다. 연구 중에는 Mac이 필요하지 않습니다.",
+    "Fuentes del Mac": "Mac의 자료",
+    "Fuentes descargadas": "다운로드한 자료",
+
     "Filtrar contexto": "컨텍스트 필터링",
     "Fuentes": "출처",
     "Fuentes adicionales resumidas: {n}": "요약된 추가 출처: {n}",
@@ -180,6 +300,18 @@ export const RESEARCH_SOURCE_TRANSLATIONS = {
     "El asistente solo consultará esta obra.": "어시스턴트는 이 작업에 대해서만 상담할 것입니다.",
   },
   ja: {
+    "Informes de versiones anteriores": "以前のバージョンのレポート",
+    "Fuentes de esta investigación": "この調査の資料",
+    "Fuentes preparadas del Mac": "Mac で準備済みの資料",
+    "Fuentes elegidas en Descargas": "「ダウンロード」で選択した資料",
+    "Cuaderno descargado": "ダウンロード済みのノートブック",
+    "Elige una copia descargada": "ダウンロード済みのコピーを選択",
+    "Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.": "このノートブックの準備済みの文章とアクセスを許可されたグラフが保持されます。調査にはローカルの語彙検索を使い、モバイル端末で文書の抽出や索引作成は行いません。",
+    "La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.": "このコピーには、この目的と人物のために選択した準備済みの文書とテキスト、その人物の家族に関する事実と引用が保持されます。選択は語彙検索に基づく限定的なもので、アーカイブ全体を表すものではありません。",
+    "Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.": "「ダウンロード → 学習資料」で選択した教材、ノート、授業のみを、ローカルの語彙検索で使用します。調査中に Mac は必要ありません。",
+    "Fuentes del Mac": "Mac の資料",
+    "Fuentes descargadas": "ダウンロード済みの資料",
+
     "Filtrar contexto": "フィルターコンテキスト",
     "Fuentes": "情報源",
     "Fuentes adicionales resumidas: {n}": "集計されたその他の情報源: {n}",

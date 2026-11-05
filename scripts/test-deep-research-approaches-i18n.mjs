@@ -36,7 +36,8 @@ await build({
   logLevel: 'silent',
 });
 const approaches = await import(`${pathToFileURL(outfile).href}?i18n=${Date.now()}`);
-const source = await readFile(path.join(repoRoot, 'electron/ai/deepResearchApproaches.ts'), 'utf8');
+const desktopSource = await readFile(path.join(repoRoot, 'electron/ai/deepResearchApproaches.ts'), 'utf8');
+const source = await readFile(path.join(repoRoot, 'shared/portableDeepResearchApproaches.ts'), 'utf8');
 const languages = ['es', 'en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr', 'zh-Hans', 'zh-Hant', 'vi', 'ja', 'ru', 'uk', 'ko'];
 const specialized = ['literature_review', 'state_of_art', 'scholarly_debate', 'comparative', 'chronological', 'conceptual'];
 const variants = ['academic', 'genealogy', 'study', 'unit', 'client'];
@@ -97,6 +98,8 @@ test('supplemental retrieval prompt follows request language and keeps JSON cont
 });
 
 test('localized retrieval wiring selects language-specific base and dynamic rules', () => {
+  assert.match(desktopSource, /import \{planApproachRetrieval as portablePlanApproachRetrieval\} from '@shared\/portableDeepResearchApproaches'/);
+  assert.match(desktopSource, /return portablePlanApproachRetrieval\(input,completeJson\)/);
   assert.match(source, /RETRIEVAL_PROMPT_BASE\[input\.language\]/);
   assert.match(source, /approachRules\(input\.approach, input\.variant, input\.language\)/);
   assert.match(source, /deterministicApproachRetrievalPlan\(input\.approach, input\.objective, input\.language\)/);

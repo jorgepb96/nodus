@@ -32,17 +32,6 @@ Download the installer for your computer and open it. There is no server to conf
 | Fedora, openSUSE and other RPM-based distributions | [Download RPM](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-linux-x86_64.rpm) | <img alt="Downloads of the RPM package" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.linuxRpm&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
 | Other Linux distributions | [Download AppImage](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-linux-x86_64.AppImage) | <img alt="Downloads of the AppImage" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.linuxAppImage&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
 
-Each counter counts every download of the build in its row across every release — the installer and the update package that the app fetches on its own alike — so the six add up to the total in the header. They refresh with the same deploy as that total.
-
-The standalone Zotero plugin is available from the same release as [nodus-zotero.xpi](https://github.com/jorgepb96/nodus/releases/latest/download/nodus-zotero.xpi). In Zotero 9 or 10, open **Tools → Plugins**, choose **Install Add-on From File** from the gear menu, and select the downloaded file.
-
-The optional [Nodus Connector for Chrome](browser-extension/README.md) captures the open academic
-page or document into the local Library. It detects embedded bibliographic metadata, DOI/ISBN and
-available files, then lets the user choose a nested Nodus Research collection and existing or new tags before
-saving. It reads the active tab only after its toolbar icon is clicked.
-
-The [latest release page](https://github.com/jorgepb96/nodus/releases/latest) always contains the newest available installers and release notes.
-
 ## One app, nine vaults
 
 ### Academic vault

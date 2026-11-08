@@ -52,26 +52,84 @@ export function classifyInstallerAsset(name) {
   return null;
 }
 
+// The Zotero plugin ships as one file in every stable release. It is not a build
+// of the app, so it stays out of `total` and the six installer rows, and has a
+// counter of its own in the README table.
+export function isZoteroPluginAsset(name) {
+  return typeof name === 'string' && name.toLowerCase() === 'nodus-zotero.xpi';
+}
+
+function emptyCounts() {
+  return {
+    linux: 0,
+    macos: 0,
+    windows: 0,
+    total: 0,
+    installers: Object.fromEntries(INSTALLER_KEYS.map((key) => [key, 0])),
+    zotero: 0,
+  };
+}
+
+function addReleaseAssets(counts, release) {
+  // GitHub's automatic source archives are links outside `assets`, so they
+  // never enter this loop. Only explicitly uploaded release packages do.
+  for (const asset of Array.isArray(release.assets) ? release.assets : []) {
+    const downloads = Number(asset?.download_count);
+    if (!Number.isFinite(downloads) || downloads < 0) continue;
+    if (isZoteroPluginAsset(asset?.name)) {
+      counts.zotero += downloads;
+      continue;
+    }
+    const platform = classifyReleaseAsset(asset?.name);
+    if (!platform) continue;
+    counts[platform] += downloads;
+    counts.total += downloads;
+    const installer = classifyInstallerAsset(asset.name);
+    if (installer) counts.installers[installer] += downloads;
+  }
+}
+
+// The README table ends with a Total row that adds up its whole column: the six
+// app installers plus the Zotero plugin. `total` keeps meaning app downloads only
+// (the header badge), so the column sum gets a name of its own.
+function withOverall(counts) {
+  return { ...counts, overall: counts.total + counts.zotero };
+}
+
+/**
+ * The release `releases/latest/download/...` resolves to: the newest published
+ * release that is neither a draft nor a prerelease. Every link in the README
+ * table points there, so this is the release the "latest version" column counts.
+ */
+export function pickLatestRelease(releases) {
+  let latest = null;
+  let latestTime = -Infinity;
+  for (const release of Array.isArray(releases) ? releases : []) {
+    if (!release || release.draft || release.prerelease) continue;
+    const time = Date.parse(release.published_at ?? release.created_at ?? '');
+    const comparable = Number.isFinite(time) ? time : -Infinity;
+    if (latest === null || comparable > latestTime) {
+      latest = release;
+      latestTime = comparable;
+    }
+  }
+  return latest;
+}
+
 export function sumReleaseDownloads(releases) {
-  const counts = { linux: 0, macos: 0, windows: 0, total: 0 };
-  const installers = Object.fromEntries(INSTALLER_KEYS.map((key) => [key, 0]));
+  const counts = emptyCounts();
 
   for (const release of Array.isArray(releases) ? releases : []) {
     if (!release || release.draft) continue;
-    // GitHub's automatic source archives are links outside `assets`, so they
-    // never enter this loop. Only explicitly uploaded release packages do.
-    for (const asset of Array.isArray(release.assets) ? release.assets : []) {
-      const platform = classifyReleaseAsset(asset?.name);
-      const downloads = Number(asset?.download_count);
-      if (!platform || !Number.isFinite(downloads) || downloads < 0) continue;
-      counts[platform] += downloads;
-      counts.total += downloads;
-      const installer = classifyInstallerAsset(asset.name);
-      if (installer) installers[installer] += downloads;
-    }
+    addReleaseAssets(counts, release);
   }
 
-  return { ...counts, installers };
+  const latestRelease = pickLatestRelease(releases);
+  const latest = emptyCounts();
+  if (latestRelease) addReleaseAssets(latest, latestRelease);
+  latest.version = typeof latestRelease?.tag_name === 'string' ? latestRelease.tag_name : null;
+
+  return withOverall({ ...counts, latest: withOverall(latest) });
 }
 
 function hasNextPage(linkHeader) {
@@ -127,18 +185,38 @@ function normalizeInstallers(value) {
   return counts;
 }
 
-function isValidStats(value) {
-  return value
-    && ['linux', 'macos', 'windows', 'total'].every((key) => isCount(value[key]))
-    && typeof value.updatedAt === 'string'
-    && normalizeInstallers(value.installers) !== null;
+const COUNT_KEYS = ['linux', 'macos', 'windows', 'total'];
+
+/** Normalizes a block of counters, or returns null when it is unusable. */
+function normalizeCounts(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (!COUNT_KEYS.every((key) => isCount(value[key]))) return null;
+  const installers = normalizeInstallers(value.installers);
+  if (installers === null) return null;
+  // Files written before the Zotero counter existed are still usable fallbacks.
+  if (value.zotero !== undefined && !isCount(value.zotero)) return null;
+  return withOverall({
+    ...Object.fromEntries(COUNT_KEYS.map((key) => [key, value[key]])),
+    installers,
+    zotero: value.zotero ?? 0,
+  });
+}
+
+function normalizeStats(value) {
+  if (!value || typeof value.updatedAt !== 'string') return null;
+  const counts = normalizeCounts(value);
+  if (!counts) return null;
+  // Older files have no `latest` block: fall back to zeros rather than discard
+  // the totals they still hold.
+  const latest = value.latest === undefined ? withOverall(emptyCounts()) : normalizeCounts(value.latest);
+  if (!latest) return null;
+  latest.version = typeof value.latest?.version === 'string' ? value.latest.version : null;
+  return { ...counts, latest, updatedAt: value.updatedAt };
 }
 
 async function readLastValidStats(outputPath) {
   try {
-    const value = JSON.parse(await readFile(outputPath, 'utf8'));
-    if (!isValidStats(value)) return null;
-    return { ...value, installers: normalizeInstallers(value.installers) };
+    return normalizeStats(JSON.parse(await readFile(outputPath, 'utf8')));
   } catch {
     return null;
   }

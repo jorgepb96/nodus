@@ -137,10 +137,35 @@ test('every README download counter reads a count the deploy publishes', () => {
   assert.deepEqual([...INSTALLER_KEYS].sort(), ROW_KEYS.map((row) => row.key).sort(),
     'every count the deploy publishes belongs to a row of the download table');
 
-  for (const { name, key } of ROW_KEYS) {
+  const queries = (line) => [...line.matchAll(/query=%24\.([A-Za-z0-9.]+)/g)].map((match) => match[1]);
+  const header = readme.split('\n').find((line) => line.startsWith('| Platform |'));
+  assert.equal(header, '| Platform | Latest installer | Total downloads | Latest version downloads |',
+    'the table names its two counter columns');
+
+  // Every row reads its all-time count first and the latest release's second.
+  const counted = [...ROW_KEYS.map(({ name, key }) => ({ name, key: `installers.${key}` })),
+    { name: 'nodus-zotero.xpi', key: 'zotero' }];
+  for (const { name, key } of counted) {
     const row = rows.filter((line) => line.includes(`${base}${name}`));
     assert.equal(row.length, 1, `README.md offers ${name} in exactly one row`);
-    assert.ok(row[0].includes(`query=%24.installers.${key}`),
-      `the ${name} row counts $.installers.${key}`);
+    assert.deepEqual(queries(row[0]), [key, `latest.${key}`],
+      `the ${name} row counts $.${key} and $.latest.${key}`);
+  }
+
+  const total = readme.split('\n').filter((line) => line.startsWith('| **Total** |'));
+  assert.equal(total.length, 1, 'the table ends with one Total row');
+  assert.deepEqual(queries(total[0]), ['overall', 'latest.overall'],
+    'the Total row sums each column, installers and Zotero plugin together');
+});
+
+test('the counters the README reads exist in what the generator writes', async () => {
+  const { sumReleaseDownloads } = await import('./github-release-downloads.mjs');
+  const stats = sumReleaseDownloads([{ tag_name: 'v1.0.0', published_at: '2026-01-01T00:00:00Z', assets: [] }]);
+  const readme = read('README.md');
+  const keys = [...readme.matchAll(/github-release-downloads\.json&amp;query=%24\.([A-Za-z0-9.]+)/g)].map((m) => m[1]);
+  assert.ok(keys.length >= 17, 'header badge plus two counters per row');
+  for (const key of keys) {
+    const value = key.split('.').reduce((node, part) => node?.[part], stats);
+    assert.equal(typeof value, 'number', `$.${key} is a count the deploy publishes`);
   }
 });

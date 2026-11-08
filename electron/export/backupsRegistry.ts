@@ -17,7 +17,7 @@ const groups: Array<[BackupCategory, RegExp]> = [
   ['dictionary', /^dictionary_/],
   [
     'conversations',
-    /^(chat_|research_|writing_|complete_guide_(artifacts|runs|units)$|saved_searches$|content_translations$|audio_clips$|decorative_images$)/,
+    /^(chat_|research_|writing_|complete_guide_(artifacts|runs|units)$|saved_searches$|content_translations$|audio_clips$|decorative_images$|podcast_(episodes|images)$)/,
   ],
   ['study', /^study_/],
   ['teaching', /^teaching_/],

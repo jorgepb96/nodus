@@ -242,7 +242,9 @@ export function App() {
   const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus | null>(null);
   const [backupWarningDismissed, setBackupWarningDismissed] = useState(false);
   const [whatsNewSettled, setWhatsNewSettled] = useState(() => !hasPendingWhatsNew());
-  const [podcastIntroOpen, setPodcastIntroOpen] = useState(() => !podcastIntroSeen());
+  // Announced once, and only on the start-up that follows an update (release notes pending):
+  // a fresh profile or a harness that marks the running version as seen never gets it.
+  const [podcastIntroOpen, setPodcastIntroOpen] = useState(() => !podcastIntroSeen() && hasPendingWhatsNew());
   const [manualWhatsNewOpen, setManualWhatsNewOpen] = useState(false);
   const [aiModelRequiredOpen, setAiModelRequiredOpen] = useState(false);
   // Startup progress is non-blocking; later checks stay silent until ready to install.

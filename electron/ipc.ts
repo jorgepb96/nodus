@@ -58,6 +58,8 @@ import { registerCompassIpc } from './ipc/compass';
 import { registerLogsIpc } from './ipc/logs';
 import { registerDriftIpc } from './ipc/drift';
 import { registerTtsIpc } from './ipc/tts';
+import { registerPodcastIpc } from './ipc/podcast';
+import { isPodcastLaneBusy, podcastLane } from './podcast/podcastLane';
 import { setBrowserTheme } from './browser/tabs';
 import { browserHistoryRepository } from './browser/history';
 import { applyPipelineLogLimits, initPipelineLogs } from './logging/pipelineLogHost';
@@ -221,6 +223,9 @@ function vaultBusyMessage(): string | null {
   if (isDeepResearchLaneBusy()) {
     return 'No se puede cambiar de bóveda mientras se genera un informe de Deep Research. Espera a que termine; en Deep Research puedes quitar de la cola los que aún no han empezado.';
   }
+  if (isPodcastLaneBusy()) {
+    return 'No se puede cambiar de bóveda mientras se genera un podcast. Espera a que termine o cancélalo en Podcast.';
+  }
   return null;
 }
 
@@ -271,6 +276,7 @@ export function registerIpc(
   registerLogsIpc(context);
   registerDriftIpc(context);
   registerTtsIpc(context);
+  registerPodcastIpc(context);
   // The processing log has to be listening before any pipeline can run: this wires the
   // sink, prunes what the previous session left behind and arms the idle prune timer.
   initPipelineLogs();
@@ -375,6 +381,7 @@ export function registerIpc(
     // Wake the durable lane for this vault. Work belonging to another vault remains
     // queued against that corpus and resumes when its owner returns to it.
     cancelDeepResearchJobsForOtherVaults(id);
+    void podcastLane().drain();
     upgradeWorldbuildingDemoDynasties();
     upgradeWorldbuildingDemoImageQuality();
     upgradeWorldbuildingDemoNarrativeDepth();

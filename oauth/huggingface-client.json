@@ -1,0 +1,10 @@
+{
+  "client_id": "https://cdn.jsdelivr.net/gh/jorgepb96/nodus@hf-oauth-v1/oauth/huggingface-client.json",
+  "client_name": "Nodus",
+  "client_uri": "https://github.com/jorgepb96/nodus",
+  "redirect_uris": ["nodus://oauth/huggingface"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "scope": "openid profile gated-repos"
+}

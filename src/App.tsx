@@ -61,6 +61,7 @@ import { ProsopographyTour } from './views/ProsopographyTour';
 import { WorldbuildingTour } from './views/WorldbuildingTour';
 import { FIRST_VAULT_VERSION } from './views/FirstVaultSetup';
 import { hasPendingWhatsNew, WhatsNewModal } from './components/WhatsNewModal';
+import { PodcastIntroModal, podcastIntroSeen } from './components/PodcastIntroModal';
 import { useUpdateProgress } from './useUpdateProgress';
 import { pendingUpdateVersion, updateInstallBusy } from './updateStatus';
 import { UpdateReadyNotice } from './components/UpdateReadyNotice';
@@ -241,6 +242,7 @@ export function App() {
   const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus | null>(null);
   const [backupWarningDismissed, setBackupWarningDismissed] = useState(false);
   const [whatsNewSettled, setWhatsNewSettled] = useState(() => !hasPendingWhatsNew());
+  const [podcastIntroOpen, setPodcastIntroOpen] = useState(() => !podcastIntroSeen());
   const [manualWhatsNewOpen, setManualWhatsNewOpen] = useState(false);
   const [aiModelRequiredOpen, setAiModelRequiredOpen] = useState(false);
   // Startup progress is non-blocking; later checks stay silent until ready to install.
@@ -2520,6 +2522,22 @@ export function App() {
         settings.mascotEnabled &&
         !settings.mascotStyleChosen && !settings.academicLearningProgress?.invitationsEligible && (
           <NodiStyleModal onChosen={async () => { await reloadSettings(); }} />
+        )}
+
+      {/* Podcast (beta), announced once to everyone who reaches the app after the release
+          notes and Nodi's style choice, and only in the vault types that have Podcast. */}
+      {podcastIntroOpen && whatsNewSettled && !manualWhatsNewOpen && !isPreviewVault &&
+        settings.onboardingComplete &&
+        settings.basicsTutorialVersion > 0 &&
+        !recoveryStatus?.needsSetup &&
+        !(settings.mascotEnabled && !settings.mascotStyleChosen) &&
+        !activeVault?.learningWorkspace && !settings.academicLearningProgress?.invitationsEligible &&
+        (isAcademic || isEstudio || isDocencia) && (
+          <PodcastIntroModal
+            uiLanguage={settings.uiLanguage}
+            onClose={() => setPodcastIntroOpen(false)}
+            onTry={() => { setPodcastIntroOpen(false); setView('podcast'); }}
+          />
         )}
 
       {!focusReduced && !manualWhatsNewOpen && whatsNewSettled && <NodiMascot settings={settings} />}

@@ -4,12 +4,12 @@ import path from 'node:path';
 import {
   TTS_MODELS, defaultTtsModelId, ttsBackendForModel, ttsBackendForPlatform, ttsModelsForPlatform,
   PHONON_LANGUAGES,
-  type TtsBackend, type TtsEngine, type TtsFragmentEvent, type TtsJobProgress, type TtsRuntimeStatus, type TtsStatus,
+  type TtsBackend, type TtsEngine, type TtsFragmentEvent, type TtsJobProgress, type TtsLanguage, type TtsRuntimeStatus, type TtsStatus,
 } from '@shared/ttsModels';
 import { PHONON_VOICES, phononVoiceUrl } from '@shared/phononVoices';
 import { POCKET_VOICES, isPocketLanguage, pocketVoiceAsset, pocketVoiceId, type PocketLanguage } from '@shared/pocketTts';
 import { downloadVerifiedNodusAsset } from '../ai/nodusLocalAi';
-import { clearAudioKey, getAudioKey, hasAudioKey, setAudioKey } from '../secrets/secretStore';
+import { clearAudioKey, hasAudioKey, setAudioKey } from '../secrets/secretStore';
 import { resolveTtsLanguage } from '@shared/ttsLanguage';
 import type { TtsEvent, TtsSpeakRequest, TtsSpeakStarted } from '@shared/api/tts';
 import { minimumVoiceTranscriptChars, readWavInfo, type TtsVoiceSaveInput } from '@shared/ttsVoices';
@@ -18,8 +18,9 @@ import { probeNvidia } from '../ai/nodusLocalAi';
 import { saveClipAsync, deleteClip, pruneOrphanScriptorNarration } from '../audio/audioService';
 import { audioClipBytesByKind, listExpiredAudioClips, setAudioClipPinned } from '../db/audioClipsRepo';
 import { TtsInstaller, type TtsInstalledRuntime } from './install';
+import { huggingFaceToken } from './huggingFaceSignIn';
 import { TtsModelStore } from './models';
-import { TtsEngineHost, type TtsVoiceRef } from './host';
+import { TtsEngineHost, type TtsFragment, type TtsVoiceRef } from './host';
 import { measurePerf } from '../perf';
 import { TtsVoiceLibrary } from './voices';
 import { concatWavFiles } from './wavConcat';
@@ -196,7 +197,7 @@ export class TtsService {
     if (!model) throw new Error('TTS_MODEL_UNAVAILABLE');
     // CC BY-NC weights are never fetched until the user accepted their terms in Nodus.
     if (model.nonCommercial && !getSettings().ttsAcceptedLicenses.includes(model.id)) throw new Error('TTS_LICENSE_NOT_ACCEPTED');
-    const token = model.gated ? getAudioKey('huggingface') : null;
+    const token = model.gated ? await huggingFaceToken() : null;
     if (model.gated && !token) throw new Error('TTS_HF_TOKEN_REQUIRED');
     try {
       await this.models.download(model, (status) => this.emit({ kind: 'model', status }), token);
@@ -246,11 +247,17 @@ export class TtsService {
     if (!this.runtime) throw new Error('TTS_RUNTIME_NOT_INSTALLED');
   }
 
-  async speak(request: TtsSpeakRequest): Promise<TtsSpeakStarted> {
+  /**
+   * Resolves the checkpoint, voice and language of a request. `request.modelId` lets a
+   * background job (a podcast) pick its own engine without touching the user's saved
+   * narration model; an unknown or unready model is refused rather than silently swapped.
+   */
+  private async prepareSynthesis(request: TtsSpeakRequest) {
     const text = String(request.text ?? '').trim();
     if (!text) throw new Error('TTS_EMPTY_TEXT');
     const settings = getSettings();
-    const modelId = this.selectedModelId();
+    if (request.modelId && !this.platformModel(request.modelId)) throw new Error('TTS_MODEL_UNAVAILABLE');
+    const modelId = request.modelId || this.selectedModelId();
     await this.assertModelReady(modelId);
     const model = TTS_MODELS.find((entry) => entry.id === modelId)!;
     const phonon = model.engine === 'phonon';
@@ -278,6 +285,33 @@ export class TtsService {
       const info = readWavInfo(await fs.readFile(ref.wavPath));
       if (ref.text.trim().length < minimumVoiceTranscriptChars(info?.durationS ?? 3)) throw new Error('TTS_VOICE_TRANSCRIPT_TOO_SHORT');
     }
+    return { text, model, modelId, voiceId, language, ref };
+  }
+
+  /**
+   * Synthesises one text and resolves with its fragments in order, without pushing fragment
+   * or job events to the window: a background lane (the podcast) owns its own progress. The
+   * fragment files live in the live directory for ten minutes, long enough to be joined.
+   */
+  async synthesize(request: TtsSpeakRequest, signal?: AbortSignal): Promise<{ fragments: TtsFragment[]; language: TtsLanguage; voiceId: string }> {
+    signal?.throwIfAborted();
+    const { text, modelId, voiceId, language, ref } = await this.prepareSynthesis(request);
+    const { jobId, done } = this.host.synth(modelId, { text, voice: ref, language, priority: request.priority ?? 0 });
+    const abort = () => this.host.cancel(jobId);
+    signal?.addEventListener('abort', abort, { once: true });
+    try {
+      const result = await done;
+      if (result.cancelled || signal?.aborted) throw signal?.reason ?? new Error('TTS_CANCELLED');
+      return { fragments: [...result.fragments].sort((a, b) => a.index - b.index), language, voiceId };
+    } finally {
+      signal?.removeEventListener('abort', abort);
+      const dir = path.join(ttsLiveDir(), jobId);
+      setTimeout(() => { void fs.rm(dir, { recursive: true, force: true }).catch(() => {}); }, 10 * 60_000).unref?.();
+    }
+  }
+
+  async speak(request: TtsSpeakRequest): Promise<TtsSpeakStarted> {
+    const { text, model, modelId, voiceId, language, ref } = await this.prepareSynthesis(request);
     const started = Date.now();
     // Each fragment's silences are read from its WAV before it is announced, in order, so the
     // renderer gets text and pauses together and the clip saved at the end has every one.

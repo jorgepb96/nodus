@@ -319,6 +319,8 @@ export function isPreviewVaultType(value: unknown): boolean {
 export const VAULT_TYPE_SCOPED_VIEWS: Record<string, VaultType[]> = {
   researchChat: ['academic', 'genealogy', 'primary_sources', 'prosopography', 'testimonios'],
   dictionary: ['academic'],
+  // Podcast research runs on the academic corpus engine or on the learning corpus.
+  podcast: ['academic', 'estudio', 'docencia'],
   // La ruta Espacio de trabajo sigue siendo académica. Los demás vaults conservan la
   // ruta Notas, aunque ambas rutas comparten ahora la misma experiencia de catálogo.
   workspace: ['academic'],

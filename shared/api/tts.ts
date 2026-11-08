@@ -11,11 +11,19 @@ export interface TtsSpeakRequest {
   voiceId?: string;
   /** Defaults to the saved `ttsLanguage`. */
   language?: TtsLanguageSetting;
+  /**
+   * The checkpoint to speak with; defaults to the saved `ttsModelId`. A podcast (or its voice
+   * preview) names its own engine so the user's narration choice is never rewritten.
+   */
+  modelId?: string;
   /** Higher runs first: playback the user is waiting for outranks background generation. */
   priority?: number;
   /** When set, the fragments are joined into a vault clip once the job ends. */
   save?: { kind: AudioEntityKind; id: string; segmentIndex: number; segmentLabel: string };
 }
+
+/** Whether this machine is signed in to Hugging Face, as whom, and whether a pasted token exists. */
+export interface HuggingFaceAuthStatus { signedIn: boolean; account: string | null; hasToken: boolean }
 
 export interface TtsSpeakStarted { jobId: string; language: TtsLanguage; voiceId: string }
 
@@ -34,6 +42,10 @@ export interface TtsApi {
   /** Stores (or, with an empty string, clears) the user's Hugging Face token for gated models; never returned to the renderer. */
   ttsSetHuggingFaceToken(token: string): Promise<boolean>;
   ttsHasHuggingFaceToken(): Promise<boolean>;
+  /** "Sign in with Hugging Face" (OAuth + PKCE in the default browser); resolves once signed in. */
+  ttsHuggingFaceSignIn(): Promise<HuggingFaceAuthStatus>;
+  ttsHuggingFaceSignOut(): Promise<HuggingFaceAuthStatus>;
+  ttsHuggingFaceStatus(): Promise<HuggingFaceAuthStatus>;
   ttsDownloadModel(modelId: string): Promise<TtsStatus>;
   ttsCancelModelDownload(modelId: string): Promise<void>;
   ttsDeleteModel(modelId: string): Promise<TtsStatus>;

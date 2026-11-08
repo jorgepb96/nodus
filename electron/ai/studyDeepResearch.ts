@@ -51,7 +51,7 @@ export const MAX_UNIT_SECTIONS = 12;
 
 /** Appended to the writer prompt for a part the teacher gave an explicit steer for. */
 
-interface StudyResearchSource {
+export interface StudyResearchSource {
   id: string;
   kind: StudySearchKind;
   sourceId: string;
@@ -402,6 +402,11 @@ function sourceUrl(entry: StudySearchIndexEntry): string {
   if (entry.kind === 'material') return `nodus://study/material/${encodeURIComponent(entry.location.materialId || entry.sourceId)}`;
   if (entry.kind === 'document') return `nodus://study/doc/${encodeURIComponent(entry.location.documentId || entry.sourceId)}`;
   return `nodus://study/recording/${encodeURIComponent(entry.location.recordingId || entry.sourceId)}${entry.location.timestampSeconds != null ? `?t=${Math.max(0, Math.floor(entry.location.timestampSeconds))}` : ''}`;
+}
+
+/** Groups retrieved chunks into citable sources (`S1`…); also feeds the podcast's dossier. */
+export function buildStudyResearchSources(entries: StudySearchIndexEntry[], language: PromptLanguage, limit = 18): StudyResearchSource[] {
+  return buildSources(entries, language, limit);
 }
 
 function buildSources(entries: StudySearchIndexEntry[], language: PromptLanguage, limit = 18): StudyResearchSource[] {

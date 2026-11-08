@@ -163,7 +163,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 206;
+export const SCHEMA_VERSION = 207;
 
 // What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
 // (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
@@ -9697,6 +9697,58 @@ export const migrations: Migration[] = [
     ALTER TABLE audio_clips_v206 RENAME TO audio_clips;
     CREATE INDEX idx_audio_clips_entity ON audio_clips(entity_kind, entity_id, segment_index);
     CREATE INDEX idx_audio_clips_retention ON audio_clips(entity_kind, pinned, created_at);
+  ` },
+  // Podcast episodes: a researched, scripted and locally voiced episode per row, with its
+  // transcript timeline, and the cover plus chapter images beside it. Machine-local in this
+  // first version: the compressed audio lives in the vault's audio directory, which full
+  // encrypted backups carry and .nodussync packages never do, so a synced row would arrive
+  // without the sound it describes. Pure CREATE, safe to replay (which is also why the images
+  // carry no ON DELETE clause: the repository deletes them with their episode).
+  { version: 207, up: /* sql */ `
+    CREATE TABLE IF NOT EXISTS podcast_episodes (
+      id                  TEXT PRIMARY KEY,
+      title               TEXT NOT NULL,
+      objective           TEXT NOT NULL DEFAULT '',
+      format              TEXT NOT NULL,
+      language            TEXT NOT NULL,
+      engine              TEXT NOT NULL,
+      model_id            TEXT NOT NULL,
+      voices_json         TEXT NOT NULL,
+      duration_cap_min    INTEGER NOT NULL,
+      duration_s          REAL NOT NULL DEFAULT 0,
+      request_json        TEXT NOT NULL,
+      plan_json           TEXT NOT NULL,
+      script_json         TEXT NOT NULL,
+      sources_json        TEXT NOT NULL DEFAULT '[]',
+      research_log        TEXT NOT NULL DEFAULT '',
+      timings_json        TEXT NOT NULL DEFAULT '[]',
+      audio_file          TEXT NOT NULL DEFAULT '',
+      audio_mime          TEXT NOT NULL DEFAULT '',
+      audio_bytes         INTEGER NOT NULL DEFAULT 0,
+      generation_json     TEXT NOT NULL DEFAULT '{}',
+      listened_position_s REAL NOT NULL DEFAULT 0,
+      listened_at         TEXT,
+      created_at          TEXT NOT NULL,
+      updated_at          TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_podcast_episodes_updated ON podcast_episodes(updated_at);
+    CREATE TABLE IF NOT EXISTS podcast_images (
+      episode_id    TEXT NOT NULL,
+      slot          INTEGER NOT NULL,
+      chapter_index INTEGER,
+      status        TEXT NOT NULL DEFAULT 'pending',
+      prompt        TEXT NOT NULL DEFAULT '',
+      style         TEXT NOT NULL DEFAULT '',
+      provider      TEXT NOT NULL DEFAULT '',
+      model         TEXT NOT NULL DEFAULT '',
+      mime          TEXT NOT NULL DEFAULT '',
+      thumbnail_mime TEXT NOT NULL DEFAULT '',
+      image         BLOB,
+      thumbnail     BLOB,
+      error         TEXT,
+      updated_at    TEXT NOT NULL,
+      PRIMARY KEY (episode_id, slot)
+    );
   ` },
 ];
 

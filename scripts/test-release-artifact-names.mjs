@@ -152,10 +152,15 @@ test('every README download counter reads a count the deploy publishes', () => {
       `the ${name} row counts $.${key} and $.latest.${key}`);
   }
 
-  const total = readme.split('\n').filter((line) => line.startsWith('| **Total** |'));
-  assert.equal(total.length, 1, 'the table ends with one Total row');
-  assert.deepEqual(queries(total[0]), ['overall', 'latest.overall'],
-    'the Total row sums each column, installers and Zotero plugin together');
+  // Two totals close the table: installers alone first, then with the Zotero plugin.
+  const totals = readme.split('\n').filter((line) => line.startsWith('| **Total'));
+  assert.deepEqual(totals.map((line) => line.split('|')[1].trim()),
+    ['**Total without the Zotero plugin**', '**Total with the Zotero plugin**'],
+    'the table ends with the total without the Zotero plugin, then the total with it');
+  assert.deepEqual(queries(totals[0]), ['total', 'latest.total'],
+    'the first Total row sums the installers only');
+  assert.deepEqual(queries(totals[1]), ['overall', 'latest.overall'],
+    'the second Total row adds the Zotero plugin');
 });
 
 test('the counters the README reads exist in what the generator writes', async () => {

@@ -123,7 +123,12 @@ export function muxAacToMp4(input: Mp4AudioInput): Uint8Array {
   const stsd = fullBox('stsd', 0, 0, u32(1), mp4a);
   const stts = fullBox('stts', 0, 0, u32(count ? 1 : 0), ...(count ? [u32(count), u32(frameSamples)] : []));
   const stsc = fullBox('stsc', 0, 0, u32(count ? 1 : 0), ...(count ? [u32(1), u32(count), u32(1)] : []));
-  const stsz = fullBox('stsz', 0, 0, u32(0), u32(count), ...input.frames.map((frame) => u32(frame.length)));
+  // One buffer for the size table: a 30-minute episode has ~84,000 frames, far more
+  // than a function call can take as separate arguments.
+  const sizes = new Uint8Array(count * 4);
+  const sizesView = new DataView(sizes.buffer);
+  input.frames.forEach((frame, i) => sizesView.setUint32(i * 4, frame.length));
+  const stsz = fullBox('stsz', 0, 0, u32(0), u32(count), sizes);
 
   const build = (chunkOffset: number) => {
     const stco = fullBox('stco', 0, 0, u32(count ? 1 : 0), ...(count ? [u32(chunkOffset)] : []));

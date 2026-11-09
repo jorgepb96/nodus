@@ -29,12 +29,13 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.16.1');
+  assert.equal(current.version, '5.17.0');
   assert.equal(current.highlights.length, 2);
-  assert.deepEqual(current.highlights.map(h => h.category), ['enhancement','enhancement']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','general']);
-  assert.match(current.highlights[0].en, /^Settings groups its sections in a side navigation/);
-  assert.match(current.highlights[1].en, /^In Ideas and Authors, the Filters button opens a floating panel/);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','new']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['general','general']);
+  assert.match(current.highlights[0].en, /^New Podcast section, in beta, under Analyze/);
+  assert.match(current.highlights[1].en, /^You can now sign in with Hugging Face/);
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.16.1').highlights[0].en, /^Settings groups its sections in a side navigation/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.16.0').highlights[0].en, /^When text is read aloud, Nodus highlights the sentence and the word being spoken/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.15.4').highlights[0].en, /^The Listen panel shows voice engine installation phases and progress/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.15.3').highlights[0].en, /^Narration adds Pocket TTS/);
@@ -99,9 +100,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: no new features, two enhancements and no fixes.
+  // Independently authored section boundaries: two new features, no enhancements and no fixes.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,0,2][i], [0,2,2][i]);
+    const entries = current.highlights.slice([0,2,2][i], [2,2,2][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

@@ -56,6 +56,10 @@ Deep Research brings findings, limitations and future questions into a saved rep
 
 ![Nodus Research Deep Research report on learning science with an AI-generated illustration](docs/screenshots/readme-academic-deep-research.jpg)
 
+Podcast (beta) turns a topic into an episode you can listen to. It researches the vault, writes a script for one or two hosts and records it with Kokoro, Phonon or Ming, all running on your computer. Pick a conversation, a debate, a lesson or a narrated essay, from 5 to 30 minutes. Episodes keep playing while you work elsewhere and download as M4A or WAV, with chapters and a transcript that follows the audio.
+
+![A two-voice Nodus Research podcast episode with chapters and a synced transcript](docs/screenshots/readme-academic-podcast.jpg)
+
 Immersion turns a topic into a guided learning route with explanations, author perspectives and practice questions, with an optional image to introduce the session.
 
 ![Nodus Research Immersion learning route with an AI-generated illustration](docs/screenshots/readme-academic-immersion.jpg)

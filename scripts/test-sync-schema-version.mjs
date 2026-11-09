@@ -36,9 +36,10 @@ test.after(async () => { closeDb(); await rm(userData, { recursive: true, force:
 
 function shape(db) {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all();
-  // V202 adds only a machine-bound execution checkpoint. The test below verifies
-  // every transport boundary; its columns cannot affect a receiver's wire shape.
-  return JSON.stringify(tables.filter(({ name }) => name !== 'research_harness_runs' && !name.startsWith('embedding_index')).map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
+  // V202 adds only a machine-bound execution checkpoint, and v207 machine-local podcast
+  // episodes. The tests below verify every transport boundary for both; their columns
+  // cannot affect a receiver's wire shape.
+  return JSON.stringify(tables.filter(({ name }) => name !== 'research_harness_runs' && !name.startsWith('embedding_index') && !name.startsWith('podcast_')).map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
 }
 
 test('research execution checkpoints remain local across every sync transport', () => {
@@ -56,6 +57,28 @@ test('research execution checkpoints remain local across every sync transport', 
   assert.deepEqual(triggers, [], 'Checkpoints must never create outgoing mutations');
   db.prepare("DELETE FROM research_harness_runs WHERE id='local-fixture'").run();
   assert.equal(db.prepare("SELECT COUNT(*) n FROM server_outbox WHERE table_name='research_harness_runs'").get().n, 0, 'Saving and deleting a checkpoint do not enqueue a mutation');
+});
+
+test('podcast episodes and their images remain local across every sync transport', () => {
+  const db = getDb();
+  const names = ['podcast_episodes', 'podcast_images'];
+  const sync = syncedTableNames(db);
+  const excluded = describeSyncCoverage().excluded;
+  for (const name of names) { assert.equal(sync.includes(name), false); assert.ok(excluded.includes(name)); }
+  ensureOutboxTriggers(db, true);
+  db.prepare(`INSERT INTO podcast_episodes(id,title,format,language,engine,model_id,voices_json,duration_cap_min,request_json,plan_json,script_json,created_at,updated_at)
+    VALUES('local-podcast','t','essay','es','kokoro','kokoro-82m-int8','[]',5,'{}','{}',?, '2026-11-08','2026-11-08')`).run(JSON.stringify({ privateFixture: 'local-podcast-fixture' }));
+  db.prepare("INSERT INTO podcast_images(episode_id,slot,status,updated_at) VALUES('local-podcast',0,'pending','2026-11-08')").run();
+  const snapshot = buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true, nodusServerIncludePassages: true }, db);
+  const payload = JSON.parse(snapshot.buffer.toString('utf8'));
+  for (const name of names) {
+    assert.equal(Object.hasOwn(payload.tables, name), false);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='trigger' AND tbl_name=? AND instr(sql,'server_outbox')>0").get(name).n, 0);
+  }
+  assert.equal(snapshot.buffer.includes('local-podcast-fixture'), false, 'Episode scripts never enter the publication');
+  db.prepare("DELETE FROM podcast_images WHERE episode_id='local-podcast'").run();
+  db.prepare("DELETE FROM podcast_episodes WHERE id='local-podcast'").run();
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM server_outbox WHERE table_name LIKE 'podcast_%'").get().n, 0, 'Saving and deleting an episode do not enqueue a mutation');
 });
 
 test('saved embedding indexes are local while their active projection may be published', () => {

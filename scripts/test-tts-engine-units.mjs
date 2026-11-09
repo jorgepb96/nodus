@@ -100,6 +100,10 @@ try {
   assert.equal(u.resolveAudioUrl(u.liveFragmentUrl(job, '/anything/007.wav'), resolvers), path.join(live, job, '007.wav'));
   assert.equal(u.resolveAudioUrl(u.clipAudioUrl('clip-1'), resolvers), '/vault/audio/a.wav');
   assert.equal(u.resolveAudioUrl(u.voiceAudioUrl('user:x'), resolvers), '/voices/user_x/reference.wav');
+  assert.equal(u.resolveAudioUrl(u.podcastAudioUrl('ep-1'), { ...resolvers, podcastPath: (id) => (id === 'ep-1' ? '/vault/audio/podcasts/ep-1.m4a' : null) }), '/vault/audio/podcasts/ep-1.m4a');
+  assert.equal(u.resolveAudioUrl(u.podcastAudioUrl('ep-1'), resolvers), null, 'no podcast resolver, no file');
+  assert.equal(u.resolveAudioUrl('nodus-audio://podcast/..%2F..%2Fsecret', { ...resolvers, podcastPath: () => '/x' }), null);
+  assert.deepEqual(['a.m4a', 'b.opus', 'c.wav'].map(u.audioContentType), ['audio/mp4', 'audio/ogg', 'audio/wav']);
   for (const bad of [
     `nodus-audio://live/${job}/../../etc/passwd`,
     `nodus-audio://live/${job}/%2e%2e%2fsecret.wav`,
@@ -127,6 +131,30 @@ try {
   await assert.rejects(u.concatWavFiles([a, c]), /TTS_FRAGMENT_FORMAT_MISMATCH/);
   await writeFile(c, Buffer.from('not a wav at all, definitely not one'));
   await assert.rejects(u.concatWavFiles([c]), /TTS_BAD_FRAGMENT/);
+
+  // ── Streaming assembler (podcasts) ───────────────────────────────────────────
+  // Parts are appended to a WAV on disk with a chosen silence before each one; the first part
+  // never gets a leading pause, and the returned start times include every inserted gap.
+  const assembled = path.join(tmp, 'frag/assembled.wav');
+  const assembler = new u.WavFileAssembler(assembled);
+  const p1 = await assembler.append([a, b], 1000, 0);
+  assert.deepEqual(p1, { startS: 0, durationS: 5 / 44100 }, 'the first part starts at zero');
+  const p2 = await assembler.append([a], 500, 0);
+  close(p2.startS, (5 + 22050) / 44100);
+  close(p2.durationS, 3 / 44100);
+  const done = await assembler.finish();
+  close(done.durationS, (5 + 22050 + 3) / 44100);
+  const assembledBytes = await (await import('node:fs/promises')).readFile(assembled);
+  const assembledInfo = u.readWavInfo(new Uint8Array(assembledBytes));
+  assert.equal(Math.round(assembledInfo.durationS * 44100), 5 + 22050 + 3, 'the header covers every appended sample');
+  assert.equal(assembledBytes.readInt16LE(44 + (5 + 22050) * 2), 1, 'the second part follows its pause');
+  const empty = new u.WavFileAssembler(path.join(tmp, 'frag/empty.wav'));
+  assert.equal(await empty.finish(), null, 'an assembler with no parts writes nothing');
+  const mixed = new u.WavFileAssembler(path.join(tmp, 'frag/mixed.wav'));
+  await mixed.append([a], 0);
+  await writeFile(c, wav([9], 24000));
+  await assert.rejects(mixed.append([c], 0), /TTS_FRAGMENT_FORMAT_MISMATCH/);
+  await mixed.abort();
 
   // ── Retention sweep ───────────────────────────────────────────────────────────
   const now = Date.parse('2026-10-20T12:00:00Z');

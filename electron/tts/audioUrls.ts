@@ -8,6 +8,8 @@ export interface AudioProtocolResolvers {
   liveDir: () => string;
   clipPath: (clipId: string) => string | null;
   voicePath: (voiceId: string) => string | null;
+  /** A saved podcast episode's compressed audio, by episode id. */
+  podcastPath?: (episodeId: string) => string | null;
 }
 
 const SAFE_SEGMENT = /^[A-Za-z0-9_.:-]{1,128}$/;
@@ -26,7 +28,14 @@ export function resolveAudioUrl(url: string, resolvers: AudioProtocolResolvers):
   }
   if (parsed.hostname === 'clip' && parts.length === 1) return resolvers.clipPath(parts[0]);
   if (parsed.hostname === 'voice' && parts.length === 1) return resolvers.voicePath(parts[0]);
+  if (parsed.hostname === 'podcast' && parts.length === 1) return resolvers.podcastPath?.(parts[0]) ?? null;
   return null;
+}
+
+/** The Content-Type of a served audio file, from its extension. */
+export function audioContentType(file: string): string {
+  const ext = path.extname(file).toLowerCase();
+  return ext === '.m4a' ? 'audio/mp4' : ext === '.opus' || ext === '.ogg' ? 'audio/ogg' : 'audio/wav';
 }
 
 export function liveFragmentUrl(jobId: string, filePath: string): string {
@@ -34,4 +43,5 @@ export function liveFragmentUrl(jobId: string, filePath: string): string {
 }
 export const clipAudioUrl = (clipId: string) => `${NODUS_AUDIO_SCHEME}://clip/${encodeURIComponent(clipId)}`;
 export const voiceAudioUrl = (voiceId: string) => `${NODUS_AUDIO_SCHEME}://voice/${encodeURIComponent(voiceId)}`;
+export const podcastAudioUrl = (episodeId: string) => `${NODUS_AUDIO_SCHEME}://podcast/${encodeURIComponent(episodeId)}`;
 

@@ -162,6 +162,25 @@ export const SECTION_DOC_TOPICS: readonly NodusDocTopic[] = [
     related: ['sections-library', 'vault-databases'],
   },
   {
+    id: 'sections-podcast',
+    area: 'sections',
+    title: { es: 'Podcast: episodios hablados con voces locales', en: 'Podcast: spoken episodes with local voices' },
+    keywords: ['podcast', 'episodio', 'episodios', 'audio', 'voces', 'dos voces', 'conversacion', 'debate', 'kokoro', 'phonon', 'guion', 'escuchar episodio', 'notebooklm'],
+    body: {
+      es: `- Podcast investiga un tema en el vault (Académico, Estudio o Docencia), escribe un guion hablado y lo graba en el equipo con Kokoro o Phonon; nada del audio sale del ordenador.
+- Formatos: Conversación y Debate (dos voces), Clase (una o dos voces, con preguntas de repaso) y Ensayo narrado (una voz). Se eligen idioma, motor, voces, nombres de los presentadores, público y una duración máxima de 5, 10, 15, 20 o 30 minutos.
+- Solo aparecen los idiomas y voces de los motores instalados con su modelo descargado (Ajustes → Narración). Los modelos Phonon en español y multilingüe tienen licencia no comercial.
+- Los episodios se encolan como en Deep Research. Con «Revisar guion antes de grabar» el trabajo se detiene con el guion listo para editarlo; un fallo se puede reintentar sin repetir la investigación.
+- El episodio se guarda comprimido (M4A, u Opus donde no hay AAC) con capítulos, transcripción que sigue el audio, fuentes consultadas, portada e imágenes por capítulo opcionales. Se puede exportar el audio y la transcripción.`,
+      en: `- Podcast researches a topic in the vault (Academic, Study or Teaching), writes a spoken script and records it on this computer with Kokoro or Phonon; none of the audio leaves the machine.
+- Formats: Conversation and Debate (two voices), Lesson (one or two voices, with review questions) and Narrated essay (one voice). You choose language, engine, voices, host names, audience and a maximum length of 5, 10, 15, 20 or 30 minutes.
+- Only the languages and voices of engines installed with their model downloaded appear (Settings → Narration). The Spanish and multilingual Phonon models have a non-commercial licence.
+- Episodes queue like Deep Research. With «Review script before recording» the job stops with the script ready to edit; a failure can be retried without repeating the research.
+- The episode is saved compressed (M4A, or Opus where AAC is unavailable) with chapters, a transcript that follows the audio, the sources consulted, and an optional cover and chapter images. Audio and transcript can be exported.`,
+    },
+    related: ['sections-deep-research'],
+  },
+  {
     id: 'sections-workspace-notes',
     area: 'sections',
     title: { es: 'Nodus Scriptor', en: 'Nodus Scriptor' },

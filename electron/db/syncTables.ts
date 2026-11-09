@@ -266,6 +266,10 @@ const NOT_SYNCED_TABLES = new Set([
   // reading cache describe THIS machine's model calls; the saved guide's Markdown
   // travels with writing_saved_drafts and does not need them.
   'complete_guide_runs', 'complete_guide_units', 'complete_guide_chunk_cache', 'complete_guide_artifacts',
+  // Podcast episodes and their images stay on the machine that voiced them for now: the audio
+  // file they describe lives in the vault's audio directory, which full backups carry and
+  // sync packages never do. Shipping the rows alone would deliver silent episodes.
+  'podcast_episodes', 'podcast_images',
   // Source-resolution provenance is rebuilt from this machine's Zotero/library files.
   // Shipping it would create attachment locators that may not exist on the receiver.
   'work_text_sources',

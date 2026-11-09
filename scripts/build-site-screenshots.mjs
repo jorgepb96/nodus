@@ -31,6 +31,7 @@ export const SITE_SHOTS = [
   { source: 'docs/screenshots/readme-academic-theme-relations.jpg', target: 'academic-theme-relations.webp' },
   { source: 'docs/screenshots/readme-academic-argument-map.jpg', target: 'academic-argument-map.webp' },
   { source: 'docs/screenshots/readme-academic-deep-research.jpg', target: 'academic-deep-research.webp' },
+  { source: 'docs/screenshots/readme-academic-podcast.jpg', target: 'academic-podcast.webp' },
   { source: 'docs/screenshots/readme-academic-immersion.jpg', target: 'academic-immersion.webp' },
   { source: 'docs/screenshots/readme-teaching-demo.jpg', target: 'teaching-demo.webp' },
   { source: 'docs/screenshots/site/teaching-questions.png', target: 'teaching-questions.webp' },

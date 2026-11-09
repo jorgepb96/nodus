@@ -9,9 +9,11 @@ const ToolkitView = lazy(() => import('../../views/ToolkitView').then((module) =
 const ResearchAssistantModal = lazy(() => import('../../views/ResearchAssistantModal').then(module => ({ default: module.ResearchAssistantModal })));
 const Settings = lazy(() => import('../../views/Settings').then((module) => ({ default: module.Settings })));
 const StudyFocusView = lazy(() => import('../../views/StudyFocusView').then((module) => ({ default: module.StudyFocusView })));
+const PodcastView = lazy(() => import('../../views/PodcastView').then((module) => ({ default: module.PodcastView })));
 
 export const shellViews = {
   studyFocus: () => <StudyFocusView />,
+  podcast: ({ settings, isAcademic, activeVault, setView }) => <PodcastView key={activeVault?.id} settings={settings} isAcademic={isAcademic} onOpenView={() => setView('podcast')} />,
   researchChat: ({ settings, assistantTarget, researchConversationTarget, openNoteFromSearch, isAcademic, isGenealogy, activeVault }) => <ResearchAssistantModal key={activeVault?.id} settings={settings} embedded isAcademic={isAcademic} initialTarget={assistantTarget} initialConversationTarget={researchConversationTarget} notesDestinationLabel="Nodus Scriptor" onOpenSavedNote={openNoteFromSearch} isGenealogy={isGenealogy} />,
   browser: () => <NodusBrowserView />,
   radar: ({ radarTarget }) => <RadarView target={radarTarget} />,

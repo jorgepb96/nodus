@@ -200,6 +200,8 @@ try {
   // across the reloads below (same origin).
   await page.evaluate((version) => {
     localStorage.setItem('nodus.lastSeenVersion', version);
+    // The Podcast (beta) announcement is exercised on its own below, as an existing user.
+    localStorage.setItem('nodus.podcastIntroSeen.v1', '1');
   }, appVersion);
 
   // ── Preload bridge ──────────────────────────────────────────────────────────
@@ -395,6 +397,7 @@ try {
   // release notes, but none of the retired feature announcements can follow them.
   await page.evaluate(async (seenKeys) => {
     localStorage.removeItem('nodus.lastSeenVersion');
+    localStorage.removeItem('nodus.podcastIntroSeen.v1');
     for (const key of seenKeys) localStorage.removeItem(key);
     await window.nodus.updateSettings({ uiLanguage: 'es', promptLanguage: 'es', basicsTutorialVersion: 4 });
   }, RETIRED_STARTUP_ANNOUNCEMENTS.map(({ seenKey }) => seenKey));
@@ -435,6 +438,12 @@ try {
   await whatsNewForExistingUser.getByRole('button', { name: 'Explorar las novedades', exact: true }).click();
 
   await whatsNewForExistingUser.waitFor({ state: 'detached' });
+  // Podcast (beta) is announced once, right after the release notes.
+  const podcastIntro = page.getByTestId('podcast-intro');
+  await podcastIntro.waitFor();
+  await podcastIntro.getByRole('button', { name: 'Ahora no', exact: true }).click();
+  await podcastIntro.waitFor({ state: 'detached' });
+  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.podcastIntroSeen.v1')), '1', 'the Podcast announcement is remembered as seen');
   await assertRetiredAnnouncementsAbsent('existing installation after release notes');
   console.log('[e2e] all five retired startup announcements stay absent without seen markers');
 
@@ -449,6 +458,7 @@ try {
   await page.getByTestId('app-shell').waitFor();
   assert.equal(await page.getByTestId('basics-tutorial-language').count(), 0, 'a seen cinematic tutorial does not return after restart/update');
   assert.equal(await page.getByTestId('whats-new-cinematic-modal').count(), 0, 'the release modal stays dismissed for the exact running version');
+  assert.equal(await page.getByTestId('podcast-intro').count(), 0, 'the Podcast announcement is shown only once');
   await waitForCondition('startup update check to finish', () => page.evaluate(async () =>
     (await window.nodus.getUpdateStatus())?.status === 'not-available'
   ));

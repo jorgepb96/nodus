@@ -6,7 +6,7 @@
   <a href="https://github.com/jorgepb96/nodus/releases/latest"><img alt="Download Nodus Research" src="https://img.shields.io/badge/Download_Nodus_Research-4f46e5?style=for-the-badge&amp;logo=github&amp;logoColor=white"></a>
   <a href="https://nodusresearch.com/"><img alt="Visit the website" src="https://img.shields.io/badge/Visit_the_website-6d28d9?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white"></a>
   <a href="https://nodusresearch.com/demo/"><img alt="Try the interactive tour" src="https://img.shields.io/badge/Try_the_interactive_tour-0f766e?style=for-the-badge&amp;logo=safari&amp;logoColor=white"></a>
-  <a href="https://github.com/jorgepb96/nodus/releases"><img alt="Total Nodus Research downloads" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.total&amp;label=Downloads&amp;style=for-the-badge&amp;color=374151"></a>
+  <a href="https://github.com/jorgepb96/nodus/releases"><img alt="Total Nodus Research downloads, app and Zotero plugin" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.overall&amp;label=Downloads&amp;style=for-the-badge&amp;color=374151"></a>
 </p>
 
 Nodus Research is an open-source, local-first desktop application for university work that brings sources, notes, data, ideas and learning materials together without forcing every project into the same shape.

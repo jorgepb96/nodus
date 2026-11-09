@@ -80,6 +80,10 @@ test('the shared component owns every control visible in the header', () => {
   // destination for the pages without one and for a modifier-click that asks
   // for the releases page in a new tab. The chip only calls itself a dialog
   // opener on the pages that can answer with one.
+  // The chip shows the same total as the README: app installers plus the Zotero plugin.
+  assert.match(headerScript, /const total = result && Number\(result\.overall \?\? result\.total\);/,
+    'the downloads chip counts the Zotero plugin too, and an older stats file still shows its installers');
+  assert.match(headerScript, /App and Zotero plugin downloads from GitHub Releases/);
   assert.match(headerScript, /const opensDialog = \(\) => typeof window\.openDl === 'function';/,
     'the chip falls back to the releases link where the page has no dialog');
   assert.match(headerScript, /downloads\.setAttribute\('aria-haspopup', 'dialog'\)/,

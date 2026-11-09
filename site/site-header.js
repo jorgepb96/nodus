@@ -77,7 +77,7 @@ Hosts opt in with a placeholder element:
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span class="download-value" id="release-download-count">—</span>
           <span class="download-word">downloads</span>
-          <span class="download-tooltip" id="release-downloads-tooltip" role="tooltip">Package downloads from GitHub Releases · updated daily</span>
+          <span class="download-tooltip" id="release-downloads-tooltip" role="tooltip">App and Zotero plugin downloads from GitHub Releases · updated twice a day</span>
         </a>
         <a class="btn primary" href="${base}demo/">Try the live demo</a>
       </div>
@@ -139,7 +139,9 @@ Hosts opt in with a placeholder element:
     fetch(`${base}data/github-release-downloads.json`)
       .then((response) => (response.ok ? response.json() : null))
       .then((result) => {
-        const total = result && Number(result.total);
+        // `overall` adds the Zotero plugin to the app installers, like the README total.
+        // An older stats file without it still shows the installers alone.
+        const total = result && Number(result.overall ?? result.total);
         if (!Number.isFinite(total)) throw new Error('invalid release download stats');
         const formatted = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(total);
         host.querySelector('#release-download-count').textContent = formatted;

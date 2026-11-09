@@ -6,7 +6,6 @@
  * refreshes it before downloads. The session wins over a pasted token while it is valid.
  */
 import { createHash, randomBytes } from 'node:crypto';
-import { shell } from 'electron';
 import {
   HF_OAUTH_TOKEN, HF_OAUTH_USERINFO, accountFromUserInfo, authorizeUrl, codeFromCallback, exchangeFields,
   isHuggingFaceCallback, refreshFields, sessionExpired, sessionFromTokenResponse, tokenRequestBody,
@@ -68,6 +67,8 @@ export async function signInWithHuggingFace(): Promise<HuggingFaceAuthStatus> {
     timer = setTimeout(() => { pending = null; reject(new Error('HF_OAUTH_TIMEOUT')); }, SIGN_IN_TIMEOUT_MS);
     pending = { state, verifier, resolve, reject, timer };
   });
+  // Loaded on use: the TTS service imports this module, and tests bundle that service without Electron.
+  const { shell } = await import('electron');
   await shell.openExternal(authorizeUrl({ state, challenge }));
   let url: string;
   try { url = await callback; } finally { clearTimeout(timer); pending = null; }

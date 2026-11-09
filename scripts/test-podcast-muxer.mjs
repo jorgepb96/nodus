@@ -66,6 +66,23 @@ test('an AAC track muxes into a fast-start MP4 whose sample table points at the 
   assert.ok(Buffer.from(bytes).includes(Buffer.from('Episodio')));
 });
 
+test('a 30-minute episode muxes without overflowing the call stack', () => {
+  // 30 min of AAC at 48 kHz is ~84,400 frames of 1024 samples; Opus at 20 ms is 90,000
+  // packets. One function argument per frame used to blow the stack ("Maximum call stack
+  // size exceeded") on the longest episodes.
+  const aacFrames = Array.from({ length: Math.ceil((30 * 60 * 48000) / 1024) }, (_, i) => new Uint8Array(8).fill(i & 0xff));
+  const mp4 = m.muxAacToMp4({ audioSpecificConfig: new Uint8Array([0x11, 0x88]), sampleRate: 48000, channels: 1, frames: aacFrames });
+  const stbl = path_(mp4, ['moov', 'trak', 'mdia', 'minf', 'stbl']);
+  const stsz = find(mp4, 'stsz', stbl.start + 8, stbl.start + stbl.size);
+  assert.equal(view(mp4).getUint32(stsz.start + 16), aacFrames.length, 'every frame has a size entry');
+  assert.equal(stsz.size, 20 + aacFrames.length * 4);
+  assert.equal(find(mp4, 'mdat').size, aacFrames.length * 8 + 8);
+
+  const packets = Array.from({ length: 90_000 }, (_, i) => new Uint8Array(6).fill(i & 0xff));
+  const ogg = m.muxOpusToOgg({ packets, durationsUs: packets.map(() => 20_000), channels: 1, inputSampleRate: 24000 });
+  assert.ok(ogg.length > packets.length * 6);
+});
+
 test('Opus packets mux into Ogg pages with valid CRCs and 48 kHz granules', () => {
   const packets = Array.from({ length: 120 }, (_, i) => new Uint8Array(40 + (i % 5)).fill(i));
   const bytes = m.muxOpusToOgg({ packets, durationsUs: packets.map(() => 20_000), channels: 1, inputSampleRate: 24000, title: 'Episodio' });

@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.17.1 — 2026-11-09
+
+### Fixes
+- Fix Podcast episodes longer than about 20 minutes failing with "Maximum call stack size exceeded" when the M4A file was built. The MP4 sample-size table passed one function argument per AAC frame (about 84,000 for 30 minutes) and is now written into a single buffer.
+
 ## 5.17.0 — 2026-11-09
 
 ### New features

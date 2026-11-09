@@ -1,5 +1,5 @@
 # Nodus release asset downloads, one row per uploaded file.
-# taken	2026-11-09T16:21:57.300Z
+# taken	2026-11-09T23:08:51.608Z
 tag	published	asset	downloads
 v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-Runtime-linux-x64.zip	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-Runtime-win32-x64.zip	1
@@ -13,29 +13,29 @@ v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-win-x64-portable.exe	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-win-x64.exe	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-x86-64.AppImage	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-linux-amd64.deb	1
-v5.17.1	2026-11-09T09:43:55Z	Nodus-linux-x86_64.AppImage	1
+v5.17.1	2026-11-09T09:43:55Z	Nodus-linux-x86_64.AppImage	3
 v5.17.1	2026-11-09T09:43:55Z	Nodus-linux-x86_64.rpm	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-arm64.dmg	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-arm64.dmg.blockmap	1
-v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-arm64.zip	7
-v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-arm64.zip.blockmap	4
+v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-arm64.zip	10
+v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-arm64.zip.blockmap	6
 v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-x64.dmg	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-x64.dmg.blockmap	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-x64.zip	1
 v5.17.1	2026-11-09T09:43:55Z	Nodus-mac-x64.zip.blockmap	2
-v5.17.1	2026-11-09T09:43:55Z	Nodus-win-x64.exe	4
-v5.17.1	2026-11-09T09:43:55Z	Nodus-win-x64.exe.blockmap	2
+v5.17.1	2026-11-09T09:43:55Z	Nodus-win-x64.exe	9
+v5.17.1	2026-11-09T09:43:55Z	Nodus-win-x64.exe.blockmap	3
 v5.17.1	2026-11-09T09:43:55Z	Nodus-x86_64.AppImage	2
 v5.17.1	2026-11-09T09:43:55Z	Nodus-x86_64.AppImage.zsync	3
-v5.17.1	2026-11-09T09:43:55Z	latest-linux.yml	3
-v5.17.1	2026-11-09T09:43:55Z	latest-mac.yml	6
-v5.17.1	2026-11-09T09:43:55Z	latest.yml	3
+v5.17.1	2026-11-09T09:43:55Z	latest-linux.yml	6
+v5.17.1	2026-11-09T09:43:55Z	latest-mac.yml	12
+v5.17.1	2026-11-09T09:43:55Z	latest.yml	6
 v5.17.1	2026-11-09T09:43:55Z	nodus-support-app-darwin-arm64.json	1
 v5.17.1	2026-11-09T09:43:55Z	nodus-support-app-darwin-x64.json	1
 v5.17.1	2026-11-09T09:43:55Z	nodus-support-app-linux-x64.json	1
 v5.17.1	2026-11-09T09:43:55Z	nodus-support-app-win32-x64.json	1
-v5.17.1	2026-11-09T09:43:55Z	nodus-zotero.xpi	7
-v5.17.1	2026-11-09T09:43:55Z	updates.json	24
+v5.17.1	2026-11-09T09:43:55Z	nodus-zotero.xpi	18
+v5.17.1	2026-11-09T09:43:55Z	updates.json	47
 v5.17.0	2026-11-09T04:32:08Z	Nodus-Support-Runtime-linux-x64.zip	1
 v5.17.0	2026-11-09T04:32:08Z	Nodus-Support-Runtime-win32-x64.zip	1
 v5.17.0	2026-11-09T04:32:08Z	Nodus-Support-linux-amd64.deb	2
@@ -80,7 +80,7 @@ v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-mac-arm64.zip	2
 v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-mac-x64.dmg	2
 v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-mac-x64.zip	2
 v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-win-x64-portable.exe	4
-v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-win-x64.exe	3
+v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-win-x64.exe	4
 v5.16.1	2026-10-25T12:01:36Z	Nodus-Support-x86-64.AppImage	2
 v5.16.1	2026-10-25T12:01:36Z	Nodus-linux-amd64.deb	112
 v5.16.1	2026-10-25T12:01:36Z	Nodus-linux-x86_64.AppImage	175
@@ -88,7 +88,7 @@ v5.16.1	2026-10-25T12:01:36Z	Nodus-linux-x86_64.rpm	185
 v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-arm64.dmg	87
 v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-arm64.dmg.blockmap	5
 v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-arm64.zip	24
-v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-arm64.zip.blockmap	13
+v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-arm64.zip.blockmap	14
 v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-x64.dmg	7
 v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-x64.dmg.blockmap	2
 v5.16.1	2026-10-25T12:01:36Z	Nodus-mac-x64.zip	2
@@ -215,7 +215,7 @@ v5.15.2	2026-10-22T10:33:25Z	Nodus-linux-x86_64.rpm	3
 v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-arm64.dmg	6
 v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-arm64.dmg.blockmap	4
 v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-arm64.zip	5
-v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-arm64.zip.blockmap	7
+v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-arm64.zip.blockmap	8
 v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-x64.dmg	3
 v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-x64.dmg.blockmap	3
 v5.15.2	2026-10-22T10:33:25Z	Nodus-mac-x64.zip	3
@@ -231,7 +231,7 @@ v5.15.2	2026-10-22T10:33:25Z	nodus-support-app-darwin-arm64.json	3
 v5.15.2	2026-10-22T10:33:25Z	nodus-support-app-darwin-x64.json	3
 v5.15.2	2026-10-22T10:33:25Z	nodus-zotero.xpi	12
 v5.15.2	2026-10-22T10:33:25Z	updates.json	45
-v5.15.1	2026-10-21T21:50:04Z	Nodus-Support-Runtime-linux-x64.zip	3
+v5.15.1	2026-10-21T21:50:04Z	Nodus-Support-Runtime-linux-x64.zip	4
 v5.15.1	2026-10-21T21:50:04Z	Nodus-Support-Runtime-win32-x64.zip	3
 v5.15.1	2026-10-21T21:50:04Z	Nodus-Support-linux-amd64.deb	3
 v5.15.1	2026-10-21T21:50:04Z	Nodus-Support-linux-x86-64.rpm	3
@@ -2047,7 +2047,7 @@ v0.8.19	2026-07-07T08:31:19Z	Nodus-0.8.19-win-x64.exe	1
 v0.8.19	2026-07-07T08:31:19Z	Nodus-0.8.19-win-x64.exe.blockmap	1
 v0.8.19	2026-07-07T08:31:19Z	latest-mac.yml	2
 v0.8.19	2026-07-07T08:31:19Z	latest.yml	1
-v0.8.18	2026-07-07T05:28:39Z	Nodus-0.8.18-mac-arm64.dmg	2
+v0.8.18	2026-07-07T05:28:39Z	Nodus-0.8.18-mac-arm64.dmg	3
 v0.8.18	2026-07-07T05:28:39Z	Nodus-0.8.18-mac-arm64.dmg.blockmap	2
 v0.8.18	2026-07-07T05:28:39Z	Nodus-0.8.18-mac-arm64.zip	3
 v0.8.18	2026-07-07T05:28:39Z	Nodus-0.8.18-mac-arm64.zip.blockmap	3

@@ -723,7 +723,9 @@ select,
      past the viewport and the page scrolls sideways */
   /* The mode carousel folds here too, not at a width of its own: a window and its
      copy are one pair everywhere on the page, so both stack at the same point. */
-  .scene-inner, .mode-body { grid-template-columns: minmax(0, 1fr); }
+  /* Flipped scenes name their own two columns with a stronger selector, so the fold
+     has to name it too or every even scene stays side by side on a phone. */
+  .scene-inner, .scene[data-flip] .scene-inner, .mode-body { grid-template-columns: minmax(0, 1fr); }
   .scene[data-flip] .scene-copy { order: 0; }
   .tool-hero { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,5 +1,5 @@
 # Nodus release asset downloads, one row per uploaded file.
-# taken	2026-11-09T11:33:40.281Z
+# taken	2026-11-09T11:34:21.584Z
 tag	published	asset	downloads
 v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-Runtime-linux-x64.zip	0
 v5.17.1	2026-11-09T09:43:55Z	Nodus-Support-Runtime-win32-x64.zip	0
@@ -1776,14 +1776,14 @@ v1.7.2	2026-07-11T10:39:19Z	latest.yml	1
 v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-mac-arm64.dmg	1
 v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-mac-arm64.dmg.blockmap	1
 v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-mac-arm64.zip	2
-v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-mac-arm64.zip.blockmap	1
-v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-win-x64.exe	0
-v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-win-x64.exe.blockmap	0
-v1.7.1	2026-07-11T09:58:54Z	latest-mac.yml	1
-v1.7.1	2026-07-11T09:58:54Z	latest.yml	0
-v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.dmg	0
-v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.dmg.blockmap	0
-v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.zip	0
+v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-mac-arm64.zip.blockmap	2
+v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-win-x64.exe	1
+v1.7.1	2026-07-11T09:58:54Z	Nodus-1.7.1-win-x64.exe.blockmap	1
+v1.7.1	2026-07-11T09:58:54Z	latest-mac.yml	2
+v1.7.1	2026-07-11T09:58:54Z	latest.yml	1
+v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.dmg	1
+v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.dmg.blockmap	1
+v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.zip	1
 v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-mac-arm64.zip.blockmap	0
 v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-win-x64.exe	0
 v1.7.0	2026-07-11T09:00:32Z	Nodus-1.7.0-win-x64.exe.blockmap	0

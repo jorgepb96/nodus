@@ -1,3 +1,4 @@
+import {LINK_TRANSLATIONS} from './i18n.link';
 const KEYS = [
   'Vincular móvil',
   'Escanea el QR o abre el enlace en Nodus para iPhone o iPad. La vinculación autoriza solo las bóvedas y los permisos seleccionados.',
@@ -174,3 +175,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     "Mac에 연결하면 저장된 오디오를 이용할 수 있습니다.", "저장된 내레이션", "이 콘텐츠는 Mac에 저장된 오디오가 없습니다.", "오디오 다운로드 중…", "이 오디오 파일은 Mac에서 사용할 수 없습니다.",
   ]),
 };
+
+for (const [language, translations] of Object.entries(LINK_TRANSLATIONS)) {
+  Object.assign(MOBILE_PARITY_TRANSLATIONS[language as keyof typeof MOBILE_PARITY_TRANSLATIONS], translations);
+}

@@ -68,7 +68,7 @@ export function LinkDictionary({navigate}:{navigate:Navigate}) {
     {busy?<p role="status">{t('Cargando…')}</p>:!issue&&!selected?<>
       <p>{entries.length} {t('entradas')}</p>
       <ul className="link-reader-catalogue">{entries.map(entry=><li key={entry.id}><button onClick={()=>open(entry.id)}>
-        <strong>{entry.name}</strong><span>{entry.shortDescription}</span>
+        <strong>{entry.name}</strong><span className="link-reader-description">{entry.shortDescription}</span>
         <small>{entry.authorCount} {t('Autores')} · {entry.workCount} {t('Obras')} · {entry.evidenceCount} {t('Evidencia')}</small>
         <span className="link-reader-badge">{t(entry.status==='active'?'Activo':entry.status==='draft'?'Borrador':'Archivado')}</span>
       </button></li>)}</ul>{!entries.length&&<p>{t('No hay entradas con estos filtros.')}</p>}
@@ -76,7 +76,7 @@ export function LinkDictionary({navigate}:{navigate:Navigate}) {
       <h2>{detail.entry.name}</h2>
       <nav className="link-reader-tabs" aria-label={t('Contenido de la entrada')}>{[
         ['overview','Definición'],['evidence','Evidencia'],['authors','Autores'],['works','Obras'],['versions','Versiones'],['relations','Relaciones']
-      ].map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>setTab(key)}>{t(label)}</button>)}</nav>
+      ].map(([key,label])=><button key={key} aria-current={tab===key?'page':undefined} onClick={()=>setTab(key)}>{t(label)}</button>)}</nav>
       {tab==='overview'&&<><Prose text={detail.entry.contentMarkdown||t('Esta entrada todavía no tiene una definición guardada.')} navigate={navigate}/>{detail.entry.notes&&<details><summary>{t('Notas')}</summary><Prose text={detail.entry.notes} navigate={navigate}/></details>}</>}
       {tab==='evidence'&&<><p>{evidence.length} {t('Evidencias')}</p>{evidence.map(item=><section className="link-reader-card" key={`${item.kind}:${item.id}`}><h3>{item.label}</h3><Prose text={item.text} navigate={navigate}/><small>{item.workTitle} {item.pageLabel} · {item.decision}</small><button onClick={()=>navigate('citation',`nodus://${item.kind}/${encodeURIComponent(item.id)}`)}>{t('Ver fuente')}</button></section>)}</>}
       {tab==='authors'&&detail.authors.map(item=><section key={item.id}><button onClick={()=>navigate('author',item.id)}>{item.name}</button><Prose text={item.summaryMarkdown} navigate={navigate}/></section>)}
@@ -102,6 +102,6 @@ export function LinkReports({navigate}:{navigate:Navigate}) {
     <select aria-label={t('Idioma')} value={language} onChange={event=>setLanguage(event.target.value)}><option value="">{t('Todos los idiomas')}</option>{[...new Set(items.map(item=>item.brief.language))].map(value=><option key={value}>{value}</option>)}</select>
     <button onClick={()=>navigate('legacyResearchReports','all')}>{t('Informes de versiones anteriores')}</button>
     {issue&&<Failure message={issue} retry={()=>setRevision(value=>value+1)}/>}
-    {busy?<p role="status">{t('Cargando…')}</p>:!issue?<><p>{filtered.length} {t('informes')}</p><ul className="link-reader-catalogue">{filtered.map(item=><li key={item.id}><button onClick={()=>navigate('deepResearchReport',item.id)}><strong>{item.title}</strong><span>{item.brief.objective}</span><small>{item.createdAt.slice(0,10)} · {item.brief.language} · {item.model?.model??''}</small></button></li>)}</ul>{!filtered.length&&<p>{t('No hay informes con estos filtros.')}</p>}</>:null}
+    {busy?<p role="status">{t('Cargando…')}</p>:!issue?<><p>{filtered.length} {t('informes')}</p><ul className="link-reader-catalogue">{filtered.map(item=><li key={item.id}><button onClick={()=>navigate('deepResearchReport',item.id)}><strong>{item.title}</strong><span className="link-reader-description">{item.brief.objective}</span><small>{item.createdAt.slice(0,10)} · {item.brief.language} · {item.model?.model??''}</small></button></li>)}</ul>{!filtered.length&&<p>{t('No hay informes con estos filtros.')}</p>}</>:null}
   </section>;
 }

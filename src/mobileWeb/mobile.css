@@ -168,7 +168,7 @@ html input,html textarea,html [contenteditable="true"]{font-size:max(16px,1em)!i
 .link-reader-badge {display:inline-flex; align-self:flex-start; width:fit-content; border-radius:999px; padding:3px 10px; background:color-mix(in srgb,var(--accent,#6366f1) 15%,transparent);}
 .link-reader-filters {display:flex; flex-wrap:wrap; gap:8px;}
 .link-reader-tabs {display:flex; flex-wrap:wrap; gap:4px; margin:12px 0;}
-.link-reader-tabs [aria-pressed=true] {background:#6366f1; color:white;}
+.link-reader-tabs [aria-current=page] {background:#6366f1; color:white;}
 .link-reader-card {padding:16px 0; border-bottom:1px solid color-mix(in srgb,currentColor 15%,transparent);}
 .link-reader-row {display:block; width:100%; text-align:left; margin:8px 0;}
 .link-reader-issue {padding:12px; color:#b91c1c; background:#fef2f2; border-radius:12px;}
@@ -176,3 +176,5 @@ html input,html textarea,html [contenteditable="true"]{font-size:max(16px,1em)!i
 .link-reader table {display:block; overflow:auto; max-width:100%;}
 .link-reader pre {white-space:pre-wrap; overflow-wrap:anywhere;}
 @media(min-width:800px){.link-reader {padding:24px;} .link-reader-catalogue {grid-template-columns:repeat(auto-fill,minmax(290px,1fr));}}
+
+.link-reader-description {display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}

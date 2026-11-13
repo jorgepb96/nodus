@@ -1,5 +1,9 @@
 /** Closed operation vocabulary. Browser, tools, extraction and indexers have no mobile route. */
 export const MOBILE_OPERATIONS = {
+  podcastEpisodes: ['mobile:podcast:list', 'corpus'],
+  podcastEpisode: ['mobile:podcast:get', 'corpus'],
+  podcastImages: ['mobile:podcast:images', 'corpus'],
+  podcastImageData: ['mobile:podcast:image', 'corpus'],
   getMobileDatabaseActionSource:['mobile:database:actionSource','corpus'],
   generateMobileDatabaseText:['mobile:database:generateText','research-generation'],
   generateMobileDatabaseImage:['mobile:database:generateImage','research-generation'],

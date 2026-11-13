@@ -1,3 +1,4 @@
+import {LinkDictionary, LinkReports} from './LinkReaders';
 import { requireMobileAudioMethod } from '@shared/mobileAudioBeta';
 import {LiveDocumentVisuals} from './liveDocumentVisuals';
 import {MobileLiveDocumentVisualEditor} from './MobileLiveDocumentVisualEditor';
@@ -69,7 +70,7 @@ import {MobilePageDocument} from './MobilePageDocument';
 import {pageBlocksToMarkdown} from '@shared/pages';
 import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
 
-type Configuration = { visualCanWrite?:boolean; visualCanGenerate?:boolean; initialResearchVisualLocalOnly?:boolean; initialResearchVisualReportId?:string; initialStudyDocumentId?:string; documentDraftScope?:string; initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; vaultId?:string; surface: 'studyIdeas' | 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'studyDocument' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { linkReadOnly?: boolean; visualCanWrite?:boolean; visualCanGenerate?:boolean; initialResearchVisualLocalOnly?:boolean; initialResearchVisualReportId?:string; initialStudyDocumentId?:string; documentDraftScope?:string; initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; vaultId?:string; surface: 'studyIdeas' | 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'studyDocument' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -349,7 +350,7 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
   if(method==='listDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>localDeepResearchJobs(call);
   if(method==='cancelDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous')return (id:string)=>cancelAutonomousDeepResearch(call,id);
   if(method==='clearFinishedDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>clearLocalDeepResearchJobs(call);
-  if(method==='listWritingWorkshopDrafts'&&config.surface==='deepResearch') return async()=>{
+  if(method==='listWritingWorkshopDrafts'&&config.surface==='deepResearch'&&!config.linkReadOnly) return async()=>{
     const own=await localDeepResearchReports(call);
     try {const remote=await call(method);return mergeMobileDeepResearchReports(own,remote);}
     catch(error){if((error as {code?:string})?.code!=='offline')throw error;return own;}
@@ -475,7 +476,7 @@ function App() {
     window.addEventListener('error', listener); return () => window.removeEventListener('error', listener);
   }, []);
   useEffect(() => {
-    if (!config.live || !['dictionary', 'deepResearch','databaseResearch'].includes(config.surface)) return;
+    if (config.linkReadOnly || !config.live || !['dictionary', 'deepResearch','databaseResearch'].includes(config.surface)) return;
     let active = true;
     let revision: string | undefined;
     let polling = false;
@@ -507,14 +508,14 @@ function App() {
     {error && <SurfaceIssue issue={error} />}
     {jobError && <SurfaceIssue issue={jobError} title={t('Estado de los trabajos')} />}
     <div className="mobile-surface-content">
-    {liveVisualEditor ? <MobileLiveDocumentVisualEditor controller={liveVisualEditor} canWrite={config.visualCanWrite===true} canGenerate={config.visualCanGenerate===true}/> : documentVisualEditor ? <MobileDocumentVisualEditor controller={documentVisualEditor} call={call} canGenerate={config.executionMode==='autonomous'}/> : config.surface === 'studyIdeas' ? <MobileStudyIdeas paired={config.live} onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)} vaultId={config.vaultId??null} settings={settings??offlineReadSettings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}} download={(subjectId,days)=>native.nodusMobileCall('studyKnowledgeCopy','download',{subjectId,days})} autonomous={config.executionMode==='autonomous'} navigate={navigate}/> : config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
+    {config.linkReadOnly && config.surface === 'dictionary' ? <LinkDictionary navigate={navigate}/> : config.linkReadOnly && config.surface === 'deepResearch' && !config.initialResearchVisualReportId ? <LinkReports navigate={navigate}/> : liveVisualEditor ? <MobileLiveDocumentVisualEditor controller={liveVisualEditor} canWrite={config.visualCanWrite===true} canGenerate={config.visualCanGenerate===true}/> : documentVisualEditor ? <MobileDocumentVisualEditor controller={documentVisualEditor} call={call} canGenerate={config.executionMode==='autonomous'}/> : config.surface === 'studyIdeas' ? <MobileStudyIdeas paired={config.live} onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)} vaultId={config.vaultId??null} settings={settings??offlineReadSettings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}} download={(subjectId,days)=>native.nodusMobileCall('studyKnowledgeCopy','download',{subjectId,days})} autonomous={config.executionMode==='autonomous'} navigate={navigate}/> : config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
       ? !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
-        : <StudyGraphView mobile settings={settings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}}
+        : <StudyGraphView mobile readOnly={config.linkReadOnly} settings={settings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}}
             onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)}
             onOpenMaterial={id=>navigate('studyMaterial',id)} onOpenDocument={id=>navigate('studyDocument',id)}
             onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
-      : config.surface === 'graph' ? <StellarWorkspace allowNoteCopy source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
-      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap}/>
+      : config.surface === 'graph' ? <StellarWorkspace allowNoteCopy={!config.linkReadOnly} source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
+      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView readOnly={config.linkReadOnly} settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap}/>
       : config.surface==='databasePresentation'&&config.initialDatabasePresentation?<MobileDatabasePresentation target={config.initialDatabasePresentation} call={native.nodusMobileCall} downloadedOnly={Boolean(config.pageDownloadedOnly)} phone={config.device==='phone'} onOpen={id=>navigate('databaseRow',id)}/>
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
@@ -534,7 +535,7 @@ function App() {
               onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId={null} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
-      : <ArgumentMapView settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
+      : <ArgumentMapView readOnly={config.linkReadOnly} settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
     </div>
     <FeedbackHost/>
   </main>;

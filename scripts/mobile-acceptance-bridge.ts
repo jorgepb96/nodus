@@ -26,12 +26,16 @@ void app.whenReady().then(async () => {
   if (recovered.remainingLockedProviders.length) throw new Error('The laboratory has inaccessible configured provider credentials.');
   const { listVaults } = await import('../electron/vaults/vaultRegistry');
   if (!listVaults().every(vault => path.resolve(vault.path).startsWith(path.resolve(lab) + path.sep))) throw new Error('All vaults must be isolated.');
+  if (process.env.NODUS_LINK_ACCEPTANCE_FIXTURES === '1') {
+    await (await import('./mobile-link-acceptance-fixtures')).ensureLinkAcceptanceFixtures(lab);
+  } else {
   await (await import('./mobile-acceptance-fixtures')).ensureAcceptanceFixtures(lab);
   await (await import('./mobile-acceptance-file-fixtures')).ensureAcceptanceFileFixtures(lab);
   await (await import('./mobile-acceptance-source-citation-fixtures')).ensureAcceptanceSourceCitationFixtures(lab);
   await (await import('./mobile-acceptance-figure-fixtures')).ensureAcceptanceFigureFixtures(lab);
   if (process.env.NODUS_MOBILE_ACCEPTANCE_SAVED_AUDIO === '1') {
     await (await import('./mobile-acceptance-audio-fixtures')).ensureAcceptanceAudioFixtures(lab);
+  }
   }
   const { createIpcContext } = await import('../electron/ipc/context');
   const context = createIpcContext(() => null);
@@ -68,7 +72,7 @@ void app.whenReady().then(async () => {
   }
   const bridge = await import('../electron/desktopBridge/server');
   const renew = async () => {
-    const offer = await bridge.createDesktopBridgeOffer(listVaults().map(vault => vault.id), ['corpus', 'writing', 'research-generation', 'testimonies', 'primary-source-files', 'prosopography-private', 'teaching-roster', 'teaching-grades', 'study-recordings'], undefined, 'automatic', {wholeWorkspace:true});
+    const offer = await bridge.createDesktopBridgeOffer(listVaults().map(vault => vault.id), ['corpus', 'writing', 'research-generation', 'testimonies', 'primary-source-files', 'prosopography-private', 'teaching-roster', 'teaching-grades', 'study-recordings'], undefined, process.env.NODUS_LINK_ACCEPTANCE_FIXTURES === '1' ? 'direct' : 'automatic', {wholeWorkspace:true});
     fs.writeFileSync(path.join(lab, 'mobile-pairing-offer.json'), JSON.stringify(offer), { mode: 0o600 });
   };
   await renew();

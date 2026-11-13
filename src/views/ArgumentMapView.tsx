@@ -76,11 +76,13 @@ export function ArgumentMapView({
   snapshot,
   onSnapshotChange,
   mobile=false,
+  readOnly=false,
   initialMap,
   initialSeed,
 }: {
   settings: AppSettings;
   mobile?:boolean;
+  readOnly?:boolean;
   initialMap?:ArgumentMap;
   initialSeed?:string;
   /** Where this section was last left. Read once, at mount, and never again. */
@@ -110,7 +112,7 @@ export function ArgumentMapView({
   useEffect(()=>{if(!initialMap)void loadSaved();},[]);
   const [ideaNodes, setIdeaNodes] = useState<IdeaPickerItem[]>([]);
   const [graphLoaded, setGraphLoaded] = useState(false);
-  const [mode, setMode] = useState<'auto' | 'ai'>(() => snapshot?.mode ?? 'auto');
+  const [mode, setMode] = useState<'auto' | 'ai'>(() => readOnly ? 'auto' : snapshot?.mode ?? 'auto');
   const [suggestions, setSuggestions] = useState<ArgumentRouteSuggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [routesRequested,setRoutesRequested]=useState(false);
@@ -347,6 +349,7 @@ export function ArgumentMapView({
                 </button>
                 <button
                   className={`px-3 py-1.5 ${!isAuto ? 'bg-indigo-600 text-white' : 'text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800'}`}
+                  hidden={readOnly}
                   title={t('La IA traza el esquema de argumentos desde una idea')}
                   onClick={() => switchMode('ai')}
                 >

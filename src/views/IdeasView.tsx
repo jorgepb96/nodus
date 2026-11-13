@@ -35,6 +35,7 @@ export function IdeasView({
   onSnapshotChange,
   onOpenGraph,
   onOpenAssistant,
+  readOnly = false,
   dataSource = academicKnowledgeViewSource,
   scopeControl,
   manual = false,
@@ -48,6 +49,7 @@ export function IdeasView({
   onSnapshotChange?: (patch: Partial<IdeasSnapshot>) => void;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
+  readOnly?: boolean;
   dataSource?: KnowledgeViewSource;
   scopeControl?: ReactNode;
   manual?: boolean;
@@ -400,6 +402,7 @@ export function IdeasView({
               onOpenIdea={showIdea}
               onOpenGraph={onOpenGraph}
               onOpenAssistant={onOpenAssistant}
+              readOnly={readOnly}
               onLabelChange={updateIdeaLabel}
               onDeleted={() => {
                 closeIdea(idea.id);
@@ -460,6 +463,7 @@ function IdeaDetailTab({
   onOpenIdea,
   onOpenGraph,
   onOpenAssistant,
+  readOnly = false,
   onLabelChange,
   onDeleted,
   testId,
@@ -471,6 +475,7 @@ function IdeaDetailTab({
   onOpenIdea: (idea: OpenIdea) => void;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
+  readOnly?: boolean;
   onLabelChange: (ideaId: string, label: string) => void;
   onDeleted: () => void;
   testId?: string;
@@ -552,7 +557,7 @@ function IdeaDetailTab({
                 </div>
                 <div className="flex max-w-lg flex-wrap justify-end gap-2">
                   <button className="btn btn-ghost border border-neutral-300 text-xs gap-1.5 dark:border-neutral-700" onClick={() => onOpenGraph({ preset: 'overview', nodeId: detail.idea.global_id, label: `${t('Idea:')} ${detail.idea.label}` })}><Icon name="layers" size={13} /> {t('Grafo')}</button>
-                  <button className="btn btn-ghost border border-neutral-300 text-xs gap-1.5 dark:border-neutral-700" onClick={() => onOpenAssistant({ title: `${t('Idea:')} ${detail.idea.label}`, selection: ASSISTANT_CONTEXTS.idea, prompt: `${t('Analiza esta idea dentro del corpus y resume sus conexiones, tensiones y lecturas prioritarias.')}\n\n${t('Idea:')} ${detail.idea.label}\n${detail.idea.statement}` })}><Icon name="chat" size={13} /> {t('Asistente')}</button>
+                  <button hidden={readOnly} className="btn btn-ghost border border-neutral-300 text-xs gap-1.5 dark:border-neutral-700" onClick={() => onOpenAssistant({ title: `${t('Idea:')} ${detail.idea.label}`, selection: ASSISTANT_CONTEXTS.idea, prompt: `${t('Analiza esta idea dentro del corpus y resume sus conexiones, tensiones y lecturas prioritarias.')}\n\n${t('Idea:')} ${detail.idea.label}\n${detail.idea.statement}` })}><Icon name="chat" size={13} /> {t('Asistente')}</button>
                   <button className="btn btn-ghost border border-neutral-300 text-xs gap-1.5 dark:border-neutral-700" disabled={saving} onClick={() => { if (!dataSource.saveIdea) { setSavingToNotes(true); return; } setSaving(true); void dataSource.saveIdea(detail).finally(() => setSaving(false)); }}><Icon name="notebook" size={13} /> {t(saving ? 'Guardando…' : 'Guardar en notas')}</button>
                   <button className="btn btn-ghost border border-red-200 text-xs text-red-600 gap-1.5 dark:border-red-900/70 dark:text-red-400" disabled={deleting} onClick={() => setConfirmDelete(true)}><Icon name="trash" size={13} /> {t('Eliminar idea')}</button>
                 </div>

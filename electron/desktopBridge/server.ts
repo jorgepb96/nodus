@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileS
 import { createServer, request as httpsRequest, type Server as HttpsServer } from 'node:https';
 import path from 'node:path';
 import { hostname } from 'node:os';
-import { spawn, type ChildProcess } from 'node:child_process';
+import {advertiseDesktopBridge, type BridgeAdvertisement} from './advertisement';
 import { app } from 'electron';
 import { safeStorage } from '../secrets/safeStorageGate';
 import { getDb, withVaultDatabase } from '../db/database';
@@ -148,11 +148,11 @@ let port: number | null = null;
 let origins: string[] = [];
 let fingerprint: string | null = null;
 let lastError: string | null = null;
-let discoveryAdvertisement: ChildProcess | undefined;
+let discoveryAdvertisement: BridgeAdvertisement | undefined;
 let discoverySignature = '';
 let originsTimer: ReturnType<typeof setInterval> | undefined;
 const offers = new Map<string, PairingOffer>();
-const advertisements = new Map<string, ChildProcess>();
+const advertisements = new Map<string, BridgeAdvertisement>();
 const pairingAttempts = new Map<string, { started: number; count: number }>();
 let jobs: BridgeJobStore | undefined;
 let relayConfiguration: RelayConfiguration | undefined;
@@ -762,14 +762,14 @@ export async function createDesktopBridgeOffer(vaultIds: string[], domains: Desk
     ...(renewal ? { renewalPairingId: renewal.id } : {}) });
   const offer = { id, ...scope, code: `${code.slice(0, 5)}-${code.slice(5)}`, origins, certificateFingerprint: fingerprint!, vaultIds: allowedVaults, domains: allowedDomains, expiresAt: new Date(expiresAt).toISOString(),
     deviceName: hostname(), macDeviceId: macIdentity(), ...(renewal ? { renewalPairingId: renewal.id } : {}), relay: relaySecret ? relayFor(id, relaySecret) : undefined, vaults: allowedVaults.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })) };
-  if (process.platform === 'darwin') {
+  {
     // The code is never advertised. Its HMAC authenticates the whole offer,
     // including the TLS pin, before iOS sends a pairing request.
     // Code discovery uses pinned direct HTTPS. Never advertise a relay encryption key.
     const payload = Buffer.from(JSON.stringify({ version: 2, ...offer, code: undefined, relay: undefined, deviceName: hostname(), vaults: allowedVaults.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })) })).toString('base64url');
     const proof = createHmac('sha256', code).update(payload).digest('base64url');
     const chunks = payload.match(/.{1,180}/g) || [];
-    const advertisement = spawn('/usr/bin/dns-sd', ['-R', `Nodus ${id.slice(0, 8)}`, '_nodus-mobile._tcp', 'local', String(port), `n=${chunks.length}`, `proof=${proof}`, ...chunks.map((chunk, index) => `p${index}=${chunk}`)], { stdio: 'ignore' });
+    const advertisement = advertiseDesktopBridge(`Nodus ${id.slice(0, 8)}`, port!, [`n=${chunks.length}`, `proof=${proof}`, ...chunks.map((chunk, index) => `p${index}=${chunk}`)]);
     advertisement.on('error', () => advertisements.delete(id));
     advertisements.set(id, advertisement);
     setTimeout(() => { advertisements.get(id)?.kill(); advertisements.delete(id); offers.delete(id); }, Math.max(1, expiresAt - Date.now())).unref();
@@ -808,13 +808,13 @@ export function desktopBridgeStatus(): DesktopBridgeStatus {
 
 function refreshOrigins(): void {
   origins = port === null ? [] : desktopBridgeOrigins(port, lanAddresses(), hostname());
-  if (process.platform !== 'darwin' || port === null) return;
+  if (port === null) return;
   const txt = desktopBridgeDiscoveryTXT(macIdentity(), origins);
   const signature = JSON.stringify([port, txt]);
   if (discoveryAdvertisement && signature === discoverySignature) return;
   discoveryAdvertisement?.kill();
   discoverySignature = signature;
-  const advertisement = spawn('/usr/bin/dns-sd', ['-R', `Nodus Mac ${macIdentity().slice(0, 8)}`, '_nodus-mobile._tcp', 'local', String(port), ...txt], { stdio: 'ignore' });
+  const advertisement = advertiseDesktopBridge(`Nodus ${macIdentity().slice(0, 8)}`, port, txt);
   discoveryAdvertisement = advertisement;
   const released = () => {
     if (discoveryAdvertisement === advertisement) {

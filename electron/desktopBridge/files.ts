@@ -1,3 +1,4 @@
+import {podcastAudioFile} from '../db/podcastRepo';
 import { createHash } from 'node:crypto';
 import {open, realpath} from 'node:fs/promises';
 import type {FileHandle} from 'node:fs/promises';
@@ -15,13 +16,16 @@ import {serveChatCapabilityFile} from './chatResultAssets';
 
 /** Saved narration uses an opaque clip ID and bounded, verified file chunks. */
 async function serveAudioClip(request: IncomingMessage, response: ServerResponse, url: URL,
-  vaultId: string, domains: readonly string[], id: string, action: string): Promise<void> {
+  vaultId: string, domains: readonly string[], id: string, action: string, kind: 'audioClip' | 'podcastAudio' = 'audioClip'): Promise<void> {
   const json = (status: number, value: unknown) => {
     response.writeHead(status, {'content-type': 'application/json', 'cache-control': 'no-store'});
     response.end(request.method === 'HEAD' ? undefined : JSON.stringify(value));
   };
   await withOwningVault(vaultId, () => withVaultDatabase(vaultId, async () => {
-    const clip = registeredAudioClip(id);
+    const episode = kind === 'podcastAudio' ? podcastAudioFile(id) : null;
+    const clip = kind === 'podcastAudio' ? (episode ? {fileName:episode.file, entityKind:'podcast'} : null) : registeredAudioClip(id);
+    const mime = episode?.mime ?? 'audio/wav';
+    if (!['audio/wav', 'audio/mp4', 'audio/m4a', 'audio/x-m4a', 'audio/ogg', 'audio/opus', 'audio/mpeg'].includes(mime)) { json(415, {error:'unsupported_audio_format'}); return; }
     if (!clip) { json(404, {error: 'file_not_found'}); return; }
     if (clip.entityKind === 'study_transcript' && !domains.includes('study-recordings')) { json(403, {error:'permission_denied'}); return; }
     let handle: FileHandle | undefined;
@@ -50,12 +54,12 @@ async function serveAudioClip(request: IncomingMessage, response: ServerResponse
       if (action === 'descriptor') {
         const digest = createHash('sha256');
         for (let offset = 0; offset < size; offset += chunkSize) digest.update(await read(offset, Math.min(chunkSize, size - offset)));
-        json(200, {kind:'audioClip', id, filename:clip.fileName, mime:'audio/wav', byteSize:size, sha256:digest.digest('hex'), chunkSize}); return;
+        json(200, {kind, id, filename:clip.fileName, mime, byteSize:size, sha256:digest.digest('hex'), chunkSize}); return;
       }
       const offset = Number(url.searchParams.get('offset') ?? 0), limit = Number(url.searchParams.get('limit') ?? chunkSize);
       if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(limit) || offset < 0 || offset > size || limit < 1 || limit > chunkSize) { json(416, {error:'invalid_file_range'}); return; }
       const length = Math.min(limit, size - offset), bytes = request.method === 'HEAD' ? undefined : await read(offset, length);
-      response.writeHead(200, {'content-type':'audio/wav', 'content-length':String(length), 'cache-control':'no-store',
+      response.writeHead(200, {'content-type':mime, 'content-length':String(length), 'cache-control':'no-store',
         'x-nodus-file-offset':String(offset), 'x-nodus-file-size':String(size)}); response.end(bytes);
     } catch (error) {
       json((error as Error).message === 'file_changed' ? 409 : 410, {error:(error as Error).message === 'file_changed' ? 'file_changed' : 'file_content_unavailable'});
@@ -145,13 +149,13 @@ export async function serveBridgeFile(request: IncomingMessage, response: Server
     response.end(request.method === 'HEAD' ? undefined : JSON.stringify(value));
   };
   const reader = ['libraryOriginal', 'libraryAttachment'].includes(kind);
-  const audio = kind === 'audioClip';
+  const audio = kind === 'audioClip' || kind === 'podcastAudio';
   const image = kind === 'corpusImage';
   const chat = kind === 'chatCapability';
   if ((!spec && !reader && !audio && !image && !chat) || !domains.includes(reader || audio || image || chat ? 'corpus' : spec.domain)) { json(403, { error: 'permission_denied' }); return; }
   if (!['descriptor', 'content'].includes(action)) { json(404, { error: 'not_found' }); return; }
   if (reader) { await serveReaderFile(request, response, url, vaultId, kind, id, action); return; }
-  if (audio) { await serveAudioClip(request, response, url, vaultId, domains, id, action); return; }
+  if (audio) { await serveAudioClip(request, response, url, vaultId, domains, id, action, kind as 'audioClip' | 'podcastAudio'); return; }
   if (image) { await serveCorpusImage(request,response,url,vaultId,domains,id,action); return; }
   if (chat) { await serveChatCapabilityFile(request,response,url,vaultId,domains,id,action); return; }
   await withVaultDatabase(vaultId, async () => {

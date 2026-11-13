@@ -153,3 +153,26 @@ html input,html textarea,html [contenteditable="true"]{font-size:max(16px,1em)!i
   .study-prompts-dialog .study-prompts-close{width:44px;flex-shrink:0}
   .study-prompts-dialog .input{min-height:44px;height:auto}
 }
+
+/* Nodus Link has reader controls, not a compressed Desktop authoring toolbar. */
+.link-reader {height:100%; overflow:auto; padding:16px; width:100%; max-width:100%; box-sizing:border-box; overflow-wrap:anywhere;}
+.link-reader > * {max-width:100%;}
+.link-reader header {display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;}
+.link-reader h1 {font-size:1.5rem; font-weight:700;}
+.link-reader h2 {font-size:1.3rem; font-weight:650; margin:16px 0;}
+.link-reader button,.link-reader summary,.link-reader input,.link-reader select {min-height:44px; border-radius:10px; padding:10px; max-width:100%;}
+.link-reader input[type=search] {display:block; width:100%; margin:12px 0; border:1px solid color-mix(in srgb,currentColor 25%,transparent); background:transparent;}
+.link-reader-catalogue {display:grid; gap:10px; list-style:none; padding:0; margin:12px 0;}
+.link-reader-catalogue li > button {display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:left; width:100%; padding:16px; background:color-mix(in srgb,currentColor 5%,transparent);}
+.link-reader-catalogue small,.link-reader-catalogue span {opacity:.75;}
+.link-reader-badge {display:inline-flex; align-self:flex-start; width:fit-content; border-radius:999px; padding:3px 10px; background:color-mix(in srgb,var(--accent,#6366f1) 15%,transparent);}
+.link-reader-filters {display:flex; flex-wrap:wrap; gap:8px;}
+.link-reader-tabs {display:flex; flex-wrap:wrap; gap:4px; margin:12px 0;}
+.link-reader-tabs [aria-pressed=true] {background:#6366f1; color:white;}
+.link-reader-card {padding:16px 0; border-bottom:1px solid color-mix(in srgb,currentColor 15%,transparent);}
+.link-reader-row {display:block; width:100%; text-align:left; margin:8px 0;}
+.link-reader-issue {padding:12px; color:#b91c1c; background:#fef2f2; border-radius:12px;}
+.link-reader article {max-width:850px; margin:0 auto;}
+.link-reader table {display:block; overflow:auto; max-width:100%;}
+.link-reader pre {white-space:pre-wrap; overflow-wrap:anywhere;}
+@media(min-width:800px){.link-reader {padding:24px;} .link-reader-catalogue {grid-template-columns:repeat(auto-fill,minmax(290px,1fr));}}

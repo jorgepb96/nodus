@@ -11,6 +11,7 @@ import type { StellarWorkspaceSnapshot } from '../stellarGraph/snapshot';
 const SUBJECT_KEY = 'nodus.studyKnowledgeSubjectId';
 
 export function StudyGraphView({
+  readOnly = false,
   settings,
   onSettingsChange,
   target,
@@ -22,6 +23,7 @@ export function StudyGraphView({
   mobile,
   onFullscreenChange,
 }: {
+  readOnly?: boolean;
   settings: AppSettings;
   onSettingsChange: () => void;
   target?: GraphNavigationTarget | null;
@@ -66,7 +68,7 @@ export function StudyGraphView({
     target={target}
     dataSource={dataSource}
     mobile={mobile}
-    allowMobileStudyNotes={mobile}
+    allowMobileStudyNotes={mobile && !readOnly}
     onFullscreenChange={onFullscreenChange}
     snapshot={snapshot}
     onSnapshotChange={onSnapshotChange}

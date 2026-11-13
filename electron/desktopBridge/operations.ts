@@ -1,3 +1,4 @@
+import {getPodcastEpisode, listPodcastEpisodes, listPodcastImages, getPodcastImageBytes} from '../db/podcastRepo';
 import {getDocumentVisuals as readCanonicalDocumentVisuals} from '../ai/documentVisuals';
 import {getWritingWorkshopDraft as readCanonicalVisualDraft} from '../db/writingDraftsRepo';
 import {runLiveDocumentVisuals,type LiveVisualMethod} from './liveDocumentVisuals';
@@ -58,6 +59,24 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  // Read the saved repository directly. Main-window podcast IPC also starts a synthesis
+  // lane and asserts a renderer identity; neither belongs in a companion read request.
+  if (['podcastEpisodes', 'podcastEpisode', 'podcastImages', 'podcastImageData'].includes(method)) {
+    const id = args[0];
+    if (method === 'podcastEpisodes' ? args.length !== 0 : typeof id !== 'string' || !id || id.length > 1024) throw new Error('invalid_arguments');
+    if (method !== 'podcastEpisodes' && args.length !== (method === 'podcastImageData' ? 3 : 1)) throw new Error('invalid_arguments');
+    if (method === 'podcastImageData' && (!Number.isInteger(args[1]) || Number(args[1]) < 0 || Number(args[1]) > 6 || !['image', 'thumbnail'].includes(String(args[2])))) throw new Error('invalid_arguments');
+    return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => {
+      if (method === 'podcastEpisodes') return listPodcastEpisodes();
+      if (method === 'podcastEpisode') return getPodcastEpisode(String(id));
+      if (!getPodcastEpisode(String(id))) throw new Error('podcast_not_found');
+      if (method === 'podcastImages') return listPodcastImages(String(id));
+      const found = getPodcastImageBytes(String(id), Number(args[1]), args[2] === 'image' ? 'image' : 'thumbnail');
+      if (!found) return null;
+      if (found.bytes.length > 8 * 1024 * 1024) throw new Error('podcast_image_too_large');
+      return `data:${found.mime};base64,${Buffer.from(found.bytes).toString('base64')}`;
+    }));
+  }
   if(method==='getDocumentVisuals') {
     return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
       const target=args[0] as {kind:'deep-research'|'immersion';id:string};

@@ -94,7 +94,7 @@ export function MobilePairingSettings() {
     <h3 className="font-semibold">{t('Vincular con mi Nodus')}</h3>
     <p className="text-sm text-neutral-500">{t('Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.')}</p>
     {!offer?.renewalPairingId && <p className="text-sm text-neutral-500">{t('Esta vinculación también incluye las bóvedas que añadas después a tu Workspace.')}</p>}
-    <p className="text-sm text-neutral-500">{t('Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.')}</p>
+    <p className="text-sm text-neutral-500">{t('Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. Consulta tus contenidos desde Nodus Link.')}</p>
     {linkedDevice && <p role="status" className="rounded-lg border border-green-600/30 bg-green-600/10 p-3 text-sm text-green-700 dark:text-green-300">{tx('{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.', { device: linkedDevice.deviceName })}</p>}
     {offer?.renewalPairingId && <div role="status" className="space-y-1 text-sm"><p className="font-medium">{tx('Renovar conexión de {device}', { device: renewalDevice?.deviceName ?? offer.renewalPairingId })}</p><p>{t('Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.')}</p></div>}
     <details className="text-sm"><summary className="cursor-pointer">{t(offer?.renewalPairingId ? 'Bóvedas' : 'Todo tu workspace')} · {(offer?.vaultIds ?? vaults).length}</summary><p className="mt-2">{(offer?.vaultIds ?? vaults.map(v => v.id)).map(id => vaults.find(v => v.id === id)?.name ?? id).join(', ')}</p></details>

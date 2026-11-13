@@ -9,6 +9,7 @@ import { createStudyKnowledgeViewSource } from './studyKnowledgeViewSource';
 const SUBJECT_KEY = 'nodus.studyKnowledgeSubjectId';
 
 export function StudyIdeasView({
+  readOnly = false,
   vaultId,
   onOpenGraph,
   onOpenAssistant,
@@ -16,6 +17,7 @@ export function StudyIdeasView({
   onOpenDocument,
   onSubjectSelected,
 }: {
+  readOnly?: boolean;
   vaultId: string | null;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
@@ -46,6 +48,7 @@ export function StudyIdeasView({
   if (!workspace) return <div className="flex h-full items-center justify-center"><Spinner label={t('Cargando ideas…')} /></div>;
   const hasSubjects = workspace.subjects.length > 0;
   return <IdeasView
+    readOnly={readOnly}
     key={selectedSubjectId}
     vaultId={vaultId}
     dataSource={dataSource}

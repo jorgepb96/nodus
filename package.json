@@ -3,7 +3,7 @@
   "version": "5.17.1",
   "description": "Local-first desktop app that turns a Zotero library into a navigable graph of ideas and authors.",
   "author": {
-    "name": "Jorge P\u00e9rez Burgue\u00f1o",
+    "name": "Jorge Pérez Burgueño",
     "url": "https://orcid.org/0000-0002-1150-1930"
   },
   "license": "AGPL-3.0-only",
@@ -255,6 +255,7 @@
     "adm-zip": "^0.6.0",
     "archiver": "^5.3.2",
     "better-sqlite3": "^12.11.1",
+    "bonjour-service": "1.4.4",
     "citeproc": "^2.4.63",
     "d3-geo": "^3.1.1",
     "diff": "^9.0.0",
@@ -472,11 +473,11 @@
         }
       ],
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Nodus Research usa el micr\u00f3fono \u00fanicamente cuando inicias un dictado o una grabaci\u00f3n de estudio.",
-        "NSCameraUsageDescription": "Nodus Research permite que un sitio abierto en su navegador integrado use la c\u00e1mara \u00fanicamente despu\u00e9s de que lo autorices para ese sitio.",
-        "NSAppleEventsUsageDescription": "Nodus Research puede usar una aplicaci\u00f3n de presentaciones instalada \u00fanicamente para convertir a PDF el archivo que elijas importar.",
+        "NSMicrophoneUsageDescription": "Nodus Research usa el micrófono únicamente cuando inicias un dictado o una grabación de estudio.",
+        "NSCameraUsageDescription": "Nodus Research permite que un sitio abierto en su navegador integrado use la cámara únicamente después de que lo autorices para ese sitio.",
+        "NSAppleEventsUsageDescription": "Nodus Research puede usar una aplicación de presentaciones instalada únicamente para convertir a PDF el archivo que elijas importar.",
         "NSDockTilePlugIn": "NodusDockTile.docktileplugin",
-        "NSCalendarsUsageDescription": "Nodus sincroniza los eventos de docencia y estudio con el calendario de Apple que elijas, solo si activas esta funci\u00f3n.",
+        "NSCalendarsUsageDescription": "Nodus sincroniza los eventos de docencia y estudio con el calendario de Apple que elijas, solo si activas esta función.",
         "NSCalendarsFullAccessUsageDescription": "Nodus necesita acceso completo para crear, actualizar y eliminar las copias de tus eventos en el calendario de Apple que elijas.",
         "NSLocalNetworkUsageDescription": "Nodus vincula tu iPhone o iPad con los vaults y permisos que elijas y conecta Presenter mientras presentas.",
         "NSBonjourServices": [

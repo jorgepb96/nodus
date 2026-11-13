@@ -56,7 +56,7 @@ export {normalizeStudyDeepResearchAudience};
 
 /** Appended to the writer prompt for a part the teacher gave an explicit steer for. */
 
-export export interface StudyResearchSource {
+export interface StudyResearchSource {
   id: string;
   kind: StudySearchKind;
   sourceId: string;

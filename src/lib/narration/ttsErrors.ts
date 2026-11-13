@@ -34,11 +34,17 @@ const MESSAGES: Record<string, string> = {
   TTS_HF_ACCESS_DENIED: 'Tu cuenta de Hugging Face aún no tiene acceso a este modelo. Abre su página, acepta los términos y vuelve a descargarlo.',
   TTS_HF_TOKEN_REQUIRED: 'Este modelo está restringido: acepta sus términos en Hugging Face y guarda un token en Ajustes → Modelos → Voz y narración.',
   TTS_VOICE_ENGINE_MISMATCH: 'La voz elegida no sirve para este modelo. Elige una voz del modelo en el selector.',
+  // «Sign in with Hugging Face» (electron/tts/huggingFaceSignIn.ts).
+  HF_OAUTH_TIMEOUT: 'El inicio de sesión con Hugging Face no se completó a tiempo. Vuelve a intentarlo.',
+  HF_OAUTH_DENIED: 'Hugging Face no autorizó a Nodus.',
+  HF_OAUTH_STATE_MISMATCH: 'La respuesta de Hugging Face no corresponde a este inicio de sesión. Vuelve a intentarlo.',
+  HF_OAUTH_INVALID_RESPONSE: 'Hugging Face devolvió una respuesta inesperada.',
+  HF_OAUTH_EXPIRED: 'Tu sesión de Hugging Face ha caducado. Vuelve a iniciar sesión.',
 };
 
 export function ttsErrorMessage(error: unknown): string {
   const raw = error instanceof Error ? error.message : String(error ?? '');
-  const code = /TTS_[A-Z_]+/.exec(raw)?.[0];
+  const code = /(?:TTS|HF_OAUTH)_[A-Z_]+/.exec(raw)?.[0];
   return code && MESSAGES[code] ? t(MESSAGES[code]) : raw;
 }
 

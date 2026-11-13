@@ -6,7 +6,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
-import { createCanvas } from '@napi-rs/canvas';
+import { fileURLToPath } from 'node:url';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
+
+// Scanned fixtures draw with a font shipped in the repository, never the runner's
+// `sans-serif`: the 2026-10-28 GitHub Ubuntu image resolved that family to nothing,
+// so every "scan" came out blank and OCR read only spaces.
+const FIXTURE_FONT = 'NodusFixtureSans';
+GlobalFonts.registerFromPath(
+  path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'server/lib/assets/fonts/NodusCJK-Regular.ttf'),
+  FIXTURE_FONT,
+);
 
 // Known phrases embedded in the text PDF, one heading + body lines per page.
 export const PDF_PAGES = [
@@ -64,7 +74,7 @@ function renderTextCanvas(lines, { width = 1000, height = 700, fontSize = 44 } =
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = '#000000';
-  ctx.font = `${fontSize}px sans-serif`;
+  ctx.font = `${fontSize}px ${FIXTURE_FONT}`;
   let y = fontSize + 40;
   for (const line of lines) {
     ctx.fillText(line, 40, y);

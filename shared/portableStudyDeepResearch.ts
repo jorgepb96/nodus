@@ -56,7 +56,7 @@ export {normalizeStudyDeepResearchAudience};
 
 /** Appended to the writer prompt for a part the teacher gave an explicit steer for. */
 
-export interface StudyResearchSource {
+export export interface StudyResearchSource {
   id: string;
   kind: StudySearchKind;
   sourceId: string;
@@ -1146,5 +1146,5 @@ async function generateStudyDeepResearchReport(
   });
   return { draft, meta };
 }
-return {MAX_UNIT_SECTIONS,STUDY_DEEP_RESEARCH_PROMPTS,TEACHING_UNIT_PROMPTS,studyDeepResearchPromptPack,mergeStudyApproachEntries,normalizeUnitOutline,assembleStudyDraftBody,resolveStudySections,generateStudyDeepResearchReport};
+return {buildStudyResearchSources:buildSources,MAX_UNIT_SECTIONS,STUDY_DEEP_RESEARCH_PROMPTS,TEACHING_UNIT_PROMPTS,studyDeepResearchPromptPack,mergeStudyApproachEntries,normalizeUnitOutline,assembleStudyDraftBody,resolveStudySections,generateStudyDeepResearchReport};
 }

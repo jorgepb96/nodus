@@ -174,9 +174,9 @@ test('the files on disk are exactly the ones the mirror script produces', () => 
   }
 });
 
-test('the academic vault carries all five of its README views, and steps through them', () => {
+test('the academic vault carries all six of its README views, and steps through them', () => {
   const academic = windows[0];
-  assert.equal(academic.figures.length, 5, 'the academic window shows its five views');
+  assert.equal(academic.figures.length, 6, 'the academic window shows its six views');
   assert.deepEqual(
     academic.figures.map((figure) => figure.src),
     [
@@ -184,13 +184,14 @@ test('the academic vault carries all five of its README views, and steps through
       'assets/screenshots/academic-theme-relations.webp',
       'assets/screenshots/academic-argument-map.webp',
       'assets/screenshots/academic-deep-research.webp',
+      'assets/screenshots/academic-podcast.webp',
       'assets/screenshots/academic-immersion.webp',
     ],
     'the order is the order the README introduces them in',
   );
   assert.deepEqual(
     academic.figures.map((figure) => figure.step),
-    ['01 / 05', '02 / 05', '03 / 05', '04 / 05', '05 / 05'],
+    ['01 / 06', '02 / 06', '03 / 06', '04 / 06', '05 / 06', '06 / 06'],
     'each view says where it sits in the set',
   );
 

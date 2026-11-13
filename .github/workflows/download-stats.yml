@@ -1,0 +1,39 @@
+name: Download stats
+
+# After every website deploy (the twice-daily refresh and every site push),
+# record the download count of every release file on the download-stats branch.
+# GitHub keeps only running totals, so this dated history is the only way to see
+# when a counter jumped and which file caused it. main is never written.
+on:
+  workflow_run:
+    workflows: [Website]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write # The download-stats branch only.
+
+concurrency:
+  group: download-stats
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/release-download-snapshots.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Record release download counts
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { recordDownloadSnapshot } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/release-download-snapshots.mjs`);
+            await recordDownloadSnapshot({ github, context, core });

@@ -55,6 +55,11 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   const [hfToken, setHfToken] = useState('');
   const [hasHfToken, setHasHfToken] = useState(false);
   useEffect(() => { void window.nodus.ttsHasHuggingFaceToken().then(setHasHfToken).catch(() => {}); }, []);
+  const [hfAuth, setHfAuth] = useState<{ signedIn: boolean; account: string | null } | null>(null);
+  const [hfSigningIn, setHfSigningIn] = useState(false);
+  useEffect(() => { void window.nodus.ttsHuggingFaceStatus().then(setHfAuth).catch(() => {}); }, []);
+  /** A gated download works with either a sign-in or a pasted token. */
+  const hfReady = hasHfToken || Boolean(hfAuth?.signedIn);
 
   const platformModels = useMemo(() => {
     const backend = status?.runtime.backend;
@@ -159,6 +164,29 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
           <button className="text-indigo-600 hover:underline dark:text-indigo-300" data-testid="narration-hf-token-link" onClick={() => void window.nodus.openExternal(HF_TOKENS_URL)}><Icon name="external" size={10} /> {t('Crear un token de lectura')}</button>
           {TTS_MODELS.filter((model) => model.gated && platformModels.includes(model)).map((model) => <button key={model.id} className="text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => void window.nodus.openExternal(model.sourceUrl)}><Icon name="external" size={10} /> {tx('Aceptar los términos de {model}', { model: model.label })}</button>)}
         </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2" data-testid="narration-hf-signin">
+          {hfAuth?.signedIn ? (<>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{hfAuth.account ? tx('Conectado a Hugging Face como {account}', { account: hfAuth.account }) : t('Conectado a Hugging Face')}</span>
+            <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(async () => setHfAuth(await window.nodus.ttsHuggingFaceSignOut()))}>{t('Cerrar sesión')}</button>
+          </>) : (<>
+            {/* Never disabled: a browser tab closed half way would otherwise lock it for ten minutes.
+                Clicking again starts a fresh sign-in and supersedes the pending one. */}
+            <button className="btn btn-primary h-7 px-3 text-[11px]" onClick={() => {
+              setHfSigningIn(true);
+              setError('');
+              window.nodus.ttsHuggingFaceSignIn().then((next) => { setHfAuth(next); setHfSigningIn(false); }, (cause) => {
+                // A second click supersedes the first attempt: that one ends quietly, the new one waits on.
+                if (String(cause instanceof Error ? cause.message : cause).includes('HF_OAUTH_SUPERSEDED')) return;
+                setHfSigningIn(false);
+                setError(ttsErrorMessage(cause));
+              });
+            }}>
+              <Icon name="user" size={11} /> {t('Iniciar sesión con Hugging Face')}
+            </button>
+            {hfSigningIn && <span className="text-[11px] text-neutral-500">{t('Esperando al navegador…')}</span>}
+            <span className="text-[11px] text-neutral-500">{t('o pega un token de lectura:')}</span>
+          </>)}
+        </div>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <input type="password" className="input h-7 w-64 text-xs" placeholder={hasHfToken ? t('Token guardado; escribe para sustituirlo') : 'hf_…'} value={hfToken} onChange={(event) => setHfToken(event.target.value)} />
           <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={!hfToken.trim()} onClick={() => void run(async () => { setHasHfToken(await window.nodus.ttsSetHuggingFaceToken(hfToken)); setHfToken(''); })}>{t('Guardar token')}</button>
@@ -249,7 +277,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
                       <input type="checkbox" checked={settings.ttsAcceptedLicenses.includes(model.id)} onChange={(event) => void patch({ ttsAcceptedLicenses: event.target.checked ? [...settings.ttsAcceptedLicenses, model.id] : settings.ttsAcceptedLicenses.filter((id) => id !== model.id) })} />
                       {t('Acepto la licencia (uso no comercial)')}
                     </label>}
-                    <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={(model.nonCommercial && !settings.ttsAcceptedLicenses.includes(model.id)) || (model.gated && !hasHfToken)} title={model.gated && !hasHfToken ? t('Guarda primero un token de Hugging Face') : undefined} onClick={() => void run(async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings.ttsModelId) await patch({ ttsModelId: model.id }); })}><Icon name="download" size={10} />{t('Descargar')}</button>
+                    <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={(model.nonCommercial && !settings.ttsAcceptedLicenses.includes(model.id)) || (model.gated && !hfReady)} title={model.gated && !hfReady ? t('Inicia sesión con Hugging Face o guarda un token') : undefined} onClick={() => void run(async () => { await window.nodus.ttsDownloadModel(model.id); if (!settings.ttsModelId) await patch({ ttsModelId: model.id }); })}><Icon name="download" size={10} />{t('Descargar')}</button>
                   </>)}
             </div>
           </article>;

@@ -117,6 +117,12 @@ window.FAQ_ENTRIES = [
     "a": "<p>Deep Research is an orchestrated report builder over <strong>your selected corpus</strong>. It plans an outline, writes section by section, tracks coverage, assembles a support matrix and bibliography, and can produce an adaptive 5–20 page report with clickable citations.</p><p>It is not an autonomous systematic review and it does not make your corpus complete. A well-cited report can still misinterpret evidence or omit important literature. Verify every substantive claim and use the result as a research draft, not a final publication.</p>"
   },
   {
+    "id": "podcast",
+    "cat": "features",
+    "q": "Can Nodus turn my sources into a podcast?",
+    "a": "<p>Yes, in beta. Open <strong>Podcast</strong> in an Academic, Study or Teaching vault, pick a topic, a format (conversation, debate, lesson or narrated essay), one or two voices and a length from 5 to 30 minutes. Nodus researches the topic in your vault, writes a spoken script and records it with Kokoro, Phonon or Ming on your own computer. You can review and edit the script before anything is recorded.</p><p>Episodes keep playing while you move around the app, and you can download them as M4A or WAV with their transcript. Install a voice engine first in Settings → Narration. The Spanish and multilingual Phonon models are licensed for non-commercial use only, so check that before you publish an episode.</p>"
+  },
+  {
     "id": "immersion",
     "cat": "features",
     "q": "What is Immersion mode?",

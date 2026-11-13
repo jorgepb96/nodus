@@ -21,7 +21,9 @@ on:
       - 'CITATION.cff'
       - '.github/workflows/pages.yml'
   schedule:
-    # 23:00 UTC is midnight in Spain in winter (01:00 in summer).
+    # Every 12 hours, so the download counts and other generated data stay fresh:
+    # 11:00 and 23:00 UTC are noon and midnight in Spain in winter (13:00 and 01:00 in summer).
+    - cron: '0 11 * * *'
     - cron: '0 23 * * *'
   workflow_dispatch:
 

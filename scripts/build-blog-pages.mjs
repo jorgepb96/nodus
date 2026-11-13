@@ -138,7 +138,7 @@ ${(post.tags || []).map((tag) => `<meta property="article:tag" content="${escape
 <div id="scroll-progress" aria-hidden="true"></div>
 
 <div data-nodus-site-header data-base="../" data-page="blog"></div>
-<script defer src="../site-header.js?v=20260927a"></script>
+<script defer src="../site-header.js?v=20261109a"></script>
 
 <main id="main" data-accent="#c084fc" data-second="#a78bfa" data-energy="0.22">
   <article class="post-page">

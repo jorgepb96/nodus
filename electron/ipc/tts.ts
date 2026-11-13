@@ -7,6 +7,7 @@ import type { TtsLanguage } from '@shared/ttsModels';
 import type { TtsSpeakRequest } from '@shared/api/tts';
 import type { TtsVoiceSaveInput } from '@shared/ttsVoices';
 import { ttsService } from '../tts/service';
+import { huggingFaceAuthStatus, signInWithHuggingFace, signOutOfHuggingFace } from '../tts/huggingFaceSignIn';
 import type { IpcContext } from './context';
 import { assertTrustedNodusMainFrame } from './trust';
 
@@ -24,6 +25,9 @@ export function registerTtsIpc({ h, getWindow }: IpcContext): void {
   h('tts:runtime:remove', async (event, engine?: string) => { trusted(event); return service.removeRuntime(engine === 'phonon' ? 'phonon' : engine === 'kokoro' ? 'kokoro' : engine === 'pocket' ? 'pocket' : 'ming'); });
   h('tts:hfToken:set', async (event, token: string) => { trusted(event); return service.setHuggingFaceToken(String(token ?? '')); });
   h('tts:hfToken:status', async (event) => { trusted(event); return service.hasHuggingFaceToken(); });
+  h('tts:hf:signIn', async (event) => { trusted(event); return signInWithHuggingFace(); });
+  h('tts:hf:signOut', async (event) => { trusted(event); return signOutOfHuggingFace(); });
+  h('tts:hf:status', async (event) => { trusted(event); return huggingFaceAuthStatus(); });
   h('tts:model:download', async (event, modelId: string) => { trusted(event); return service.downloadModel(String(modelId)); });
   h('tts:model:cancel', async (event, modelId: string) => { trusted(event); service.models.cancel(String(modelId)); });
   h('tts:model:delete', async (event, modelId: string) => { trusted(event); return service.deleteModel(String(modelId)); });

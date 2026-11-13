@@ -24,6 +24,7 @@ test('Pocket settings install the correct engine, download voices and save uploa
   globalThis.__pocketUiStatus = status;
   window.nodus = {
     ttsHasHuggingFaceToken: async () => true,
+    ttsHuggingFaceStatus: async () => ({ signedIn: false, account: null, hasToken: true }),
     ttsVoices: async () => voices,
     ttsDiskUsage: async () => null,
     ttsInstallRuntime: async engine => { calls.push(['install', engine]); },

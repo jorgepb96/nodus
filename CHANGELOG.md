@@ -1,5 +1,16 @@
 # Changelog
 
+## 5.17.1 — 2026-11-09
+
+### Fixes
+- Fix Podcast episodes longer than about 20 minutes failing with "Maximum call stack size exceeded" when the M4A file was built. The MP4 sample-size table passed one function argument per AAC frame (about 84,000 for 30 minutes) and is now written into a single buffer.
+
+## 5.17.0 — 2026-11-09
+
+### New features
+- Add Podcast (beta) under Analyze in Academic, Study and Teaching vaults. A topic is researched in the vault, scripted for one or two hosts as a conversation, debate, lesson or narrated essay, fitted to a 5 to 30 minute cap and recorded with local voices (Kokoro, Phonon or Ming). The script can be reviewed before recording, episodes keep playing in other sections and download as M4A or WAV with chapters and a synced transcript.
+- Sign in with Hugging Face in Settings, Voice and narration, to download gated voice models without pasting a token. The session is stored encrypted on this computer and can be signed out at any time.
+
 ## 5.16.1 — 2026-10-25
 
 ### Enhancements

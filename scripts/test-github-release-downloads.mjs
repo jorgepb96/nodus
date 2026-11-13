@@ -7,6 +7,8 @@ import {
   classifyInstallerAsset,
   classifyReleaseAsset,
   fetchAllReleases,
+  isZoteroPluginAsset,
+  pickLatestRelease,
   refreshReleaseDownloadStats,
   sumReleaseDownloads,
 } from './github-release-downloads.mjs';
@@ -105,7 +107,8 @@ test('sums several releases, skips drafts and keeps the platform breakdown', () 
     { draft: true, assets: [{ name: 'Nodus-win-x64.exe', download_count: 1000 }] },
   ]);
 
-  assert.deepEqual(counts, {
+  const { latest, ...historical } = counts;
+  assert.deepEqual(historical, {
     linux: 30,
     macos: 70,
     windows: 50,
@@ -118,8 +121,12 @@ test('sums several releases, skips drafts and keeps the platform breakdown', () 
       linuxRpm: 0,
       linuxAppImage: 20,
     },
+    zotero: 0,
+    overall: 150,
   });
   assert.equal(counts.macos, counts.installers.macosArm64 + counts.installers.macosIntel);
+  // Without dates, the first non-draft release in GitHub's order is the latest.
+  assert.equal(latest.total, 60);
 });
 
 test('the row counters add up to the total', () => {
@@ -150,8 +157,69 @@ test('the row counters add up to the total', () => {
   assert.equal(rows, 1810);
 });
 
+test('the Zotero plugin has its own counter, outside the app total', () => {
+  assert.equal(isZoteroPluginAsset('nodus-zotero.xpi'), true);
+  assert.equal(isZoteroPluginAsset('Nodus-Zotero.XPI'), true);
+  assert.equal(isZoteroPluginAsset('nodus-zotero.xpi.blockmap'), false);
+  assert.equal(isZoteroPluginAsset('updates.json'), false);
+
+  const counts = sumReleaseDownloads([
+    { draft: false, assets: [
+      { name: 'Nodus-win-x64.exe', download_count: 10 },
+      { name: 'nodus-zotero.xpi', download_count: 4 },
+    ] },
+    { draft: false, assets: [{ name: 'nodus-zotero.xpi', download_count: 3 }] },
+    { draft: true, assets: [{ name: 'nodus-zotero.xpi', download_count: 100 }] },
+  ]);
+  assert.equal(counts.total, 10, 'the plugin is not a build of the app');
+  assert.equal(counts.zotero, 7);
+  assert.equal(counts.overall, 17, 'the Total row adds the plugin to the app');
+});
+
+test('the latest release is the newest published one that is not a prerelease', () => {
+  const releases = [
+    { tag_name: 'v3.0.0', draft: true, published_at: null, created_at: '2026-11-05T00:00:00Z' },
+    { tag_name: 'v2.1.0-beta', prerelease: true, published_at: '2026-11-04T00:00:00Z' },
+    { tag_name: 'v2.0.0', published_at: '2026-11-03T00:00:00Z' },
+    { tag_name: 'v1.9.1', published_at: '2026-11-01T00:00:00Z' },
+  ];
+  assert.equal(pickLatestRelease(releases)?.tag_name, 'v2.0.0');
+  // GitHub orders by creation; a later-published backport still loses to the newest.
+  assert.equal(pickLatestRelease([...releases].reverse())?.tag_name, 'v2.0.0');
+  assert.equal(pickLatestRelease([{ draft: true }, { prerelease: true }]), null);
+});
+
+test('the latest-version column counts only the release the links resolve to', () => {
+  const counts = sumReleaseDownloads([
+    { tag_name: 'v2.0.0', published_at: '2026-11-03T00:00:00Z', assets: [
+      { name: 'Nodus-mac-arm64.dmg', download_count: 5 },
+      { name: 'Nodus-mac-arm64.zip', download_count: 6 },
+      { name: 'Nodus-linux-x86_64.rpm', download_count: 2 },
+      { name: 'nodus-zotero.xpi', download_count: 9 },
+      { name: 'latest-mac.yml', download_count: 500 },
+    ] },
+    { tag_name: 'v1.0.0', published_at: '2026-10-01T00:00:00Z', assets: [
+      { name: 'Nodus-mac-arm64.dmg', download_count: 100 },
+      { name: 'nodus-zotero.xpi', download_count: 50 },
+    ] },
+  ]);
+
+  assert.equal(counts.latest.version, 'v2.0.0');
+  assert.equal(counts.latest.installers.macosArm64, 11);
+  assert.equal(counts.latest.installers.linuxRpm, 2);
+  assert.equal(counts.latest.total, 13);
+  assert.equal(counts.latest.zotero, 9);
+  assert.equal(counts.latest.overall, 22);
+  const latestRows = Object.values(counts.latest.installers).reduce((sum, n) => sum + n, 0);
+  assert.equal(latestRows, counts.latest.total, 'the latest column adds up like the total one');
+
+  assert.equal(counts.installers.macosArm64, 111);
+  assert.equal(counts.zotero, 59);
+  assert.equal(counts.overall, 172);
+});
+
 test('accepts releases without assets', () => {
-  assert.deepEqual(sumReleaseDownloads([{ draft: false }, { draft: false, assets: [] }]), {
+  const empty = {
     linux: 0,
     macos: 0,
     windows: 0,
@@ -164,7 +232,14 @@ test('accepts releases without assets', () => {
       linuxRpm: 0,
       linuxAppImage: 0,
     },
+    zotero: 0,
+    overall: 0,
+  };
+  assert.deepEqual(sumReleaseDownloads([{ draft: false }, { draft: false, assets: [] }]), {
+    ...empty,
+    latest: { ...empty, version: null },
   });
+  assert.deepEqual(sumReleaseDownloads([]).latest, { ...empty, version: null });
 });
 
 test('requests every GitHub Releases page with per_page=100', async () => {
@@ -207,6 +282,25 @@ test('keeps the last valid value when GitHub returns an error', async () => {
       linuxRpm: 0,
       linuxAppImage: 5,
     },
+    zotero: 4,
+    latest: {
+      linux: 1,
+      macos: 2,
+      windows: 3,
+      total: 6,
+      installers: {
+        macosArm64: 2,
+        macosIntel: 0,
+        windows: 3,
+        linuxDeb: 1,
+        linuxRpm: 0,
+        linuxAppImage: 0,
+      },
+      zotero: 1,
+      version: 'v1.2.3',
+      overall: 7,
+    },
+    overall: 70,
     updatedAt: '2026-07-17T03:17:00.000Z',
   };
 
@@ -256,6 +350,10 @@ test('a stats file that predates the installer breakdown is still a fallback', a
       linuxAppImage: 0,
     });
     assert.equal(result.stats.total, 66);
+    assert.equal(result.stats.zotero, 0);
+    assert.equal(result.stats.overall, 66);
+    assert.equal(result.stats.latest.total, 0);
+    assert.equal(result.stats.latest.version, null);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

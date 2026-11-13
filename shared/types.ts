@@ -31,6 +31,7 @@ import type { CompassApi } from './api/compass';
 import type { LogsApi } from './api/logs';
 import type { DriftApi } from './api/drift';
 import type { TtsApi } from './api/tts';
+import type { PodcastApi } from './api/podcast';
 import type { LibraryAttachmentRecord } from './libraryTypes';
 import type { ToolkitToolPage } from './toolkitNavigation';
 
@@ -9421,7 +9422,7 @@ export interface BrowserApi {
   onBrowserFoundInPage(cb: (result: { requestId: number; activeMatchOrdinal: number; matches: number; selectionArea: unknown; finalUpdate: boolean }) => void): () => void;
 }
 
-export interface NodusApi extends StudyFocusApi, ProsopographyApi, TestimoniesApi, ToolkitApi, TeachingApi, DatabasesApi, PagesApi, PrimarySourcesApi, ArchiveApi, WorldbuildingApi, PlatformApi, RecordsApi, AcademicApi, LibraryApi, RadarApi, ReactionIndexApi, CompassApi, BrowserApi, LogsApi, DriftApi, TtsApi {
+export interface NodusApi extends StudyFocusApi, ProsopographyApi, TestimoniesApi, ToolkitApi, TeachingApi, DatabasesApi, PagesApi, PrimarySourcesApi, ArchiveApi, WorldbuildingApi, PlatformApi, RecordsApi, AcademicApi, LibraryApi, RadarApi, ReactionIndexApi, CompassApi, BrowserApi, LogsApi, DriftApi, TtsApi, PodcastApi {
   // settings + secrets
   getSettings(): Promise<AppSettings>;
   updateSettings(patch: Partial<AppSettings>): Promise<AppSettings>;

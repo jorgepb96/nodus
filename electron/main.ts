@@ -73,6 +73,8 @@ import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscript
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
 import { killSearxngSync } from './websearch/searxngService';
 import { registerAudioProtocol, registerAudioSchemePrivileges } from './tts/audioProtocol';
+import { podcastAudioPath } from './podcast/podcastLane';
+import { handleHuggingFaceCallback } from './tts/huggingFaceSignIn';
 import { killTtsSync, ttsService } from './tts/service';
 import { scheduleNarrationRetention } from './tts/retention';
 import { audioClipPath } from './audio/audioService';
@@ -200,6 +202,12 @@ let pendingDeepLink: string | null = process.argv.find((arg) => arg.startsWith('
 
 function handleDeepLink(url: string): void {
   if (!url || !url.startsWith('nodus://')) return;
+  // The Hugging Face sign-in returns here from the browser; it never reaches the renderer.
+  if (handleHuggingFaceCallback(url)) {
+    const win = mainWindow;
+    if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
+    return;
+  }
   const win = mainWindow;
   if (win && !win.isDestroyed()) {
     win.webContents.send('deeplink:received', url);
@@ -1120,6 +1128,7 @@ app.whenReady().then(async () => {
     liveDir: ttsLiveDir,
     clipPath: (clipId) => audioClipPath(clipId),
     voicePath: (voiceId) => ttsService().voices.referencePath(voiceId),
+    podcastPath: (episodeId) => podcastAudioPath(episodeId),
   });
   setCopilotWindowProvider(() => mainWindow);
   setZoteroPluginWindowProvider(() => mainWindow);

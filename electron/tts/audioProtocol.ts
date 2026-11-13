@@ -4,7 +4,7 @@ import fsp from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { protocol } from 'electron';
 import { parseArchiveByteRange } from '../archiveProtocol';
-import { NODUS_AUDIO_SCHEME, resolveAudioUrl, type AudioProtocolResolvers } from './audioUrls';
+import { NODUS_AUDIO_SCHEME, audioContentType, resolveAudioUrl, type AudioProtocolResolvers } from './audioUrls';
 
 export { NODUS_AUDIO_SCHEME, clipAudioUrl, liveFragmentUrl, voiceAudioUrl } from './audioUrls';
 
@@ -14,6 +14,7 @@ export { NODUS_AUDIO_SCHEME, clipAudioUrl, liveFragmentUrl, voiceAudioUrl } from
  *   nodus-audio://live/<jobId>/<NNN>.wav   a fragment of a narration still being generated
  *   nodus-audio://clip/<clipId>            a finished clip in the active vault
  *   nodus-audio://voice/<voiceId>          a voice library reference recording
+ *   nodus-audio://podcast/<episodeId>      a saved podcast episode (.m4a or .opus)
  *
  * The old route encoded each WAV as a base64 data: URL in the main process and copied it
  * across IPC; a long report meant tens of megabytes of string work on the main thread. Here
@@ -34,7 +35,7 @@ export function registerAudioProtocol(resolvers: AudioProtocolResolvers): void {
       if (!stat?.isFile()) return new Response(null, { status: 404 });
       const headers = new Headers({
         'Accept-Ranges': 'bytes',
-        'Content-Type': 'audio/wav',
+        'Content-Type': audioContentType(file),
         'Cache-Control': 'private, no-cache',
         'X-Content-Type-Options': 'nosniff',
       });

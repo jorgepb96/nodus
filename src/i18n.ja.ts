@@ -3,6 +3,7 @@ import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
+import { PODCAST_TRANSLATIONS } from './i18n.podcast';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
 import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
@@ -8384,3 +8385,4 @@ export const JA: Record<string, string> = {
 Object.assign(JA, SIGN_TRANSLATIONS['ja']);
 
 Object.assign(JA, RESEARCH_QUEUE_TRANSLATIONS['ja']);
+Object.assign(JA, PODCAST_TRANSLATIONS['ja']);

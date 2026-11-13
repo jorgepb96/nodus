@@ -14,6 +14,7 @@ test('saved voice previews pause, resume, switch voices and reset after completi
   const voices = ['one', 'two'].map(id => ({ id, name: id, language: 'es', origin: 'uploaded', durationS: 10 }));
   window.nodus = {
     ttsHasHuggingFaceToken: async () => false,
+    ttsHuggingFaceStatus: async () => ({ signedIn: false, account: null, hasToken: false }),
     ttsVoices: async () => voices,
     ttsDiskUsage: async () => null,
   };

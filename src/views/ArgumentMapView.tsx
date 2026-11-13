@@ -513,7 +513,7 @@ export function ArgumentMapView({
         </section>
 
         {openArgumentMaps.map((tab) => (
-          <ArgumentMapTab key={tab.key} tab={tab} active={surface === 'map' && activeMapKey === tab.key} onCancel={mobile && tab.mode !== 'auto' ? () => {
+          <ArgumentMapTab key={tab.key} tab={tab} readOnly={readOnly} active={surface === 'map' && activeMapKey === tab.key} onCancel={mobile && tab.mode !== 'auto' ? () => {
             void (window.nodus as unknown as {cancelMobileArgumentMap(seedId:string):Promise<void>}).cancelMobileArgumentMap(tab.ideaId)
               .catch(error=>setOpenArgumentMaps(current=>current.map(item=>item.key===tab.key?{...item,error:String(error)}:item)));
           } : undefined} />
@@ -523,7 +523,7 @@ export function ArgumentMapView({
   );
 }
 
-function ArgumentMapTab({ tab, active, onCancel }: { tab: ArgumentMapTabState; active: boolean; onCancel?:()=>void }) {
+function ArgumentMapTab({ tab, active, onCancel, readOnly=false }: { tab: ArgumentMapTabState; active: boolean; onCancel?:()=>void; readOnly?:boolean }) {
   // Every open map owns its reveal and detail state. Keeping this inside the tab is
   // what makes switching maps preserve the exact branches and side panel the reader
   // was using in each one.
@@ -681,7 +681,7 @@ function ArgumentMapTab({ tab, active, onCancel }: { tab: ArgumentMapTabState; a
           )}
         </div>
       </div>
-      {(ideaDetail || edgeDetail || detailLoading) && <NodeDetailPanel ideaDetail={ideaDetail} edgeDetail={edgeDetail} loading={detailLoading} width={detailWidth} fontSize={detailFontSize} onWidthChange={setDetailWidth} onFontChange={changeDetailFont} onClose={closeDetail} />}
+      {(ideaDetail || edgeDetail || detailLoading) && <NodeDetailPanel readOnly={readOnly} ideaDetail={ideaDetail} edgeDetail={edgeDetail} loading={detailLoading} width={detailWidth} fontSize={detailFontSize} onWidthChange={setDetailWidth} onFontChange={changeDetailFont} onClose={closeDetail} />}
     </section>
   );
 }

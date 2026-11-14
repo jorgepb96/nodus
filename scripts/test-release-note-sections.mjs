@@ -29,11 +29,14 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.17.1');
-  assert.equal(current.highlights.length, 1);
-  assert.deepEqual(current.highlights.map(h => h.category), ['fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['general']);
-  assert.match(current.highlights[0].en, /^Podcast episodes longer than about 20 minutes now finish/);
+  assert.equal(current.version, '5.18.0');
+  assert.equal(current.highlights.length, 2);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new', 'fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['general', 'general']);
+  assert.match(current.highlights[0].en, /^Pair Nodus Link on iPhone or iPad/);
+  assert.match(current.highlights[1].en, /^Improve document retrieval/);
+  // 5.17.1 finished long Podcast episodes. Its notes stay as published.
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.17.1').highlights[0].en, /^Podcast episodes longer than about 20 minutes now finish/);
   // 5.17.0 introduced Podcast. Its notes stay as published.
   assert.match(RELEASE_NOTES.find(note => note.version === '5.17.0').highlights[0].en, /^New Podcast section, in beta, under Analyze/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.17.0').highlights[1].en, /^You can now sign in with Hugging Face/);
@@ -102,9 +105,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: two new features, no enhancements and no fixes.
+  // Independently authored section boundaries: one new feature, no enhancements and one fix.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,0,0][i], [0,0,1][i]);
+    const entries = current.highlights.slice([0,1,1][i], [1,1,2][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

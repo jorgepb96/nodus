@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.18.0 — 2026-11-14
+
+### New features
+- Link Nodus Link on iPhone or iPad to the whole Desktop workspace using a code, QR or link in Settings > Mobile connection. Consult ideas, graphs, argument maps, saved Deep Research, dictionary entries and existing podcasts over LAN or VPN.
+
+### Fixes
+- Preserve rich-text notes, attachment data and historical versions across companion operations.
+- Restore document retrieval with prototype-backed stores and read recent podcast files from their actual saved locations, including Windows paths.
+
 ## 5.17.1 — 2026-11-09
 
 ### Fixes

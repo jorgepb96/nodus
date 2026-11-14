@@ -13,6 +13,7 @@
 //   • both a queued report and the running one can be cancelled without overlap;
 //   • one failure does not stall the lane.
 import assert from 'node:assert/strict';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { build } from 'esbuild';
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
@@ -413,6 +414,66 @@ try {
     assert.equal(restored.find((job) => job.title === 'preset').sectionLength, 10_000);
   }
 
+  // Mobile requests own their vault across awaits and UI switches, while retaining one lane.
+  {
+    queue.__resetDeepResearchQueueForTest();
+    const owner = new AsyncLocalStorage();
+    let uiVault = { id: 'desktop-a', name: 'Desktop A' }, active = 0, maximum = 0;
+    const gates = [], saved = [];
+    queue.configureDeepResearchQueue({
+      activeVault: () => uiVault,
+      executionVault: () => owner.getStore() ?? uiVault,
+      runMobile: (vault, work) => owner.run(vault, work),
+      generate: request => new Promise(resolve => {
+        maximum = Math.max(maximum, ++active);
+        const vault = owner.getStore(); assert(vault);
+        gates.push(() => { active--; resolve(fakeReport(request.objective)); });
+      }),
+      saveDraft: ({ request }) => { saved.push({ objective: request.objective, vault: owner.getStore().id }); return `saved-${request.objective}`; },
+    });
+    const b = queue.runDeepResearchJob({ origin: 'mobile', vault: { id: 'mobile-b', name: 'B' }, request: { objective: 'mobile-B' }, save: true });
+    const c = queue.runDeepResearchJob({ origin: 'mobile', vault: { id: 'mobile-c', name: 'C' }, request: { objective: 'mobile-C' }, save: true });
+    await waitFor(() => gates.length === 1, 'the owned mobile lane');
+    uiVault = { id: 'desktop-d', name: 'Desktop D' };
+    gates[0](); await b;
+    await waitFor(() => gates.length === 2, 'the second mobile vault'); gates[1](); await c;
+    assert.deepEqual(saved, [{ objective: 'mobile-B', vault: 'mobile-b' }, { objective: 'mobile-C', vault: 'mobile-c' }]);
+    assert.equal(maximum, 1); assert.equal(uiVault.id, 'desktop-d'); assert.equal(queue.isDeepResearchLaneBusy(), false);
+  }
+  // A running mobile request may already have committed: restore it for review, never regenerate.
+  {
+    queue.__resetDeepResearchQueueForTest(); let checkpoints = [], executions = 0;
+    queue.configureDeepResearchQueue({ activeVault: () => ({ id: 'mobile-vault', name: 'Mobile' }),
+      generate: () => new Promise(() => {}), saveDraft: () => 'saved', persist: records => { checkpoints = JSON.parse(JSON.stringify(records)); } });
+    queue.enqueueDeepResearchJob({ origin: 'mobile', request: { objective: 'Interrupted mobile request' }, save: true });
+    await waitFor(() => checkpoints[0]?.record.status === 'running', 'a running checkpoint');
+    queue.__resetDeepResearchQueueForTest();
+    queue.configureDeepResearchQueue({ activeVault: () => ({ id: 'mobile-vault', name: 'Mobile' }), load: () => checkpoints,
+      generate: async () => { executions++; return fakeReport('repeat'); }, saveDraft: () => 'saved-again' });
+    assert.equal(queue.listDeepResearchJobs()[0].status, 'failed'); assert.match(queue.listDeepResearchJobs()[0].error, /Review/);
+    assert.equal(executions, 0);
+  }
+
+  // A restored queued mobile job waits for recovery of its original Bridge id.
+  {
+    queue.__resetDeepResearchQueueForTest(); let checkpoints = [];
+    const vault = { id: 'mobile-recovery', name: 'Recovery' };
+    queue.configureDeepResearchQueue({ activeVault: () => ({ id: 'desktop', name: 'Desktop' }),
+      generate: () => new Promise(() => {}), saveDraft: () => 'saved', persist: records => { checkpoints = JSON.parse(JSON.stringify(records)); } });
+    const input = { origin: 'mobile', bridgeJobId: 'private-bridge-job', vault, request: { objective: 'Recover once' }, save: true };
+    const original = queue.enqueueDeepResearchJob(input);
+    const persisted = checkpoints.find(job => job.record.id === original.id); assert.equal(persisted.record.status, 'queued');
+    queue.__resetDeepResearchQueueForTest(); let executions = 0;
+    queue.configureDeepResearchQueue({ activeVault: () => vault, load: () => [persisted], runMobile: (_vault, work) => work(),
+      generate: async () => { executions++; return fakeReport('Recovered'); }, saveDraft: () => 'saved-recovery' });
+    await new Promise(resolve => setImmediate(resolve)); assert.equal(executions, 0, 'A disconnected queued request cannot secretly resume');
+    const resumed = queue.enqueueDeepResearchJob({ ...input, requireExisting: true }); assert.equal(resumed.id, original.id);
+    await waitFor(() => queue.listDeepResearchJobs()[0].status === 'completed', 'one recovered result');
+    assert.equal(queue.listDeepResearchJobs()[0].savedDraftId, 'saved-recovery'); assert.equal(executions, 1);
+    assert.equal(queue.enqueueDeepResearchJob({ ...input, requireExisting: true }).id, original.id); assert.equal(executions, 1);
+    assert.throws(() => queue.enqueueDeepResearchJob({ ...input, bridgeJobId: 'lost-history', requireExisting: true }), /Review/);
+    assert.throws(() => queue.enqueueDeepResearchJob({ ...input, vault: { id: 'another-vault', name: 'Other' }, requireExisting: true }), /Review/);
+  }
   console.log('deep research queue test passed');
 } finally {
   await rm(tmp, { recursive: true, force: true });

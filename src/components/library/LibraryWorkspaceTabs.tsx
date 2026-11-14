@@ -65,17 +65,29 @@ export function WorkspaceTabStrip({
   const activeTitle = tabs.find((tab) => tab.key === activeKey)?.title;
 
   useEffect(() => {
-    const active = stripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
     // Scroll this strip only. scrollIntoView also moves outer scroll containers,
     // which makes the workspace header and sidebar jump during activation.
     const strip = stripRef.current;
-    if (active && strip) {
-      // Include the close and rename controls, not just the title button.
-      const item = (active.closest('.library-workspace-tab') ?? active).getBoundingClientRect();
+    if (!strip) return;
+    const revealActive = () => {
+      const active = strip.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+      if (!active) return;
+      const tab = active.closest<HTMLElement>('.library-workspace-tab') ?? active;
+      if (tab.classList.contains('is-library')) { strip.scrollLeft = 0; return; }
+      // Include close/rename controls. A phone's pinned catalogue also occupies
+      // space inside the scroller and must never cover the selected title.
+      const item = tab.getBoundingClientRect();
       const bounds = strip.getBoundingClientRect();
-      const delta = item.left < bounds.left ? item.left - bounds.left : item.right > bounds.right ? item.right - bounds.right : 0;
+      const home = strip.querySelector<HTMLElement>('.library-workspace-tab.is-library');
+      const reserved = home && getComputedStyle(home).position === 'sticky' ? home.getBoundingClientRect().width + 4 : 0;
+      const start = bounds.left + reserved;
+      const delta = item.left < start ? item.left - start : item.right > bounds.right ? item.right - bounds.right : 0;
       if (delta) strip.scrollLeft += delta;
-    }
+    };
+    revealActive();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(revealActive);
+    observer?.observe(strip);
+    const active = strip.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
     // Activation can load a document asynchronously. Wait for its selected tab,
     // rather than moving focus to the old one on the next animation frame.
     if (active && focusAfterActivation.current) {
@@ -85,7 +97,8 @@ export function WorkspaceTabStrip({
         focusAfterActivation.current = false;
       }
     }
-  }, [activeKey, tabs.length, activeTitle, homeLabel]);
+    return () => observer?.disconnect();
+  }, [activeKey, tabs.length, activeTitle, homeLabel, showHome]);
 
   if (!tabs.length && (!alwaysShowHome || !showHome)) return null;
 
@@ -130,6 +143,7 @@ export function WorkspaceTabStrip({
           <button
             type="button"
             role="tab"
+            aria-label={homeLabel}
             aria-selected={activeKey === null}
             tabIndex={activeKey === null ? 0 : -1}
             data-testid={homeTestId}
@@ -185,6 +199,24 @@ export function WorkspaceTabStrip({
           );
         })}
       </div>
+      {tabs.length > 1 && <label className="library-workspace-tab-picker hidden">
+        <span aria-hidden="true"><Icon name="copy" size={13} /><span>{tabs.length}</span></span>
+        <select
+          aria-label={`${homeLabel}: ${t('Abiertos')}`}
+          data-testid="workspace-open-tabs"
+          value={activeKey === null ? 'home' : String(tabs.findIndex(tab => tab.key === activeKey))}
+          onChange={event => {
+            if (event.target.value === 'home') onActivateHome();
+            else {
+              const tab = tabs[Number(event.target.value)];
+              if (tab) onActivateTab(tab.key);
+            }
+          }}
+        >
+          {showHome && <option value="home">{homeLabel}</option>}
+          {tabs.map((tab, index) => <option key={tab.key} value={String(index)}>{tab.title}</option>)}
+        </select>
+      </label>}
     </div>
   );
 }

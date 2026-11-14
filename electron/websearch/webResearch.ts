@@ -377,7 +377,7 @@ async function choosePassages(input: WebResearchInput, deps: WebResearchDeps, pa
   const accepted: WebEvidence[] = [];
   let bytes = 0;
   for (const { lexical: _lexical, coverage: _coverage, ...item } of chosen) {
-    const size = Buffer.byteLength(item.text);
+    const size = new TextEncoder().encode(item.text).byteLength;
     if (bytes + size > limits.evidenceBytes) continue;
     bytes += size;
     accepted.push(item);

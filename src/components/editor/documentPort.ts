@@ -32,6 +32,7 @@ export interface EditorDocument {
 export interface EditorDocumentPort<TDocument extends EditorDocument = EditorDocument> {
   loadEditorData(documentId: string): Promise<StudyDocEditorData>;
   save(documentId: string, input: StudyDocUpdateInput): Promise<TDocument>;
+  resolveMobileConflict?(documentId: string, keepMobile: boolean): Promise<StudyDocEditorData>;
   restoreVersion(documentId: string, versionId: string): Promise<TDocument>;
   createAnnotation(documentId: string, input: StudyAnnotationInput): Promise<StudyAnnotation>;
   updateAnnotation(id: string, patch: Partial<StudyAnnotationInput> & { resolved?: boolean }): Promise<StudyAnnotation | null>;
@@ -73,6 +74,7 @@ export const studyDocumentPort: EditorDocumentPort<import('@shared/studyOrg').St
 export const workspaceNotePort: EditorDocumentPort<EditorDocument & { noteId: string }> = {
   referenceKind: 'note',
   loadEditorData: (noteId) => window.nodus.getWorkspaceNoteEditorData(noteId),
+  resolveMobileConflict: (noteId, keepMobile) => (window.nodus as unknown as { resolveMobileWorkspaceConflict(id: string, keep: boolean): Promise<StudyDocEditorData> }).resolveMobileWorkspaceConflict(noteId, keepMobile),
   save: async (noteId, input) => noteAsEditorDocument(await window.nodus.updateWorkspaceNote(noteId, input)),
   restoreVersion: async (noteId, versionId) => noteAsEditorDocument(await window.nodus.restoreWorkspaceNoteVersion(noteId, versionId)),
   createAnnotation: (noteId, input) => window.nodus.createWorkspaceAnnotation(noteId, input),

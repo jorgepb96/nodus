@@ -1,69 +1,16 @@
 import { createHash } from 'node:crypto';
 import type { ModelRef, PromptLanguage } from '@shared/types';
 import type { StudyImproveRequest, StudyImproveResult, StudyStyle } from '@shared/studyImprove';
-import {
-  estimateStudyTokens,
-  localizedStudyStyleInstruction,
-  missingProtectedSpans,
-  protectStudyText,
-  renderStudyStylePrompt,
-  restoreProtectedSpans,
-  studyImprovePromptPack,
-  studyFreeTransformationWarning,
-  studyImprovementWarnings,
-} from '@shared/studyImprove';
+import {restoreProtectedSpans} from '@shared/studyImprove';
 import { getStudyStyle, recordStudyImprovement } from '../db/studyStylesRepo';
 import { getSettings } from '../db/settingsRepo';
 import { completeTextStream } from './aiClient';
 import { runStudyAiTask } from './studyAiPolicy';
 
 import { normalizePromptLanguage } from '@shared/promptLanguageOptions';
-const MAX_SELECTION_CHARS = 48_000;
+import {prepareStudyImprovement, finishStudyImprovement} from '@shared/studyImprovementGeneration';
+export {buildStudyImprovePrompt} from '@shared/studyImprovementGeneration';
 
-export function buildStudyImprovePrompt(request: StudyImproveRequest, style: StudyStyle, protectedText: string, language: PromptLanguage = 'es') {
-  const copy = studyImprovePromptPack(language);
-  const free = request.mode === 'free';
-  const protectedMarkerRule = protectedText.includes('⟦NODUS_PROTECTED_')
-    ? `- ${copy.protectedMarker}`
-    : '';
-  const styleInstruction = renderStudyStylePrompt(localizedStudyStyleInstruction(style, language), {
-    ...request.variables,
-    language: request.variables?.language ?? style.language,
-    targetLength: request.length,
-    selectedText: protectedText,
-  });
-  const system = `${copy.role}
-
-${copy.rulesHeader}
-- ${copy.mustReturn}
-- ${copy.preserve}
-${protectedMarkerRule}
-- ${copy.noInvent}
-${free
-    ? `- ${copy.free}`
-    : `- ${copy.faithful}`}
-- ${copy.level[request.level]}
-- ${copy.length[request.length]}
-- ${copy.conflictInstruction}
-${style.systemPrompt ? `\n${copy.styleHeader}\n${style.systemPrompt}` : ''}`;
-  const user = `${styleInstruction}
-${request.additionalInstructions?.trim() ? `\n${request.additionalInstructions.trim()}\n` : ''}
-
-${copy.scopeLabel}: ${request.scope}.
-${copy.outputLanguage}: ${request.variables?.language || style.language || copy.sameOriginal}.
-
-${copy.selectionHeader}
-<<<NODUS_SELECTION
-${protectedText}
-NODUS_SELECTION>>>`;
-  return { system, user };
-}
-
-function stripWrappingFence(value: string): string {
-  const trimmed = value.trim();
-  const match = trimmed.match(/^```(?:markdown|md|text)?\s*\n([\s\S]*?)\n```$/i);
-  return match ? match[1] : trimmed;
-}
 
 function completeProtectedStreamPrefix(value: string): string {
   const unicodeOpen = value.lastIndexOf('⟦');
@@ -92,15 +39,11 @@ export async function improveStudyText(
 ): Promise<StudyImproveResult> {
   signal?.throwIfAborted();
   if (request.additionalInstructions !== undefined && (typeof request.additionalInstructions !== 'string' || request.additionalInstructions.length > 4000)) throw new Error('Las instrucciones superan el límite de 4.000 caracteres.');
-  const original = request.text.replace(/\r\n/g, '\n');
-  if (!original.trim()) throw new Error('Selecciona texto para mejorarlo.');
-  if (original.length > MAX_SELECTION_CHARS) throw new Error(`La selección supera el límite de ${MAX_SELECTION_CHARS.toLocaleString('es-ES')} caracteres.`);
   const style = getStudyStyle(request.styleId);
-  if (!style || !style.active || style.archivedAt) throw new Error('El estilo seleccionado no está disponible.');
+  if (!style) throw new Error('El estilo seleccionado no está disponible.');
   const aiSettings = getSettings();
   const promptLanguage: PromptLanguage = request.promptLanguage ?? aiSettings.promptLanguage ?? 'es';
-  const protectedValue = protectStudyText(original, request.protectedTerms ?? []);
-  const prompt = buildStudyImprovePrompt(request, style, protectedValue.text, promptLanguage);
+  const {original, protectedValue, prompt} = prepareStudyImprovement(request, style, promptLanguage);
   const requestedModel = modelFor(request, style);
   let streamed = '';
   let visibleStreamed = '';
@@ -140,25 +83,13 @@ export async function improveStudyText(
   });
   const raw = completed.value; const model = completed.model;
   signal?.throwIfAborted();
-  const protectedResult = stripWrappingFence(raw || streamed);
-  // Some small local models helpfully expand a placeholder back to the exact
-  // protected value even though the prompt asks them not to touch it. That is
-  // still a successful preservation, so only reject spans for which neither the
-  // marker nor its byte-for-byte original value survives.
-  const missing = missingProtectedSpans(protectedResult, protectedValue.spans)
-    .filter((span) => !protectedResult.includes(span.value));
-  if (missing.length) {
-    throw new Error(`La mejora alteró ${missing.length} fragmento(s) protegido(s). El original no se ha modificado.`);
-  }
-  const text = restoreProtectedSpans(protectedResult, protectedValue.spans);
-  if (!text.trim()) throw new Error('La IA no devolvió texto. El original no se ha modificado.');
+  const finished = finishStudyImprovement(request, style, raw || streamed, promptLanguage, normalizePromptLanguage(aiSettings.uiLanguage));
+  const {text, warnings} = finished;
   if (text.startsWith(visibleStreamed)) {
     const trailingDelta = text.slice(visibleStreamed.length);
     visibleStreamed = text;
     if (trailingDelta) onDelta(trailingDelta);
   }
-  const warnings = studyImprovementWarnings(original, text, protectedValue.spans, request.mode, normalizePromptLanguage(aiSettings.uiLanguage));
-  if (request.mode === 'free') warnings.unshift(studyFreeTransformationWarning(normalizePromptLanguage(aiSettings.uiLanguage)));
   const originalHash = hash(original);
   const resultHash = hash(text);
   const log = recordStudyImprovement({
@@ -187,8 +118,8 @@ export async function improveStudyText(
     modelName: model.model,
     originalHash,
     resultHash,
-    protectedSpanCount: protectedValue.spans.length,
-    estimatedInputTokens: estimateStudyTokens(`${prompt.system}\n${prompt.user}`),
-    estimatedOutputTokens: estimateStudyTokens(text),
+    protectedSpanCount: finished.protectedSpanCount,
+    estimatedInputTokens: finished.estimatedInputTokens,
+    estimatedOutputTokens: finished.estimatedOutputTokens,
   };
 }

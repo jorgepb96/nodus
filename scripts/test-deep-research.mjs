@@ -1560,9 +1560,20 @@ try {
       'shared/deepResearchWritingPromptPacks.ts',
       'shared/genealogyDeepResearchPromptPacks.ts',
     ].map((file) => readFile(path.join(repoRoot, file), 'utf8')));
-    assert.ok(sources.every((source) => source.includes('deepResearchNarrativeRules')), 'all Deep Research writers share the locale-aware prose contract');
-    assert.match(sources[0], /deepResearchWritingPromptPack/, 'the general writer resolves its native prompt pack');
-    assert.match(sources[1], /genealogyDeepResearchPromptPack/, 'the genealogy writer resolves its native prompt pack');
+    const portableWriter = await readFile(path.join(repoRoot, 'shared/portableDeepResearchAI.ts'), 'utf8');
+    const genealogyWriter=await readFile(path.join(repoRoot,'shared/portableGenealogyDeepResearch.ts'),'utf8');
+    const studyWriter=await readFile(path.join(repoRoot,'shared/portableStudyDeepResearch.ts'),'utf8');
+    assert.match(sources[1],/const genealogyEngine=portableGenealogyDeepResearch\(/);
+    assert.match(sources[3],/portableStudyDeepResearch\(/);
+    assert.match(sources[0], /import\s*\{portableDeepResearchAI\}\s*from '@shared\/portableDeepResearchAI'/, 'the Desktop writer imports the canonical portable stages');
+    assert.match(sources[0], /const canonicalAcademicAI = portableDeepResearchAI\(/, 'the Desktop writer constructs the canonical stages');
+    assert.match(sources[0], /portableAcademicDeepResearch\(\{ai:canonicalAcademicAI/, 'the Desktop adapters bind the canonical AI stages');
+    const academicAdapters=await readFile(path.join(repoRoot,'shared/portableAcademicDeepResearch.ts'),'utf8');
+    assert.match(academicAdapters,/aiWriteSection[^\n]*=host.ai/,'the shared adapters use the host canonical writer');
+    assert.match(academicAdapters,/writeSection: \(input\) => aiWriteSection\(input, model/,'section writing delegates to that actual host writer');
+    assert.ok([portableWriter,genealogyWriter,studyWriter,sources[2]].every((source) => source.includes('deepResearchNarrativeRules')), 'all effective Deep Research writers share the locale-aware prose contract');
+    assert.match(portableWriter, /deepResearchWritingPromptPack\(input\.language,/, 'the canonical general writer resolves its native prompt pack');
+    assert.match(genealogyWriter, /genealogyDeepResearchPromptPack/, 'the genealogy writer resolves its native prompt pack');
     assert.match(writingPromptPacks, /valor marginal sea cero/, 'the Spanish general writer stops when evidence adds no new value');
     assert.match(genealogyPromptPacks, /valor probatorio marginal/, 'the Spanish genealogy writer uses the same evidence-driven stopping rule');
     assert.match(DEEP_RESEARCH_NARRATIVE_RULES.join('\n'), /evidencia de un solo lado/iu, 'every writer rejects unilateral agreement and contradiction claims');

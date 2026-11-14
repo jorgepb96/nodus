@@ -94,7 +94,7 @@ test('the first-vault chooser can only ever meet a genuinely new install', async
   const [app, prefs, defaults, types] = await Promise.all([
     read('src/App.tsx'),
     read('electron/db/appPrefs.ts'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('shared/types.ts'),
   ]);
   // The gate is captured from the FIRST settings read of the run. Both flags it depends

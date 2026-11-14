@@ -5,6 +5,31 @@ export const DATABASE_CONTAINER_PAGE_DEFAULT = 50;
 export const DATABASE_CONTAINER_PAGE_MAX = 500;
 export const DATABASE_CONTAINER_CURSOR_VERSION = 1 as const;
 
+export type DatabaseContainerFilterTranslation = {kind:'true'}|{kind:'false'}|{kind:'node';node:FilterNode};
+/** The Desktop SQL and selected companion copy share the same physical mapping. */
+export function translateDatabaseContainerFilter(node:FilterNode|null|undefined,source:DatabaseViewDataSource,primaryInverse:Map<string,string>):DatabaseContainerFilterTranslation {
+  if(!node)return {kind:'true'};
+  if(node.type==='condition') {
+    const canonical=source.propertyMap[node.columnId]?node.columnId:primaryInverse.get(node.columnId)??node.columnId;
+    const columnId=source.propertyMap[canonical];return columnId?{kind:'node',node:{...node,columnId}}:{kind:'false'};
+  }
+  const children=node.children.map(child=>translateDatabaseContainerFilter(child,source,primaryInverse));
+  if(node.operator==='and') {
+    if(children.some(child=>child.kind==='false'))return {kind:'false'};
+    const nodes=children.flatMap(child=>child.kind==='node'?[child.node]:[]);
+    return nodes.length?{kind:'node',node:{type:'group',operator:'and',children:nodes}}:{kind:'true'};
+  }
+  if(children.some(child=>child.kind==='true'))return {kind:'true'};
+  const nodes=children.flatMap(child=>child.kind==='node'?[child.node]:[]);
+  return nodes.length?{kind:'node',node:{type:'group',operator:'or',children:nodes}}:{kind:'false'};
+}
+export function combinedDatabaseContainerFilter(view:FilterNode|null,local:FilterNode|null|undefined,source:DatabaseViewDataSource,primaryInverse:Map<string,string>):DatabaseContainerFilterTranslation {
+  const translations=[translateDatabaseContainerFilter(view,source,primaryInverse),translateDatabaseContainerFilter(local,source,primaryInverse)];
+  if(translations.some(entry=>entry.kind==='false'))return {kind:'false'};
+  const nodes=translations.flatMap(entry=>entry.kind==='node'?[entry.node]:[]);
+  return !nodes.length?{kind:'true'}:nodes.length===1?{kind:'node',node:nodes[0]}:{kind:'node',node:{type:'group',operator:'and',children:nodes}};
+}
+
 export interface DatabaseDataSource {
   id: string;
   databaseId: string;
@@ -55,6 +80,8 @@ export interface DatabaseContainerRow {
   rowId: string;
   sourceName: string;
   cells: Record<string, string | null>;
+  formulaErrors?: Record<string, string>;
+  formulaColors?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
   revision: number;

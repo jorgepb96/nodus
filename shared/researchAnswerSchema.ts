@@ -96,4 +96,3 @@ export function normalizeResearchWriterSchemaValue(value: unknown): unknown {
   const { tables: _ignored, ...normalized } = output;
   return normalized;
 }
-

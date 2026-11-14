@@ -1,0 +1,7 @@
+# Autonomous review of a locally created scene — source stage
+
+NodusKit carries generated templates from the actual shared Desktop prose prompt for every supported prompt language. A scene authored by this companion and durably marked as new can use that template before its first Mac connection. Existing Mac scenes still require their actual downloaded baseline. No downloaded baseline is rebased or substituted with another scene.
+
+The protected checkpoint keeps the current unsaved draft, the saved source baseline, raw paid response, preview and original request UUID. Publication is provider free and includes the creating mutation ID. The Mac records actual new-scene creation, owning vault and device grant in the same canonical mutation/receipt transaction. Publication requires that proof and verifies the current scene title, authored beats and stored prose against the captured baseline. Later Mac edits produce an explicit source conflict; the paid result stays on the mobile. Reviewing a draft does not save its text.
+
+Templates are serialized by `scripts/generate-mobile-prose-templates.mjs`, not copied by hand. Prepared Node/Swift fixtures cover unconfirmed and foreign-device creation, publication, retry without provider use, current unsaved text and a later source conflict. **These fixtures and compilation have not been executed for this source revision.** Network reattachment, physical-device UI and processing of a conflicted result remain part of final local acceptance. This is not release approval.

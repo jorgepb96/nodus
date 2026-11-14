@@ -6,6 +6,14 @@ import { createHash, randomUUID } from 'node:crypto';
 import { LIMITS } from '../packages/capability-api/src/limits';
 
 const versions = new Map<string, number>();
+const retainedOwners=new Map<string,number>();
+/** While a live reply creates tools/results, checkpoints may not collect files
+ * that have been created but whose final reference has not streamed yet. */
+export function retainChatAssets(owner:string):()=>void {
+  directory(owner);retainedOwners.set(owner,(retainedOwners.get(owner)??0)+1);
+  let released=false;
+  return ()=>{if(released)return;released=true;const count=(retainedOwners.get(owner)??1)-1;if(count)retainedOwners.set(owner,count);else retainedOwners.delete(owner);};
+}
 const root = () => path.join(app.getPath('userData'), 'chat-assets');
 export const chatAssetOwner = (surface: string, conversationId: string, vaultId = '') =>
   createHash('sha256').update(JSON.stringify([surface, vaultId, conversationId])).digest('hex');
@@ -29,6 +37,15 @@ export function storeChatImage(owner: string, image: { bytes: Buffer; mimeType: 
     throw error;
   }
   return `nodus-image://chat/${owner}/${id}`;
+}
+/** Import an authenticated mobile figure under its already-persisted identity.
+ * Both canonical protocols share these bytes; a lost ACK cannot allocate a new id. */
+export function importDocumentFigureAsset(owner: string, id: string, image: { bytes: Buffer; mimeType: string }, metadata: Record<string, string>): void {
+  if (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(id) || !image.bytes.length || image.bytes.length > 8 * 1024 * 1024 || !['image/png','image/jpeg','image/webp'].includes(image.mimeType)) throw new Error('Invalid document figure asset.');
+  const dir=directory(owner);fs.mkdirSync(dir,{recursive:true,mode:0o700});
+  const files: Array<[string,Buffer]> = [[`${id}.image`,image.bytes],[`${id}.capability`,image.bytes],[`${id}.json`,Buffer.from(JSON.stringify({...metadata,mimeType:image.mimeType}))],[`${id}.capability.json`,Buffer.from(JSON.stringify({mimeType:image.mimeType,name:'figure.png',title:metadata.title??'figure'}))]];
+  for(const [name,bytes] of files){const file=path.join(dir,name);if(fs.existsSync(file)){const stat=fs.lstatSync(file);if(!stat.isFile()||stat.isSymbolicLink()||!fs.readFileSync(file).equals(bytes))throw new Error('Document figure asset identity conflict.');}}
+  for(const [name,bytes] of files){const file=path.join(dir,name);if(!fs.existsSync(file)){fs.writeFileSync(file+'.tmp',bytes,{mode:0o600});fs.renameSync(file+'.tmp',file);}}
 }
 export function getChatImage(id: string): { blob: Buffer; mime: string } | null {
   if (!/^[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(id)) return null;
@@ -63,7 +80,13 @@ export function storeCapabilityFile(owner: string, input: { bytes: Buffer; mimeT
 }
 export function getCapabilityFile(source: string): { blob: Buffer; mimeType: string; name: string; title: string } | null {
   const match = /^nodus-capability:\/\/chat\/([a-f0-9]{64}\/[a-f0-9-]{36})$/.exec(source); if (!match) return null;
-  try { const metadata = JSON.parse(fs.readFileSync(path.join(root(), `${match[1]}.capability.json`), 'utf8')); return { blob: fs.readFileSync(path.join(root(), `${match[1]}.capability`)), ...metadata }; }
+  try {
+    const file=path.join(root(),`${match[1]}.capability`),meta=path.join(root(),`${match[1]}.capability.json`),stat=fs.lstatSync(file),metaStat=fs.lstatSync(meta);
+    if(!stat.isFile()||stat.isSymbolicLink()||stat.size>64*1024*1024||!metaStat.isFile()||metaStat.isSymbolicLink()||metaStat.size>32*1024)return null;
+    const metadata=JSON.parse(fs.readFileSync(meta,'utf8'));
+    if(typeof metadata.mimeType!=='string'||typeof metadata.name!=='string'||typeof metadata.title!=='string')return null;
+    return {blob:fs.readFileSync(file),mimeType:metadata.mimeType,name:metadata.name,title:metadata.title};
+  }
   catch { return null; }
 }
 /** Remove images dropped by regeneration, message truncation, or history retention.
@@ -74,10 +97,14 @@ export function getCapabilityFile(source: string): { blob: Buffer; mimeType: str
  *  artifact, not in the conversation. Reading the message alone would collect exactly the
  *  attachments a saved result still needs, and the failure would only show up later, as a
  *  download or a model that had quietly stopped existing. */
-export function reconcileChatAssets(owner: string, messages: Array<{ content: string }>): void {
+export function reconcileChatAssets(owner: string, messages: Array<{ content: string;concilium?:unknown }>): void {
+  if(retainedOwners.has(owner))return;
   const dir = directory(owner);
   if (!fs.existsSync(dir)) return;
-  const text = messages.map(message => message.content).join('\n');
+  const text = messages.flatMap(message => {
+    const council=message.concilium as {members?:Array<{answer?:unknown}>}|undefined;
+    return [message.content,...(Array.isArray(council?.members)?council.members.flatMap(member=>typeof member.answer==='string'?[member.answer]:[]):[])];
+  }).join('\n');
   const files = fs.readdirSync(dir);
 
   // Only artifacts the conversation still refers to: one that was itself dropped must not

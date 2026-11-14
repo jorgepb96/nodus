@@ -3,6 +3,7 @@ import { normalizeAcademicMetadata, cloneAcademicDocument } from '@shared/academ
 import { EditorialCards, EditorialNavigator, CatalogViewControl, EditorialCreateTrigger, EditorialCatalogRow } from '../components/workspace/EditorialChrome';
 import '../components/workspace/editorialWorkspace.css';
 import { notifyDataChanged } from '../hooks';
+import {useCompanionContentRefresh} from '../companionEvents';
 import { ManualIdeaEditor } from './ManualIdeaEditor';
 // El espacio de trabajo de la bóveda académica: notas, ideas y colecciones en una sola
 // vista, y el mismo editor que ya usan Estudio y Docencia.
@@ -523,6 +524,7 @@ export function WorkspaceView({
   /** Study and teaching vaults: notes can be linked to courses, subjects, topics and materials. */
   studyLinks?: { onOpenLocation: (target: StudyNavigationTarget) => void; onOpenMaterial: (id: string) => void };
 }) {
+  const [mobileCommandIssue, setMobileCommandIssue] = useState<string | null>(null);
   const [pinnedActionIds, setPinnedActionIds] = useState<string[]>(snapshot?.pinnedActionIds ?? []);
   const [layout, setLayout] = useState<'editorial' | 'navigator'>(() => snapshot?.layout ?? 'editorial');
   const [catalogView, setCatalogView] = useState<'list' | 'cards'>(() => snapshot?.catalogView ?? 'list');
@@ -576,6 +578,7 @@ export function WorkspaceView({
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useCompanionContentRefresh(refresh);
 
   // The study side of the links reloads on its own: it changes from the study sections
   // too (a note unlinked from a subject), not only from here.
@@ -738,8 +741,21 @@ export function WorkspaceView({
     });
   };
 
+  const mobileWorkspaceCommands = (window as unknown as {nodusMobileConfig?: {live?: boolean}}).nodusMobileConfig?.live
+    ? window.nodus as unknown as {duplicateMobileWorkspaceNote(id: string): Promise<Note>; trashMobileWorkspaceNote(id: string): Promise<void>}
+    : null;
+
   const duplicateNote = async (note: Note) => {
     if (activeId === note.id && !await flushRef.current()) return;
+    if (mobileWorkspaceCommands) {
+      setMobileCommandIssue(null);
+      try {
+        const copy = await mobileWorkspaceCommands.duplicateMobileWorkspaceNote(note.id);
+        openNote(copy.id);
+        await refresh();
+      } catch (error) { setMobileCommandIssue(error instanceof Error ? error.message : String(error)); }
+      return;
+    }
     const data = await window.nodus.getWorkspaceNoteEditorData(note.id);
     const copy = await window.nodus.createNote({
       title: `${note.title} (${t('copia')})`, content: note.content,
@@ -753,7 +769,15 @@ export function WorkspaceView({
   const moveToTrash = async (ids: string[]) => {
     const unique = [...new Set(ids)];
     if (activeId && unique.includes(activeId) && !await flushRef.current()) return;
-    await window.nodus.trashNotes(unique);
+    if (mobileWorkspaceCommands) {
+      setMobileCommandIssue(null);
+      const queued: string[] = [];
+      try { for (const id of unique) { await mobileWorkspaceCommands.trashMobileWorkspaceNote(id); queued.push(id); } }
+      catch (error) { setMobileCommandIssue(error instanceof Error ? error.message : String(error)); }
+      closeNotes(queued);
+      try { await refresh(); } catch (error) { setMobileCommandIssue(error instanceof Error ? error.message : String(error)); }
+      if (queued.length !== unique.length) return;
+    } else await window.nodus.trashNotes(unique);
     closeNotes(unique);
     setSelected(new Set());
     setPendingNoteDelete(null);
@@ -1162,8 +1186,6 @@ export function WorkspaceView({
                   key={note.id}
                   data-testid={`workspace-item-${note.id}`}
                   data-anchor-id={note.id}
-                  role="button"
-                  tabIndex={0}
                   draggable={scope.kind !== 'trash'}
                   onDragStart={(event) => {
                     if (scope.kind === 'trash') return;
@@ -1172,7 +1194,6 @@ export function WorkspaceView({
                   }}
                   className={`grid min-h-[62px] w-full grid-cols-[28px_22px_minmax(0,1fr)_minmax(120px,0.45fr)_72px] items-center border-b border-neutral-900 px-4 text-left text-xs hover:bg-neutral-900/60 ${selected.has(note.id) ? 'bg-indigo-500/10' : openIds.includes(note.id) ? 'bg-neutral-900/40' : ''}`}
                   onClick={(event) => { if ((event.target as HTMLElement).closest('input,button')) return; if (scope.kind === 'trash') toggleSelected(note.id); else openNote(note.id); }}
-                  onKeyDown={(event) => { if (event.key !== 'Enter' && event.key !== ' ') return; event.preventDefault(); if (scope.kind === 'trash') toggleSelected(note.id); else openNote(note.id); }}
                   onContextMenu={(event) => {
                     event.preventDefault();
                     setItemContextMenu({ noteId: note.id, x: Math.max(8, Math.min(event.clientX, window.innerWidth - 250)), y: Math.max(8, Math.min(event.clientY, window.innerHeight - 340)) });
@@ -1181,7 +1202,7 @@ export function WorkspaceView({
                   <input type="checkbox" checked={selected.has(note.id)} onChange={(event) => toggleSelected(note.id, event.target.checked)} onClick={(event) => event.stopPropagation()} aria-label={tx('Seleccionar {name}', { name: note.title })} />
                   <Icon name={KIND_ICON[kind]} size={14} className={`mt-0.5 shrink-0 ${kind === 'idea' ? 'text-amber-400' : 'text-neutral-500'}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm">{note.title}</span><small className="text-[10px] text-neutral-500">{tree.folders.find(folder => folder.id === note.folderId)?.name ?? t('Sin colección')}</small>
+                    <button className="block w-full truncate text-left text-sm" aria-label={tx('Abrir {name}', { name: note.title })} onClick={event => { event.stopPropagation(); if (scope.kind === 'trash') toggleSelected(note.id); else void openNote(note.id); }}>{note.title}</button><small className="text-[10px] text-neutral-500">{tree.folders.find(folder => folder.id === note.folderId)?.name ?? t('Sin colección')}</small>
                     <span className="mt-0.5 block truncate text-[11px] text-neutral-500">{plainSnippet(note.content) || t('Sin contenido')}</span>
                   </span>
                   <span className="flex min-w-0 flex-wrap gap-1 pr-2">
@@ -1202,6 +1223,7 @@ export function WorkspaceView({
 
   return (
     <div className="library-theme editorial-workspace relative flex h-full min-h-0 flex-col">
+      {mobileCommandIssue && <div role="alert" className="flex items-start gap-3 border-b border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"><span className="flex-1">{mobileCommandIssue}</span><button aria-label={t('Cerrar')} className="grid min-h-11 min-w-11 shrink-0 place-items-center" onClick={() => setMobileCommandIssue(null)}><Icon name="x" size={16} /></button></div>}
       {workspaceTabs}
 
       <div className={`min-h-0 flex-1 overflow-hidden ${active ? 'hidden' : ''}`} aria-hidden={active ? true : undefined}>

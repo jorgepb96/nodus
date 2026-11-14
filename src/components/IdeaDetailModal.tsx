@@ -34,6 +34,8 @@ export function IdeaDetailModal({
   const [edges, setEdges] = useState<EdgeDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingNote, setSavingNote] = useState<IdeaDetail | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     setHistory([initialIdeaId]);
@@ -45,16 +47,21 @@ export function IdeaDetailModal({
     setLoading(true);
     setDetail(null);
     setEdges([]);
-    void Promise.all([window.nodus.getIdeaDetail(selectedId), window.nodus.getIdeaEdges(selectedId)]).then(([idea, nextEdges]) => {
+    setLoadError(null);
+    void window.nodus.getIdeaDetail(selectedId).then(async idea => {
       if (!on) return;
       setDetail(idea);
-      setEdges(nextEdges);
-      setLoading(false);
-    });
+      if (idea && idea.idea.mobileSourceScope !== 'authoredText') {
+        const nextEdges = await window.nodus.getIdeaEdges(selectedId);
+        if (on) setEdges(nextEdges);
+      }
+    }).catch(error => {
+      if (on) setLoadError(error instanceof Error ? error.message : String(error));
+    }).finally(() => { if (on) setLoading(false); });
     return () => {
       on = false;
     };
-  }, [selectedId]);
+  }, [selectedId, retry]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -143,6 +150,10 @@ export function IdeaDetailModal({
             <span className="text-[10px] text-neutral-600">{tx('{i} de {n}', { i: pos + 1, n: history.length })}</span>
           </div>
 
+          {loadError && <div role="alert" className="mb-3 space-y-2 rounded-lg border border-amber-700/40 bg-amber-950/20 p-3 text-sm">
+            <p className="break-words">{loadError}</p>
+            <button className="btn btn-ghost min-h-11" disabled={loading} onClick={() => setRetry(value => value + 1)}>{t('Reintentar')}</button>
+          </div>}
           {loading ? (
             <div className="space-y-3 animate-pulse">
               <div className="h-4 w-1/3 rounded bg-neutral-800" />
@@ -155,7 +166,7 @@ export function IdeaDetailModal({
               <div>
                 <Badge color="indigo">{ideaTypeLabel(detail.idea.type as IdeaType)}</Badge>
                 <h3 className="mt-2 text-base font-semibold leading-snug">{detail.idea.label}</h3>
-                <p className="mt-1 text-sm text-neutral-400">{detail.idea.statement}</p>
+                <p role="group" aria-label={t('Enunciado de la idea')} className="mt-1 text-sm text-neutral-400">{detail.idea.statement}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -178,7 +189,10 @@ export function IdeaDetailModal({
                 </button>
               </div>
 
-              <section>
+              {detail.idea.mobileSourceScope === 'authoredText' && <p className="rounded-lg border border-neutral-700 p-3 text-sm text-neutral-400">
+                {t('Texto escrito en este móvil. Descarga sus evidencias y conexiones para consultarlas sin el Mac.')}
+              </p>}
+              {detail.idea.mobileSourceScope !== 'authoredText' && !loadError && <section>
                 <div className="mb-1 text-xs uppercase text-neutral-500">{tx('Conexiones ({n})', { n: connections.length })}</div>
                 {connections.length === 0 ? (
                   <p className="text-xs text-neutral-500">{t('Esta idea aún no tiene conexiones con otras ideas.')}</p>
@@ -206,15 +220,15 @@ export function IdeaDetailModal({
                     ))}
                   </ul>
                 )}
-              </section>
+              </section>}
 
-              <section>
+              {detail.idea.mobileSourceScope !== 'authoredText' && <section>
                 <div className="mb-1 text-xs uppercase text-neutral-500">{t('Obras que la desarrollan')}</div>
                 {detail.occurrences.length === 0 && <p className="text-xs text-neutral-500">{t('Sin obras vinculadas.')}</p>}
                 {detail.occurrences.map((occurrence) => (
                   <OccurrenceCard key={occurrence.nodus_id} occurrence={occurrence} />
                 ))}
-              </section>
+              </section>}
 
               {detail.evidence.length > 0 && (
                 <section>

@@ -39,7 +39,7 @@ test('the single Library screen owns explicit global and vault scopes', async ()
 test('v3 upgrades stay in the vault corpus until Global is explicitly enabled', async () => {
   const [types, settings, prefs, view] = await Promise.all([
     readSource('shared/types.ts'),
-    readSource('electron/db/settingsRepo.ts'),
+    readSource('shared/defaultAppSettings.ts'),
     readSource('electron/db/appPrefs.ts'),
     readSource('src/views/GlobalLibraryView.tsx'),
   ]);

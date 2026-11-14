@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
+if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-database-job-identity')) process.exit(0);
+const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-db-job-'));
+const runtime=installRuntimeHooks(directory);runtime.app.on=()=>{};runtime.app.once=()=>{};
+const require=createRequire(import.meta.url);let database;
+try {
+  database=require('../electron/db/database.ts');const db=database.getDb();
+  const vaults=require('../electron/vaults/vaultRegistry.ts'),first=vaults.getActiveVault(),other=vaults.createVault('Aislado');
+  const repo=require('../electron/db/databaseDeepResearchRepo.ts');
+  const stamp='2026-10-11T00:00:00Z';
+  db.prepare('INSERT INTO db_databases(id,short_id,name,created_at,updated_at) VALUES(?,?,?,?,?)').run('database','DB-37','Datos',stamp,stamp);
+  assert.equal(repo.findMobileDatabaseResearchRun('original-request'),null);
+  const make=()=>repo.createDatabaseResearchRun({databaseId:'database',objective:'Pregunta verificable'});
+  assert.throws(()=>repo.mobileDatabaseResearchTransaction(()=>{const run=make();repo.rememberMobileDatabaseResearchRun('original-request',run.id);throw new Error('crash-before-commit');}),/crash-before-commit/);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM database_research_runs').get().n,0);
+  assert.equal(repo.findMobileDatabaseResearchRun('original-request'),null,'Run and receipt roll back together');
+  const saved=repo.mobileDatabaseResearchTransaction(()=>{const run=make();repo.rememberMobileDatabaseResearchRun('original-request',run.id);return run;});
+  assert.equal(repo.findMobileDatabaseResearchRun('original-request').id,saved.id);
+  assert.throws(()=>repo.mobileDatabaseResearchTransaction(()=>{const duplicate=make();repo.rememberMobileDatabaseResearchRun('original-request',duplicate.id);}),/UNIQUE/);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM database_research_runs').get().n,1,'Duplicate creation rolls back');
+  assert.equal(await database.withVaultDatabase(other.id,()=>repo.findMobileDatabaseResearchRun('original-request')),null,'Receipts never cross vaults');
+  assert.equal(await database.withVaultDatabase(first.id,()=>repo.findMobileDatabaseResearchRun('original-request').id),saved.id);
+  db.prepare('DELETE FROM database_research_runs WHERE id=?').run(saved.id);
+  assert.throws(()=>repo.findMobileDatabaseResearchRun('original-request'),/mobile_database_research_run_unavailable/,'A cleared run cannot silently generate again');
+  console.log('Database run identity, atomic receipt rollback and vault ownership passed. Provider/UI acceptance is separate.');
+} finally {database?.closeDb();runtime.restore();fs.rmSync(directory,{recursive:true,force:true});}

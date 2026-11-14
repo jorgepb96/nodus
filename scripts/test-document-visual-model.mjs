@@ -50,7 +50,7 @@ test('a model crossing the IPC boundary is validated, and the level assigned to 
 });
 
 test('the enrichment resolves its engine once and every call in the run uses it', () => {
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('electron/ai/documentVisuals.ts') + '\n' + read('shared/portableDocumentVisuals.ts');
   assert.match(source, /const model = resolveDocumentVisualModel\(\{[\s\S]*?requested: request\.model,[\s\S]*?configured: settings\[documentVisualModelKey\(target\.kind\)\],[\s\S]*?general: settings\.synthesisModel,[\s\S]*?stored: input\.model,/,
     'the run must weigh the request, the setting and the stored model in one place');
   assert.equal(source.includes('request.model ?? input.model'), false, 'no call site may bypass the resolved model');
@@ -68,7 +68,7 @@ test('the app reads the task’s model from the vault’s settings, not only fro
 });
 
 test('a figure that fails names the engine that ran it', () => {
-  const source = read('electron/ai/documentVisuals.ts');
+  const source = read('electron/ai/documentVisuals.ts') + '\n' + read('shared/portableDocumentVisuals.ts');
   const failures = [...source.matchAll(/logPipelineFailure\(\{[\s\S]*?\n\s*\}\);/g)].map(match => match[0]);
   assert.equal(failures.length, 2, 'both the per-figure and the run-level failure are recorded');
   for (const failure of failures) {

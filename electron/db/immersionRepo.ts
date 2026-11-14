@@ -11,6 +11,7 @@ import type {
   ModelRef,
 } from '@shared/types';
 import { getDb } from './database';
+import {normalizePromptLanguage} from '@shared/promptLanguageOptions';
 import { deleteResearchRuns } from './researchRunsRepo';
 import { immersionAnnotationDocumentId } from '@shared/readerAnnotations';
 import { normalizeBareCitations } from '../ai/immersionCore';
@@ -103,7 +104,7 @@ function toSession(row: SessionRow): ImmersionSession | null {
   return {
     id: row.id,
     topic: row.topic,
-    language: row.language === 'en' ? 'en' : 'es',
+    language: normalizePromptLanguage(row.language),
     minutes: row.minutes,
     model: parseJson<ModelRef | null>(row.model_json, null),
     plan,
@@ -130,7 +131,7 @@ function toSummary(row: SessionRow): ImmersionSessionSummary {
     id: row.id,
     topic: row.topic,
     title: row.title || row.topic,
-    language: row.language === 'en' ? 'en' : 'es',
+    language: normalizePromptLanguage(row.language),
     minutes: row.minutes,
     stats,
     progressPct: pct,

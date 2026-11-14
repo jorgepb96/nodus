@@ -13,7 +13,7 @@ const tmp = await mkdtemp(path.join(os.tmpdir(), 'nodus-thinking-catalog-'));
 test.after(() => rm(tmp, { recursive: true, force: true }));
 const outfile = path.join(tmp, 'thinkingEffort.mjs');
 globalThis.__catalog = { reads: 0, fail: false };
-await build({ entryPoints: [path.join(root, 'electron/ai/thinkingEffort.ts')], outfile,
+const bundled = await build({ metafile: true, entryPoints: [path.join(root, 'electron/ai/thinkingEffort.ts')], outfile,
   bundle: true, platform: 'node', format: 'esm', logLevel: 'silent', alias: { '@shared': path.join(root, 'shared') },
   plugins: [{ name: 'stubs', setup(api) {
     const mocks = {
@@ -21,10 +21,15 @@ await build({ entryPoints: [path.join(root, 'electron/ai/thinkingEffort.ts')], o
 export const openAiCompatBase = () => null;`,
       '../secrets/secretStore': `export const getApiKey = () => 'key';`,
     };
-    api.onResolve({ filter: /^(\.\/providers|\.\.\/secrets\/secretStore)$/ }, args => ({ path: args.path, namespace: 'mock' }));
+    api.onResolve({ filter: /^(\.\/providers|\.\.\/secrets\/secretStore)$/ }, args => args.importer === path.join(root, 'electron/ai/thinkingEffort.ts')
+      ? { path: args.path, namespace: 'mock' }
+      : undefined);
     api.onLoad({ filter: /.*/, namespace: 'mock' }, args => ({ contents: mocks[args.path] }));
   } }],
 });
+// A same-spelled relative import in shared budget/reasoning code is a different
+// module. Keep that implementation real instead of replacing it with the AI stub.
+assert.ok(Object.keys(bundled.metafile.inputs).includes('shared/providers.ts'));
 const { thinkingCatalogInfo } = await import(pathToFileURL(outfile));
 
 test('the catalogue entry is read from the provider once across turns, not once per turn', async () => {

@@ -41,7 +41,7 @@ test('legacy study reports remain student-facing while teaching can opt into a t
 test('the selected audience crosses the UI, queue request, prompt phases and saved brief', async () => {
   const [view, engine, sidebar, app] = await Promise.all([
     readFile(path.join(repoRoot, 'src/views/DeepResearchView.tsx'), 'utf8'),
-    readFile(path.join(repoRoot, 'electron/ai/studyDeepResearch.ts'), 'utf8'),
+    readFile(path.join(repoRoot, 'shared/portableStudyDeepResearch.ts'), 'utf8'),
     readFile(path.join(repoRoot, 'src/components/TeachingSidebar.tsx'), 'utf8'),
     Promise.resolve(readSource('@shell')),
   ]);
@@ -54,6 +54,8 @@ test('the selected audience crosses the UI, queue request, prompt phases and sav
   assert.match(app, /teachingUnits: \(/);
   assert.match(app, /\bisTeaching\b/);
 
+  const binding=await readFile(path.join(repoRoot,'electron/ai/studyDeepResearch.ts'),'utf8');
+  assert.match(binding,/portableStudyDeepResearch\(\{completeJson,completeText,retrieveStudyAssistantEntries,listStudyIdeasForSources\}\)/);
   assert.match(engine, /normalizeStudyDeepResearchAudience\(\s*request\.audience/);
   assert.match(engine, /studyDeepResearchPromptPack\(language, audience, unitMode\)/);
   assert.ok((engine.match(/audience,/g) ?? []).length >= 4, 'audience is sent during planning, writing, finalization and saving');

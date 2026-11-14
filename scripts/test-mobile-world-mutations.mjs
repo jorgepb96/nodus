@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
+
+if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-world-mutations'))process.exit(0);
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-world-mutations-'));
+const runtime=installRuntimeHooks(root);runtime.app.on=()=>{};runtime.app.once=()=>{};
+const require=createRequire(import.meta.url);let database;
+try {
+  database=require('../electron/db/database.ts');
+  const {getActiveVault,createVault,setActiveVault,withOwningVault}=require('../electron/vaults/vaultRegistry.ts');
+  const {applyBridgeMutations,mobileWorldContentMutationTables}=require('../electron/desktopBridge/mutations.ts');
+  const academic=getActiveVault(),world=createVault('Mundo de aceptación aislado','worldbuilding'),other=createVault('Otro mundo','worldbuilding');
+  const domains=['corpus','writing','files'];
+  assert.deepEqual(mobileWorldContentMutationTables(academic.id,domains),[]);
+  assert.deepEqual(mobileWorldContentMutationTables(world.id,['corpus']),[]);
+  assert.ok(!mobileWorldContentMutationTables(world.id,['corpus','writing']).includes('world_images'));
+  assert.ok(mobileWorldContentMutationTables(world.id,domains).includes('world_images'));
+  const stamp=new Date().toISOString();
+  const change=(id,table,key,row)=>({id,clientId:'phone',kind:'upsert',table,key,row,assets:[],schemaVersion:database.SCHEMA_VERSION,createdAt:stamp});
+  const times={created_at:stamp,updated_at:stamp};
+  const scene=change('scene-created','world_scenes',['scene'],{scene_id:'scene',title:'Escena móvil',narrative_order:0,...times});
+  const thread=change('thread-created','world_threads',['thread'],{thread_id:'thread',kind:'arc',title:'  Arco   móvil  ',title_key:'incorrecto',...times});
+  const beat=change('beat-created','world_beats',['arc','thread','scene'],{thread_kind:'arc',thread_id:'thread',scene_id:'scene',mark:'step',...times});
+  const read=(vault,work)=>database.withVaultDatabase(vault.id,()=>work(database.getDb()));
+  setActiveVault(other.id);
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[scene,thread,beat],domains)).applied,['scene-created','thread-created','beat-created']);
+  assert.equal(await read(other,db=>db.prepare('SELECT count(*) n FROM world_scenes').get().n),0,'The active vault is not the owning vault');
+  assert.equal(await read(world,db=>db.prepare('SELECT title_key FROM world_threads WHERE thread_id=?').get('thread').title_key),'arco movil');
+  const longText=Array(120).fill('Palabra').join(' '), prose=change('prose','world_scene_text',['scene'],{scene_id:'scene',text:longText,word_count:999,...times});
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[prose],domains)).applied,['prose']);
+  assert.equal(await read(world,db=>db.prepare('SELECT word_count FROM world_scene_text WHERE scene_id=?').get('scene').word_count),120,'Canonical counts cannot trust a phone counter');
+  const latest=await read(world,db=>db.prepare('SELECT updated_at FROM world_scene_text WHERE scene_id=?').get('scene').updated_at);
+  const shrink=change('shrink','world_scene_text',['scene'],{scene_id:'scene',text:'Reescritura breve',word_count:999,created_at:stamp,updated_at:new Date(Date.parse(latest)+1).toISOString()});
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[shrink],domains)).applied,['shrink']);
+  assert.equal(await read(world,db=>db.prepare('SELECT text FROM world_scene_snapshots WHERE scene_id=? AND reason=?').get('scene','shrink').text),longText,'Canonical overwrite keeps the original prose');
+  const count=await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n);
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[shrink],domains)).duplicate,['shrink']);
+  assert.equal(await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n),count,'A lost acknowledgement cannot create another snapshot');
+  const manuscript=require('../electron/db/worldManuscriptRepo.ts'),macText=Array(60).fill('Texto del Mac').join(' ');
+  await withOwningVault(world.id,()=>read(world,()=>manuscript.saveSceneText('scene',macText)));
+  const current=await read(world,db=>db.prepare('SELECT text,updated_at FROM world_scene_text WHERE scene_id=?').get('scene'));
+  const conflicted=change('conflicted-prose','world_scene_text',['scene'],{scene_id:'scene',text:'Borrador del teléfono',_mobileExpectedText:'Reescritura breve',word_count:3,created_at:stamp,updated_at:new Date(Date.parse(current.updated_at)+1000).toISOString()});
+  const conflict=await applyBridgeMutations(world.id,'paired-phone',[conflicted],domains);
+  assert.equal(conflict.rejected[0].reason,'world_scene_text_conflict');assert.match(conflict.rejected[0].error_description,/borrador se conserva/);
+  assert.equal(await read(world,db=>db.prepare('SELECT text FROM world_scene_text WHERE scene_id=?').get('scene').text),current.text,'A stale device baseline never overwrites newer authored prose');
+  assert.equal(await read(world,db=>db.prepare('SELECT count(*) n FROM desktop_bridge_receipts WHERE mutation_id=?').get(conflicted.id).n),0,'A conflict cannot receive a successful write receipt');
+  const localSnapshot=change('local-before-shrink','world_scene_snapshots',['before-shrink'],{snapshot_id:'before-shrink',scene_id:'scene',text:current.text,word_count:180,reason:'shrink',created_at:new Date(Date.parse(current.updated_at)+1000).toISOString()});
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[localSnapshot],domains)).applied,[localSnapshot.id]);
+  const snapshotsBefore=await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n);
+  const rebased={...conflicted,id:'rebased-prose',row:{...conflicted.row,_mobileExpectedText:current.text}};
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[rebased],domains)).applied,[rebased.id]);
+  assert.equal(await read(world,db=>db.prepare('SELECT text FROM world_scene_text WHERE scene_id=?').get('scene').text),rebased.row.text);
+  assert.equal(await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n),snapshotsBefore,'A confirmed phone preimage is not duplicated by the canonical shrink hook');
+  const refusals=[{...beat,id:'missing-scene',key:['arc','thread','missing'],row:{...beat.row,scene_id:'missing'}},
+    {...beat,id:'wrong-kind',key:['conflict','thread','scene'],row:{...beat.row,thread_kind:'conflict'}},
+    {...beat,id:'wrong-mark',row:{...beat.row,mark:'breaks'}},
+    {...beat,id:'private-table',table:'teaching_students'}, {...beat,id:'admin-table',table:'sync_device_peers'}];
+  const rejected=await applyBridgeMutations(world.id,'paired-phone',refusals,domains);
+  assert.equal(rejected.rejected.length,refusals.length);assert.deepEqual(rejected.applied,[]);
+  assert.deepEqual((await applyBridgeMutations(academic.id,'paired-phone',[scene],domains)).rejected,[{id:'scene-created',reason:'table_not_writable'}]);
+  assert.deepEqual((await applyBridgeMutations(world.id,'read-only-domain',[scene],['corpus'])).rejected,[{id:'scene-created',reason:'table_not_writable'}]);
+  database.closeDb();setActiveVault(other.id);
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[scene,thread,beat,prose,shrink],domains)).duplicate,['scene-created','thread-created','beat-created','prose','shrink']);
+  console.log(JSON.stringify({passed:true,isolatedVaults:3,orderedWorldWrites:true,canonicalCounts:true,shrinkPreserved:true,reopenedReceipts:true,privateOperationsRefused:true,releaseApproved:false}));
+} finally {try{database?.closeDb();}catch{}fs.rmSync(root,{recursive:true,force:true});}

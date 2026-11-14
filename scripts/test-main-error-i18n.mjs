@@ -54,6 +54,7 @@ function load(file) {
 const { localizeRuntimeError, localizeIpcPayload } = load('shared/uiLanguage.ts');
 const { MAIN_PROCESS_ERRORS, MAIN_PROCESS_ERROR_PATTERNS } = load('shared/mainProcessErrors.ts');
 const { CLOUDFLARE_SYNC_ERRORS } = load('shared/cloudflareSyncErrors.ts');
+const { COMPANION_RUNTIME_ERRORS, COMPANION_RUNTIME_ERROR_PATTERNS } = load('shared/companionErrors.ts');
 
 /** Every language the interface offers, minus Spanish (the source). */
 const LANGUAGES = ['en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr', 'zh-CN'];
@@ -179,6 +180,26 @@ test('every catalogue entry is translated in all seven languages and left alone 
       assert.ok(translations[language], `${message} is missing a ${language} translation`);
       assert.equal(out, translations[language], `${message} must resolve to its ${language} translation`);
       assert.notEqual(out, message, `${message} must actually change in ${language}`);
+    }
+  }
+});
+
+test('companion errors preserve their recovery reason and dynamic IDs in every app language', () => {
+  const languages = [...LANGUAGES, 'zh-TW', 'ja', 'ko'];
+  for (const [message, translations] of Object.entries(COMPANION_RUNTIME_ERRORS)) {
+    for (const language of languages) {
+      assert.ok(translations[language], `${message}: missing ${language}`);
+      assert.equal(localizeRuntimeError(message, language), translations[language]);
+    }
+  }
+  for (const id of ['archive-db-42', 'db-$&-東京']) {
+    const message = `La base ${id} no está descargada para investigar.`;
+    for (const language of languages) {
+      const result = localizeRuntimeError(message, language);
+      assert.equal(result, COMPANION_RUNTIME_ERROR_PATTERNS[0].translate(id)[language]);
+      assert.ok(result.includes(id), `${language}: database ID must remain literal`);
+      assert.notEqual(result, message);
+      assert.ok(!GENERIC.has(result));
     }
   }
 });

@@ -38,6 +38,7 @@ import type {
 } from '@shared/studyOrg';
 import { createStudyShortId, normalizeStudyName, studyPlacementKey } from '@shared/studyOrg';
 import { getDb } from './database';
+import { toAcademicYear, toCourse, toSubject, toTopic, toFolder, toDocument, toPlacement, toTag, toDocumentTag, toTemplate } from '@shared/studyOrgProjection';
 import { embeddingReadTable } from './embeddingIndexSchema';
 
 type Row = Record<string, unknown>;
@@ -63,100 +64,6 @@ function ids(kind: keyof typeof PREFIX) {
 function now(): string {
   return new Date().toISOString();
 }
-
-function bool(value: unknown): boolean {
-  return Number(value) === 1;
-}
-
-function base(row: Row) {
-  return {
-    id: String(row.id),
-    shortId: String(row.short_id),
-    position: Number(row.position ?? 0),
-    archivedAt: row.archived_at ? String(row.archived_at) : null,
-    deletedAt: row.deleted_at ? String(row.deleted_at) : null,
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-  };
-}
-
-function named(row: Row) {
-  return {
-    ...base(row),
-    name: String(row.name),
-    description: row.description ? String(row.description) : null,
-    color: row.color ? String(row.color) : null,
-    icon: row.icon ? String(row.icon) : null,
-    emoji: row.emoji ? String(row.emoji) : null,
-    imageData: row.image_data ? String(row.image_data) : null,
-    year: row.year == null ? null : Number(row.year),
-    favorite: bool(row.favorite),
-  };
-}
-
-const toAcademicYear = (row: Row): StudyAcademicYear => ({
-  ...base(row),
-  label: String(row.label),
-  startDate: String(row.start_date),
-  endDate: String(row.end_date),
-  color: row.color ? String(row.color) : null,
-});
-const toCourse = (row: Row): StudyCourse => ({ ...named(row), academicYearId: row.academic_year_id ? String(row.academic_year_id) : null });
-const toSubject = (row: Row): StudySubject => ({
-  ...named(row),
-  courseId: String(row.course_id),
-  academicYearId: row.academic_year_id ? String(row.academic_year_id) : null,
-});
-const toTopic = (row: Row): StudyTopic => ({
-  ...named(row),
-  subjectId: String(row.subject_id),
-  folderId: row.folder_id ? String(row.folder_id) : null,
-  parentId: row.parent_id ? String(row.parent_id) : null,
-});
-const toFolder = (row: Row): StudyFolder => ({
-  ...named(row),
-  parentId: row.parent_id ? String(row.parent_id) : null,
-  courseId: row.course_id ? String(row.course_id) : null,
-  subjectId: row.subject_id ? String(row.subject_id) : null,
-});
-const toDocument = (row: Row): StudyDocument => ({
-  ...base(row),
-  title: String(row.title),
-  kind: String(row.kind) as StudyDocument['kind'],
-  contentMarkdown: String(row.content_markdown ?? ''),
-  description: row.description ? String(row.description) : null,
-  color: row.color ? String(row.color) : null,
-  icon: row.icon ? String(row.icon) : null,
-  emoji: row.emoji ? String(row.emoji) : null,
-  imageData: row.image_data ? String(row.image_data) : null,
-  year: row.year == null ? null : Number(row.year),
-  favorite: bool(row.favorite),
-  pinned: bool(row.pinned),
-  locked: bool(row.locked),
-  embeddingProvider: row.embedding_provider ? String(row.embedding_provider) : null,
-  embeddingModel: row.embedding_model ? String(row.embedding_model) : null,
-  embeddingDim: row.embedding_dim == null ? null : Number(row.embedding_dim),
-  embeddingTextHash: row.embedding_text_hash ? String(row.embedding_text_hash) : null,
-});
-const toPlacement = (row: Row): StudyPlacement => ({
-  ...base(row),
-  documentId: String(row.document_id),
-  courseId: row.course_id ? String(row.course_id) : null,
-  subjectId: row.subject_id ? String(row.subject_id) : null,
-  topicId: row.topic_id ? String(row.topic_id) : null,
-  folderId: row.folder_id ? String(row.folder_id) : null,
-});
-const toTag = (row: Row): StudyTag => named(row);
-const toDocumentTag = (row: Row): StudyDocumentTag => ({
-  ...base(row),
-  documentId: String(row.document_id),
-  tagId: String(row.tag_id),
-});
-const toTemplate = (row: Row): StudyTemplate => ({
-  ...named(row),
-  kind: String(row.kind) as StudyTemplate['kind'],
-  content: JSON.parse(String(row.content_json || '{}')) as StudyTemplate['content'],
-});
 
 function lifecycleWhere(options: StudyWorkspaceOptions): string {
   const filters: string[] = [];
@@ -392,9 +299,15 @@ export function createStudyFolder(input: CreateStudyFolderInput): StudyFolder {
 }
 
 export function createStudyDocument(input: CreateStudyDocumentInput): StudyDocument {
+  return createStudyDocumentWithIdentity(input, crypto.randomUUID());
+}
+
+/** Stable companion identities are allocated before the device reconnects. */
+export function createStudyDocumentWithIdentity(input: CreateStudyDocumentInput, identity: string): StudyDocument {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(identity)) throw new Error('Identidad de documento no válida.');
   const db = getDb();
   const create = db.transaction(() => {
-    const key = ids('document');
+    const key = { id: identity, shortId: createStudyShortId(PREFIX.document, identity) };
     const timestamp = now();
     db.prepare(`INSERT INTO study_docs
       (id, short_id, title, kind, content_markdown, description, color, icon, emoji, image_data, year, position, created_at, updated_at)
@@ -869,30 +782,54 @@ export function applyStudyTemplate(id: string, name?: string): StudyCourse | Stu
 }
 
 function copyNativeStudyDocument(sourceId: string, targetId: string): void {
-  const row = getDb().prepare('SELECT native_document_json, native_schema_version, style_json, spellcheck_language, custom_dictionary_json FROM study_docs WHERE id = ?').get(sourceId) as Row;
+  const row = getDb().prepare('SELECT native_document_json, native_schema_version, style_json, spellcheck_language, custom_dictionary_json, academic_metadata_json FROM study_docs WHERE id = ?').get(sourceId) as Row;
   const native = parseNativeDocument(row.native_document_json);
-  getDb().prepare('UPDATE study_docs SET native_document_json = ?, native_schema_version = ?, style_json = ?, spellcheck_language = ?, custom_dictionary_json = ? WHERE id = ?').run(native ? JSON.stringify(cloneNativeDocument(native)) : null, row.native_schema_version, row.style_json, row.spellcheck_language, row.custom_dictionary_json, targetId);
+  const cloned = native ? cloneNativeDocument(native) : null;
+  const blockIds = new Map<string, string>();
+  const remember = (source: NonNullable<typeof native>, target: NonNullable<typeof native>) => source.forEach((block, index) => {
+    if (!target[index]) return;
+    blockIds.set(block.id, target[index].id);
+    remember(block.children ?? [], target[index].children ?? []);
+  });
+  if (native && cloned) remember(native, cloned);
+  let academicJson = row.academic_metadata_json ?? null;
+  if (typeof academicJson === 'string') {
+    const academic = JSON.parse(academicJson);
+    if (academic && typeof academic === 'object') {
+      for (const note of Object.values(academic.notes ?? {}) as Array<{document?: unknown}>) {
+        const document = parseNativeDocument(JSON.stringify(note.document));
+        if (document) { const copy = cloneNativeDocument(document); remember(document, copy); note.document = copy; }
+      }
+      for (const evidence of academic.evidence ?? []) evidence.blockId = blockIds.get(evidence.blockId) ?? evidence.blockId;
+      academicJson = JSON.stringify(academic);
+    }
+  }
+  getDb().prepare('UPDATE study_docs SET native_document_json = ?, native_schema_version = ?, style_json = ?, spellcheck_language = ?, custom_dictionary_json = ?, academic_metadata_json = ? WHERE id = ?').run(cloned ? JSON.stringify(cloned) : null, row.native_schema_version, row.style_json, row.spellcheck_language, row.custom_dictionary_json, academicJson, targetId);
+}
+
+/** Same document duplication as Desktop, with an identity allocated before a
+ * mobile request. The caller owns the surrounding receipt transaction. */
+export function duplicateStudyDocumentWithIdentity(id: string, identity: string): StudyDocument {
+  const db = getDb();
+  return db.transaction(() => {
+    const original = getStudyEntity('document', id) as StudyDocument | null;
+    if (!original) throw new Error('Documento no encontrado.');
+    const copy = createStudyDocumentWithIdentity({
+      title: `${original.title} (copia)`, kind: original.kind, contentMarkdown: original.contentMarkdown,
+      description: original.description, color: original.color, icon: original.icon, emoji: original.emoji,
+      imageData: original.imageData, year: original.year,
+    }, identity);
+    copyNativeStudyDocument(id, copy.id);
+    const placements = db.prepare('SELECT * FROM study_placements WHERE document_id = ? ORDER BY id').all(id) as Row[];
+    for (const row of placements) addStudyPlacement(copy.id, toPlacement(row));
+    return getStudyEntity('document', copy.id) as StudyDocument;
+  })();
 }
 
 export function duplicateStudyTree(kind: StudyEntityKind, id: string): StudyCourse | StudySubject | StudyTopic | StudyFolder | StudyDocument {
   const db = getDb();
   return db.transaction(() => {
-    if (kind === 'document') {
-      const original = getStudyEntity('document', id) as StudyDocument | null;
-      if (!original) throw new Error('Documento no encontrado.');
-      const copy = createStudyDocument({
-        title: `${original.title} (copia)`, kind: original.kind, contentMarkdown: original.contentMarkdown,
-        description: original.description, color: original.color, icon: original.icon, emoji: original.emoji,
-        imageData: original.imageData, year: original.year,
-      });
-      copyNativeStudyDocument(id, copy.id);
-      const placements = db.prepare('SELECT * FROM study_placements WHERE document_id = ?').all(id) as Row[];
-      for (const placementRow of placements) {
-        const placement = toPlacement(placementRow);
-        addStudyPlacement(copy.id, placement);
-      }
-      return copy;
-    }
+    if (kind === 'document') return duplicateStudyDocumentWithIdentity(id, crypto.randomUUID());
 
     const scope = descendantIds(kind, id);
     const courseMap = new Map<string, string>();

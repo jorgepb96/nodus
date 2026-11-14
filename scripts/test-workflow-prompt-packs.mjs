@@ -11,9 +11,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const languages = ['es', 'en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr', 'zh-Hans', 'zh-Hant', 'vi', 'ja', 'ru', 'uk', 'ko'];
 const require = createRequire(import.meta.url);
 
-async function load(entry, label) {
+async function load(entry, label, plugins = []) {
   const outfile = path.join(os.tmpdir(), `nodus-${label}-${process.pid}.cjs`);
-  await build({ entryPoints: [path.join(root, entry)], bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'silent' });
+  await build({ entryPoints: [path.join(root, entry)], bundle: true, platform: 'node', format: 'cjs', outfile, plugins, logLevel: 'silent' });
   try { return require(outfile); } finally { fs.rmSync(outfile, { force: true }); }
 }
 
@@ -100,11 +100,41 @@ test('workflow consumers select the configured prompt language', () => {
   assert.match(notes, /notesOrderPromptPack\(getSettings\(\)\.promptLanguage \?\? 'es'\)/);
   assert.match(reprocess, /reprocessConnectionsPromptPack\(settings\.promptLanguage \?\? 'es'\)/);
   assert.match(reprocess, /system: prompt\.relationSystem/);
-  assert.match(matrix, /synthesisPromptPack\(getSettings\(\)\.promptLanguage \?\? 'es'\)/);
+  assert.match(matrix, /language\?:PromptLanguage/);
+  assert.match(matrix, /synthesisPromptPack\(language\s*\?\?\s*getSettings\(\)\.promptLanguage \?\? 'es'\)/);
+  assert.match(matrix, /const source=prepareMatrixCellSynthesis\(authorId,themeId\)/);
   assert.match(work, /synthesisPromptPack\(getSettings\(\)\.promptLanguage \?\? 'es'\)/);
   assert.match(verifier, /manuscriptVerifierPrompt\(language\)/);
   assert.match(knowledge, /buildStudyKnowledgePrompt\(source\.title, chunk, language\)/);
   assert.match(knowledge, /studyKnowledgePromptPack\(getSettings\(\)\.promptLanguage \?\? 'es'\)/);
   assert.match(diarization, /getSettings\(\)\.promptLanguage \?\? 'es'/);
   assert.match(diarization, /transcriptPrompt\(transcript, expectedSpeakers, language\)/);
+});
+
+
+test('matrix synthesis honors explicit language, then configured language, then Spanish', async () => {
+  const matrix = await load('electron/ai/synthesisMatrix.ts', 'matrix-language', [{
+    name: 'matrix-language-isolated-io',
+    setup(api) {
+      api.onResolve({filter: /\.\.\/db\/(database|settingsRepo)$|\.\/aiClient$/}, ({path: source}) => ({path: source, namespace: 'matrix-fixture'}));
+      api.onLoad({filter: /.*/, namespace: 'matrix-fixture'}, ({path: source}) => ({loader: 'js', contents:
+        source.endsWith('database') ? `export const getDb = () => ({prepare: (sql) => ({get: () => sql.includes('authors') ? {name:'Fixture author'} : {label:'Fixture theme'}, all: () => [{global_id:'fixture-idea',label:'Fixture idea',type:'concept',statement:'Fixture evidence'}]})});` :
+        source.endsWith('settingsRepo') ? `export const getSettings = () => globalThis.__matrixPromptSettings;` :
+        `export const completeJson = async () => { throw new Error('preparing a prompt must never invoke a provider'); };`
+      }));
+    },
+  }]);
+  const prompts = await load('shared/synthesisPromptPacks.ts', 'matrix-language-packs');
+  try {
+    for (const language of languages) {
+      globalThis.__matrixPromptSettings = {promptLanguage: language};
+      const configured = matrix.prepareMatrixCellSynthesis('fixture-author', 'fixture-theme');
+      assert.equal(configured.prompt.system, prompts.synthesisPromptPack(language).matrixSystem);
+      assert.match(configured.prompt.user, /Fixture evidence/);
+      const explicit = language === 'es' ? 'en' : 'es';
+      assert.equal(matrix.prepareMatrixCellSynthesis('fixture-author', 'fixture-theme', explicit).prompt.system, prompts.synthesisPromptPack(explicit).matrixSystem);
+    }
+    globalThis.__matrixPromptSettings = {};
+    assert.equal(matrix.prepareMatrixCellSynthesis('fixture-author', 'fixture-theme').prompt.system, prompts.synthesisPromptPack('es').matrixSystem);
+  } finally { delete globalThis.__matrixPromptSettings; }
 });

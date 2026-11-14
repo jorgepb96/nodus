@@ -10,7 +10,7 @@ import { completeGuideMarkdown, completeGuideReportInput, completeGuideReviewShe
 import type { PromptLanguage, WritingWorkshopDraft, WritingWorkshopExportFormat } from '@shared/types';
 import { DEEP_LABELS } from '@shared/deepResearchReport';
 import { stripLeadingAbstract } from '@shared/writingDocument';
-import { getDocumentVisuals } from '../ai/documentVisuals';
+import { getDocumentVisualsForExport as getDocumentVisuals } from './documentVisualAssets';
 import { completeGuideDocx } from './completeGuideDocx';
 import { htmlToPdfBytes } from './htmlToPdf';
 import { pngSize, type DocxImage } from './markdownDocx';

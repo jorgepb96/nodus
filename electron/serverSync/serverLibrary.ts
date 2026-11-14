@@ -132,15 +132,21 @@ function publicCollection(value: LibraryCollectionView): PublishedLibraryCollect
   };
 }
 
-function* allItems(): Generator<LibraryCatalogItem> {
+function* allItems(vaultId?: string): Generator<LibraryCatalogItem> {
   let count = 0;
   for (let offset = 0; ; offset += PAGE_SIZE) {
-    const page = listGlobalLibraryItems({ limit: PAGE_SIZE, offset, includeFacets: false, sort: [{ field: 'title', direction: 'asc' }] });
+    const page = listGlobalLibraryItems({ vaultId, limit: PAGE_SIZE, offset, includeFacets: false, sort: [{ field: 'title', direction: 'asc' }] });
     yield* page.items;
     count += page.items.length;
     if (count >= page.total || page.items.length === 0) break;
   }
 }
+
+export function allServerLibraryItems(vaultId?: string): LibraryCatalogItem[] {
+  return [...allItems(vaultId)];
+}
+
+interface ServerLibraryPublicationOptions { items?: LibraryCatalogItem[]; includePackages?: boolean }
 
 function staysInside(root: string, candidate: string): boolean {
   const base = path.resolve(root);
@@ -312,16 +318,21 @@ async function packageForAsync(item: LibraryCatalogItem, record: LibraryItemReco
   return step.value;
 }
 
-function* publicationSteps(now: string): Generator<{ item: LibraryCatalogItem; record: LibraryItemRecord }, BuiltServerLibraryPublication, PackageResult> {
+function* publicationSteps(now: string, options: ServerLibraryPublicationOptions): Generator<{ item: LibraryCatalogItem; record: LibraryItemRecord }, BuiltServerLibraryPublication, PackageResult> {
   const packages: ServerLibraryPackage[] = [];
   const documents: PublishedLibraryDocument[] = [];
   const personalAnnotations: ServerPersonalLibraryAnnotation[] = [];
-  for (const item of allItems()) {
+  for (const item of options.items ?? allItems()) {
     const record = getGlobalLibraryItem(item.id);
     if (!record || record.deletedAt) continue;
-    const built = yield { item, record };
-    if (built.value) packages.push(built.value);
     const original = originalMetadata(record);
+    const raw = options.includePackages === false ? getLibraryReaderRawContent(item.id) : null;
+    const built = options.includePackages === false ? {
+      value: null, wordCount: raw?.markdown.split(/\s+/u).filter(Boolean).length ?? 0,
+      figureCount: raw ? markdownFigures(raw.markdown).length : 0,
+      cleanAvailable: Boolean(raw?.markdown.trim()), originalIncluded: original.available,
+    } : yield { item, record };
+    if (built.value) packages.push(built.value);
     const annotations = listLibraryReaderAnnotations(item.id);
     for (const annotation of annotations) {
       personalAnnotations.push({ documentId: item.id, annotation: annotation as unknown as Record<string, unknown> });
@@ -384,16 +395,16 @@ function* publicationSteps(now: string): Generator<{ item: LibraryCatalogItem; r
 }
 
 /** Build the complete global-library projection for synchronous local callers. */
-export function buildServerLibraryPublication(now = new Date().toISOString()): BuiltServerLibraryPublication {
-  const steps = publicationSteps(now);
+export function buildServerLibraryPublication(now = new Date().toISOString(), options: ServerLibraryPublicationOptions = {}): BuiltServerLibraryPublication {
+  const steps = publicationSteps(now, options);
   let step = steps.next();
   while (!step.done) step = steps.next(packageFor(step.value.item, step.value.record));
   return step.value;
 }
 
 /** Publish without compressing large originals on the main event-loop thread. */
-export async function buildServerLibraryPublicationAsync(now = new Date().toISOString()): Promise<BuiltServerLibraryPublication> {
-  const steps = publicationSteps(now);
+export async function buildServerLibraryPublicationAsync(now = new Date().toISOString(), options: ServerLibraryPublicationOptions = {}): Promise<BuiltServerLibraryPublication> {
+  const steps = publicationSteps(now, options);
   let step = steps.next();
   while (!step.done) {
     await yieldToMain();

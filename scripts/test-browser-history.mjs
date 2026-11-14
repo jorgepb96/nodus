@@ -114,7 +114,7 @@ test('clear-all and close policy affect history without coupling it to Bookmarks
   assert.doesNotMatch(clearAll, /bookmarks\.(?:clear|delete|replace)/);
   const lifecycle = readFileSync(path.join(repoRoot, 'electron/browser/lifecycle.ts'), 'utf8');
   assert.match(lifecycle, /clearBrowserHistoryOnCloseIfConfigured\(\)/);
-  const settings = readFileSync(path.join(repoRoot, 'electron/db/settingsRepo.ts'), 'utf8');
+  const settings = readFileSync(path.join(repoRoot, 'shared/defaultAppSettings.ts'), 'utf8');
   assert.match(settings, /browserHistoryRetention: '30d'/);
   assert.match(settings, /browserClearHistoryOnClose: false/);
 });

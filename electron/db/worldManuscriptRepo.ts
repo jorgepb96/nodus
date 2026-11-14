@@ -67,7 +67,7 @@ export function getSceneText(sceneId: string): SceneText {
  *  3. The word count is recomputed here and stored, because every screen that shows it
  *     (the spine, the target, today's delta) would otherwise have to read the whole book.
  */
-export function saveSceneText(sceneId: string, text: string | null): SceneText {
+export function saveSceneText(sceneId: string, text: string | null, previous?: SceneText): SceneText {
   const db = getDb();
   const exists = db.prepare('SELECT 1 FROM world_scenes WHERE scene_id = ?').get(sceneId);
   if (!exists) throw new Error('Escena no encontrada.');
@@ -77,11 +77,9 @@ export function saveSceneText(sceneId: string, text: string | null): SceneText {
   // moment nobody remembers to press anything: a paste over a selected chapter, or an undo
   // stack lost to a reload. Half is the line because a real edit rarely halves a scene and
   // an accident almost always does.
-  const before = getSceneText(sceneId);
+  const before = previous ?? getSceneText(sceneId);
   const after = countWords(promoted);
-  if (before.wordCount >= SHRINK_FLOOR && after < before.wordCount / 2) {
-    writeSnapshot(sceneId, before.text, before.wordCount, 'shrink');
-  }
+  preserveSceneTextBeforeOverwrite(sceneId, before, promoted);
   const ts = now();
   db.prepare(
     `INSERT INTO world_scene_text (scene_id, text, word_count, created_at, updated_at)
@@ -304,6 +302,15 @@ export function manuscriptFindings(): WorldFinding[] {
 
 /** Below this a scene is a stub, and «half of it» is noise rather than a loss. */
 const SHRINK_FLOOR = 40;
+
+/** Also used when a device mutation has already passed canonical conflict checks. */
+export function preserveSceneTextBeforeOverwrite(sceneId:string, before:SceneText, text:string|null):void {
+  if (before.wordCount >= SHRINK_FLOOR && countWords(text) < before.wordCount / 2) {
+    const latest=getDb().prepare('SELECT text,reason FROM world_scene_snapshots WHERE scene_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1').get(sceneId) as {text:string|null;reason:string}|undefined;
+    if(latest?.reason==='shrink'&&(latest.text??'')===(before.text??''))return;
+    writeSnapshot(sceneId, before.text, before.wordCount, 'shrink');
+  }
+}
 /** Per scene. A novel with unbounded snapshots is a novel that syncs several times over. */
 const MAX_SNAPSHOTS = 20;
 

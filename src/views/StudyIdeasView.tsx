@@ -9,24 +9,30 @@ import { createStudyKnowledgeViewSource } from './studyKnowledgeViewSource';
 const SUBJECT_KEY = 'nodus.studyKnowledgeSubjectId';
 
 export function StudyIdeasView({
+  readOnly = false,
   vaultId,
   onOpenGraph,
   onOpenAssistant,
   onOpenMaterial,
   onOpenDocument,
+  onSubjectSelected,
 }: {
+  readOnly?: boolean;
   vaultId: string | null;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
   onOpenMaterial: (id: string) => void;
   onOpenDocument: (id: string) => void;
+  onSubjectSelected?: (id:string)=>void;
 }) {
+  const [issue,setIssue]=useState(''),[attempt,setAttempt]=useState(0);
   const [workspace, setWorkspace] = useState<StudyWorkspace | null>(null);
   const [subjectId, setSubjectId] = useState(() => localStorage.getItem(SUBJECT_KEY) ?? '');
   const selectedSubjectId = workspace?.subjects.some((subject) => subject.id === subjectId)
     ? subjectId
     : (workspace?.subjects[0]?.id ?? '');
-  useEffect(() => { void window.nodus.getStudyWorkspace().then(setWorkspace); }, []);
+  useEffect(() => { let active=true;setIssue('');void window.nodus.getStudyWorkspace().then(value=>{if(active)setWorkspace(value);}).catch(error=>{if(active)setIssue(error instanceof Error?error.message:String(error));});return()=>{active=false;}; }, [attempt]);
+  useEffect(()=>{onSubjectSelected?.(selectedSubjectId);},[onSubjectSelected,selectedSubjectId]);
   useEffect(() => {
     if (workspace && selectedSubjectId !== subjectId) setSubjectId(selectedSubjectId);
   }, [selectedSubjectId, subjectId, workspace]);
@@ -38,9 +44,11 @@ export function StudyIdeasView({
     else onOpenDocument(match[2]);
   }), [onOpenDocument, onOpenMaterial, selectedSubjectId]);
 
+  if(issue)return <div role="alert" className="p-4"><p>{issue}</p><button className="btn" onClick={()=>setAttempt(value=>value+1)}>{t('Reintentar')}</button></div>;
   if (!workspace) return <div className="flex h-full items-center justify-center"><Spinner label={t('Cargando ideas…')} /></div>;
   const hasSubjects = workspace.subjects.length > 0;
   return <IdeasView
+    readOnly={readOnly}
     key={selectedSubjectId}
     vaultId={vaultId}
     dataSource={dataSource}

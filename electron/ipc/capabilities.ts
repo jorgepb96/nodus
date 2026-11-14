@@ -35,15 +35,46 @@ function providerOrThrow(capabilityId: string): CapabilityProvider {
 
 /** A worker outside a chat turn: settings, health and rendering a stored result. There is
  *  no conversation to charge, so the model and attachment lanes are simply absent. */
-function detachedWorker(capabilityId: string) {
+export function storedResultAdapters() {
+  const adapters=createCapabilityAdapters({locale:'en',pins:pinCapabilitiesForTurn(),runCoreStages:async answer=>answer});
+  delete adapters.model;delete adapters.vision;delete adapters.beforePaidCall;delete adapters.attachments;
+  if(adapters.svg)adapters.svg.refine=async()=>{throw new Error('Stored-result readers cannot invoke a model.');};
+  return adapters;
+}
+function detachedWorker(capabilityId: string,readOnly=false) {
   const provider = providerOrThrow(capabilityId);
   const runtime = resolveTrustedCapability(capabilityId, pinCapabilitiesForTurn().pins.get(capabilityId));
   if (!runtime) throw new Error('That capability is not installed.');
-  const services = createCapabilityHostServices(createCapabilityAdapters({
+  const services = createCapabilityHostServices(readOnly?storedResultAdapters():createCapabilityAdapters({
     locale: 'en', pins: pinCapabilitiesForTurn(),
     runCoreStages: async answer => answer,
   }));
-  return { provider, runtime, handle: acquireCapabilityWorker(runtime, { services }) };
+  return { provider, runtime, handle: acquireCapabilityWorker(runtime, { services,...(readOnly?{scopeKey:'stored-result-reader'}:{}) }) };
+}
+
+export async function renderStoredLegacyResult(fence:string,payload:string,locale='en') {
+  const request=legacyResultRequest(fence,payload);
+  if(!request)return {available:false as const,reason:'no-provider' as const};
+  const {handle}=detachedWorker(request.provider.id,true);
+  const view=await handle.call('renderLegacyResult',{
+    fence:request.fence,artifactType:request.artifactType,artifactVersion:request.artifactVersion,payload:request.payload,
+    ...(request.asset!==undefined?{asset:request.asset}:{}),locale,
+  },{timeoutMs:60_000});
+  return {available:true as const,capabilityId:request.provider.id,pluginId:request.provider.plugin?.id,view:validateViewDocument(view)};
+}
+
+/** The same provider-free reader is used by Desktop and the private companion.
+ * It has no conversation, model or attachment creation lane. */
+export async function renderStoredCapabilityArtifact(source:string,locale='en') {
+  const sidecar=artifactSidecar(source);
+  if(!sidecar)return {available:false as const,reason:'missing' as const};
+  const provider=capabilityRegistry().providers.get(sidecar.capabilityId);
+  if(!provider||provider.source!=='plugin')return {available:false as const,reason:'no-provider' as const,sidecar};
+  const envelope=readCapabilityArtifact(source);
+  if(!envelope)return {available:false as const,reason:'unreadable' as const,sidecar};
+  const {handle}=detachedWorker(sidecar.capabilityId,true);
+  const view=await handle.call('renderArtifact',{artifactType:envelope.artifactType,artifactVersion:envelope.artifactVersion,data:envelope.data,locale},{timeoutMs:60_000});
+  return {available:true as const,sidecar,view:validateViewDocument(view)};
 }
 
 export function registerCapabilitiesIpc(context: IpcContext): void {
@@ -116,22 +147,7 @@ export function registerCapabilitiesIpc(context: IpcContext): void {
   });
 
   h('artifacts:render', async (_event, source: string, locale = 'en') => {
-    const sidecar = artifactSidecar(source);
-    if (!sidecar) return { available: false as const, reason: 'missing' as const };
-    const provider = capabilityRegistry().providers.get(sidecar.capabilityId);
-    // A result whose package is gone still shows what it was and who made it, with a way
-    // to get the provider back, instead of disappearing from the conversation.
-    if (!provider || provider.source !== 'plugin') {
-      return { available: false as const, reason: 'no-provider' as const, sidecar };
-    }
-    const envelope = readCapabilityArtifact(source);
-    if (!envelope) return { available: false as const, reason: 'unreadable' as const, sidecar };
-    const { handle } = detachedWorker(sidecar.capabilityId);
-    const view = await handle.call('renderArtifact', {
-      artifactType: envelope.artifactType, artifactVersion: envelope.artifactVersion,
-      data: envelope.data, locale,
-    }, { timeoutMs: 60_000 });
-    return { available: true as const, sidecar, view: validateViewDocument(view) };
+    return renderStoredCapabilityArtifact(source,locale);
   });
 
   /** One historical block, rendered by whichever package now owns that fence.
@@ -142,23 +158,7 @@ export function registerCapabilitiesIpc(context: IpcContext): void {
    *  shows what the block was with a way to get the provider back — never a placeholder
    *  that pretends the result is still being produced. */
   h('capabilities:renderLegacyResult', async (_event, fence: string, payload: string, locale = 'en') => {
-    const request = legacyResultRequest(fence, payload);
-    if (!request) return { available: false as const, reason: 'no-provider' as const };
-    const { handle } = detachedWorker(request.provider.id);
-    const view = await handle.call('renderLegacyResult', {
-      fence: request.fence,
-      artifactType: request.artifactType,
-      artifactVersion: request.artifactVersion,
-      payload: request.payload,
-      ...(request.asset !== undefined ? { asset: request.asset } : {}),
-      locale,
-    }, { timeoutMs: 60_000 });
-    return {
-      available: true as const,
-      capabilityId: request.provider.id,
-      pluginId: request.provider.plugin?.id,
-      view: validateViewDocument(view),
-    };
+    return renderStoredLegacyResult(fence,payload,locale);
   });
 
   /** What the migration is doing, in terms the interface can show without interpreting a

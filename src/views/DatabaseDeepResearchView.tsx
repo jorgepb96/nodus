@@ -119,6 +119,7 @@ interface ReaderReport {
   reportType: DatabaseDeepResearchReportType;
   readAt?: string | null;
 }
+export type DatabaseResearchReportSummary = Pick<ReaderReport,'id'|'runId'|'title'|'summary'|'createdAt'|'costUsd'|'qualityStatus'|'reportType'|'readAt'>;
 
 function toWritingAnnotation(annotation: DatabaseDeepResearchReportAnnotation): WritingDraftAnnotation {
   return { ...annotation, draftId: annotation.reportId };
@@ -606,7 +607,7 @@ function DatabaseReaderSurface({
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-neutral-800 p-4 lg:block"><div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">{t("Contenido")}</div><div className="mb-4 h-1.5 overflow-hidden rounded bg-neutral-800"><div className="h-full bg-indigo-500" style={{ width: `${progress}%` }} /></div>{report.sections.map((section) => <a key={section.id} href={`#${section.id}`} className="mb-1 block rounded-lg px-2 py-1.5 text-xs hover:bg-neutral-900">{section.title}</a>)}</aside>
         <main ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto px-5 py-6 md:px-10" data-testid="database-deep-research-reader-scroll"><div ref={documentRef} className="deep-research-reader-document mx-auto max-w-5xl space-y-7" style={{ "--deep-research-font-size": `${fontSize}px` } as CSSProperties}><ReportCharts charts={report.charts} />{report.sections.length ? report.sections.map((section) => <section key={section.id} id={section.id} className="scroll-mt-5"><h3 className="mb-3 text-xl font-semibold">{section.title}</h3><Markdown content={section.markdown} /></section>) : <Markdown content={report.markdown} />}</div></main>
-        {evidenceOpen && <aside data-testid="database-deep-research-evidence-drawer" className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 bg-neutral-950/30 p-4"><h3 className="mb-3 font-semibold">{t("Evidencia")}</h3>{report.evidence.length ? <div className="space-y-2">{report.evidence.map((item) => <article key={item.id} className="rounded-xl border border-neutral-800 p-3"><div className="text-xs font-medium">{item.label}</div><p className="mt-1 text-xs leading-5 text-neutral-500">{item.excerpt}</p><div className="mt-2 text-[10px] text-neutral-500">{item.method && `${t("Método")}: ${item.method} · `}{item.n != null && `n=${item.n} · `}{t("Filas")}: {item.rowIds.length || "—"}</div></article>)}</div> : <p className="text-xs text-neutral-500">{t("No hay evidencia registrada.")}</p>}</aside>}
+        {evidenceOpen && <aside data-testid="database-deep-research-evidence-drawer" aria-label={t("Evidencia")} className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 bg-neutral-950/30 p-4"><div className="mb-3 flex items-center justify-between gap-3"><h3 className="font-semibold">{t("Evidencia")}</h3><button className="btn btn-ghost min-h-11 min-w-11" onClick={onToggleEvidence} aria-label={t("Cerrar evidencia")}><Icon name="x" size={18}/></button></div>{report.evidence.length ? <div className="space-y-2">{report.evidence.map((item) => <article key={item.id} className="rounded-xl border border-neutral-800 p-3"><div className="text-xs font-medium">{item.label}</div><p className="mt-1 text-xs leading-5 text-neutral-500">{item.excerpt}</p><div className="mt-2 text-[10px] text-neutral-500">{item.method && `${t("Método")}: ${item.method} · `}{item.n != null && `n=${item.n} · `}{t("Filas")}: {item.rowIds.length || "—"}</div></article>)}</div> : <p className="text-xs text-neutral-500">{t("No hay evidencia registrada.")}</p>}</aside>}
       </div>
       <ReaderSelectionActions key={report.id} ref={markActionsRef} targetRef={documentRef} scrollRef={scrollRef} contextId={`database-deep-research:${report.id}`} annotations={annotations} highlighterColor={highlighterColor} onCreateAnnotation={onCreateAnnotation} onUpdateComment={onUpdateComment} onDeleteAnnotation={onDeleteAnnotation} onAnnotationError={onAnnotationError} onMarkChange={setHasMark} />
       <FindInPage targetRef={scrollRef} />
@@ -618,10 +619,18 @@ export function DatabaseDeepResearchView({
   settings,
   snapshot,
   onSnapshotChange,
+  mobile = false,
+  loadReportSummaries,
+  enqueueMobileResearch,
+  retryMobileResearch,
 }: {
   settings: import("@shared/types").AppSettings;
   snapshot?: DatabaseDeepResearchSnapshot;
   onSnapshotChange?: (patch: Partial<DatabaseDeepResearchSnapshot>) => void;
+  mobile?: boolean;
+  loadReportSummaries?: () => Promise<DatabaseResearchReportSummary[]>;
+  enqueueMobileResearch?: (input:DatabaseDeepResearchJobInput) => Promise<'accepted'|'pending'>;
+  retryMobileResearch?: (id:string) => Promise<void>;
 }) {
   const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
   const [details, setDetails] = useState<
@@ -661,7 +670,7 @@ export function DatabaseDeepResearchView({
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<DatabaseDeepResearchJob[]>([]);
-  const [reports, setReports] = useState<ReaderReport[]>([]);
+  const [reports, setReports] = useState<DatabaseResearchReportSummary[]>([]);
   const [reportFilter, setReportFilter] = useState<DatabaseDeepResearchReportType[]>(() => Array.isArray(snapshot?.reportFilter) ? snapshot.reportFilter : []);
   const [reportSearch, setReportSearch] = useState(snapshot?.search ?? "");
   const [readStates, setReadStates] = useState<ReadState[]>(() => readStatesFromFilter(snapshot?.readFilter));
@@ -796,21 +805,39 @@ export function DatabaseDeepResearchView({
   const loadJobsAndReports = useCallback(async () => {
     const [loadedJobs, loadedReports] = await Promise.all([
       window.nodus.listDatabaseDeepResearchJobs(),
-      window.nodus.listDatabaseDeepResearchReports(),
+      loadReportSummaries ? loadReportSummaries() : window.nodus.listDatabaseDeepResearchReports().then(reports=>reports.map(normalizeReport)),
     ]);
     setJobs(loadedJobs);
-    setReports(
-      loadedReports.map((report) =>
-        normalizeReport(report as DatabaseDeepResearchReport),
-      ),
-    );
-  }, []);
+    setReports(loadedReports);
+  }, [loadReportSummaries]);
+  useEffect(()=>{
+    const unsubscribe=window.nodus.onDatabaseDeepResearchReportAnnotationsChanged(()=>{
+      void loadJobsAndReports().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error))));
+    });
+    return unsubscribe;
+  },[loadJobsAndReports]);
+  useEffect(()=>{
+    setReader(current=>{
+      if(!current) return current;
+      const report=reports.find(item=>item.id===current.id);
+      return report&&report.readAt!==current.readAt?{...current,readAt:report.readAt}:current;
+    });
+  },[reports]);
   useEffect(() => {
-    void load().catch((error) => setPreviewError(t((error as Error).message)));
+    if (!mobile) void load().catch((error) => setPreviewError(t((error as Error).message)));
     void loadJobsAndReports().catch((error) =>
       setPreviewError(t((error as Error).message)),
     );
-  }, [load, loadJobsAndReports]);
+  }, [load, loadJobsAndReports,mobile]);
+  useEffect(()=>{
+    if(!mobile) return;
+    const refresh=()=>{ void loadJobsAndReports().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error)))); };
+    window.addEventListener('nodus:mobile-database-reading-changed',refresh);
+    return ()=>window.removeEventListener('nodus:mobile-database-reading-changed',refresh);
+  },[mobile,loadJobsAndReports]);
+  useEffect(()=>{
+    if(mobile&&composerOpen) void load().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error))));
+  },[mobile,composerOpen,load]);
   useEffect(
     () =>
       window.nodus.onDatabaseDeepResearchProgress(
@@ -957,6 +984,12 @@ export function DatabaseDeepResearchView({
     }
     setBusy(true);
     try {
+      if(enqueueMobileResearch) {
+        const state=await enqueueMobileResearch({...input,model,thinkingEffort,planSections:previewSections});
+        setToast(t(state==='pending'?'Solicitud guardada en el móvil. Se enviará cuando Nodus vuelva a estar disponible.':'Solicitud aceptada por Nodus. Puedes seguir trabajando mientras se prepara el informe.'));
+        void loadJobsAndReports().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error))));
+        return true;
+      }
       const job = await window.nodus.enqueueDatabaseDeepResearch({
         ...input,
         model,
@@ -991,18 +1024,21 @@ export function DatabaseDeepResearchView({
     if (reader?.id === id) setReader(null);
   };
   const openReport = useCallback(
-    async (report: ReaderReport) => {
+    async (report: DatabaseResearchReportSummary) => {
+      try {
       const loaded = await window.nodus.getDatabaseDeepResearchReport(
         report.id,
       );
-      setReader(
-        loaded ? normalizeReport(loaded as DatabaseDeepResearchReport) : report,
-      );
+      if (!loaded) throw new Error(t("El informe ya no está disponible."));
+      setReader(normalizeReport(loaded as DatabaseDeepResearchReport));
       setEvidenceOpen(false);
       onSnapshotChange?.({
         openReportId: report.id,
         reading: snapshot?.openReportId === report.id ? snapshot.reading ?? null : null,
       });
+      } catch (error) {
+        setToast(t(error instanceof Error ? error.message : String(error)));
+      }
     },
     [onSnapshotChange, snapshot?.openReportId, snapshot?.reading],
   );
@@ -1023,10 +1059,11 @@ export function DatabaseDeepResearchView({
     });
     return unsubscribe;
   }, [reader?.id, refreshAnnotations]);
-  const toggleReportRead = useCallback(async (report: ReaderReport) => {
+  const toggleReportRead = useCallback(async (report: DatabaseResearchReportSummary) => {
     try {
       const next = await window.nodus.setDatabaseDeepResearchReportRead(report.id, !report.readAt);
-      const updated = next && typeof next === "object" ? normalizeReport(next as DatabaseDeepResearchReport) : { ...report, readAt: report.readAt ? null : new Date().toISOString() };
+      if (!next || typeof next !== "object") throw new Error(t("No se pudo guardar el estado de lectura."));
+      const updated = normalizeReport(next as DatabaseDeepResearchReport);
       setReports((current) => current.map((item) => item.id === report.id ? updated : item));
       setReader((current) => current?.id === report.id ? updated : current);
     } catch (error) {
@@ -1078,7 +1115,7 @@ export function DatabaseDeepResearchView({
         { format, includeSnapshot: includeSnapshot && format === "zip" },
       );
       if (!result.canceled)
-        setToast(tx("Exportado: {path}", { path: result.path ?? "" }));
+        setToast(mobile ? t("Exportación preparada") : tx("Exportado: {path}", { path: result.path ?? "" }));
     } catch (error) {
       setToast(t((error as Error).message));
     }
@@ -1127,13 +1164,13 @@ export function DatabaseDeepResearchView({
   // They must not also appear as failed generation jobs.
   const queueFailed: QueueStripItem[] = jobs
     .filter((job) => ["failed", "cancelled", "stale"].includes(job.status))
-    .map((job) => ({ id: job.id, title: job.title, status: "failed", progress: null, error: job.error, origin: "app", enqueuedAt: job.createdAt }));
+    .map((job) => ({ id: job.id, title: job.title, status: "failed", progress: null, error: job.error, origin: "app", enqueuedAt: job.createdAt,retryable:(job as typeof job & {retryable?:boolean}).retryable }));
 
   const allSelected = visibleReports.length > 0 && visibleReports.every((report) => selectedReports.has(report.id));
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden" data-testid="database-deep-research">
       <SectionHeader icon="telescope" title={t("Deep Research")} subtitle={t("Investiga tus bases de datos con evidencia trazable y un lector completo.")} testId="database-deep-research-header" actions={<button className="btn btn-primary" data-testid="database-deep-research-new" onClick={() => setComposerOpen(true)}><Icon name="plus" size={14} />{t("Nuevo informe")}</button>} />
-      {queueActive.length > 0 || queueFailed.length > 0 ? <DeepResearchQueueStrip active={queueActive} failed={queueFailed} running={queueActive.some((item) => item.status === "running")} onRemove={(item) => void cancelJob(item.id)} onClearFinished={() => void clearFinishedJobs()} /> : null}
+      {queueActive.length > 0 || queueFailed.length > 0 ? <DeepResearchQueueStrip active={queueActive} failed={queueFailed} running={queueActive.some((item) => item.status === "running")} onRemove={(item) => void cancelJob(item.id)} onClearFinished={() => void clearFinishedJobs()} onRetry={retryMobileResearch ? item=>{void retryMobileResearch(item.id).then(loadJobsAndReports).catch(error=>setToast(t(String(error))));}:undefined} /> : null}
       <SectionToolbar testId="database-deep-research-toolbar">
         <div className="relative min-w-56 flex-1"><Icon name="search" size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" /><input className="input input-with-leading-icon h-9 w-full" value={reportSearch} onChange={(event) => { setReportSearch(event.target.value); onSnapshotChange?.({ search: event.target.value }); }} placeholder={t("Buscar entre tus informes…")} aria-label={t("Buscar entre tus informes")} /></div>
         <GalleryFilterMenu label={t("Estado")} icon="eye" options={filterOptions.read} selected={readStates} onChange={changeReadStates} testId="database-deep-research-read-filter" />

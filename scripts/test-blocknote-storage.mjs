@@ -150,6 +150,56 @@ try {
   ]}),/1 MB/);
   assert.equal(db.prepare('SELECT COUNT(*) AS count FROM db_blobs').get().count,blobsBefore);
   assert.deepEqual(workspace.getWorkspaceNoteEditorData(mediaNote.id).nativeDocument,compact.nativeDocument);
+  // Projection sidecars may exceed 1 MB by repeating a valid smaller source.
+  const richNote = notes.createNote({title:'Proyección enriquecida',content:''});
+  const richNative = [{id:'bounded-rich-parent',type:'paragraph',props:{},content:[{type:'text',text:'a'.repeat(600_000),styles:{bold:true}}],children:[
+    {id:'bounded-rich-child',type:'paragraph',props:{},content:[{type:'text',text:'b'.repeat(600_000),styles:{italic:true}}],children:[]},
+  ]}];
+  workspace.updateWorkspaceNote(richNote.id,{title:richNote.title,contentMarkdown:'',nativeDocument:richNative});
+  const richPage = pages.getPageDocumentForNote(richNote.id);
+  assert.ok(richPage.blocks.every(block=>JSON.stringify(block.content).length>1_000_000));
+  assert.deepEqual(richPage.nativeDocument,richNative,'source bounds apply per block, preserving nested rich content and repeated projections');
+  const oversizedRich = structuredClone(richNative);
+  oversizedRich[0].content[0].text='c'.repeat(1_100_000);
+  assert.throws(()=>pages.savePageDocument({pageId:richPage.page.id,expectedRevision:richPage.revision,blocks:[],nativeDocument:oversizedRich}),/1 MB/);
+  const oversizedRemote = new Y.Doc();Y.applyUpdate(oversizedRemote,richPage.yjsState);
+  oversizedRemote.getMap('editor').set('blockNoteDocument',oversizedRich);
+  assert.throws(()=>pages.applyPageDocumentUpdate(richPage.page.id,Y.encodeStateAsUpdate(oversizedRemote,richPage.stateVector),richPage.revision),/1 MB/);
+  oversizedRemote.destroy();
+  assert.equal(pages.getPageDocumentForNote(richNote.id).revision,richPage.revision,'rejected native saves and remote updates leave the revision intact');
+  // Reproduce a page persisted by the older projection allowance. Reading it
+  // and editing a neighbor must preserve the large source already on disk.
+  const legacyNative = structuredClone(richNative);legacyNative[0].content[0].text='legacy '.repeat(160_000);
+  const legacyDrafts = native.blockNoteToPageBlocks(legacyNative);
+  const legacyY = new Y.Doc();Y.applyUpdate(legacyY,richPage.yjsState);
+  pageYjs.writePageYDocument(legacyY,richNote.title,legacyDrafts,legacyNative);
+  db.transaction(()=>{
+    for(const block of legacyDrafts)db.prepare('UPDATE page_blocks SET content_json=? WHERE page_id=? AND id=?').run(JSON.stringify(block.content),richPage.page.id,block.id);
+    db.prepare('UPDATE page_documents SET snapshot_blob=?,state_vector=?,snapshot_sequence=next_update_sequence-1 WHERE page_id=?').run(Buffer.from(Y.encodeStateAsUpdate(legacyY)),Buffer.from(Y.encodeStateVector(legacyY)),richPage.page.id);
+  })();legacyY.destroy();
+  assert.deepEqual(pages.getPageDocumentForNote(richNote.id).nativeDocument,legacyNative,'existing oversized native content remains readable without normalization');
+  const neighboringEdit=structuredClone(legacyNative);neighboringEdit[0].children[0].content[0].text='Neighbor edited';
+  const preservedLegacy=pages.savePageDocument({pageId:richPage.page.id,expectedRevision:richPage.revision,blocks:[],nativeDocument:neighboringEdit});
+  assert.equal(preservedLegacy.ok,true);assert.deepEqual(preservedLegacy.document.nativeDocument,neighboringEdit,'an unrelated edit retains an untouched legacy oversized block');
+  const legacyRevision=pages.listPageRevisions(richPage.page.id).items[0].revision;
+  const shortenedLegacy=structuredClone(neighboringEdit);shortenedLegacy[0].content[0].text='Shortened current paragraph';
+  const shortened=pages.savePageDocument({pageId:richPage.page.id,expectedRevision:preservedLegacy.document.revision,blocks:[],nativeDocument:shortenedLegacy});
+  assert.equal(shortened.ok,true);
+  const restoredLegacy=pages.restorePageRevision(richPage.page.id,legacyRevision,shortened.document.revision);
+  assert.equal(restoredLegacy.ok,true);assert.deepEqual(restoredLegacy.document.nativeDocument,neighboringEdit,'trusted persisted history restores an oversized legacy block after newer text was shortened');
+  workspace.updateWorkspaceNote(richNote.id,{title:richNote.title,contentMarkdown:'',nativeDocument:shortenedLegacy});
+  const legacyNoteVersion=workspace.getWorkspaceNoteEditorData(richNote.id).versions.find(version=>version.nativeDocument?.[0].content?.[0].text===neighboringEdit[0].content[0].text);
+  assert.ok(legacyNoteVersion,'shortening a legacy note snapshots its exact native source');
+  workspace.restoreWorkspaceNoteVersion(richNote.id,legacyNoteVersion.id);
+  assert.deepEqual(workspace.getWorkspaceNoteEditorData(richNote.id).nativeDocument,neighboringEdit,'note-version restore retains oversized historical source after shortening');
+  assert.throws(()=>workspace.updateWorkspaceNote(richNote.id,{title:richNote.title,contentMarkdown:'',nativeDocument:oversizedRich,reason:'restore'}),/1 MB/,'a caller-provided restore reason cannot authorize new oversized content');
+  assert.throws(()=>pages.restoreNotePageDocumentVersion(pages.getPageDocumentForNote(mediaNote.id).page.id,legacyNoteVersion.id,0),/Versión no encontrada/,'a version from another note cannot authorize a restore');
+  // Direct universal-page clients can still read and save older inline media.
+  const legacyImageNote=notes.createNote({title:'Imagen nativa antigua',content:''});
+  const legacyImagePage=pages.getPageDocumentForNote(legacyImageNote.id);
+  const legacyImageNative=[{...mediaDocument[0],id:'legacy-inline-image'},...native.markdownToBlockNote('Neighbor')];
+  const legacyImageSaved=pages.savePageDocument({pageId:legacyImagePage.page.id,expectedRevision:legacyImagePage.revision,blocks:[],nativeDocument:legacyImageNative});
+  assert.equal(legacyImageSaved.ok,true);assert.deepEqual(pages.getPageDocumentForNote(legacyImageNote.id).nativeDocument,legacyImageNative,'legacy inline media bytes and metadata remain intact');
   const { runMigrations, SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
   const persisted = () => ['study_docs', 'study_doc_versions', 'note_versions', 'note_annotations'].map(table => db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all());
   const beforeReplay = persisted();

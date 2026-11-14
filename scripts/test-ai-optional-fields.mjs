@@ -120,7 +120,10 @@ test('native and compatible transports share thinking recovery', () => {
 
 test('a streamed answer cut at the output ceiling is reported, not stored', () => {
   const source = readFileSync(path.join(repoRoot, 'electron/ai/aiClient.ts'), 'utf8');
-  const options = readFileSync(path.join(repoRoot, 'electron/ai/thinkingEffort.ts'), 'utf8');
+  const options = readFileSync(path.join(repoRoot, 'shared/researchOutputBudget.ts'), 'utf8');
+  const consumer = readFileSync(path.join(repoRoot, 'electron/ai/thinkingEffort.ts'), 'utf8');
+  assert.match(consumer, /import \{thinkingOutputAllowance\} from '@shared\/researchOutputBudget'/);
+  assert.match(consumer, /maxTokens: .*thinkingOutputAllowance\(model, job\.effort, job\.info\)/);
   // The Anthropic stream reads the only truncation signal it has — `stop_reason` on the final
   // `message_delta`, plus the thinking-token breakdown — and refuses to store the fragment.
   assert.match(source, /stopReason = event\.delta\.stop_reason/);

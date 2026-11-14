@@ -26,6 +26,7 @@ export function installRuntimeHooks(userDataPath, overrides = {}) {
   const Module = require('node:module');
   const originalResolveFilename = Module._resolveFilename;
   const originalLoad = Module._load;
+  const originalTsLoader = require.extensions['.ts'];
   const electronStub = {
     net: { fetch: (...args) => globalThis.fetch(...args) },
     app: {
@@ -102,7 +103,12 @@ export function installRuntimeHooks(userDataPath, overrides = {}) {
     module._compile(output, filename);
   };
 
-  return electronStub;
+  return Object.assign(electronStub, {restore() {
+    Module._resolveFilename = originalResolveFilename;
+    Module._load = originalLoad;
+    if (originalTsLoader) require.extensions['.ts'] = originalTsLoader;
+    else delete require.extensions['.ts'];
+  }});
 }
 
 /**

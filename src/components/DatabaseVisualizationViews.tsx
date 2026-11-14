@@ -77,10 +77,16 @@ export function DatabaseChartView({ databaseId, columns, config, onOpen, filterO
     aggregation, type, filter: queryFilter, limit: compact ? 20 : 200 })); } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); } finally { setLoading(false); } },
   [aggregation, compact, config?.chart.seriesColumnId, configError, databaseId, queryFilter, type, xColumn, yColumn]);
   useEffect(() => { void load(); }, [load]);
-  const openPoint = async (point: DatabaseChartPoint) => { const page = await window.nodus.queryDatabaseRows({ databaseId, filter: mergeFilters(queryFilter, point.drilldownFilter), limit: 50 });
-    setDrilldown({ point, rows: page.rows, cursor: page.nextCursor, loading: false }); };
-  const loadMore = async () => { if (!drilldown?.cursor) return; setDrilldown({ ...drilldown, loading: true }); const page = await window.nodus.queryDatabaseRows({ databaseId,
-    filter: mergeFilters(queryFilter, drilldown.point.drilldownFilter), cursor: drilldown.cursor, limit: 50 }); setDrilldown({ ...drilldown, rows: [...drilldown.rows, ...page.rows], cursor: page.nextCursor, loading: false }); };
+  const openPoint = async (point: DatabaseChartPoint) => {
+    setError(null);
+    try{const page=await window.nodus.queryDatabaseRows({databaseId,filter:mergeFilters(queryFilter,point.drilldownFilter),limit:50});setDrilldown({point,rows:page.rows,cursor:page.nextCursor,loading:false});}
+    catch(cause){setError(cause instanceof Error?cause.message:String(cause));}
+  };
+  const loadMore = async () => {
+    if(!drilldown?.cursor)return;const captured=drilldown;setError(null);setDrilldown({...captured,loading:true});
+    try{const page=await window.nodus.queryDatabaseRows({databaseId,filter:mergeFilters(queryFilter,captured.point.drilldownFilter),cursor:captured.cursor,limit:50});setDrilldown(current=>current?.point===captured.point?{...captured,rows:[...captured.rows,...page.rows],cursor:page.nextCursor,loading:false}:current);}
+    catch(cause){setError(cause instanceof Error?cause.message:String(cause));setDrilldown(current=>current?.point===captured.point?{...current,loading:false}:current);}
+  };
   const exportChart = async (format: 'svg' | 'png') => { if (!result) return; const title = `${t('Gráfico')} · ${xColumn?.name ?? ''}`;
     try {
       const exported = await window.nodus.exportDatabaseChart({ databaseId, title, format, svg: renderDatabaseChartSvg(title, result.points, type) });
@@ -137,7 +143,9 @@ function DashboardMini({ databaseId, columns, view, globalFilter, onOpen }: Comm
 
 function DashboardRowPreview({ databaseId, columns, view, globalFilter, onOpen }: CommonProps & { view: DatabaseSavedView; globalFilter: FilterNode | null }) {
   const [rows, setRows] = useState<DatabaseRow[]>([]); const [count, setCount] = useState(0);
-  useEffect(() => { let canceled = false; void window.nodus.queryDatabaseRows({ databaseId, viewId: view.id, filter: mergeFilters(view.config.filter, globalFilter), limit: 8 }).then((page) => { if (!canceled) { setRows(page.rows); setCount(page.totalCount); } }); return () => { canceled = true; }; }, [databaseId, globalFilter, view]);
+  const [error,setError]=useState<string|null>(null),[loading,setLoading]=useState(false);
+  useEffect(() => { let canceled = false;setError(null);setLoading(true); void window.nodus.queryDatabaseRows({ databaseId, viewId: view.id, filter: mergeFilters(view.config.filter, globalFilter), limit: 8 }).then((page) => { if (!canceled) { setRows(page.rows); setCount(page.totalCount); } }).catch(cause=>{if(!canceled)setError(cause instanceof Error?cause.message:String(cause));}).finally(()=>{if(!canceled)setLoading(false);}); return () => { canceled = true; }; }, [databaseId, globalFilter, view]);
+  if(error||loading)return <VisualizationStatus loading={loading} error={error}/>;
   return <div className="min-h-0 flex-1 overflow-auto p-2"><div className="mb-1 text-xs text-neutral-500">{tx('{n} filas', { n: count })}</div>{rows.map((row) => <button key={row.id} className="block min-h-8 w-full truncate rounded px-2 text-left text-xs hover:bg-neutral-100 dark:hover:bg-neutral-900" onClick={() => onOpen(row.id)}>{titleOf(row, columns)}</button>)}</div>;
 }
 

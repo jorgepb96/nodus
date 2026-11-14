@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../i18n';
 
@@ -26,6 +26,7 @@ export function TextInputModal({
   const [value, setValue] = useState(initialValue);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -50,6 +51,7 @@ export function TextInputModal({
   };
 
   const inputProps = {
+    id: inputId,
     autoFocus: true,
     className: 'input w-full text-sm',
     value,
@@ -61,7 +63,7 @@ export function TextInputModal({
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-6" onClick={() => { if (!busy) onCancel(); }}>
       <form data-testid={testId} className="card w-full max-w-md p-5" role="dialog" aria-modal="true" aria-label={title} onSubmit={submit} onClick={(event) => event.stopPropagation()}>
         <h2 className="mb-3 text-base font-semibold">{title}</h2>
-        {label && <label className="mb-1.5 block text-xs text-neutral-500">{label}</label>}
+        {label && <label htmlFor={inputId} className="mb-1.5 block text-xs text-neutral-500">{label}</label>}
         {multiline
           ? <textarea {...inputProps} className={`${inputProps.className} min-h-28 resize-y`} />
           : <input {...inputProps} />}

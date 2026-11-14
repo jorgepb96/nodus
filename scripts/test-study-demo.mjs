@@ -6,7 +6,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -94,7 +94,21 @@ function installRuntimeHooks(userDataPath) {
   };
   Module._load = function (request, parent, isMain) { if (request === 'electron') return electronStub; return originalLoad.call(this, request, parent, isMain); };
   require.extensions['.ts'] = function (module, filename) {
-    const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { fileName: filename, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.NodeJs, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX, resolveJsonModule: true, skipLibCheck: true } }).outputText;
+    const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+      // Preserve the real module URL for createRequire in this CommonJS harness.
+      transformers: { before: [(context) => {
+        const visit = (node) => {
+          if (ts.isPropertyAccessExpression(node) && node.name.text === 'url'
+            && ts.isMetaProperty(node.expression)
+            && node.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+            && node.expression.name.text === 'meta') {
+            return ts.factory.createStringLiteral(pathToFileURL(filename).href);
+          }
+          return ts.visitEachChild(node, visit, context);
+        };
+        return (root) => ts.visitNode(root, visit);
+      }] },
+      fileName: filename, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, moduleResolution: ts.ModuleResolutionKind.NodeJs, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX, resolveJsonModule: true, skipLibCheck: true } }).outputText;
     module._compile(output, filename);
   };
 }

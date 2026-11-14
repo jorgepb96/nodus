@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -120,9 +121,38 @@ test('the catalogue and open maps are persistent workspace tabs', () => {
     /className=\{surface === 'catalog' \? 'flex h-full min-h-0 flex-col' : 'hidden'\}/,
     'the catalogue stays mounted while its idea map is open',
   );
-  assert.match(
-    view,
-    /<ArgumentMapTab key=\{tab\.key\} tab=\{tab\} active=\{surface === 'map' && activeMapKey === tab\.key\}/,
-    'every nested map stays mounted when the reader switches tabs or returns to the catalogue',
-  );
+  const source = ts.createSourceFile('ArgumentMapView.tsx', view, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const maps = [];
+  function visit(node) {
+    if (ts.isJsxExpression(node) && node.expression && ts.isCallExpression(node.expression)
+      && node.expression.expression.getText(source) === 'openArgumentMaps.map'
+      && /<ArgumentMapTab\b/.test(node.expression.getText(source))) maps.push(node);
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  assert.equal(maps.length, 1, 'the workspace renders the complete open-map collection');
+  assert.equal(maps[0].parent.openingElement?.tagName.getText(source), 'main',
+    'the tab collection is an unconditional workspace child, so inactive tabs remain mounted');
+  const javascript = ts.transpileModule(`return (${maps[0].expression.getText(source)});`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React },
+  }).outputText;
+  const renderTabs = new Function('React', 'ArgumentMapTab', 'openArgumentMaps', 'surface', 'activeMapKey', 'readOnly', 'mobile', javascript);
+  const tabs = [{ key: 'auto:a', mode: 'auto' }, { key: 'saved:b', mode: 'ai' }];
+  const React = { createElement: (type, props) => ({ type, props }) };
+  const ArgumentMapTab = () => {};
+  for (const readOnly of [false, true]) {
+    for (const surface of ['catalog', 'map']) {
+      for (const activeKey of tabs.map(tab => tab.key)) {
+        const elements = renderTabs(React, ArgumentMapTab, tabs, surface, activeKey, readOnly, false);
+        assert.equal(elements.length, tabs.length, 'returning to the catalogue keeps every map mounted');
+        elements.forEach((element, index) => {
+          assert.equal(element.type, ArgumentMapTab);
+          assert.equal(element.props.key, tabs[index].key, 'stable keys preserve each map’s local state');
+          assert.equal(element.props.tab, tabs[index]);
+          assert.equal(element.props.active, surface === 'map' && activeKey === tabs[index].key);
+          assert.equal(element.props.readOnly, readOnly, 'each saved map receives the reader permission');
+        });
+      }
+    }
+  }
 });

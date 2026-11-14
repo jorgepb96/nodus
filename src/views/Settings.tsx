@@ -122,7 +122,7 @@ const SETTINGS_TABS: { id: SettingsTabId; label: string; icon: string; keywords:
   { id: 'interface', label: 'Interfaz', icon: 'palette', keywords: 'idioma tema claro oscuro animaciones barra lateral menu navegacion accesibilidad contraste escala fuente lectura enfoque' },
   { id: 'integrations', label: 'Integraciones', icon: 'link', keywords: 'mcp servidor token puerto chatgpt openai tunnel tunel word copilot certificado addin quimica chemistry stock mcule enamine proveedores comprar listas' },
   { id: 'browser', label: 'Nodus Browser', icon: 'compass', keywords: 'navegador browser web cookies cache almacenamiento datos permisos sitios descargas privacidad' },
-  { id: 'mobile', label: 'Conexión móvil', icon: 'link', keywords: 'movil mobile iphone ipad workspace conectar vincular codigo qr red lan vpn tailscale live escritorio' },
+  { id: 'mobile', label: 'Conexión móvil', icon: 'link', keywords: 'nodus link movil mobile ios iphone ipados ipad android workspace conectar vincular codigo qr red lan vpn tailscale live escritorio' },
   { id: 'server', label: 'Servidor avanzado', icon: 'globe', keywords: 'servidor avanzado cloud cloudflare docker compartir vault boveda estudiantes investigadores dominio subdominio oauth claude chatgpt reverse proxy caddy nginx publicar sincronizar' },
   { id: 'system', label: 'Tutoriales', icon: 'graduation', keywords: 'sistema ayuda tutorial' },
   { id: 'data', label: 'Backup / copia de seguridad', icon: 'download', keywords: 'datos backup exportar importar demo copia cifrada peligro reinicializar grafo borrar' },
@@ -135,7 +135,7 @@ const SETTINGS_TABS: { id: SettingsTabId; label: string; icon: string; keywords:
 const SETTINGS_TAB_GROUPS: { label: string; tabs: SettingsTabId[] }[] = [
   { label: 'Inteligencia artificial', tabs: ['providers', 'models'] },
   { label: 'Contenido', tabs: ['library', 'extraction'] },
-  { label: 'Aplicación', tabs: ['interface', 'integrations', 'browser', 'server'] },
+  { label: 'Aplicación', tabs: ['interface', 'integrations', 'browser', 'mobile', 'server'] },
   { label: 'Datos', tabs: ['data'] },
   { label: 'Ayuda', tabs: ['system', 'updates', 'about'] },
 ];

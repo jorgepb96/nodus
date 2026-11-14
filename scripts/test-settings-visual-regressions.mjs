@@ -17,6 +17,13 @@ assert.ok(registeredTabs.includes('mobile'), 'the mobile connection settings mus
 assert.deepEqual([...groupedTabs].sort(), [...registeredTabs].sort(),
   'every settings destination, including mobile connection, must appear exactly once in navigation');
 
+const applicationTabs = groupDefinitions.match(/label: 'Aplicación', tabs: \[([^\]]+)\]/)?.[1] ?? '';
+assert.match(applicationTabs, /'mobile'/, 'Mobile connection must be reachable in Application');
+const mobileKeywords = tabDefinitions.match(/id: 'mobile',[^\n]+keywords: '([^']+)'/)?.[1] ?? '';
+for (const query of ['nodus link', 'ios', 'ipad', 'android']) {
+  assert.ok(mobileKeywords.includes(query), `Mobile connection must be discoverable by ${query}`);
+}
+
 assert.match(
   vaultSwitcher,
   /hover:bg-red-100 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-950\/40 dark:hover:text-red-400/,

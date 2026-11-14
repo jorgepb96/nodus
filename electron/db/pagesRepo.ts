@@ -789,7 +789,7 @@ export function restoreNotePageDocumentVersion(pageId: string, versionId: string
   return getDb().transaction(() => {
     const page = getPage(pageId);
     const row = page?.noteId ? getDb().prepare('SELECT * FROM note_versions WHERE id = ? AND note_id = ?').get(versionId, page.noteId) as Row | undefined : undefined;
-    if (!row?.native_document_json) throw new Error('Versión nativa no encontrada.');
+    if (!row?.native_document_json) throw new Error('Versión no encontrada.');
     const native = validateBlockNoteDocument(JSON.parse(String(row.native_document_json)));
     const input = externalizeEditorAttachments({pageId, expectedRevision, blocks: [], nativeDocument: native,
       schemaVersion: Number(row.native_schema_version ?? 1),

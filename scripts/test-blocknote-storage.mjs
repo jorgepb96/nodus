@@ -193,7 +193,7 @@ try {
   workspace.restoreWorkspaceNoteVersion(richNote.id,legacyNoteVersion.id);
   assert.deepEqual(workspace.getWorkspaceNoteEditorData(richNote.id).nativeDocument,neighboringEdit,'note-version restore retains oversized historical source after shortening');
   assert.throws(()=>workspace.updateWorkspaceNote(richNote.id,{title:richNote.title,contentMarkdown:'',nativeDocument:oversizedRich,reason:'restore'}),/1 MB/,'a caller-provided restore reason cannot authorize new oversized content');
-  assert.throws(()=>pages.restoreNotePageDocumentVersion(pages.getPageDocumentForNote(mediaNote.id).page.id,legacyNoteVersion.id,0),/Versión nativa no encontrada/,'a version from another note cannot authorize a restore');
+  assert.throws(()=>pages.restoreNotePageDocumentVersion(pages.getPageDocumentForNote(mediaNote.id).page.id,legacyNoteVersion.id,0),/Versión no encontrada/,'a version from another note cannot authorize a restore');
   // Direct universal-page clients can still read and save older inline media.
   const legacyImageNote=notes.createNote({title:'Imagen nativa antigua',content:''});
   const legacyImagePage=pages.getPageDocumentForNote(legacyImageNote.id);

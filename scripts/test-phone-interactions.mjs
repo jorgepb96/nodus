@@ -16,6 +16,13 @@ globalThis.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.win
 globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.window);
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 dom.window.HTMLElement.prototype.scrollTo = function() {};
+// jsdom has no top layer; exercise the real picker and its focus behaviour with
+// the browser popover lifecycle represented by a minimal open-state shim.
+const popovers=new WeakSet();
+dom.window.HTMLElement.prototype.showPopover=function(){popovers.add(this);};
+dom.window.HTMLElement.prototype.hidePopover=function(){popovers.delete(this);};
+const nativeMatches=dom.window.HTMLElement.prototype.matches;
+dom.window.HTMLElement.prototype.matches=function(selector){return selector===':popover-open'?popovers.has(this):nativeMatches.call(this,selector);};
 const require = createRequire(import.meta.url), React = require('react'), { createRoot } = require('react-dom/client');
 const fixture = await build({ stdin: { contents: `export {ResearchActivityPanel} from './src/components/ResearchActivityPanel'; export {NodeDetailPanel} from './src/components/NodeDetailPanel'; export {ArgumentMapCanvas} from './src/components/argumentMap/ArgumentMapCanvas'; export {ResearchAssistantModal} from './src/views/ResearchAssistantModal'; export {DEFAULT_APP_SETTINGS} from './shared/defaultAppSettings'; export {setActiveLang} from './src/i18n'; export {installMobileKeyboard} from './src/mobileWeb/mobileKeyboard'; export * from './shared/touchCamera';`, resolveDir: process.cwd(), loader:'ts' }, bundle:true, write:false, platform:'node', format:'cjs', jsx:'automatic', external:['react','react/jsx-runtime','react-dom','react-dom/client'],loader:{'.css':'empty','.svg':'dataurl'} });
 const module = new Module(path.join(process.cwd(),'scripts','phone-interactions-fixture.cjs')); module.paths=Module._nodeModulePaths(process.cwd()); module._compile(fixture.outputFiles[0].text,module.id);
@@ -120,12 +127,23 @@ test('phone chat history opens separately, preserves the draft, and leaves the m
     });
     const enter=new dom.window.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true});input.dispatchEvent(enter);
     assert.equal(enter.defaultPrevented,false,'Return on the iPhone keyboard writes a newline, sending uses the explicit button');
-    assert.ok(view.container.querySelector('.research-assistant-header select'));
+    const model=view.container.querySelector('.research-assistant-header [data-testid="research-chat-model"] button[aria-haspopup="listbox"]');
+    assert.ok(model,'the shared searchable model picker remains in the phone header');
+    assert.match(model.getAttribute('aria-label'),/^Modelo del chat:/);
+    assert.equal(model.disabled,false);
     await React.act(async()=>view.container.querySelector('[data-testid="research-history-toggle"]').click());
     assert.equal(history.hidden,false); assert.equal(view.container.inert,true);
     await React.act(async()=>history.querySelector('[data-sheet-close]').click());
     assert.equal(history.hidden,true); assert.equal(view.container.inert,false);
     assert.equal(input.value,draft,'opening and dismissing history must not replace the composer or lose its unsent text');
+    assert.equal(view.container.querySelector('textarea'),input,'history preserves the mounted composer');
+    assert.equal(view.container.querySelector('[data-testid="research-chat-model"] button'),model,'history preserves the mounted model picker');
+    await React.act(async()=>model.click());
+    assert.equal(model.getAttribute('aria-expanded'),'true');
+    assert.ok(document.querySelector('[role="listbox"][aria-label="Modelo del chat"]'),'the model picker remains usable after history closes');
+    await React.act(async()=>model.click());
+    assert.equal(model.getAttribute('aria-expanded'),'false');
+    assert.equal(input.value,draft,'using the picker does not clear the draft');
     const options=[...view.container.querySelectorAll('button')].find(button=>button.getAttribute('aria-label')==='Opciones');
     await React.act(async()=>options.click());
     assert.equal(document.querySelector('[role="dialog"][aria-label="Opciones"]').parentElement.hidden,false);

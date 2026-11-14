@@ -295,8 +295,31 @@ test('the argument map keeps route filters without restoring a built map from sn
     readSource('src/views/ArgumentMapView.tsx'),
     readSource('src/app/viewSnapshots.ts'),
   ]);
-  for (const restored of ['mode', 'seedId', 'suggestionSearch', 'minConnections', 'routeSort']) {
-    assert.match(view, new RegExp(`useState[^\\n]*\\(\\) => snapshot\\?\\.${restored}`), `${restored} survives leaving the section`);
+  const ts = require('typescript');
+  const source = ts.createSourceFile('ArgumentMapView.tsx', view, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const fields = ['mode', 'seedId', 'suggestionSearch', 'minConnections', 'routeSort'];
+  const initializers = [];
+  function visit(node) {
+    if (ts.isVariableDeclaration(node) && ts.isArrayBindingPattern(node.name)
+      && fields.includes(node.name.elements[0]?.getText(source))) initializers.push(node.parent.parent.getText(source));
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  assert.equal(initializers.length, fields.length, 'exercise every real route-filter initializer');
+  const javascript = ts.transpileModule(`${initializers.join('\n')}\nreturn {${fields.join(',')}};`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
+  }).outputText;
+  const initialize = new Function('snapshot', 'readOnly', 'useState', javascript);
+  const useState = value => [typeof value === 'function' ? value() : value, () => {}];
+  const remembered = { mode: 'ai', seedId: 'remembered-idea', suggestionSearch: 'evidence', minConnections: 3, routeSort: 'label' };
+  assert.deepEqual(initialize(remembered, false, useState), remembered,
+    'Desktop restores the chosen mode and the full route filter');
+  assert.deepEqual(initialize(remembered, true, useState), { ...remembered, mode: 'auto' },
+    'the read-only catalogue keeps the route filter but opens its available automatic mode');
+  for (const readOnly of [false, true]) {
+    assert.deepEqual(initialize(undefined, readOnly, useState), {
+      mode: 'auto', seedId: '', suggestionSearch: '', minConnections: 0, routeSort: 'connections',
+    }, 'a fresh catalogue uses its normal defaults');
   }
   // Ordinary section navigation restores filters, never a built map. An explicit
   // saved-map prop is a separate path that reuses its already generated content.

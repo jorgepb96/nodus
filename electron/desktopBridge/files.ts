@@ -34,8 +34,18 @@ async function serveAudioClip(request: IncomingMessage, response: ServerResponse
       const folder = await realpath(path.join(vaultRoot, 'audio'));
       const folderRelative = path.relative(vaultRoot, folder);
       if (folderRelative.startsWith('..') || path.isAbsolute(folderRelative)) { json(403, {error:'invalid_registered_file_path'}); return; }
-      if (!clip.fileName || clip.fileName !== path.basename(clip.fileName) || clip.fileName.includes('\\')) { json(403, {error:'invalid_registered_file_path'}); return; }
-      const file = await realpath(path.join(folder, clip.fileName)), relative = path.relative(folder, file);
+      // The podcast producer stores paths relative to audio/, including the
+      // podcasts/ subdirectory (and Windows separators). Older clips stay flat.
+      const parts = (kind === 'podcastAudio' ? clip.fileName.replace(/\\/g, '/') : clip.fileName).split('/');
+      const invalid = parts.some(part => !part || part === '.' || part === '..' || /[:\\\0]/.test(part));
+      if (invalid || (parts.length !== 1 && !(kind === 'podcastAudio' && parts.length === 2 && parts[0] === 'podcasts'))) {
+        json(403, {error:'invalid_registered_file_path'}); return;
+      }
+      const audioRoot = parts.length === 2 ? await realpath(path.join(folder, 'podcasts')) : folder;
+      const audioRelative = path.relative(folder, audioRoot);
+      if (parts.length === 2 && audioRelative !== 'podcasts') { json(403, {error:'invalid_registered_file_path'}); return; }
+      const filename = parts.at(-1)!;
+      const file = await realpath(path.join(audioRoot, filename)), relative = path.relative(audioRoot, file);
       if (relative.startsWith('..') || path.isAbsolute(relative)) { json(403, {error:'invalid_registered_file_path'}); return; }
       handle = await open(file, 'r');
       const stat = await handle.stat(), size = stat.size, chunkSize = 4 * 1024 * 1024;
@@ -54,7 +64,7 @@ async function serveAudioClip(request: IncomingMessage, response: ServerResponse
       if (action === 'descriptor') {
         const digest = createHash('sha256');
         for (let offset = 0; offset < size; offset += chunkSize) digest.update(await read(offset, Math.min(chunkSize, size - offset)));
-        json(200, {kind, id, filename:clip.fileName, mime, byteSize:size, sha256:digest.digest('hex'), chunkSize}); return;
+        json(200, {kind, id, filename, mime, byteSize:size, sha256:digest.digest('hex'), chunkSize}); return;
       }
       const offset = Number(url.searchParams.get('offset') ?? 0), limit = Number(url.searchParams.get('limit') ?? chunkSize);
       if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(limit) || offset < 0 || offset > size || limit < 1 || limit > chunkSize) { json(416, {error:'invalid_file_range'}); return; }

@@ -26,12 +26,12 @@ try {
   for (const kind of ['deep_research','immersion','study_document','study_transcript']) {
     clips.push(await own(first, () => audio.saveClip(kind,'opaque-entity',{segmentIndex:0,segmentLabel:kind,provider:'piper',voice:'fixture',language:'es',bytes})));
   }
-  async function request(vault, id, action='descriptor', query='', domains=['corpus'], method='GET') {
+  const request = async (vault, id, action='descriptor', query='', domains=['corpus'], method='GET') => {
     let status, payload, headers;
     await serveBridgeFile({method},{writeHead(code,value){status=code;headers=value;},end(value){payload=value;}},
       new URL('https://localhost/file'+query),vault.id,domains,'audioClip',id,action);
     return {status,payload,headers};
-  }
+  };
   for (const clip of clips) {
     const domains = clip.entityKind === 'study_transcript' ? ['corpus','study-recordings'] : ['corpus'];
     const response = await request(first,clip.id,'descriptor','',domains); assert.equal(response.status,200);
@@ -56,6 +56,8 @@ try {
     await assert.rejects(executeMobileOperation(first.id,['corpus'],'listAudioClips',args),/invalid_arguments/);
   }
   const clip = clips[0];
+  await own(first, () => database.getDb().prepare('UPDATE audio_clips SET file_name=? WHERE id=?').run('podcasts/not-a-narration.wav',clip.id));
+  assert.equal((await request(first,clip.id)).status,403,'only podcasts accept their producer subdirectory');
   const outside = path.join(root,'outside-secret.wav');fs.writeFileSync(outside,'private test content');
   await own(first, () => database.getDb().prepare('UPDATE audio_clips SET file_name=? WHERE id=?').run('../outside-secret.wav',clip.id));
   assert.equal((await request(first,clip.id)).status,403);

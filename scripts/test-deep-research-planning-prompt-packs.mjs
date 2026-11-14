@@ -130,7 +130,7 @@ test('planning schema enums and limits remain invariant across translations', ()
 test('the five production planning stages are wired to the native pack, with no active Spanish arrays', () => {
   assert.match(deepResearchSource, /from '\.\/deepResearchPlanningPromptPacks';/);
   assert.match(desktopSource, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/);
-  assert.match(desktopSource, /portableDeepResearchAI\(\{get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
+  assert.match(desktopSource, /portableDeepResearchAI\(\{currentResearchHarness,get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
   const ranges = [
     ['aiDecomposeObjective', 'const VERIFY_BATCH'],
     ['aiAuditPlanCoverage', 'async function aiPlanReport'],
@@ -170,6 +170,36 @@ test('portable decomposition forwards language and enforces the canonical questi
     assert.equal(JSON.parse(captured.request.user).idioma, language);
     assert.equal(captured.receivedModel, model);
     assert.equal(result.length, 16, 'the canonical maximum remains enforced after extraction');
+  }
+});
+
+test('the research harness owns reviews only while active; ordinary Desktop planning still runs both reviews', async () => {
+  const aiBundle = path.join(scratch, 'portable-planning-harness.mjs');
+  execFileSync(path.join(root, 'node_modules/.bin/esbuild'), [path.join(root, 'shared/portableDeepResearchAI.ts'), '--bundle', '--platform=node', '--format=esm', `--outfile=${aiBundle}`], {cwd: root, stdio: 'ignore'});
+  const {portableDeepResearchAI} = await import(pathToFileURL(aiBundle).href);
+  const input = {objective: 'Only documented evidence', language: 'en', sectionCount: 1, sectionMode: 'user', coverageQuestions: ['What is documented?'], ideas: [], themes: [], gaps: [], contradictions: [], works: [], passages: []};
+  const model = {provider: 'openai', model: 'fixture-only'};
+  const pack = packsModule.deepResearchPlanningPromptPack('en', {documentaryEvidence: false, sectionCount: 1, sectionMode: 'user', approachRules: []});
+  for (const harnessState of ['absent', 'inactive', 'active']) {
+    const calls = [];
+    const ai = portableDeepResearchAI({
+      documentaryEvidence: true,
+      ...(harnessState === 'absent' ? {} : {currentResearchHarness: () => harnessState === 'active' ? {id: 'fixture-harness'} : null}),
+      completeText: async () => { throw new Error('unexpected text call'); },
+      completeJson: async (request, guard, receivedModel) => {
+        calls.push(request);
+        assert.equal(receivedModel, model);
+        const value = {title: `Plan ${calls.length}`, abstract: 'Evidence bound', sections: [{id: 's1', title: `Section ${calls.length}`, purpose: 'Inspect evidence', keyClaims: ['Bounded question'], coverageQuestions: input.coverageQuestions}]};
+        assert.equal(guard(value), true);
+        return value;
+      },
+    });
+    const result = await ai.aiPlanReport(input, model);
+    const active = harnessState === 'active';
+    assert.deepEqual(calls.map(call => call.system), active ? [pack.planReport] : [pack.planReport, pack.reviewPlan, pack.adversarialReview], harnessState);
+    assert.equal(result.title, active ? 'Plan 1' : 'Plan 3');
+    assert.equal(result.sections[0].title, active ? 'Section 1' : 'Section 3');
+    assert.deepEqual(result.sections[0].coverageQuestions, input.coverageQuestions);
   }
 });
 

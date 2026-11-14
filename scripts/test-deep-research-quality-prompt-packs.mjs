@@ -67,7 +67,7 @@ test('non-Spanish quality packs are native and preserve invariant JSON vocabular
 test('production quality stages call the native pack and no longer own Spanish arrays', () => {
   assert.match(source, /from '\.\/deepResearchQualityPromptPacks';/);
   assert.match(desktopSource, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/);
-  assert.match(desktopSource, /portableDeepResearchAI\(\{get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
+  assert.match(desktopSource, /portableDeepResearchAI\(\{currentResearchHarness,get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
   const ranges = [
     ['async function aiReviewReport', 'function isAiCoherence'],
     ['async function aiCheckCoherence', 'interface AiProbes'],

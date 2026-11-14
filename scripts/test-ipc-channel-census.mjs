@@ -23,14 +23,56 @@ function withoutDirectBranch(method) {
   return dispatcherSource.slice(0, branch.getStart(source)) + dispatcherSource.slice(branch.end);
 }
 
-test('real HTTP dispatcher covers its 39 direct methods without inventing IPC handlers', () => {
+const podcastReads = {
+  podcastEpisodes: ['mobile:podcast:list', 'listPodcastEpisodes'],
+  podcastEpisode: ['mobile:podcast:get', 'getPodcastEpisode'],
+  podcastImages: ['mobile:podcast:images', 'listPodcastImages'],
+  podcastImageData: ['mobile:podcast:image', 'getPodcastImageBytes'],
+};
+
+test('real HTTP dispatcher covers its 43 direct methods without inventing IPC handlers', () => {
   const census = mobileOperationCensus(input);
-  assert.equal(census.directMethods.size, 39); // 28 literal routes + 7 DB Set routes + 4 export Set routes.
+  assert.equal(census.directMethods.size, 43); // 32 literal routes (including 4 podcast reads) + 7 DB Set routes + 4 export Set routes.
   for (const method of census.directMethods) {
     assert(census.entries.some(entry => entry.method === method));
     assert(!census.invoked.some(entry => entry.method === method));
   }
   assert.deepEqual(orphan(census), []);
+});
+
+test('saved podcast reads have explicit direct repository routes, never synthetic IPC handlers', () => {
+  const census = mobileOperationCensus(input);
+  const source = parse(dispatcherSource);
+  const registry = parse(registrySource);
+  const operations = registry.statements.flatMap(node => ts.isVariableStatement(node) ? [...node.declarationList.declarations] : [])
+    .find(node => node.name.getText(registry) === 'MOBILE_OPERATIONS').initializer.expression;
+  const execute = source.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'executeMobileOperation');
+  const branch = execute.body.statements.find(node => ts.isIfStatement(node) && node.expression.getText(source).includes("'podcastEpisodes'"));
+  assert(branch, 'the saved-podcast dispatcher exists');
+  const calls = new Set();
+  function visit(node) {
+    if (ts.isCallExpression(node)) calls.add(node.expression.getText(source));
+    ts.forEachChild(node, visit);
+  }
+  visit(branch.thenStatement);
+  assert.deepEqual([...calls].filter(name => /podcast/i.test(name)).sort(),
+    [...new Set(Object.values(podcastReads).map(([, repository]) => repository))].sort(),
+    'the podcast branch calls only the four saved-repository readers, without a synthesis lane');
+  assert(calls.has('withOwningVault') && calls.has('withVaultDatabase'), 'reads retain both vault boundaries');
+  for (const [method, [channel]] of Object.entries(podcastReads)) {
+    const entry = census.entries.find(entry => entry.method === method);
+    assert.equal(entry?.channel, channel);
+    const registration = operations.properties.find(node => node.name.getText(registry) === method);
+    assert.equal(registration?.initializer.elements[1]?.text, 'corpus');
+    assert(census.directMethods.has(method));
+    assert(!census.invoked.some(entry => entry.method === method));
+    assert(!handled.has(channel), `${channel} must not masquerade as main-window podcast IPC`);
+  }
+  const removed = mobileOperationCensus({ ...input, dispatcherSource: withoutDirectBranch('podcastEpisodes') });
+  for (const method of Object.keys(podcastReads)) {
+    assert(!removed.directMethods.has(method));
+    assert(orphan(removed).some(entry => entry.method === method), `${method} must become orphaned if its read dispatcher is removed`);
+  }
 });
 
 test('removing a real equality-selected branch exposes its methods as orphan IPC', () => {

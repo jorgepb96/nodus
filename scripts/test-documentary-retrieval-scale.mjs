@@ -27,7 +27,7 @@ try {
   const keys = [];
   store.db.transaction(() => {
     for (let index = 0; index < count; index++) {
-      const document = Math.floor(index / perDocument), key = `index-${document}`, id = `${key}:${index % perDocument}`;
+      const document = Math.floor(index / perDocument), key = document.toString(16).padStart(64, '0'), id = `${key}:${index % perDocument}`;
       if (index % perDocument === 0) { insertRevision.run(key, `source-${document}`); keys.push(key); }
       const text = `Fuente histórica ${document}. Pasaje ${index}: educación, legislación y organización social de la Segunda República.`;
       insert.run(id, key, `source-${document}`, index % perDocument, text, JSON.stringify({ pageNumber: index % perDocument + 1 }), Buffer.from(vector().buffer));
@@ -48,12 +48,26 @@ try {
     pending.set(id, { resolve, deadline }); child.send({ ...input, id, filename });
   });
   const settings = { preset: 'custom', candidates: 60, passagesPerRound: 10, evidenceTokens: 8000, rounds: 1, autoExpand: false, threshold: { mode: 'automatic' } };
+  // The SQL store owns its methods on the prototype; the portable adapter must
+  // retain those methods and their receiver for every retrieval lane.
+  assert.equal(Object.hasOwn(store, 'lexicalSearch'), false);
+  const directInput = { query: 'educación', lexicalKeys: [keys[0]], vectorKeys: [], vector: null, threshold: -1, settings };
+  const activity = [];
+  const directLexical = runDocumentaryRetrieval(store, directInput, (...event) => activity.push(event));
+  assert.equal(directLexical.passages.length, settings.passagesPerRound);
+  assert.ok(directLexical.passages.every(passage => passage.index_key === keys[0]));
+  assert.deepEqual(activity.map(event => event.slice(0, 3)), [['lexical', 'lexical', 'active'], ['lexical', 'lexical', 'completed']]);
+  const directPages = runDocumentaryRetrieval(store, { ...directInput, read: { kind: 'pages', from: 2, to: 2 } });
+  assert.deepEqual(directPages.passages.map(passage => passage.id), [`${keys[0]}:1`]);
+  const directContext = runDocumentaryRetrieval(store, { ...directInput, read: { kind: 'context', passageId: `${keys[0]}:1`, radius: 1 } });
+  assert.deepEqual(directContext.passages.map(passage => passage.id), [0, 1, 2].map(ordinal => `${keys[0]}:${ordinal}`));
   const cases = [];
   let maximumLagMs = 0, heartbeats = 0, lastTick = performance.now();
   for (const size of [10_000, 50_000, 100_000]) {
     const selected = keys.slice(0, size / perDocument);
     const input = { query: 'unmatched-scale-probe', lexicalKeys: selected, vectorKeys: selected, vector: Array.from(vector()), threshold: -1, settings };
     const expected = runDocumentaryRetrieval(store, input);
+    assert.equal(expected.passages.length, settings.passagesPerRound, 'class-instance semantic retrieval produces real results');
     const elapsed = [];
     let rss = 0;
     for (let repeat = 0; repeat < 6; repeat++) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { installRuntimeHooks, requireElectronRuntime } from './lib/tsRuntimeHooks.mjs';
@@ -82,7 +82,7 @@ try {
   const {seedWorkspaceNote} = require('../src/mobileWeb/workspaceNotes.ts');
   const captureMarkdown = '# Captura\n\nCita [S1](nodus://idea/source-37) y $x^2$.\n\n| A | B |\n| --- | --- |\n| 7 | 30 |';
   const provenance = {origin:'assistant',model:{provider:'openai',model:'real-model-reference',pending:false,reasoningEffort:'high'},ref:'response-37',note:'Captured answer',authoredOn:'mobile',researchChat:{surface:'research',conversationId:'conversation-37',conversationTitle:'Real context',messageId:'message-7',messageIndex:2,references:[{citationId:'S1',label:'Actual citation',subtitle:null,quote:'Original quotation',href:'nodus://idea/source-37'}]}};
-  const withoutBlockIds=blocks=>blocks.map(({id,children,...block})=>({...block,children:withoutBlockIds(children??[])}));
+  const withoutBlockIds=blocks=>blocks.map(({id:_id,children,...block})=>({...block,children:withoutBlockIds(children??[])}));
   const nextBeforeCaptures = await scoped(() => ideas.nextGlobalId());
   for (const kind of ['markdown','assistant','writing','debate','idea','hypothesis']) {
     const seeded = seedWorkspaceNote({title:'Same explicit capture',content:captureMarkdown,kind,source:provenance,tags:['capture'],folderId:folder.id});
@@ -105,12 +105,33 @@ try {
   }
   assert.equal(await scoped(()=>ideas.nextGlobalId()),nextBeforeCaptures,'Kind idea captures do not allocate a manual or derived idea identity');
   assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM ideas WHERE label=?').get('Same explicit capture').n),0);
+  const assertExternalizedImage = async (committed, input) => {
+    const url = input.nativeDocument[0].props.url;
+    const bytes = Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    const reference = `nodus-blob://${hash}`;
+    const expectedNative = structuredClone(input.nativeDocument);
+    expectedNative[0].props.url = reference;
+    assert.deepEqual(committed.editorData.nativeDocument, expectedNative, 'only the binary URL changes in the complete native image block');
+    const expectedMarkdown = input.contentMarkdown.replaceAll(url, reference);
+    assert.equal(committed.editorData.contentMarkdown, expectedMarkdown);
+    assert.equal(committed.note.content, expectedMarkdown);
+    await scoped(db => {
+      const pages = require('../electron/db/pagesRepo.ts');
+      assert.deepEqual(Buffer.from(pages.getPageAsset(hash)), bytes, 'the owning vault retains every original media byte');
+      assert.equal(db.prepare('SELECT COUNT(*) n FROM db_blobs WHERE hash=?').get(hash).n, 1);
+      const page = pages.getPageDocumentForNote(committed.note.id);
+      assert.equal(db.prepare('SELECT COUNT(*) n FROM page_block_blobs attachment JOIN page_blocks block ON block.id=attachment.block_id WHERE block.page_id=? AND attachment.blob_hash=?').get(page.page.id, hash).n, 1);
+      assert.deepEqual(page.nativeDocument, expectedNative);
+    });
+    assert.equal(input.nativeDocument[0].props.url, url, 'externalizing a save never mutates the caller draft');
+  };
   const imageData='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN3sAAAAASUVORK5CYII=';
   const imageSeed=seedWorkspaceNote({title:'Inline capture',content:`![Preserved](${imageData})`,kind:'assistant',source:provenance});
   assert.ok(JSON.stringify(imageSeed.nativeDocument).includes(imageData),'Canonical Markdown importer preserves inline resource bytes');
   const imageCapture={id:randomUUID(),noteId:randomUUID(),creation:{kind:'assistant',source:provenance,folderId:null,tags:[]},input:{title:imageSeed.title,contentMarkdown:imageSeed.content,nativeDocument:imageSeed.nativeDocument,schemaVersion:2,expectedRevision:0}};
   const imageCaptureSaved=await applyWorkspaceEdit(first.id,'phone-grant',imageCapture);
-  assert.deepEqual(imageCaptureSaved.editorData.nativeDocument,imageSeed.nativeDocument);assert.equal(imageCaptureSaved.note.content,imageSeed.content);
+  await assertExternalizedImage(imageCaptureSaved, imageCapture.input);
   assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageCapture),imageCaptureSaved);
 
   // A valid sub-2 MB attachment occurs in native JSON and Markdown. Its
@@ -125,8 +146,7 @@ try {
   const wireBytes = Buffer.byteLength(JSON.stringify(imageRequest));
   assert.ok(wireBytes > 4 * 1024 * 1024 && wireBytes < MOBILE_WORKSPACE_EDIT_MAX_BYTES);
   const imageSaved = await applyWorkspaceEdit(first.id,'phone-grant',imageRequest);
-  assert.deepEqual(imageSaved.editorData.nativeDocument,imageRequest.input.nativeDocument);
-  assert.equal(imageSaved.editorData.contentMarkdown,imageRequest.input.contentMarkdown);
+  await assertExternalizedImage(imageSaved, imageRequest.input);
   const imageHistory = imageSaved.editorData.versions.length;
   assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageRequest),imageSaved);
   assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id))).versions.length,imageHistory);
@@ -251,6 +271,8 @@ try {
   const projection = require('../shared/academicProjection.ts').academicMarkdownProjection;
   const commandInitial = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
   const fullSource = await applyWorkspaceEdit(first.id, 'phone-grant', {id: randomUUID(), noteId: commandOwner.id, input: {title: commandOwner.title, contentMarkdown: projection(sourceNative, sourceMetadata), nativeDocument: sourceNative, schemaVersion: 2, academicMetadata: sourceMetadata, style: {fontFamily: 'serif'}, spellcheckLanguage: 'fr-FR', customDictionary: ['genealogía'], expectedRevision: commandInitial.revision}});
+  assert.deepEqual(fullSource.editorData.nativeDocument, sourceNative);
+  assert.deepEqual(fullSource.editorData.academicMetadata, sourceMetadata);
   const protectedComment = await scoped(() => workspace.createWorkspaceAnnotation(commandOwner.id, {from: 0, to: 22, selectedText: 'Protected source quote', comment: 'Source comment survives duplication and trash', locked: true, anchor: {blockId: sourceNative[0].id, from: 0, to: 22}}));
   const sourceForCommand = await scoped(() => mobileWorkspaceEditorData(commandOwner.id));
   const capturedNative = structuredClone(sourceNative); capturedNative.push(...markdownToBlockNote('Captured pending draft paragraph'));

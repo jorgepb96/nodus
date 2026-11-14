@@ -1,5 +1,7 @@
 import {academicMarkdownProjection} from '@shared/academicProjection';
 import type { AcademicMetadata } from '@shared/academicDocument';
+import { normalizeAcademicMetadata } from '@shared/academicDocument';
+import { externalizeEditorAttachments } from './editorAttachmentsRepo';
 import { readPageAcademicMetadata } from '@shared/pageYjs';
 import { createHash, randomUUID } from 'node:crypto';
 import * as Y from 'yjs';
@@ -554,7 +556,7 @@ export function getPageDocumentForNote(noteId: string): PageDocument | null {
   return page ? getPageDocument(page.id) : null;
 }
 
-function normalizeDrafts(pageId: string, drafts: PageBlockDraft[], native: BlockNoteDocument | null = null): Required<PageBlockDraft>[] {
+function normalizeDrafts(pageId: string, drafts: PageBlockDraft[], native: BlockNoteDocument | null = null, nativeSource: 'save' | 'history' = 'save'): Required<PageBlockDraft>[] {
   if (drafts.length > 10_000) throw new Error('Una página no puede guardar más de 10.000 bloques en una sola mutación.');
   const ids = new Set<string>();
   let nativeProjections: Map<string, PageBlockDraft> | undefined;
@@ -566,12 +568,28 @@ function normalizeDrafts(pageId: string, drafts: PageBlockDraft[], native: Block
     const content = jsonObject(draft.content);
     // Validated native documents already have a 4 MB aggregate bound. Their
     // legacy projections repeat the same content in native/Markdown/cache fields.
-    // Only internally generated projections may use that bounded overhead.
+    // Only internally generated projections may use that bounded overhead;
+    // repeating a large native text block must not bypass the source limit.
     const size = JSON.stringify(content).length;
     if (size > 1_000_000) {
       if (!native || size > 16_000_000) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
       nativeProjections ??= new Map(blockNoteToPageBlocks(native).map(block=>[block.id!,block]));
-      if (canonicalJson(content) !== canonicalJson(nativeProjections.get(id)?.content)) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
+      const projection = nativeProjections.get(id)?.content;
+      if (canonicalJson(content) !== canonicalJson(projection)) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
+      const source = jsonObject(projection?._blockNote);
+      const props = jsonObject(source.props);
+      // Older native pages may still contain inline media. Budget its metadata
+      // and text independently of the binary URL, as editor saves now do via blobs.
+      const inlineMedia = ['image', 'audio', 'video', 'file'].includes(String(source.type))
+        && typeof props.url === 'string' && /^data:[\w.+-]+\/[\w.+-]+;base64,[A-Za-z0-9+/=]+$/.test(props.url);
+      const sourceSize = JSON.stringify(inlineMedia ? { ...source, props: { ...props, url: '' } } : source).length;
+      // Only the internal revision-restoration path can supply trusted history.
+      if (sourceSize > 1_000_000 && nativeSource !== 'history') {
+        const stored = getDb().prepare('SELECT content_json FROM page_blocks WHERE page_id = ? AND id = ?').get(pageId, id) as Row | undefined;
+        // Preserve an untouched legacy block when another part of its page is
+        // saved; only new or changed oversized source content is rejected.
+        if (!stored || canonicalJson(source) !== canonicalJson(parseJson(stored.content_json)._blockNote)) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
+      }
     }
     return {
       id,
@@ -763,6 +781,24 @@ function persistDocument(
 }
 
 export function savePageDocument(input: SavePageDocumentInput): PageMutationResult {
+  return savePageDocumentInternal(input, 'save');
+}
+
+/** Trusted note history is read by identity, never supplied by a client flag. */
+export function restoreNotePageDocumentVersion(pageId: string, versionId: string, expectedRevision: number): PageMutationResult {
+  return getDb().transaction(() => {
+    const page = getPage(pageId);
+    const row = page?.noteId ? getDb().prepare('SELECT * FROM note_versions WHERE id = ? AND note_id = ?').get(versionId, page.noteId) as Row | undefined : undefined;
+    if (!row?.native_document_json) throw new Error('Versión nativa no encontrada.');
+    const native = validateBlockNoteDocument(JSON.parse(String(row.native_document_json)));
+    const input = externalizeEditorAttachments({pageId, expectedRevision, blocks: [], nativeDocument: native,
+      schemaVersion: Number(row.native_schema_version ?? 1),
+      academicMetadata: normalizeAcademicMetadata(parseJson(row.academic_metadata_json)), reason: 'restore'});
+    return savePageDocumentInternal(input, 'history');
+  })();
+}
+
+function savePageDocumentInternal(input: SavePageDocumentInput, nativeSource: 'save' | 'history'): PageMutationResult {
   const db = getDb();
   return db.transaction((): PageMutationResult => {
     const page = getPage(input.pageId);
@@ -782,7 +818,7 @@ export function savePageDocument(input: SavePageDocumentInput): PageMutationResu
     const before = capturePageHistorySnapshot(page.id, doc);
     ensurePageHistory(page.id, before);
     const native = input.nativeDocument == null ? input.nativeDocument : validateBlockNoteDocument(input.nativeDocument);
-    const drafts = normalizeDrafts(page.id, native ? blockNoteToPageBlocks(native) : input.blocks, native);
+    const drafts = normalizeDrafts(page.id, native ? blockNoteToPageBlocks(native) : input.blocks, native, nativeSource);
     const vector = Y.encodeStateVector(doc);
     writePageYDocument(doc, page.title, drafts, native, input.schemaVersion, input.academicMetadata);
     const update = Y.encodeStateAsUpdate(doc, vector);
@@ -1020,7 +1056,7 @@ export function restorePageRevision(
     const drafts = normalizeDrafts(pageId, native ? blockNoteToPageBlocks(native) : target.blocks.filter((block) => block.trashedAt == null).map((block) => ({
       id: block.id, parentBlockId: block.parentBlockId, order: block.order,
       type: block.type, content: block.content,
-    })), native);
+    })), native, 'history');
     const doc = loadYDoc(documentRow);
     const vector = Y.encodeStateVector(doc);
     writePageYDocument(doc, target.page.title, drafts, target.nativeDocument ?? null, target.schemaVersion, target.academicMetadata);

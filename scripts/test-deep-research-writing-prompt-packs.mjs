@@ -79,7 +79,7 @@ test('runtime section scaffolding and failures are native in all eight languages
 test('production writing stages use the native pack and remain scoped to their original functions', () => {
   assert.match(source, /from '\.\/deepResearchWritingPromptPacks';/);
   assert.match(desktopSource, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/);
-  assert.match(desktopSource, /portableDeepResearchAI\(\{get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
+  assert.match(desktopSource, /portableDeepResearchAI\(\{currentResearchHarness,get documentaryEvidence\(\) \{ return getActiveVault\(\)\.type === "academic"; \}, completeJson, completeText\}\)/);
   assert.match(desktopSource, /portableAcademicDeepResearch\(\{ai:canonicalAcademicAI,/);
   const academicSource = readFileSync(path.join(root, 'shared/portableAcademicDeepResearch.ts'), 'utf8');
   assert.match(academicSource, /const \{[^}]*aiReviseSection[^}]*aiPlanSectionEvidence[^}]*aiWriteSection[^}]*aiFinalize[^}]*aiAuditFinalSummary[^}]*\}=host\.ai/);

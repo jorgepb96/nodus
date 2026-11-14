@@ -37,7 +37,7 @@ import { normalizeStudyDocStyle, parseStudyDocLinks } from '@shared/studyEditor'
 import type { Note, WorkspaceLibraryLink, WorkspaceLibraryLinkInput } from '@shared/types';
 import { getDb } from './database';
 import { getNote } from './notesRepo';
-import { getPageDocumentForNote, reconcileLegacyNoteCache, synchronizeNotePage, savePageDocument } from './pagesRepo';
+import { getPageDocumentForNote, reconcileLegacyNoteCache, synchronizeNotePage, savePageDocument, restoreNotePageDocumentVersion } from './pagesRepo';
 import { blockNoteToPageBlocks, markdownToBlockNote, nativeDocumentText, parseNativeDocument, validateBlockNoteDocument } from '@shared/blockNoteDocument';
 import { externalizeEditorAttachments } from './editorAttachmentsRepo';
 import { markdownToPageBlocks } from '@shared/pages';
@@ -215,6 +215,10 @@ export function getWorkspaceNoteEditorData(noteId: string): StudyDocEditorData {
 
 /** Guardado del editor: versiona lo anterior, respeta los fragmentos bloqueados. */
 export function updateWorkspaceNote(noteId: string, input: StudyDocUpdateInput): Note {
+  return updateWorkspaceNoteInternal(noteId, input);
+}
+
+function updateWorkspaceNoteInternal(noteId: string, input: StudyDocUpdateInput, trustedNativeVersionId?: string): Note {
   const db = getDb();
   return db.transaction(() => {
     const current = noteRow(noteId);
@@ -266,7 +270,9 @@ export function updateWorkspaceNote(noteId: string, input: StudyDocUpdateInput):
     }
     let savedDocument: PageDocument;
     if (native || input.nativeDocument === null || input.academicMetadata !== undefined) {
-      const saved = savePageDocument({ pageId: pageDocument.page.id, expectedRevision: pageDocument.revision, blocks: native ? blockNoteToPageBlocks(native) : markdownToPageBlocks(content), nativeDocument: native, schemaVersion: input.schemaVersion, academicMetadata, reason: input.reason });
+      const saved = trustedNativeVersionId
+        ? restoreNotePageDocumentVersion(pageDocument.page.id, trustedNativeVersionId, pageDocument.revision)
+        : savePageDocument({ pageId: pageDocument.page.id, expectedRevision: pageDocument.revision, blocks: native ? blockNoteToPageBlocks(native) : markdownToPageBlocks(content), nativeDocument: native, schemaVersion: input.schemaVersion, academicMetadata, reason: input.reason });
       if (!saved.ok) throw new Error('REVISION_CONFLICT: La nota ha cambiado en otra sesión.');
       savedDocument = saved.document;
     } else savedDocument = synchronizeNotePage(noteId, title, content);
@@ -293,7 +299,7 @@ export function restoreWorkspaceNoteVersion(noteId: string, versionId: string): 
     .get(versionId, noteId) as Row | undefined;
   if (!row) throw new Error('Versión no encontrada.');
   const version = toVersion(row);
-  return updateWorkspaceNote(noteId, {
+  return updateWorkspaceNoteInternal(noteId, {
     title: version.title,
     contentMarkdown: version.contentMarkdown,
     nativeDocument: version.nativeDocument ?? undefined,
@@ -301,7 +307,7 @@ export function restoreWorkspaceNoteVersion(noteId: string, versionId: string): 
     academicMetadata: version.academicMetadata,
     style: version.style,
     reason: 'restore',
-  });
+  }, version.nativeDocument ? version.id : undefined);
 }
 
 // ── Comentarios anclados ─────────────────────────────────────────────────────────

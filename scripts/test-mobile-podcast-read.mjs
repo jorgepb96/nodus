@@ -26,10 +26,10 @@ try {
     script:{turns:[{id:'turn-1',chapterIndex:0,speaker:'A',text:'Real saved transcript',sourceIds:['S1']}]},
     sources:[{id:'S1',kind:'idea',title:'Idea',excerpt:'Stored evidence',link:'nodus://idea/fixture'}],researchLog:'Read existing evidence',
     timeline:{turns:[{turnId:'turn-1',startS:0,durationS:4}],chapters:[{index:0,title:'Chapter',startS:0}]},
-    durationS:4,audioFile:'link-podcast.m4a',audioMime:'audio/mp4',audioBytes:bytes.length,generation:{ttsModelId:'fixture',engine:'kokoro',codec:'mp4a.40.2'}};
+    durationS:4,audioFile:path.join('podcasts','link-podcast.m4a'),audioMime:'audio/mp4',audioBytes:bytes.length,generation:{ttsModelId:'fixture',engine:'kokoro',codec:'mp4a.40.2'}};
   await own(first,()=>{
     repo.savePodcastEpisode(input);
-    const folder=path.join(registry.activeVaultDir(),'audio');fs.mkdirSync(folder,{recursive:true});fs.writeFileSync(path.join(folder,input.audioFile),bytes);
+    const folder=path.join(registry.activeVaultDir(),'audio');fs.mkdirSync(path.join(folder,'podcasts'),{recursive:true});fs.writeFileSync(path.join(folder,input.audioFile),bytes);
     repo.putPodcastImagePlaceholder(input.id,0,null,'Fixture','contemporary_editorial');
     repo.setPodcastImageData(input.id,0,{mime:'image/png',image:Buffer.from('fixture image'),thumbnail:Buffer.from('fixture thumbnail'),provider:'fixture',model:'fixture'});
   });
@@ -50,11 +50,29 @@ try {
     return {status,payload,headers};
   };
   const descriptor=await file();assert.equal(descriptor.status,200);
-  const value=JSON.parse(descriptor.payload);assert.equal(value.kind,'podcastAudio');assert.equal(value.mime,'audio/mp4');assert.equal(value.sha256,createHash('sha256').update(bytes).digest('hex'));
+  const value=JSON.parse(descriptor.payload);assert.equal(value.kind,'podcastAudio');assert.equal(value.filename,'link-podcast.m4a');assert.equal(value.mime,'audio/mp4');assert.equal(value.sha256,createHash('sha256').update(bytes).digest('hex'));
   const firstChunk=await file(first,'content'),lastChunk=await file(first,'content','?offset=4194304&limit=117');assert.deepEqual(Buffer.concat([firstChunk.payload,lastChunk.payload]),bytes);
   assert.equal((await file(second)).status,404);assert.equal((await file(first,'content','',[])).status,403);assert.equal((await file(first,'content','?offset=-1')).status,416);
   assert.deepEqual(await own(first,()=>repo.getPodcastEpisode(input.id)),before,'Reading never mutates the saved episode');
-  await own(first,()=>database.getDb().prepare('UPDATE podcast_episodes SET audio_file=? WHERE id=?').run('../outside.mp4',input.id));assert.equal((await file()).status,403);
+  const setPath=stored=>own(first,()=>database.getDb().prepare('UPDATE podcast_episodes SET audio_file=? WHERE id=?').run(stored,input.id));
+  // Both platforms persist this relative path; transport exposes only its leaf.
+  await setPath('podcasts\\link-podcast.m4a');assert.deepEqual(JSON.parse((await file()).payload),value);
+  assert.deepEqual((await file(first,'content','?offset=4194304&limit=117')).payload,bytes.subarray(4194304));
+  const folder=await own(first,()=>path.join(registry.activeVaultDir(),'audio'));
+  fs.writeFileSync(path.join(folder,'legacy.m4a'),bytes);await setPath('legacy.m4a');
+  assert.equal(JSON.parse((await file()).payload).sha256,value.sha256,'legacy flat podcast paths remain readable');
+  for(const invalid of ['../outside.mp4','podcasts/../legacy.m4a','podcasts\\..\\legacy.m4a','/podcasts/link-podcast.m4a','C:\\podcasts\\link-podcast.m4a','podcasts//link-podcast.m4a','podcasts/nested/link.m4a','elsewhere/link.m4a','podcasts/','podcasts/.']){
+    await setPath(invalid);assert.equal((await file()).status,403,`Reject invalid stored podcast path: ${invalid}`);
+  }
+  await setPath('');assert.equal((await file()).status,404,'an episode without registered audio has no file capability');
   await own(first,()=>{const folder=path.join(registry.activeVaultDir(),'audio');fs.writeFileSync(path.join(root,'outside.mp4'),'private');fs.symlinkSync(path.join(root,'outside.mp4'),path.join(folder,'link.mp4'));database.getDb().prepare('UPDATE podcast_episodes SET audio_file=? WHERE id=?').run('link.mp4',input.id);});assert.equal((await file()).status,403);
-  console.log(JSON.stringify({suite:'mobile-podcast-read',result:'passed',vaults:2,canonicalEpisode:true,transcriptAndSources:true,images:true,chunkedAudio:true,sha256:true,readOnly:true,pathIsolation:true}));
+  fs.symlinkSync(path.join(folder,'legacy.m4a'),path.join(folder,'podcasts','escape.m4a'));await setPath('podcasts/escape.m4a');
+  assert.equal((await file()).status,403,'nested podcast symlinks cannot read another audio subdirectory');
+  fs.renameSync(path.join(folder,'podcasts'),path.join(folder,'original-podcasts'));
+  fs.symlinkSync(path.join(folder,'original-podcasts'),path.join(folder,'podcasts'),'dir');await setPath('podcasts/link-podcast.m4a');
+  assert.equal((await file()).status,403,'the podcast directory cannot alias a different audio subdirectory');
+  fs.unlinkSync(path.join(folder,'podcasts'));
+  fs.symlinkSync(root,path.join(folder,'podcasts'),'dir');await setPath('podcasts/outside.mp4');
+  assert.equal((await file()).status,403,'the podcast directory cannot be a symlink outside audio');
+  console.log(JSON.stringify({suite:'mobile-podcast-read',result:'passed',vaults:2,canonicalEpisode:true,transcriptAndSources:true,images:true,chunkedAudio:true,sha256:true,readOnly:true,pathIsolation:true,productionPodcastPaths:true,windowsSeparators:true,legacyFlat:true}));
 } finally {database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

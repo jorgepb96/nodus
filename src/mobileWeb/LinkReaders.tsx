@@ -28,6 +28,7 @@ export function LinkDictionary({navigate}:{navigate:Navigate}) {
   const [detail,setDetail]=useState<DictionaryEntryDetail|null>(null);
   const [evidence,setEvidence]=useState<DictionaryEvidenceItem[]>([]);
   const [versions,setVersions]=useState<DictionaryVersion[]>([]);
+  const [expandedVersion,setExpandedVersion]=useState<string|null>(null);
   const [tab,setTab]=useState('overview');
   const [busy,setBusy]=useState(true);
   const [issue,setIssue]=useState('');
@@ -81,7 +82,10 @@ export function LinkDictionary({navigate}:{navigate:Navigate}) {
       {tab==='evidence'&&<><p>{evidence.length} {t('Evidencias')}</p>{evidence.map(item=><section className="link-reader-card" key={`${item.kind}:${item.id}`}><h3>{item.label}</h3><Prose text={item.text} navigate={navigate}/><small>{item.workTitle} {item.pageLabel} · {item.decision}</small><button onClick={()=>navigate('citation',`nodus://${item.kind}/${encodeURIComponent(item.id)}`)}>{t('Ver fuente')}</button></section>)}</>}
       {tab==='authors'&&detail.authors.map(item=><section key={item.id}><button onClick={()=>navigate('author',item.id)}>{item.name}</button><Prose text={item.summaryMarkdown} navigate={navigate}/></section>)}
       {tab==='works'&&detail.works.map(item=><button className="link-reader-row" key={item.id} onClick={()=>navigate('work',item.id)}>{item.title} · {item.authors.join(', ')}</button>)}
-      {tab==='versions'&&versions.map((item,index)=><details key={item.id}><summary aria-label={`${t('Versión')} ${index+1}: ${item.generatedAt}`}>{item.generatedAt} · {item.state} · {item.model?.model??''}</summary><Prose text={item.contentMarkdown} navigate={navigate}/></details>)}
+      {tab==='versions'&&versions.map((item,index)=><section className="link-reader-card" key={item.id}>
+        <button className="link-reader-row" aria-label={`${t('Versión')} ${index+1}: ${item.generatedAt}`} aria-expanded={expandedVersion===item.id}
+          onClick={()=>setExpandedVersion(value=>value===item.id?null:item.id)}>{item.generatedAt} · {item.state} · {item.model?.model??''}</button>
+        {expandedVersion===item.id&&<Prose text={item.contentMarkdown} navigate={navigate}/>}</section>)}
       {tab==='relations'&&(detail.relations?.length?detail.relations.map(item=><button className="link-reader-row" key={item.id} onClick={()=>open(item.entry.id)}>{item.entry.name} · {item.type}</button>):<p>{t('No hay relaciones guardadas.')}</p>)}
     </article>:null}
   </section>;

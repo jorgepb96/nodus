@@ -6,6 +6,17 @@ const [settings, vaultSwitcher] = await Promise.all([
   readFile(new URL('../src/components/VaultSwitcher.tsx', import.meta.url), 'utf8'),
 ]);
 
+// Every registered settings destination must be reachable from the grouped menu.
+// A section can still render through search while being absent from navigation.
+const tabDefinitions = settings.slice(settings.indexOf('const SETTINGS_TABS:'), settings.indexOf('const SETTINGS_TAB_GROUPS:'));
+const groupDefinitions = settings.slice(settings.indexOf('const SETTINGS_TAB_GROUPS:'), settings.indexOf('const SETTINGS_TAB_STORAGE_KEY'));
+const registeredTabs = [...tabDefinitions.matchAll(/\bid: '([^']+)'/g)].map((match) => match[1]);
+const groupedTabs = [...groupDefinitions.matchAll(/tabs: \[([^\]]+)\]/g)]
+  .flatMap((match) => [...match[1].matchAll(/'([^']+)'/g)].map((tab) => tab[1]));
+assert.ok(registeredTabs.includes('mobile'), 'the mobile connection settings must be registered');
+assert.deepEqual([...groupedTabs].sort(), [...registeredTabs].sort(),
+  'every settings destination, including mobile connection, must appear exactly once in navigation');
+
 assert.match(
   vaultSwitcher,
   /hover:bg-red-100 hover:text-red-600 dark:text-neutral-400 dark:hover:bg-red-950\/40 dark:hover:text-red-400/,

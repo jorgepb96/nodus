@@ -135,7 +135,7 @@ const SETTINGS_TABS: { id: SettingsTabId; label: string; icon: string; keywords:
 const SETTINGS_TAB_GROUPS: { label: string; tabs: SettingsTabId[] }[] = [
   { label: 'Inteligencia artificial', tabs: ['providers', 'models'] },
   { label: 'Contenido', tabs: ['library', 'extraction'] },
-  { label: 'Aplicación', tabs: ['interface', 'integrations', 'browser', 'server'] },
+  { label: 'Aplicación', tabs: ['interface', 'integrations', 'browser', 'mobile', 'server'] },
   { label: 'Datos', tabs: ['data'] },
   { label: 'Ayuda', tabs: ['system', 'updates', 'about'] },
 ];

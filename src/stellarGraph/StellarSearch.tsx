@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { GraphNode } from "@shared/types";
-import type { StellarGraphSource } from "./source";
+import type { StellarTheme } from "@shared/stellarGraph";
+import { themeName, type StellarGraphSource } from "./source";
 import { NODE_LABELS } from "./palette";
 import { t } from "../i18n";
 import { Icon } from "../components/ui";
 
-export function StellarSearch({ source, author, initialQuery = "", onQueryChange, disabled, visibleIds, onRemove, onChoose }: {
+export function StellarSearch({ source, author, initialQuery = "", onQueryChange, disabled, visibleIds, onRemove, onChoose, themes, onChooseTheme }: {
   source: StellarGraphSource;
   author?: string;
   initialQuery?: string;
@@ -14,6 +15,8 @@ export function StellarSearch({ source, author, initialQuery = "", onQueryChange
   visibleIds: Set<string>;
   onRemove(id: string): void;
   onChoose(node: GraphNode): void;
+  themes?: StellarTheme[];
+  onChooseTheme?(theme: StellarTheme): void;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [open, setOpen] = useState(!!initialQuery);
@@ -26,6 +29,12 @@ export function StellarSearch({ source, author, initialQuery = "", onQueryChange
   const input = useRef<HTMLInputElement>(null);
   const request = useRef(0);
   const listId = useId();
+  const searchesThemes = themes !== undefined && onChooseTheme !== undefined;
+  const needle = query.trim().toLocaleLowerCase();
+  const themeMatches = searchesThemes && needle
+    ? themes.filter(theme => themeName(theme).toLocaleLowerCase().includes(needle)) : [];
+  const resultCount = themeMatches.length + results.length;
+  const searchLabel = t(searchesThemes ? "Buscar ideas y temas" : "Buscar una idea");
   useEffect(() => { onQueryChange?.(query); }, [query, onQueryChange]);
 
   useEffect(() => {
@@ -64,6 +73,11 @@ export function StellarSearch({ source, author, initialQuery = "", onQueryChange
     onChoose(node);
     if (!keepOpen) { setOpen(false); input.current?.blur(); }
   };
+  const chooseTheme = (theme: StellarTheme) => {
+    if (disabled) return;
+    setOpen(false); input.current?.blur();
+    onChooseTheme?.(theme);
+  };
   const more = async () => {
     if (busy || cursor === null) return;
     const version = request.current;
@@ -85,22 +99,25 @@ export function StellarSearch({ source, author, initialQuery = "", onQueryChange
     }}>
       <div className="stellar-search-field">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
-        <input ref={input} type="search" role="combobox" aria-label={t("Buscar una idea")}
+        <input ref={input} type="search" role="combobox" aria-label={searchLabel}
           aria-autocomplete="list" aria-haspopup="grid" aria-expanded={open} aria-controls={open ? listId : undefined}
           aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
-          placeholder={t("Buscar una idea…")} value={query}
+          placeholder={searchesThemes ? `${searchLabel}…` : t("Buscar una idea…")} value={query}
           onFocus={() => setOpen(true)}
           onChange={event => { setQuery(event.target.value); setOpen(true); setActive(-1); setBusy(true); }}
           onKeyDown={event => {
             if (event.key === "Escape") { setOpen(false); event.stopPropagation(); }
             if (event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault(); setOpen(true);
-              setActive(index => !results.length ? -1 : index < 0
-                ? event.key === "ArrowDown" ? 0 : results.length - 1
-                : (index + (event.key === "ArrowDown" ? 1 : -1) + results.length) % results.length);
+              setActive(index => !resultCount ? -1 : index < 0
+                ? event.key === "ArrowDown" ? 0 : resultCount - 1
+                : (index + (event.key === "ArrowDown" ? 1 : -1) + resultCount) % resultCount);
             }
-            if (event.key === "Enter" && open && results.length) {
-              event.preventDefault(); choose(results[Math.max(0, active)]);
+            if (event.key === "Enter" && open && resultCount) {
+              event.preventDefault();
+              const index = Math.min(resultCount - 1, Math.max(0, active));
+              if (index < themeMatches.length) chooseTheme(themeMatches[index]);
+              else choose(results[index - themeMatches.length]);
             }
           }} />
         {query && <button className="stellar-search-clear" aria-label={t("Limpiar búsqueda")} onClick={() => {
@@ -108,9 +125,17 @@ export function StellarSearch({ source, author, initialQuery = "", onQueryChange
         }}>×</button>}
       </div>
       {open && <div className="stellar-search-popover">
-        <div className="stellar-search-caption">{t("AÑADE IDEAS AL LIENZO")}<kbd>esc</kbd></div>
-        <div id={listId} role="grid" aria-label={t("Ideas encontradas")} aria-busy={busy} className="stellar-search-results">
-          {results.map((node, index) => <div key={node.id} id={`${listId}-${index}`} role="row" aria-selected={index === active}
+        <div className="stellar-search-caption">{searchesThemes ? `${t("Temas")} / ${t("Ideas")}` : t("AÑADE IDEAS AL LIENZO")}<kbd>esc</kbd></div>
+        <div id={listId} role="grid" aria-label={searchesThemes ? searchLabel : t("Ideas encontradas")} aria-busy={busy} className="stellar-search-results">
+          {themeMatches.map((theme, index) => <div key={`theme:${theme.id}`} id={`${listId}-${index}`} role="row" aria-selected={index === active} className="stellar-search-result">
+            <div role="gridcell"><button className="stellar-search-choice" tabIndex={-1} disabled={disabled}
+              onMouseDown={event => event.preventDefault()} onClick={() => chooseTheme(theme)}>
+              <small>{t("Tema")} · {theme.ideaCount.toLocaleString()} {t(theme.ideaCount === 1 ? "idea" : "ideas")}</small>
+              <strong>{themeName(theme)}</strong>
+            </button></div>
+            <div role="gridcell" aria-hidden="true"><Icon name="layers" size={18} /></div>
+          </div>)}
+          {results.map((node, index) => <div key={node.id} id={`${listId}-${themeMatches.length + index}`} role="row" aria-selected={themeMatches.length + index === active}
             className={`stellar-search-result ${visibleIds.has(node.id) ? "included" : ""}`}>
             <div role="gridcell"><button className="stellar-search-choice" tabIndex={-1} disabled={disabled || busy}
               onMouseDown={event => event.preventDefault()} onClick={() => choose(node)}>
@@ -127,7 +152,7 @@ export function StellarSearch({ source, author, initialQuery = "", onQueryChange
         </div>
         {busy && <p role="status">{t("Buscando…")}</p>}
         {error && <p role="alert">{error}</p>}
-        {!busy && !error && !results.length && <p role="status">{t("No hay ideas que coincidan con la búsqueda.")}</p>}
+        {!busy && !error && !resultCount && <p role="status">{t(searchesThemes ? "No hay ideas ni temas que coincidan con la búsqueda." : "No hay ideas que coincidan con la búsqueda.")}</p>}
         {cursor !== null && <button className="stellar-search-more" disabled={busy} onClick={() => void more()}>{t("Más resultados")}</button>}
       </div>}
     </div>

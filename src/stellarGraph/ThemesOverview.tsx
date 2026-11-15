@@ -186,24 +186,20 @@ export function ThemesOverview({
         </div>
         <div className="stellar-header-actions">
           {toolbar}
+          <div className="stellar-theme-search-row">
           <StellarSearch source={source} disabled={false} visibleIds={visibleIds}
+            themes={sorted} onChooseTheme={onOpen} onQueryChange={setQuery}
             onChoose={node => { if (!visibleIds.has(node.id)) updateIdeas([...pinned, node]); }}
             onRemove={id => {
               updateIdeas(pinned.filter(node => node.id !== id));
               setPositions(current => Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)));
             }} />
-          <div className="stellar-search">
-            <div className="stellar-search-field">
-              <Icon name="search" size={14} />
-              <input
-                className="stellar-themes-filter"
-                type="search"
-                value={query}
-                placeholder={t("Filtrar temas…")}
-                aria-label={t("Filtrar temas")}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </div>
+          {compact && <button className="stellar-theme-presentation"
+            aria-label={t(directory ? "Ver constelación" : "Ver temas")}
+            title={t(directory ? "Ver constelación" : "Ver temas")}
+            aria-pressed={phoneCanvas} onClick={() => setPhoneCanvas(value => !value)}>
+            <Icon name={directory ? "network" : "list"} size={20} />
+          </button>}
           </div>
         </div>
       </header>
@@ -256,9 +252,7 @@ export function ThemesOverview({
               : `${sorted.length.toLocaleString()} ${t(sorted.length === 1 ? "tema" : "temas")}`}
             {ideaCount !== null && ` · ${tx("{n} ideas únicas en el corpus", { n: ideaCount.toLocaleString() })}`}
           </div>
-          <div className="stellar-navigation">
-            {compact && <button onClick={() => setPhoneCanvas(value => !value)}>{t(directory ? "Ver constelación" : "Ver temas")}</button>}
-            {!directory && <>
+          {!directory && <div className="stellar-navigation">
             <CorpusContextControls context={corpusContext} onFit={() => api.current?.fitContext()} />
             <button aria-label={t("Alejar")} title={t("Alejar")} onClick={() => api.current?.zoom(1 / 1.55)}>
               −
@@ -267,8 +261,7 @@ export function ThemesOverview({
               +
             </button>
             <button onClick={() => api.current?.fit()}>{t("Encuadrar")}</button>
-            </>}
-          </div>
+          </div>}
           {error && (
             <div className="stellar-error" role="alert">
               {error}

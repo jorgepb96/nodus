@@ -8386,3 +8386,8 @@ Object.assign(JA, SIGN_TRANSLATIONS['ja']);
 
 Object.assign(JA, RESEARCH_QUEUE_TRANSLATIONS['ja']);
 Object.assign(JA, PODCAST_TRANSLATIONS['ja']);
+
+Object.assign(JA, {
+  "Buscar ideas y temas": "アイデアとテーマを検索",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "検索に一致するアイデアやテーマはありません。"
+});

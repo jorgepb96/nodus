@@ -1,3 +1,4 @@
+import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
 import { RELEASE_5_17_1_HIGHLIGHTS } from './releaseNotes5171';
 import { RELEASE_5_17_0_HIGHLIGHTS } from './releaseNotes5170';
@@ -673,3 +674,5 @@ RELEASE_NOTES_IT["5.2.1"] = RELEASE_NOTES_IT["5.2.0"];
 
 // 5.4.1 intentionally ships the exact same What's New copy as 5.4.0.
 RELEASE_NOTES_IT["5.4.1"] = RELEASE_NOTES_IT["5.4.0"];
+
+RELEASE_NOTES_IT["5.18.1"] = RELEASE_5_18_1_HIGHLIGHTS.map(row => row["it"]);

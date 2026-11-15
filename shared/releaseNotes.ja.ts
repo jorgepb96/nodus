@@ -1,3 +1,4 @@
+import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
 import { RELEASE_5_17_1_HIGHLIGHTS } from './releaseNotes5171';
 import { RELEASE_5_17_0_HIGHLIGHTS } from './releaseNotes5170';
@@ -749,3 +750,5 @@ export const RELEASE_NOTES_JA: Record<string, string[]> = {
     "「シャーバード」の声を修正しました。エンジンが実際にレンダリングするものである男性の声として表示されるようになりました。",
   ],
 };
+
+RELEASE_NOTES_JA["5.18.1"] = RELEASE_5_18_1_HIGHLIGHTS.map(row => row["ja"]);

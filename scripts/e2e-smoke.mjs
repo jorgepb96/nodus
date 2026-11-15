@@ -2838,7 +2838,7 @@ try {
   await page.getByTestId('study-graph-view').waitFor();
   await page.getByTestId('study-graph-subject').waitFor();
   await page.getByTestId('study-graph-view').getByTestId('stellar-canvas').waitFor();
-  await page.getByTestId('study-graph-view').getByRole('combobox', { name: 'Buscar una idea', exact: true }).waitFor();
+  await page.getByTestId('study-graph-view').getByRole('combobox', { name: 'Buscar ideas y temas', exact: true }).waitFor();
   // Memory-backed study graphs now enter through the same permanent themes hub.
   // Playback belongs to an exploration tab, so exercise that transition explicitly.
   const studyGraph = page.getByTestId('study-graph-view');

@@ -1,3 +1,4 @@
+import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
 import { RELEASE_5_17_1_HIGHLIGHTS } from './releaseNotes5171';
 import { RELEASE_5_17_0_HIGHLIGHTS } from './releaseNotes5170';
@@ -732,3 +733,5 @@ export const RELEASE_NOTES_ZH_TW: Record<string, string[]> = {
     "修復了「Sharvard」語音：現在會顯示為男聲，這也是引擎實際使用的聲音。"
   ]
 };
+
+RELEASE_NOTES_ZH_TW["5.18.1"] = RELEASE_5_18_1_HIGHLIGHTS.map(row => row["zh-TW"]);

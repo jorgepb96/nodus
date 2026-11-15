@@ -9253,3 +9253,8 @@ Object.assign(EN, SIGN_TRANSLATIONS['en']);
 
 Object.assign(EN, RESEARCH_QUEUE_TRANSLATIONS['en']);
 Object.assign(EN, PODCAST_TRANSLATIONS['en']);
+
+Object.assign(EN, {
+  "Buscar ideas y temas": "Search ideas and themes",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "No ideas or themes match your search."
+});

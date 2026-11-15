@@ -9017,3 +9017,8 @@ Object.assign(FR, SIGN_TRANSLATIONS['fr']);
 
 Object.assign(FR, RESEARCH_QUEUE_TRANSLATIONS['fr']);
 Object.assign(FR, PODCAST_TRANSLATIONS['fr']);
+
+Object.assign(FR, {
+  "Buscar ideas y temas": "Rechercher des idées et des thèmes",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "Aucune idée ni aucun thème ne correspond à votre recherche."
+});

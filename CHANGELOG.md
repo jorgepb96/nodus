@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.18.1 — 2026-11-15
+
+### New features
+- Support selected section and podcast downloads in Nodus Link for offline use. Removing a download only removes the iPhone or iPad copy.
+
+### Enhancements
+- Search graph ideas and themes in one field. Use the native iOS full-screen bridge for argument maps and align controls with the tab bar.
+
+### Fixes
+- Show Mobile connection under Application in Settings and find it by Nodus Link, iOS, iPad or Android.
+- Send private Deep Research read marks and annotations to the linked reader without adding them to public publications. Use the computer’s configured index for related search and validate current embedding contracts correctly.
+
 ## 5.18.0 — 2026-11-14
 
 ### New features

@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createHash } from 'node:crypto';
 import { buildServerSnapshot, type BuiltSnapshot } from '../serverSync/serverSnapshot';
 import { mobileConsultationSnapshot } from '../../shared/mobileConsultationSnapshot';
 import { getDb, withVaultDatabase } from '../db/database';
@@ -13,7 +14,7 @@ import { semanticReadQuery, contextReadQuery, validQueryKind } from '../../serve
 // @ts-expect-error The vector wire decoder is JavaScript, bundled by Vite.
 import { decodeVectorSet } from '../../server/lib/core/vectors.mjs';
 // @ts-expect-error Existing Mac vectors use the same explicit legacy contract as Server.
-import { migrateLegacyVectorV1Header, fingerprintEmbeddingContract, embeddingContractsCompatible } from '../../server/lib/core/embeddingContract.mjs';
+import { migrateLegacyVectorV1Header, validateEmbeddingContract, fingerprintEmbeddingContract, embeddingContractsCompatible } from '../../server/lib/core/embeddingContract.mjs';
 // The private live transport uses the same tested read projection as Nodus Server.
 // @ts-expect-error The server module is JavaScript and is bundled by Vite.
 import { createCorpusRoutes } from '../../server/lib/routes/corpus.mjs';
@@ -31,9 +32,36 @@ function databaseStamp(file: string): string {
 }
 export function invalidateLiveCorpus(vaultId: string): void { snapshots.delete(vaultId); invalidateLiveLibrary(vaultId); }
 
+/** Reading marks are personal, so public snapshots intentionally exclude them.
+ * The authenticated companion must still see the same read/unread state as Desktop.
+ * Add only the marks of reports in this vault's private corpus, never to publication. */
+function buildPrivateCorpusSnapshot(vault: NonNullable<ReturnType<typeof getVault>>, bridgeGenealogyEvidence = false): BuiltSnapshot {
+  const db = getDb();
+  const built = buildServerSnapshot(vault, {
+    nodusServerIncludePassages: true, nodusServerIncludeUserContent: true,
+    nodusServerIncludePrimarySources: false, nodusServerIncludeTestimonies: false,
+    ...(vault.type === 'genealogy' ? { bridgeGenealogyEvidence } : {}),
+  }, db);
+  const document = JSON.parse(built.buffer.toString('utf8'));
+  const drafts = document.tables?.writing_saved_drafts;
+  if (!Array.isArray(drafts)) return built;
+  const ids = new Set(drafts.map((draft: {id: string}) => String(draft.id)));
+  const exists = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='writing_draft_reads'").get();
+  const reads = exists
+    ? (db.prepare('SELECT draft_id, updated_at FROM writing_draft_reads ORDER BY draft_id').all() as {draft_id: string; updated_at: string}[])
+      .filter(row => ids.has(String(row.draft_id)))
+    : [];
+  document.tables.writing_draft_reads = reads;
+  const counts = {...built.counts, writing_draft_reads: reads.length};
+  if (document.counts) document.counts.writing_draft_reads = reads.length;
+  // A reading change must invalidate catalogue ETags even though public content is unchanged.
+  const revision = createHash('sha256').update(built.revision).update(JSON.stringify(reads)).digest('base64url');
+  return {...built, counts, revision, buffer: Buffer.from(JSON.stringify(document))};
+}
+
 export async function liveCorpusRevision(vaultId:string):Promise<string>{
   const vault=getVault(vaultId);if(!vault)throw new Error('vault_not_found');
-  const built=await withVaultDatabase(vaultId,()=>buildServerSnapshot(vault,{nodusServerIncludePassages:true,nodusServerIncludeUserContent:true,nodusServerIncludePrimarySources:false,nodusServerIncludeTestimonies:false},getDb()));
+  const built=await withVaultDatabase(vaultId,()=>buildPrivateCorpusSnapshot(vault));
   return built.revision;
 }
 
@@ -47,12 +75,7 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
   const stamp = `${databaseStamp(vault.path)}:genealogy-evidence=${bridgeGenealogyEvidence}`;
   let cached = snapshots.get(vaultId);
   if (!cached || cached.stamp !== stamp) {
-    const value = await withVaultDatabase(vaultId, () => buildServerSnapshot(vault, {
-      nodusServerIncludePassages: true, nodusServerIncludeUserContent: true,
-      // Private domains remain separately granted, never part of this corpus projection.
-      nodusServerIncludePrimarySources: false, nodusServerIncludeTestimonies: false,
-      ...(vault.type === 'genealogy' ? { bridgeGenealogyEvidence } : {}),
-    }, getDb()));
+    const value = await withVaultDatabase(vaultId, () => buildPrivateCorpusSnapshot(vault, bridgeGenealogyEvidence));
     cached = { stamp, value, document: JSON.parse(value.buffer.toString('utf8')), vectors: new Map() };
     snapshots.delete(vaultId); snapshots.set(vaultId, cached);
     if (snapshots.size > 2) snapshots.delete(snapshots.keys().next().value!);
@@ -93,7 +116,14 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
         const summary = describeVectorSet(getDb(), kind);
         if (!summary) return { set: null, locked: null };
         const header = { ...summary, format: 'nodus.vectors', version: 1, quant: 'int8-l2' };
-        const contract = migrateLegacyVectorV1Header(header);
+        // Wire format v1 also carries modern index contracts. Only metadata without
+        // a contract is legacy; migrating a modern header rejects its own contract.
+        const contract = summary.embeddingContract
+          ? validateEmbeddingContract(summary.embeddingContract)
+          : migrateLegacyVectorV1Header(header);
+        if (contract.provider !== summary.provider || contract.model !== summary.model || contract.dim !== summary.dim) {
+          throw new Error('embedding_contract_identity_mismatch');
+        }
         const locked = { contract, fingerprint: fingerprintEmbeddingContract(contract) };
         // A settings identity probe needs only metadata, never a second copy
         // of a potentially large matrix. Build the matrix only for a query.

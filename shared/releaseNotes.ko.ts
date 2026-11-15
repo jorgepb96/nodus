@@ -1,3 +1,4 @@
+import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
 import { RELEASE_5_17_1_HIGHLIGHTS } from './releaseNotes5171';
 import { RELEASE_5_17_0_HIGHLIGHTS } from './releaseNotes5170';
@@ -749,3 +750,5 @@ export const RELEASE_NOTES_KO: Record<string, string[]> = {
     "\"Sharvard\" 음성이 수정되었습니다. 이제 엔진이 실제로 렌더링하는 남성 음성으로 나타납니다.",
   ],
 };
+
+RELEASE_NOTES_KO["5.18.1"] = RELEASE_5_18_1_HIGHLIGHTS.map(row => row["ko"]);

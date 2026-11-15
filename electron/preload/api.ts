@@ -351,6 +351,7 @@ export const nodusApi: NodusApi = {
   getRecoveryStatus: () => ipcRenderer.invoke('recovery:status'),
   chooseRecoveryFolder: (mode, language) => ipcRenderer.invoke('recovery:chooseFolder', mode, language),
   initializeRecoveryFolder: (folder, password, language) => ipcRenderer.invoke('recovery:initialize', folder, password, language),
+  quickStartRecovery: (language, besideExisting) => ipcRenderer.invoke('recovery:quickStart', language, besideExisting),
   restoreRecoverySnapshot: (root, fileName, password, language, onProgress) => {
     const requestId = `recovery-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const listener = (_event: unknown, id: string, progress: RecoveryRestoreProgress) => {

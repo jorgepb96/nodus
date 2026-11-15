@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import type { ZoteroCollection, ZoteroItem, ZoteroLibrary, WorkView, AppSettings } from '@shared/types';
 import { Badge, Icon } from '../components/ui';
 import { VirtualList } from '../components/VirtualList';
+import { ZoteroConnectionNotice } from '../components/ZoteroConnectionNotice';
+import { useZoteroConnection } from '../hooks/useZoteroConnection';
+import { zoteroFailureText } from '../lib/zoteroConnection';
 import { t, tx } from '../i18n';
 
 const ITEM_TYPES = ['journalArticle', 'book', 'bookSection', 'conferencePaper', 'thesis', 'preprint', 'report'];
@@ -134,18 +137,42 @@ export function CollectionsModal({
   const [onlyTag, setOnlyTag] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'unscanned' | 'light' | 'deep' | 'summary'>('all');
 
+  // A closed Zotero used to reject these reads with nobody listening, which left the
+  // tree saying "No collections." — indistinguishable from an empty library. The reads
+  // now wait for a connection that answers, and every failure is shown where the list
+  // would have been.
+  const zotero = useZoteroConnection();
+  const zoteroReady = zotero.status?.ok === true;
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
+
   useEffect(() => {
-    void window.nodus.zoteroLibraries().then((next) => { setLibraries(next); setLibrary(next[0] ?? null); });
     void window.nodus.listWorks({ includeArchived: true }).then((ws) => {
       setWorksByKey(new Map(ws.map((w) => [w.zotero_key, w])));
     });
   }, []);
 
   useEffect(() => {
-    if (!library) return;
+    if (!zoteroReady) return;
+    let cancelled = false;
+    setLoadError(null);
+    window.nodus.zoteroLibraries().then(
+      (next) => { if (!cancelled) { setLibraries(next); setLibrary((current) => current ?? next[0] ?? null); } },
+      (cause) => { if (!cancelled) setLoadError(zoteroFailureText(cause)); },
+    );
+    return () => { cancelled = true; };
+  }, [zoteroReady, reloadNonce]);
+
+  useEffect(() => {
+    if (!library || !zoteroReady) return;
+    let cancelled = false;
     setRoots([]); setSelected(null); setItems([]);
-    void window.nodus.zoteroCollections(library).then(setRoots);
-  }, [library?.type, library?.id]);
+    window.nodus.zoteroCollections(library).then(
+      (next) => { if (!cancelled) { setLoadError(null); setRoots(next); } },
+      (cause) => { if (!cancelled) setLoadError(zoteroFailureText(cause)); },
+    );
+    return () => { cancelled = true; };
+  }, [library?.type, library?.id, zoteroReady, reloadNonce]);
 
   useEffect(() => {
     setMonitoringKeys(settings.monitoredCollections ?? []);
@@ -192,10 +219,18 @@ export function CollectionsModal({
       }
       setLoadingItems(true);
       // Include subcollection items by default so a parent collection isn't shown empty.
-      const data = await window.nodus.zoteroCollectionItems(col.key, { recursive }).catch(() => []);
-      itemCache.set(cacheKey, data);
-      setItems(data);
-      setLoadingItems(false);
+      try {
+        const data = await window.nodus.zoteroCollectionItems(col.key, { recursive });
+        // Only a real answer is cached: caching the failure would keep showing an
+        // empty collection after Zotero came back.
+        itemCache.set(cacheKey, data);
+        setItems(data);
+      } catch (cause) {
+        setItems([]);
+        setLoadError(zoteroFailureText(cause));
+      } finally {
+        setLoadingItems(false);
+      }
     },
     [recursive]
   );
@@ -352,6 +387,8 @@ export function CollectionsModal({
           </div>
         </div>
 
+        {(!zoteroReady || loadError) && <ZoteroConnectionNotice connection={zotero} loadError={loadError} onRetry={() => setReloadNonce((value) => value + 1)} testId="collections-zotero-notice" />}
+
         <div className="flex-1 flex min-h-0">
           {/* Tree */}
           <div className="w-72 border-r border-neutral-800 overflow-y-auto p-2">
@@ -368,7 +405,7 @@ export function CollectionsModal({
                 onSelect={loadItems}
               />
             ))}
-            {roots.length === 0 && <div className="text-neutral-500 text-sm p-2">{t('Sin colecciones.')}</div>}
+            {zoteroReady && !loadError && roots.length === 0 && <div className="text-neutral-500 text-sm p-2" data-testid="zotero-collections-empty">{t('Sin colecciones.')}</div>}
           </div>
 
           {/* Items */}

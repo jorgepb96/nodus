@@ -82,6 +82,23 @@ export function RecoverySetupWizard({
     }
   };
 
+  // A way through for someone who only wants to start: Nodus picks the folder and keeps
+  // the credentials itself, and asks for the recovery kit later. Not offered over an
+  // existing installation, whose vaults deserve a credential their owner chose.
+  const quickStart = async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const next = await window.nodus.quickStartRecovery(language, true);
+      if (next.ok) await onComplete();
+      else setResult(next);
+    } catch (error) {
+      setResult({ ok: false, message: error instanceof Error ? error.message : String(error) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (result?.ok) {
     return (
       <div className="recovery-cinema" data-testid="recovery-setup-success">
@@ -126,6 +143,12 @@ export function RecoverySetupWizard({
             ? (t('Tus bóvedas actuales no se moverán ni se modificarán. Crearemos una primera copia cifrada y verificada antes de activar la recuperación.'))
             : (t('Configura una carpeta segura antes de empezar. Tus bóvedas seguirán trabajando localmente y Nodus guardará aquí copias recuperables.'))}</p>
           <div className="recovery-safety"><Icon name="lock" /><span>{t('La base de datos activa nunca se abre directamente desde Google Drive o Dropbox: así evitamos conflictos y corrupción.')}</span></div>
+          {!status.previousInstallation && (
+            <div className="recovery-quick-start" data-testid="recovery-quick-start">
+              <button className="btn btn-ghost" data-testid="recovery-quick-start-button" disabled={busy} onClick={() => void quickStart()}><Icon name="chevronRight" />{t('Empezar ahora y protegerlo después')}</button>
+              <small>{t('Nodus usará una carpeta propia en este ordenador y te recordará guardar el kit de recuperación más adelante.')}</small>
+            </div>
+          )}
         </aside>
 
         <section className="recovery-form">

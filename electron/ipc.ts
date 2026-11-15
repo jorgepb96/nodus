@@ -155,6 +155,8 @@ import { scanQueue } from './pipeline/scanQueue';
 import {
   getRecoveryStatus,
   initializeRecoveryFolder,
+  initializeDefaultRecoveryFolder,
+  clearQuickStartMarker,
   inspectRecoveryFolderSafely,
   restoreRecoverySnapshot,
 } from './recovery/recoveryManager';
@@ -965,6 +967,8 @@ export function registerIpc(
       throw new Error('La contraseña maestra debe tener al menos 8 caracteres.');
     }
     setBackupPassword(validation.normalized);
+    // A master password the user chose is a credential they hold.
+    clearQuickStartMarker();
   });
   h('backup:clearPassword', async () => clearBackupPassword());
   h('backup:hasPassword', async () => hasBackupPassword());
@@ -1017,6 +1021,8 @@ export function registerIpc(
         `Generated: ${new Date().toISOString()}`,
       ]).join('\n')
     );
+    // The kit is now somewhere the user chose: the quick-start reminder is answered.
+    clearQuickStartMarker();
     return { ok: true, message: filePath };
   });
   // Never rejects: the built-in list is always a complete answer (see tutorialCatalogue).
@@ -1047,6 +1053,9 @@ export function registerIpc(
   });
   h('recovery:initialize', async (_e, folder: string, password: string, language: AppLanguage = 'es') =>
     initializeRecoveryFolder(folder, password, app.getVersion(), language)
+  );
+  h('recovery:quickStart', async (_e, language: AppLanguage = 'es', besideExisting = false) =>
+    initializeDefaultRecoveryFolder(app.getVersion(), language, besideExisting === true)
   );
   h('recovery:restore', async (event, root: string, fileName: string, password: string, language: AppLanguage = 'es', requestId = '') => {
     let lastSentAt = 0;

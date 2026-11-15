@@ -19,6 +19,7 @@ import { academicInitialView, academicNavigation, academicNavigationGroups, acad
 import { headerActionVisible, type HeaderActionId } from '@shared/headerActions';
 import type { AcademicInterfaceProfile } from '@shared/types';
 import { ResearchPreparationWelcome } from './components/ResearchPreparationWelcome';
+import { RecoveryKitReminder, StuckNudge } from './components/FirstRunNudges';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AppSettings, CorpusHealthBucketId, DatabaseSummary, NodiNotification, RecoveryStatus, ServerInboxEntry, SyncLogEntry, VaultSummary, ZoteroSyncStatus } from '@shared/types';
 import type { AnnouncementRefreshResult } from '@shared/announcements';
@@ -1501,6 +1502,8 @@ export function App() {
   const learningSuspended = !settings?.onboardingComplete || !recoveryStatus || (!activeVault?.learningWorkspace && Boolean(recoveryStatus.needsSetup) && (!settings?.academicLearningProgress?.invitationsEligible || Boolean(settings.academicLearningProgress.realSetupStarted))) || paletteOpen || collectionsOpen || feedbackOpen || manualWhatsNewOpen;
   const learningBlocked = learningOverlayBusy || learningSuspended || interfacePickerOpen;
   const learning = useAcademicLearningController({ settings, vault: activeVault, enabled: isAcademic, blocked: learningBlocked, progress: queueActivity.preparation, queue: queueActivity.queue, workWaiting:view==='deepResearch'&&queueActivity.research.some(job=>job.vaultId===activeVault?.id&&['queued','running'].includes(job.status))||view==='dictionary'&&queueActivity.dictionary.some(job=>!['done','degraded','failed'].includes(job.phase)),extractionVersion: JSON.stringify(queueActivity.extraction.map(job=>[job.id,job.status])), view, onSettings: setSettings, navigate: setView });
+  // A guide on screen (an invitation or a practice in progress) owns the user's attention.
+  const learningGuideActive = Boolean(learning.entry) || Boolean(learning.session && !learning.session.paused);
   useEffect(() => {
     const open = () => { setVaultAnchor(null); setInterfacePickerOpen(true); };
     window.addEventListener('nodus:interface-tab', open);
@@ -1979,6 +1982,17 @@ export function App() {
         onLater={() => setDeferredUpdate(updateNoticeKey)}
         onRecovery={() => { void window.nodus.updateSettings(recoverySetupRequest(settings)).then(setSettings); }}
       />}
+
+      {/* The two reminders the first run postpones: neither interrupts a guide in progress. */}
+      {!isPreviewVault && !activeVault?.learningWorkspace && !learningGuideActive && (
+        <RecoveryKitReminder status={recoveryStatus} onSaved={() => void reloadRecoveryStatus()} />
+      )}
+      <StuckNudge
+        eligible={isAcademic && !isPreviewVault && !activeVault?.learningWorkspace && !settings.demoMode && !learningGuideActive && Boolean(settings.academicLearningProgress?.invitationsEligible)}
+        firstAnswerCompleted={Boolean(settings.academicLearningProgress?.lessons['first-answer']?.practiceCompleted)}
+        onResume={() => learning.open('first-answer', 'guide')}
+        onFeedback={() => setFeedbackOpen(true)}
+      />
 
       {settings.demoMode && (
         <div className="flex items-center gap-3 px-4 py-1.5 bg-amber-100 border-b border-amber-300 text-amber-800 text-xs dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300">

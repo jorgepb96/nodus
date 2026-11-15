@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { configureEmbeddingIndex } from '../configureEmbeddingIndex';
+import { saveLearningModels } from './learningModelSetup';
 import type { AppSettings, ModelRef } from '@shared/types';
-import { ACADEMIC_LESSONS, learningModelPatch, learningProgress, learningInvitationPreference } from '@shared/academicLearning';
+import { ACADEMIC_LESSONS, learningProgress, learningInvitationPreference } from '@shared/academicLearning';
 import { learningText, type LearningCopyKey } from '@shared/academicLearningCopy';
-import { getNodusLocalModel, modelRefSupportsExtraction } from '@shared/localAiModels';
+import { modelRefSupportsExtraction } from '@shared/localAiModels';
 import type { AcademicLearningController } from './useAcademicLearning';
 import { LearningDialog } from './LearningDialog';
 import { AcademicLearningSpotlight } from './AcademicLearningSpotlight';
@@ -104,21 +104,13 @@ function LearningModels({ purpose, settings, onClose, onSaved }: { purpose:'chat
   if(!model || needsEmbeddings && !embedding) return;
   setBusy(true);setError('');
   try {
-   const definitions=[...new Set([model,...(needsEmbeddings?[embedding]:[])].filter(m=>m?.provider==='nodus').map(m=>m!.model))].map(id=>getNodusLocalModel(id));
-   if(definitions.length){
-    const status=await window.nodus.getNodusLocalAiStatus();
-    if(definitions.some(d=>d?.runtime==='llama_cpp')&&!status.runtime.ready){setDownload(copy('prepare'));await window.nodus.installNodusLocalRuntime(()=>{});}
-    for(const d of definitions)if(d&&!status.models.some(m=>m.id===d.id&&m.downloaded)){setDownload(d.label);await window.nodus.downloadNodusLocalModel(d.id,()=>{});}
-   }
-   if(needsEmbeddings&&embedding&&!await configureEmbeddingIndex(embedding))return;
-   const fresh=await window.nodus.getSettings();
-   const next=await window.nodus.updateSettings({...learningModelPatch(fresh,purpose,model,needsEmbeddings?embedding:null),favorites:fresh.favorites.some(m=>m.model===model.model&&m.provider===model.provider)?fresh.favorites:[...fresh.favorites,model]});
-   onSaved(next);
+   const next=await saveLearningModels({purpose,model,embedding:needsEmbeddings?embedding:null,onDownload:setDownload,runtimeLabel:copy('prepare')});
+   if(next)onSaved(next);
   }catch(cause){setError(cause instanceof Error?cause.message:String(cause));}finally{setBusy(false);setDownload('');}
  };
  return <LearningDialog title={copy('configure')} testId="learning-model-setup" onClose={()=>{if(!busy)onClose();}}><div className="learning-invitation"><p>{copy(purpose==='chat'?(needsEmbeddings?'twoRoles':'manualPrepare'):'cloud')}</p><p className="learning-muted">{copy('cost')}</p>
   {purpose==='analysis'&&settings.chatModel&&modelRefSupportsExtraction(settings.chatModel)&&<button className="btn btn-ghost border border-neutral-700" onClick={()=>setModel(settings.chatModel)}>{copy('reuseChat')}</button>}
-  <OnboardingModelStep purpose={purpose} cloudFirst showEmbeddings={needsEmbeddings} providerKeys={settings.providerKeys} aiModel={model} embeddingModel={embedding} onAiChange={setModel} onEmbeddingChange={setEmbedding} disabled={busy}/>
+  <OnboardingModelStep purpose={purpose} cloudFirst embeddingChoice showEmbeddings={needsEmbeddings} providerKeys={settings.providerKeys} aiModel={model} embeddingModel={embedding} onAiChange={setModel} onEmbeddingChange={setEmbedding} disabled={busy}/>
   {error&&<p role="alert">{error}</p>}{download&&<p role="status">{download}</p>}
   <div className="flex gap-2"><button className="btn btn-primary" data-testid="learning-model-save" onClick={()=>void save()} disabled={busy||!model||needsEmbeddings&&!embedding}>{busy?copy('prepare'):copy('continue')}</button><button className="btn btn-ghost" disabled={busy} onClick={onClose}>{copy('later')}</button></div>
  </div></LearningDialog>;

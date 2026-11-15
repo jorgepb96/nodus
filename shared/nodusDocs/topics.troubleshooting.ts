@@ -102,18 +102,22 @@ export const TROUBLESHOOTING_DOC_TOPICS: readonly NodusDocTopic[] = [
     id: 'troubleshooting-zotero',
     area: 'troubleshooting',
     title: { es: 'Zotero no conecta o no sincroniza', en: 'Zotero will not connect or sync' },
-    keywords: ['zotero', 'no conecta', 'zotero cerrado', 'api local', 'credenciales caducadas', 'limite', 'sincronizar', 'no aparece la biblioteca', 'sincronizacion interrumpida', 'solo lectura'],
+    keywords: ['zotero', 'no conecta', 'zotero cerrado', 'api local', 'credenciales caducadas', 'limite', 'sincronizar', 'no aparece la biblioteca', 'sincronizacion interrumpida', 'solo lectura', 'plugin', 'importar zotero', 'reintentar'],
     body: {
       es: `- Requisito: Nodus usa la API local de Zotero en modo solo lectura y necesita Zotero 7 o posterior.
 - «Zotero no está disponible. Ábrelo y vuelve a analizar.» es el aviso típico cuando Zotero no está abierto. Además hay que activar en Zotero la opción «Permitir que otras aplicaciones de este ordenador se comuniquen con Zotero» (ajustes avanzados de Zotero).
 - Errores del cliente de Zotero y su significado: «Las credenciales de Zotero han caducado.» (401), «Zotero rechazó el acceso a esta biblioteca.» (403), «Zotero mantiene temporalmente limitado el acceso.» (429), «Zotero respondió HTTP {estado}.» y «No se pudo conectar con Zotero: {detalle}».
 - La pista que muestra la app es: comprobar que Zotero esté abierto y que la opción de comunicación esté activada en los ajustes avanzados de Zotero.
+- Para importar la biblioteca NO hace falta el plugin «Nodus para Zotero»: el plugin es un chat dentro de Zotero y se activa aparte (Ajustes > Integraciones). Si la biblioteca no aparece, la causa es Zotero cerrado o esa casilla sin marcar, no el plugin.
+- El primer arranque, la ventana «Colecciones de Zotero» y Ajustes > Biblioteca muestran el aviso «Nodus todavía no puede leer tu Zotero» con esos dos pasos y vuelven a comprobarlo solos cada pocos segundos durante un par de minutos; después queda el botón «Reintentar».
 - Una sincronización puede quedar «Sincronización interrumpida» o «Sincronización requiere revisión»: los datos locales se conservan y el aviso pide revisar antes de continuar.
 - Zotero se configura en Ajustes > Biblioteca (modo Manual o Tiempo real, tag de lectura, ruta de storage y automatizaciones de análisis). En Testimonios, Prosopografía y Worldbuilding esa pestaña no existe porque no usan Zotero.`,
       en: `- Requirement: Nodus uses Zotero's local API read-only and needs Zotero 7 or later.
 - "Zotero is not available. Open it and analyse again." is the typical notice when Zotero is not running. Zotero's "Allow other applications on this computer to communicate with Zotero" option (in its advanced settings) must also be enabled.
 - Zotero client errors and their meaning: credentials expired (401), Zotero refused access to this library (403), Zotero is temporarily rate-limiting access (429), Zotero answered HTTP {status}, and could not connect to Zotero: {detail}.
 - The hint the app shows is: check that Zotero is open and that the communication option is enabled in Zotero's advanced settings.
+- Importing the library does NOT need the "Nodus for Zotero" plugin: the plugin is a chat inside Zotero and is enabled separately (Settings > Integrations). When the library does not appear, the cause is a closed Zotero or that unticked box, not the plugin.
+- The first run, the "Zotero collections" window and Settings > Library show the notice "Nodus cannot read your Zotero yet" with those two steps and re-check by themselves every few seconds for a couple of minutes; after that the "Retry" button remains.
 - A sync can end as "Sync interrupted" or "Sync needs review": local data is kept and the notice asks for a review before continuing.
 - Zotero is configured in Settings > Library (Manual or Real time mode, reading tag, storage path and analysis automations). Testimonies, Prosopography and Worldbuilding have no such tab because they do not use Zotero.`,
     },

@@ -8,6 +8,7 @@ import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp
 import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { FIRST_RUN_TRANSLATIONS } from './i18n.firstRun';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
@@ -108,6 +109,7 @@ export const KO: Record<string, string> = {
   'El catálogo de documentos guardados tiene un formato inválido.': '저장된 문서 목록의 형식이 잘못되었습니다.',
   ...EMBEDDING_INDEX_TRANSLATIONS["ko"],
   ...BACKUPS_TRANSLATIONS.ko,
+  ...FIRST_RUN_TRANSLATIONS.ko,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ko,
   ...CALENDAR_SYNC_TRANSLATIONS["ko"],

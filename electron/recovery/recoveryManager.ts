@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { app } from 'electron';
 import type {
   AppLanguage,
   RecoveryFolderInspection,
@@ -276,7 +277,15 @@ export async function getRecoveryStatus(): Promise<RecoveryStatus> {
     folder,
     hasPassword: hasBackupPassword(),
     hasRecoveryKey: Boolean(getBackupRecoveryKey()),
+    ...quickStartStatus(configuredRoot),
   };
+}
+
+/** Pending only while the folder in use is still the one the quick start made. */
+function quickStartStatus(configuredRoot: string): Pick<RecoveryStatus, 'credentialsPending' | 'quickStartAt'> {
+  const marker = readQuickStartMarker();
+  const pending = !!marker && !!configuredRoot && path.resolve(marker.folder) === path.resolve(configuredRoot);
+  return { credentialsPending: pending, quickStartAt: pending ? marker.createdAt : null };
 }
 
 function settingsPatch(root: string) {
@@ -316,8 +325,23 @@ export async function initializeRecoveryFolder(
   ja: "フォルダーが時間内に応答しませんでした。オフラインで利用できるようにして、もう一度試してください。", }) };
   }
   if (inspection.kind !== 'empty') return { ok: false, message: inspection.message };
+  const result = await initializeRecoveryRoot(inspection.path, cleanPassword, appVersion, language);
+  // A password the user typed is a credential they hold: nothing is pending any more.
+  if (result.ok) clearQuickStartMarker();
+  return result;
+}
 
-  const root = inspection.path;
+/**
+ * Turn an empty folder into the recovery folder and prove it with a first snapshot.
+ * Everything it changes is put back if any step fails, so a failed attempt leaves the
+ * install exactly as it was — still owing a setup, never half-configured.
+ */
+async function initializeRecoveryRoot(
+  root: string,
+  cleanPassword: string,
+  appVersion: string,
+  language: AppLanguage,
+): Promise<RecoverySetupResult> {
   const previousSettings = getSettings();
   const previousPassword = getBackupPassword();
   const previousRecoveryKey = getBackupRecoveryKey();
@@ -365,6 +389,133 @@ export async function initializeRecoveryFolder(
     }
     return { ok: false, message: error instanceof Error ? error.message : String(error) };
   }
+}
+
+// ── Quick start ─────────────────────────────────────────────────────────────
+//
+// The recovery folder is not only where snapshots go: the Global Library lives inside
+// it (`<folder>/nodus-library`), so nothing can be imported until one exists. The wizard
+// therefore stood between a newcomer and their first document, asking for a folder, a
+// master password and a recovery kit before there was anything to protect.
+//
+// A quick start makes the same folder without asking: a default location, a generated
+// password kept in the OS-protected store, and the usual recovery key. It is the state
+// a restore-by-recovery-key already leaves behind ("generate a fresh password; the user
+// can replace it in Settings and export a new kit"), reached from the other direction.
+// What it cannot do is hand the user a credential, so it leaves a marker that keeps the
+// "save your recovery kit" reminder alive until they do.
+
+interface QuickStartMarker {
+  format: 'nodus.recovery-quick-start';
+  formatVersion: 1;
+  folder: string;
+  createdAt: string;
+}
+
+function quickStartMarkerPath(): string {
+  return path.join(app.getPath('userData'), 'recovery-quick-start.json');
+}
+
+function readQuickStartMarker(): QuickStartMarker | null {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(quickStartMarkerPath(), 'utf8')) as Partial<QuickStartMarker>;
+    return parsed.format === 'nodus.recovery-quick-start' && typeof parsed.folder === 'string' && typeof parsed.createdAt === 'string'
+      ? { format: parsed.format, formatVersion: 1, folder: parsed.folder, createdAt: parsed.createdAt }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The user now holds a credential of their own (they saved the kit or chose a master
+ * password), so the reminder has nothing left to ask for.
+ */
+export function clearQuickStartMarker(): void {
+  try { fs.rmSync(quickStartMarkerPath(), { force: true }); } catch { /* best effort */ }
+}
+
+/**
+ * Where a quick start puts the data, most preferred first.
+ *
+ * `~/Nodus`, like `~/Zotero`: visible in the file manager and outside the folders
+ * macOS guards with a permission prompt (Documents, Desktop, Downloads). An isolated
+ * profile (`NODUS_USERDATA`: tests, demos, a second instance) must never write outside
+ * itself, so it keeps the folder inside the profile.
+ */
+export function defaultRecoveryFolderCandidates(): string[] {
+  const override = process.env.NODUS_DEFAULT_RECOVERY_FOLDER?.trim();
+  const base = override
+    ? path.resolve(override)
+    : process.env.NODUS_USERDATA
+      ? path.join(app.getPath('userData'), 'Nodus')
+      : path.join(app.getPath('home'), 'Nodus');
+  return [base, ...[2, 3, 4, 5, 6, 7, 8, 9].map((n) => `${base} ${n}`)];
+}
+
+export async function initializeDefaultRecoveryFolder(
+  appVersion: string,
+  language: AppLanguage = 'es',
+  /** The user has seen the wizard and chose to start fresh next to an earlier folder. */
+  besideExisting = false,
+): Promise<RecoverySetupResult> {
+  const settings = getSettings();
+  // Never over an install that already has a folder: this is for a first run only.
+  if ((settings.recoverySetupVersion ?? 0) >= RECOVERY_SETUP_VERSION && settings.autoBackupFolder?.trim()) {
+    return { ok: true, message: settings.autoBackupFolder, folder: settings.autoBackupFolder };
+  }
+  let lastMessage = '';
+  const candidates = defaultRecoveryFolderCandidates();
+  for (const [index, candidate] of candidates.entries()) {
+    let inspection: RecoveryFolderInspection;
+    try {
+      fs.mkdirSync(candidate, { recursive: true });
+      inspection = inspectRecoveryFolder(candidate, language);
+    } catch (error) {
+      lastMessage = error instanceof Error ? error.message : String(error);
+      continue;
+    }
+    // The preferred folder already holds a Nodus recovery: this is someone coming back
+    // (a reinstall, a restored home folder). Their snapshots need the credential they
+    // chose, so the decision goes to the wizard instead of being made around them.
+    if (inspection.kind === 'recovery' && index === 0 && !besideExisting) {
+      return { ok: false, message: inspection.message, existingRecoveryFolder: inspection.path };
+    }
+    if (inspection.kind !== 'empty') {
+      lastMessage = inspection.message;
+      continue;
+    }
+    const result = await initializeRecoveryRoot(inspection.path, generateBackupPassword(), appVersion, language);
+    if (!result.ok) {
+      lastMessage = result.message;
+      continue;
+    }
+    try {
+      fs.writeFileSync(quickStartMarkerPath(), JSON.stringify({
+        format: 'nodus.recovery-quick-start', formatVersion: 1, folder: inspection.path, createdAt: new Date().toISOString(),
+      } satisfies QuickStartMarker, null, 2));
+    } catch { /* The folder works without the reminder; losing it must not fail setup. */ }
+    // The key is deliberately not returned: nobody is on a screen that would show it.
+    // It stays in the protected store and reaches the user through the recovery kit.
+    return { ok: true, message: result.message, snapshot: result.snapshot, folder: inspection.path };
+  }
+  return {
+    ok: false,
+    message: lastMessage || tr(language, {
+      es: 'No se pudo preparar una carpeta para Nodus.',
+      en: 'A folder for Nodus could not be prepared.',
+      fr: 'Impossible de préparer un dossier pour Nodus.',
+      de: 'Es konnte kein Ordner für Nodus vorbereitet werden.',
+      pt: 'Não foi possível preparar uma pasta para o Nodus.',
+      'pt-BR': 'Não foi possível preparar uma pasta para o Nodus.',
+      it: 'Impossibile preparare una cartella per Nodus.',
+      tr: 'Nodus için bir klasör hazırlanamadı.',
+      'zh-CN': '无法为 Nodus 准备文件夹。',
+      'zh-TW': '無法為 Nodus 準備資料夾。',
+      ja: 'Nodus 用のフォルダーを準備できませんでした。',
+      ko: 'Nodus용 폴더를 준비하지 못했습니다.',
+    }),
+  };
 }
 
 export async function restoreRecoverySnapshot(

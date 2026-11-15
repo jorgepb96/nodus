@@ -1,4 +1,5 @@
 import { AcademicLearningCatalog } from '../learning/AcademicLearningSurface';
+import { ZoteroConnectionStatus } from '../components/ZoteroConnectionNotice';
 import { openAcademicLearning } from '../learning/AcademicLearningContext';
 import { NodusSupportSettings } from './settings/NodusSupportSettings';
 import { ACADEMIC_ALWAYS_VISIBLE, academicCustomizationPatch, academicSidebarEditorState, academicToolkitPages } from '../academicInterfaceProfiles';
@@ -1060,6 +1061,7 @@ export function Settings({
 
       {visibleSettingsSection('library', 'Zotero y sincronización', 'zotero sincronizacion manual tiempo real storage tag lectura') && (
           <Section title={t('Zotero y sincronización')} icon="book">
+            <ZoteroConnectionStatus />
             <Row label={t('Modo de sincronización')}>
               <select className="input" value={settings.syncMode} onChange={(e) => patch({ syncMode: e.target.value as any })}>
                 <option value="manual">{t('Manual')}</option>
@@ -2564,6 +2566,9 @@ export function Settings({
           <Section title={`${t('Nodus para Zotero')} · beta`} icon="puzzle">
             <p className="text-xs text-neutral-500">
               {t('Chat de Nodus dentro de Zotero: pregunta sobre el ítem abierto con el contexto de tu biblioteca (resumen, ideas, conexiones). Instala el plugin en Zotero; se conecta a Nodus automáticamente.')}
+            </p>
+            <p className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs leading-5 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950/50 dark:text-neutral-400" data-testid="zotero-plugin-not-required">
+              {t('Este plugin es opcional y no sirve para importar. Para traer tu biblioteca de Zotero a Nodus basta con tener Zotero abierto: se hace desde Biblioteca, sin instalar nada.')}
             </p>
             <div className="flex items-center justify-between gap-4">
               <label className="text-sm text-neutral-300">{t('Activar el servidor de Nodus para Zotero')}</label>

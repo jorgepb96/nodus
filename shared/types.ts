@@ -2644,6 +2644,14 @@ export interface RecoveryStatus {
   hasPassword: boolean;
   hasRecoveryKey: boolean;
   health: RecoveryHealth;
+  /**
+   * The folder was prepared without asking (a first-run quick start) and the user has
+   * not yet saved the recovery kit or chosen a master password of their own. Their data
+   * is protected on this computer; they could not restore it on another one.
+   */
+  credentialsPending?: boolean;
+  /** ISO time of that quick start, while it is still pending. */
+  quickStartAt?: string | null;
 }
 
 export interface RecoverySetupResult {
@@ -2652,6 +2660,13 @@ export interface RecoverySetupResult {
   snapshot?: RecoverySnapshotSummary;
   /** Shown once after setup so the user can store an independent credential. */
   recoveryKey?: string;
+  /** The folder now in use (quick start: the one Nodus picked). */
+  folder?: string;
+  /**
+   * Quick start only: the default location already holds a Nodus recovery folder, so
+   * the wizard must ask whether to restore it rather than starting beside it.
+   */
+  existingRecoveryFolder?: string;
 }
 
 export type RecoveryRestoreProgressPhase =
@@ -9615,6 +9630,13 @@ export interface NodusApi extends StudyFocusApi, ProsopographyApi, TestimoniesAp
   chooseRecoveryFolder(mode: 'create' | 'restore', language?: AppLanguage): Promise<RecoveryFolderInspection | null>;
   /** Create a recovery root and commit its first verified full-state snapshot. */
   initializeRecoveryFolder(path: string, password: string, language?: AppLanguage): Promise<RecoverySetupResult>;
+  /**
+   * First run: prepare the recovery folder in a default location with generated
+   * credentials, without asking. Leaves `credentialsPending` set on the status.
+   * `besideExisting` starts fresh even when the default location already holds an
+   * earlier Nodus recovery folder (the wizard passes it once the user has decided).
+   */
+  quickStartRecovery(language?: AppLanguage, besideExisting?: boolean): Promise<RecoverySetupResult>;
   /** Restore a selected snapshot from an existing recovery root. */
   restoreRecoverySnapshot(
     root: string,

@@ -159,6 +159,12 @@ assert.equal(indexer.manualIndexStatus().state, 'error');
 assert.equal(notes.getNote(c.note.id).content, 'Offline content');
 fail = false; await indexer.runManualIndex(vault.id);
 assert.equal(indexer.manualIndexStatus().state, 'ready');
+// A theme is part of an idea's embedding text: the index must read it, or the stored
+// vector is rejected as "source changed" and the index never becomes ready.
+manual.saveManualIdea({ ...payload, themes: ['Memoria colectiva'] });
+await indexer.runManualIndex(vault.id);
+assert.equal(indexer.manualIndexStatus().state, 'ready', JSON.stringify(indexer.manualIndexStatus()));
+assert.ok(ideas.getIdea(a.globalId).embedding, 'an idea with a theme is indexed');
 const targetIndex = api.indexes.createIndex(db.getDb(), api.indexes.embeddingProfile({ ...settings.getSettings(), embeddingProvider: 'openai', embeddingModel: 'other-model' }));
 db.getDb().prepare('UPDATE embedding_index_state SET pending_id=?').run(targetIndex.id);
 api.indexes.commitEmbeddingIndex(db.getDb(), api.indexes.indexContext(db.getDb(), targetIndex));

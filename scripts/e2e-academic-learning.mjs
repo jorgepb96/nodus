@@ -78,7 +78,7 @@ try{
  await page.getByTestId(`vault-library-item-${workId}`).locator('input[type="checkbox"]').waitFor();
  await page.getByTestId('learning-prepare-selected').click();await page.getByTestId('learning-model-setup').waitFor();assert.equal(generations+embeddings,0,'models require an explicit action');
  await page.getByTestId('learning-model-setup').getByRole('button',{name:'Local: opción avanzada',exact:true}).click();
- for(const [role,model]of[['onboarding-ai-model','fixture-chat'],['onboarding-embedding-model','fixture-embedding']]){await page.getByTestId(`${role}-trigger`).click();await page.getByTestId(`${role}-search`).fill(model);await page.getByRole('option').filter({hasText:'LM Studio'}).first().click();}
+ for(const [role,model]of[['onboarding-ai-model','fixture-chat'],['onboarding-embedding-model','fixture-embedding']]){if(role==='onboarding-embedding-model')await page.getByTestId('onboarding-embedding-mode-local').click();await page.getByTestId(`${role}-trigger`).click();await page.getByTestId(`${role}-search`).fill(model);await page.getByRole('option').filter({hasText:'LM Studio'}).first().click();}
  await page.getByTestId('learning-model-save').click();await page.getByTestId('learning-model-setup').waitFor({state:'detached'});
  const setup=await waitState(page,s=>s.chatModel?.model==='fixture-chat','chat-only setup');assert.equal(setup.synthesisModel,null);assert.equal(setup.extractionModel,null);assert.equal(setup.modelSettingsMode,'advanced');assert.equal(setup.embeddingModel,'fixture-embedding');
  await page.getByTestId('learning-prepare-selected').click();

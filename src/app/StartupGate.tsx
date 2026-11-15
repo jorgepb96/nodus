@@ -16,7 +16,7 @@ import type { ReactNode } from 'react';
 import type { AppSettings, RecoveryStatus, VaultSummary } from '@shared/types';
 import type { View } from '../navigation';
 import { BASICS_TUTORIAL_VERSION, BasicsTutorial } from '../views/BasicsTutorial';
-import { AcademicLearningWelcome } from '../learning/AcademicLearningWelcome';
+import { FirstRunStart } from '../views/FirstRunStart';
 import { FirstVaultSetup } from '../views/FirstVaultSetup';
 import { Onboarding } from '../views/Onboarding';
 import { RecoverySetupWizard } from '../views/RecoverySetupWizard';
@@ -119,15 +119,30 @@ const SETTLED_GUARDS: readonly Guard<SettledState>[] = [
       <FirstVaultSetup
         vault={state.activeVault!}
         onComplete={async () => {
-          await Promise.all([state.reloadSettings(), state.reloadVaults()]);
+          // The vault screen also prepares the recovery folder (a quick start), so the
+          // status the later guards read has to be the one that follows it.
+          await Promise.all([state.reloadSettings(), state.reloadVaults(), state.reloadRecoveryStatus()]);
         }}
       />
     ),
   },
   {
+    // Where a new academic vault begins: bring sources, choose the AI, and arrive in
+    // the chat with a question ready. The id is the one the welcome card had, because
+    // it is the same step of the sequence — only what it asks for has changed.
     id: 'academic-learning-welcome',
     when: state => !state.isPreviewVault && (state.newInstall || Boolean(state.settings.academicLearningProgress?.freshIntroductionPending)) && state.activeVault?.type === 'academic' && state.settings.firstVaultVersion > 0 && !state.settings.onboardingComplete && !state.settings.academicLearningProgress?.welcomeComplete,
-    render: state => <AcademicLearningWelcome settings={state.settings} vault={state.activeVault!} onDone={state.reloadSettings}/>,
+    render: state => (
+      <FirstRunStart
+        settings={state.settings}
+        vault={state.activeVault!}
+        reloadRecoveryStatus={state.reloadRecoveryStatus}
+        onDone={async (view) => {
+          await state.reloadSettings();
+          if (view) state.setView(view);
+        }}
+      />
+    ),
   },
   {
     id: 'recovery-status-unknown',

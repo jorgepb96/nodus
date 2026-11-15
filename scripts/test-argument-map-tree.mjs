@@ -136,14 +136,15 @@ test('the catalogue and open maps are persistent workspace tabs', () => {
   const javascript = ts.transpileModule(`return (${maps[0].expression.getText(source)});`, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React },
   }).outputText;
-  const renderTabs = new Function('React', 'ArgumentMapTab', 'openArgumentMaps', 'surface', 'activeMapKey', 'readOnly', 'mobile', javascript);
+  const renderTabs = new Function('React', 'ArgumentMapTab', 'openArgumentMaps', 'surface', 'activeMapKey', 'readOnly', 'mobile', 'onFullscreenChange', javascript);
   const tabs = [{ key: 'auto:a', mode: 'auto' }, { key: 'saved:b', mode: 'ai' }];
   const React = { createElement: (type, props) => ({ type, props }) };
   const ArgumentMapTab = () => {};
+  const onFullscreenChange = () => {};
   for (const readOnly of [false, true]) {
     for (const surface of ['catalog', 'map']) {
       for (const activeKey of tabs.map(tab => tab.key)) {
-        const elements = renderTabs(React, ArgumentMapTab, tabs, surface, activeKey, readOnly, false);
+        const elements = renderTabs(React, ArgumentMapTab, tabs, surface, activeKey, readOnly, false, onFullscreenChange);
         assert.equal(elements.length, tabs.length, 'returning to the catalogue keeps every map mounted');
         elements.forEach((element, index) => {
           assert.equal(element.type, ArgumentMapTab);
@@ -151,6 +152,7 @@ test('the catalogue and open maps are persistent workspace tabs', () => {
           assert.equal(element.props.tab, tabs[index]);
           assert.equal(element.props.active, surface === 'map' && activeKey === tabs[index].key);
           assert.equal(element.props.readOnly, readOnly, 'each saved map receives the reader permission');
+          assert.equal(element.props.onFullscreenChange, onFullscreenChange, 'each mounted tab receives the native full-screen callback');
         });
       }
     }

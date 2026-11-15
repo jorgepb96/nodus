@@ -204,7 +204,7 @@ try {
  await hub().waitFor();
  await waitForHubIds(expectedThemeIds);
  await page.screenshot({path:root+'/output/stellar-tabs/themes.png'});
- const hubSearch=hub().getByRole('combobox',{name:'Buscar una idea'});
+ const hubSearch=hub().getByRole('combobox',{name:'Buscar ideas y temas',exact:true});
  await hubSearch.fill(''); await hubSearch.focus();
  await hub().locator('.stellar-search-toggle').first().waitFor();
  const pinnedLabel=await hub().locator('.stellar-search-choice strong').first().innerText();

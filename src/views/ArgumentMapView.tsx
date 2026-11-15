@@ -79,12 +79,15 @@ export function ArgumentMapView({
   readOnly=false,
   initialMap,
   initialSeed,
+  onFullscreenChange,
 }: {
   settings: AppSettings;
   mobile?:boolean;
   readOnly?:boolean;
   initialMap?:ArgumentMap;
   initialSeed?:string;
+  /** Embedded mobile hosts own fullscreen instead of the browser API. */
+  onFullscreenChange?: (fullscreen: boolean) => Promise<void>;
   /** Where this section was last left. Read once, at mount, and never again. */
   snapshot?: ArgumentSnapshot;
   onSnapshotChange?: (patch: Partial<ArgumentSnapshot>) => void;
@@ -513,7 +516,7 @@ export function ArgumentMapView({
         </section>
 
         {openArgumentMaps.map((tab) => (
-          <ArgumentMapTab key={tab.key} tab={tab} readOnly={readOnly} active={surface === 'map' && activeMapKey === tab.key} onCancel={mobile && tab.mode !== 'auto' ? () => {
+          <ArgumentMapTab key={tab.key} tab={tab} readOnly={readOnly} onFullscreenChange={onFullscreenChange} active={surface === 'map' && activeMapKey === tab.key} onCancel={mobile && tab.mode !== 'auto' ? () => {
             void (window.nodus as unknown as {cancelMobileArgumentMap(seedId:string):Promise<void>}).cancelMobileArgumentMap(tab.ideaId)
               .catch(error=>setOpenArgumentMaps(current=>current.map(item=>item.key===tab.key?{...item,error:String(error)}:item)));
           } : undefined} />
@@ -523,7 +526,7 @@ export function ArgumentMapView({
   );
 }
 
-function ArgumentMapTab({ tab, active, onCancel, readOnly=false }: { tab: ArgumentMapTabState; active: boolean; onCancel?:()=>void; readOnly?:boolean }) {
+function ArgumentMapTab({ tab, active, onCancel, readOnly=false, onFullscreenChange }: { tab: ArgumentMapTabState; active: boolean; onCancel?:()=>void; readOnly?:boolean; onFullscreenChange?: (fullscreen: boolean) => Promise<void> }) {
   // Every open map owns its reveal and detail state. Keeping this inside the tab is
   // what makes switching maps preserve the exact branches and side panel the reader
   // was using in each one.
@@ -531,12 +534,40 @@ function ArgumentMapTab({ tab, active, onCancel, readOnly=false }: { tab: Argume
   const workspaceRef = useRef<HTMLElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenError, setFullscreenError] = useState(false);
+  const fullscreenHost = useRef(onFullscreenChange);
+  fullscreenHost.current = onFullscreenChange;
+  const nativeFullscreen = useRef(false);
+  const fullscreenTransition = useRef(0);
+
+  // Closing a map or returning to the catalogue restores the native app controls.
+  // A pending bridge response must not re-enter fullscreen after that transition.
+  useEffect(() => {
+    if (!active) setFullscreen(false);
+    return () => {
+      fullscreenTransition.current += 1;
+      if (nativeFullscreen.current) {
+        nativeFullscreen.current = false;
+        void fullscreenHost.current?.(false).catch(() => {});
+      }
+    };
+  }, [active]);
 
   useEffect(() => {
-    const update = () => setFullscreen(document.fullscreenElement === workspaceRef.current);
+    const update = () => {
+      if (!fullscreenHost.current) setFullscreen(document.fullscreenElement === workspaceRef.current);
+    };
     // Electron does not consistently leave HTML full screen on Escape itself.
     // Consume it before the detail panel so the selected evidence stays open.
     const exitOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && fullscreenHost.current && nativeFullscreen.current) {
+        event.preventDefault(); event.stopPropagation();
+        const transition = ++fullscreenTransition.current;
+        void fullscreenHost.current(false).then(() => {
+          if (transition !== fullscreenTransition.current) return;
+          nativeFullscreen.current = false; setFullscreen(false);
+        }).catch(() => setFullscreenError(true));
+        return;
+      }
       if (event.key !== 'Escape' || document.fullscreenElement !== workspaceRef.current) return;
       event.preventDefault();
       event.stopPropagation();
@@ -553,6 +584,19 @@ function ArgumentMapTab({ tab, active, onCancel, readOnly=false }: { tab: Argume
   const toggleFullscreen = async () => {
     setFullscreenError(false);
     try {
+      if (fullscreenHost.current) {
+        const next = !nativeFullscreen.current;
+        const transition = ++fullscreenTransition.current;
+        nativeFullscreen.current = next;
+        try {
+          await fullscreenHost.current(next);
+          if (transition === fullscreenTransition.current) setFullscreen(next);
+        } catch (error) {
+          if (transition === fullscreenTransition.current) nativeFullscreen.current = !next;
+          throw error;
+        }
+        return;
+      }
       if (document.fullscreenElement === workspaceRef.current) await document.exitFullscreen();
       else await workspaceRef.current?.requestFullscreen();
     } catch {
@@ -650,7 +694,7 @@ function ArgumentMapTab({ tab, active, onCancel, readOnly=false }: { tab: Argume
   };
 
   return (
-    <section ref={workspaceRef} className={active ? 'argument-map-tab flex h-full min-h-0' : 'hidden'}>
+    <section ref={workspaceRef} className={active ? `argument-map-tab flex h-full min-h-0${fullscreen && onFullscreenChange ? ' is-native-fullscreen' : ''}` : 'hidden'}>
       <div className="flex min-w-0 flex-1 flex-col">
         {tab.map && (
           <div className="argument-view-switch">

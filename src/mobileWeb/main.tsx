@@ -515,7 +515,7 @@ function App() {
             onOpenMaterial={id=>navigate('studyMaterial',id)} onOpenDocument={id=>navigate('studyDocument',id)}
             onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
       : config.surface === 'graph' ? <StellarWorkspace allowNoteCopy={!config.linkReadOnly} source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
-      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView readOnly={config.linkReadOnly} settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap}/>
+      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView readOnly={config.linkReadOnly} settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap} onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)}/>
       : config.surface==='databasePresentation'&&config.initialDatabasePresentation?<MobileDatabasePresentation target={config.initialDatabasePresentation} call={native.nodusMobileCall} downloadedOnly={Boolean(config.pageDownloadedOnly)} phone={config.device==='phone'} onOpen={id=>navigate('databaseRow',id)}/>
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
@@ -535,7 +535,7 @@ function App() {
               onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId={null} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
-      : <ArgumentMapView readOnly={config.linkReadOnly} settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
+      : <ArgumentMapView readOnly={config.linkReadOnly} settings={settings} mobile initialSeed={config.initialArgumentSeed} onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)}/>}
     </div>
     <FeedbackHost/>
   </main>;

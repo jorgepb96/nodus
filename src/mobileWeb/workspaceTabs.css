@@ -202,7 +202,27 @@
   margin: 0;
 }
 .mobile-surface :is(.stellar-new-tab, .stellar-fullscreen) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  flex: 0 0 44px;
+  width: 44px;
   min-width: 44px;
   height: var(--mobile-workspace-tab-height);
   min-height: var(--mobile-workspace-tab-height);
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  line-height: 1;
+  background: var(--stellar-bg);
+  border: 1px solid var(--stellar-line);
+  border-bottom-color: transparent;
+  border-radius: 9px 9px 0 0;
 }
+.mobile-surface :is(.stellar-new-tab, .stellar-fullscreen) > svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.mobile-surface .stellar-fullscreen > span { display: none; }

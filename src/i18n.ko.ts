@@ -8386,3 +8386,8 @@ Object.assign(KO, SIGN_TRANSLATIONS['ko']);
 
 Object.assign(KO, RESEARCH_QUEUE_TRANSLATIONS['ko']);
 Object.assign(KO, PODCAST_TRANSLATIONS['ko']);
+
+Object.assign(KO, {
+  "Buscar ideas y temas": "아이디어 및 주제 검색",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "검색과 일치하는 아이디어나 주제가 없습니다."
+});

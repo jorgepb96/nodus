@@ -8775,3 +8775,8 @@ Object.assign(TR, SIGN_TRANSLATIONS['tr']);
 
 Object.assign(TR, RESEARCH_QUEUE_TRANSLATIONS['tr']);
 Object.assign(TR, PODCAST_TRANSLATIONS['tr']);
+
+Object.assign(TR, {
+  "Buscar ideas y temas": "Fikir ve tema ara",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "Aramanızla eşleşen fikir veya tema yok."
+});

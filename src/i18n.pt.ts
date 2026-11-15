@@ -8966,3 +8966,8 @@ Object.assign(PT, SIGN_TRANSLATIONS['pt']);
 
 Object.assign(PT, RESEARCH_QUEUE_TRANSLATIONS['pt']);
 Object.assign(PT, PODCAST_TRANSLATIONS['pt']);
+
+Object.assign(PT, {
+  "Buscar ideas y temas": "Pesquisar ideias e temas",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "Nenhuma ideia ou tema corresponde à pesquisa."
+});

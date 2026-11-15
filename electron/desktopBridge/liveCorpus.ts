@@ -3,7 +3,9 @@ import { createHash } from 'node:crypto';
 import { buildServerSnapshot, type BuiltSnapshot } from '../serverSync/serverSnapshot';
 import { mobileConsultationSnapshot } from '../../shared/mobileConsultationSnapshot';
 import { getDb, withVaultDatabase } from '../db/database';
-import { getVault } from '../vaults/vaultRegistry';
+import { getVault, withOwningVault } from '../vaults/vaultRegistry';
+import { semanticSearch as searchDesktopByMeaning } from '../ai/semanticSearch';
+import {buildSectionDownload} from './sectionDownloads';
 import { statSync } from 'node:fs';
 import { readPrivateSourceContext } from './privateSources';
 import { privateContextRevision } from './privateSourceContext';
@@ -19,10 +21,10 @@ import { migrateLegacyVectorV1Header, validateEmbeddingContract, fingerprintEmbe
 // @ts-expect-error The server module is JavaScript and is bundled by Vite.
 import { createCorpusRoutes } from '../../server/lib/routes/corpus.mjs';
 
-type LiveSnapshot = { stamp: string; value: BuiltSnapshot; document: unknown; vectors: Map<VectorKind, ReturnType<typeof decodeVectorSet>> };
+type LiveSnapshot = { stamp: string; value: BuiltSnapshot; document: unknown; vectors: Map<VectorKind, ReturnType<typeof decodeVectorSet>>; sectionDownload?: {name: string; result: ReturnType<typeof buildSectionDownload>} };
 const snapshots = new Map<string, LiveSnapshot>();
 export function isReadOnlyCorpusQuery(method: string | undefined, path: string | undefined): boolean {
-  return method === 'POST' && (path === 'search/semantic' || path === 'context');
+  return method === 'POST' && (path === 'search/semantic' || path === 'search/related' || path === 'context');
 }
 function databaseStamp(file: string): string {
   return [file, `${file}-wal`].map(name => {
@@ -32,9 +34,9 @@ function databaseStamp(file: string): string {
 }
 export function invalidateLiveCorpus(vaultId: string): void { snapshots.delete(vaultId); invalidateLiveLibrary(vaultId); }
 
-/** Reading marks are personal, so public snapshots intentionally exclude them.
- * The authenticated companion must still see the same read/unread state as Desktop.
- * Add only the marks of reports in this vault's private corpus, never to publication. */
+/** Reading marks and annotations are personal, so public snapshots exclude them.
+ * The authenticated companion must see the same reading state as Desktop.
+ * Add only rows for reports in this vault's private corpus, never to publication. */
 function buildPrivateCorpusSnapshot(vault: NonNullable<ReturnType<typeof getVault>>, bridgeGenealogyEvidence = false): BuiltSnapshot {
   const db = getDb();
   const built = buildServerSnapshot(vault, {
@@ -52,10 +54,20 @@ function buildPrivateCorpusSnapshot(vault: NonNullable<ReturnType<typeof getVaul
       .filter(row => ids.has(String(row.draft_id)))
     : [];
   document.tables.writing_draft_reads = reads;
-  const counts = {...built.counts, writing_draft_reads: reads.length};
-  if (document.counts) document.counts.writing_draft_reads = reads.length;
-  // A reading change must invalidate catalogue ETags even though public content is unchanged.
-  const revision = createHash('sha256').update(built.revision).update(JSON.stringify(reads)).digest('base64url');
+  const hasAnnotations = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='writing_draft_annotations'").get();
+  const annotations = hasAnnotations
+    ? (db.prepare('SELECT * FROM writing_draft_annotations ORDER BY id').all() as {draft_id: string}[])
+      .filter(row => ids.has(String(row.draft_id)))
+    : [];
+  document.tables.writing_draft_annotations = annotations;
+  const counts = {...built.counts, writing_draft_reads: reads.length, writing_draft_annotations: annotations.length};
+  if (document.counts) {
+    document.counts.writing_draft_reads = reads.length;
+    document.counts.writing_draft_annotations = annotations.length;
+  }
+  // Personal changes invalidate private catalogue/detail ETags without changing publication.
+  const revision = createHash('sha256').update(built.revision)
+    .update(JSON.stringify({reads, annotations})).digest('base64url');
   return {...built, counts, revision, buffer: Buffer.from(JSON.stringify(document))};
 }
 
@@ -68,6 +80,23 @@ export async function liveCorpusRevision(vaultId:string):Promise<string>{
 export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse, url: URL, vaultId: string, segments: string[], input?: Record<string, unknown>, domains: readonly string[] = []): Promise<void> {
   const vault = getVault(vaultId);
   if (!vault) { res.writeHead(404); res.end(); return; }
+  if (req.method === 'POST' && segments.join('/') === 'search/related') {
+    // The companion sends text, never provider credentials or a different embedding model.
+    // Reuse Desktop's active-index retrieval under the explicitly linked vault. This only
+    // embeds the query; it cannot prepare, activate or modify a corpus index.
+    const query = typeof input?.query === 'string' ? input.query.trim() : '';
+    const limit = typeof input?.limit === 'number' && Number.isInteger(input.limit) ? input.limit : 50;
+    if (vault.type !== 'academic' || query.length < 2 || query.length > 4096 || limit < 1 || limit > 50) {
+      res.writeHead(400, {'content-type': 'application/json'});
+      res.end(JSON.stringify({error: 'invalid_query'})); return;
+    }
+    const result = await withOwningVault(vaultId, () => withVaultDatabase(vaultId, async () => {
+      try { return await searchDesktopByMeaning(query, {kinds: ['idea', 'work', 'passage'], limit}); }
+      catch { return {available: false, results: [], warning: 'semantic_search_unavailable'}; }
+    }));
+    res.writeHead(200, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store'});
+    res.end(JSON.stringify(result)); return;
+  }
   if (segments[0] === 'library') { await serveLiveLibrary(req, res, url, vaultId, segments.slice(1)); return; }
   // Evidence quotations are private source content. Ordinary kinship/place metadata
   // remains corpus-only; a cache built with a stronger grant cannot answer a weaker one.
@@ -81,6 +110,23 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
     if (snapshots.size > 2) snapshots.delete(snapshots.keys().next().value!);
   }
   const built = cached.value;
+  if (segments.length === 3 && segments[0] === 'downloads' && segments[1] === 'sections' && ['GET','HEAD'].includes(req.method ?? '')) {
+    try {
+      // Retain at most one bounded section per cached vault. A HEAD poll on an unchanged
+      // database must not rebuild the graph or repeatedly encode all report illustrations.
+      const section = cached.sectionDownload?.name === segments[2] ? cached.sectionDownload.result
+        : await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => buildSectionDownload(built, segments[2])));
+      cached.sectionDownload = {name: segments[2], result: section};
+      res.writeHead(200, {'content-type': 'application/json; charset=utf-8', 'content-length': section.buffer.length,
+        'x-nodus-revision': section.revision, 'cache-control': 'no-store'});
+      res.end(req.method === 'HEAD' ? undefined : section.buffer);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'section_download_failed';
+      res.writeHead(code === 'section_download_too_large' ? 413 : 400, {'content-type': 'application/json'});
+      res.end(req.method === 'HEAD' ? undefined : JSON.stringify({error: code}));
+    }
+    return;
+  }
   res.setHeader('x-nodus-revision', built.revision);
   res.setHeader('cache-control', 'no-store');
   if (isReadOnlyCorpusQuery(req.method, segments.join('/'))) {

@@ -61,15 +61,17 @@
 
 /* Only the workspace enters the top layer: source details remain usable beside it. */
 .argument-map-tab:fullscreen { width: 100vw; height: 100vh; background: #090d1b; }
-.argument-map-tab:fullscreen .argument-view-switch,
-.argument-map-tab:fullscreen .argument-atlas-heading,
-.argument-map-tab:fullscreen .argument-overview { display: none; }
-.argument-map-tab:fullscreen .argument-atlas { min-height: 0; }
+/* WKWebView fullscreen stays inside the app's safe viewport, above the section tabs. */
+.argument-map-tab.is-native-fullscreen { position: fixed; inset: 0; z-index: 100; width: 100%; height: 100%; background: #090d1b; }
+.argument-map-tab:is(:fullscreen, .is-native-fullscreen) .argument-view-switch,
+.argument-map-tab:is(:fullscreen, .is-native-fullscreen) .argument-atlas-heading,
+.argument-map-tab:is(:fullscreen, .is-native-fullscreen) .argument-overview { display: none; }
+.argument-map-tab:is(:fullscreen, .is-native-fullscreen) .argument-atlas { min-height: 0; }
 .argument-fullscreen-toggle { position: absolute; top: 17px; right: 20px; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--atlas-line); border-radius: 8px; background: var(--atlas-controls); color: var(--atlas-text); font-size: 11px; cursor: pointer; }
 .argument-fullscreen-error { position: absolute; right: 20px; top: 62px; max-width: 280px; padding: 10px; border: 1px solid var(--atlas-line); border-radius: 8px; background: var(--atlas-controls); color: var(--atlas-text); font-size: 11px; }
 .argument-canvas-caption { max-width: calc(100% - 285px); }
 .argument-canvas-caption > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.light .argument-map-tab:fullscreen { background: #f6f7fc; }
+.light .argument-map-tab:is(:fullscreen, .is-native-fullscreen) { background: #f6f7fc; }
 .light .argument-wire { stroke: color-mix(in srgb, currentColor 65%, #273756); opacity: .7; }
 .light .is-traced .argument-wire { opacity: 1; }
 .light .argument-node { border-color: color-mix(in srgb, var(--branch-color) 40%, #b4bbcc); box-shadow: 0 8px 24px #2737560d; }

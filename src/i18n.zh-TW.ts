@@ -8031,3 +8031,8 @@ Object.assign(ZH_TW, SIGN_TRANSLATIONS['zh-TW']);
 
 Object.assign(ZH_TW, RESEARCH_QUEUE_TRANSLATIONS['zh-TW']);
 Object.assign(ZH_TW, PODCAST_TRANSLATIONS['zh-TW']);
+
+Object.assign(ZH_TW, {
+  "Buscar ideas y temas": "搜尋想法與主題",
+  "No hay ideas ni temas que coincidan con la búsqueda.": "沒有符合搜尋的想法或主題。"
+});

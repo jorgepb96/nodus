@@ -20,7 +20,7 @@ async function loadGate() {
     logLevel: 'silent',
   });
   const module = await import(pathToFileURL(bundle));
-  return { Gate: module.AiRequestGate, Scheduler: module.AiRequestScheduler, output };
+  return { Gate: module.AiRequestGate, Scheduler: module.AiRequestScheduler, embeddingRequestClass: module.embeddingRequestClass, output };
 }
 
 const descriptor = (overrides = {}) => ({
@@ -360,6 +360,31 @@ test('model snapshots report aggregate model capacity across credential scopes',
     assert.ok(snapshot.active <= snapshot.currentLimit);
     release();
     await Promise.all(work);
+  } finally {
+    await rm(output, { recursive: true, force: true });
+  }
+});
+
+test('a question asked during local indexing waits for one batch, not the whole queue', async () => {
+  const { Scheduler, embeddingRequestClass, output } = await loadGate();
+  try {
+    assert.equal(embeddingRequestClass('nodus', 'query'), 'interactive');
+    assert.equal(embeddingRequestClass('nodus', 'document'), 'embedding');
+    assert.equal(embeddingRequestClass('nodus'), 'embedding');
+    assert.equal(embeddingRequestClass('ollama', 'query'), 'interactive');
+    assert.equal(embeddingRequestClass('openai', 'query'), 'embedding', 'remote accounts keep their embedding concurrency');
+    // The live failure: BGE-M3 on one slot, a long document's batches queued, then a question.
+    const scheduler = new Scheduler({ globalLimit: 4, policyFor: () => ({ mode: 'automatic', initial: 1, maximum: 1, manualLimit: 1 }) });
+    const local = (requestClass) => ({ provider: 'nodus', model: 'bge-m3-q8_0-cls', credentialScope: 'local', endpoint: 'nodus-local-runtime', requestClass });
+    const order = [];
+    let releaseRunning;
+    const running = scheduler.run(local(embeddingRequestClass('nodus', 'document')), () => new Promise((resolve) => { releaseRunning = () => { order.push('batch-0'); resolve(); }; }));
+    const queued = [1, 2, 3].map((n) => scheduler.run(local(embeddingRequestClass('nodus', 'document')), async () => { order.push(`batch-${n}`); }));
+    const question = scheduler.run(local(embeddingRequestClass('nodus', 'query')), async () => { order.push('question'); });
+    await new Promise((resolve) => setImmediate(resolve));
+    releaseRunning();
+    await Promise.all([running, question, ...queued]);
+    assert.deepEqual(order, ['batch-0', 'question', 'batch-1', 'batch-2', 'batch-3']);
   } finally {
     await rm(output, { recursive: true, force: true });
   }

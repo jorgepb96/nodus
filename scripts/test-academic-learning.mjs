@@ -155,6 +155,21 @@ test('annotations remain inside narrow and scaled windows and leave their contro
   }
  }
 });
+test('a large dialog never loses its close button under the card',()=>{
+ // Measured from a real failure: the citation dialog filled the window, no free space
+ // was left, and the cheapest place for the card was over the dialog's close button.
+ const viewport={width:1389,height:868},target={left:199,top:304,width:991,height:347};
+ const close={left:1160,top:226,width:28,height:28};
+ const controls=[close,{left:221,top:280,width:200,height:30}];
+ const card=G.placeGuide(target,{width:318,height:250},viewport,controls,[close]);
+ const overlap=Math.max(0,Math.min(card.left+card.width,close.left+close.width)-Math.max(card.left,close.left))*Math.max(0,Math.min(card.top+card.height,close.top+close.height)-Math.max(card.top,close.top));
+ assert.equal(overlap,0,JSON.stringify(card));
+ assert.ok(card.left>=0&&card.top>=0&&card.left+card.width<=viewport.width&&card.top+card.height<=viewport.height);
+ // Without the protection the same geometry covers the close button, which is why it exists.
+ const unprotected=G.placeGuide(target,{width:318,height:250},viewport,controls);
+ const covered=Math.max(0,Math.min(unprotected.left+unprotected.width,close.left+close.width)-Math.max(unprotected.left,close.left))*Math.max(0,Math.min(unprotected.top+unprotected.height,close.top+close.height)-Math.max(unprotected.top,close.top));
+ assert.ok(covered>0,'the fixture reproduces the failure without protection');
+});
 test('annotations also leave nearby form inputs reachable',()=>{
  const target={left:1200,top:240,width:200,height:40};
  const controls=[target,{left:800,top:180,width:320,height:100},{left:1200,top:298,width:240,height:90}];

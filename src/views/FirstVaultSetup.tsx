@@ -124,7 +124,7 @@ export function FirstVaultSetup({
 
             <div className="mt-4 text-left">
               <div className="mb-1.5 text-xs text-neutral-500">{t('Tipo de bóveda')}</div>
-              <VaultTypePicker value={type} onChange={setType} disabled={busy} />
+              <VaultTypePicker value={type} onChange={setType} disabled={busy} foldEarlyPhases />
             </div>
 
             {error && <p role="alert" data-testid="first-vault-error" className="mt-3 rounded-lg border border-red-900/60 bg-red-950/20 px-3 py-2 text-left text-xs text-red-300">{error}</p>}

@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { VaultType } from '@shared/types';
 import { isPreviewVaultType, VAULT_TYPE_COLORS, VAULT_TYPES } from '@shared/vaultTypes';
-import { t } from '../i18n';
+import { t, tx } from '../i18n';
 import { ConfirmModal } from './ConfirmModal';
 import { Icon } from './ui';
 
@@ -230,19 +230,38 @@ export function PreAlphaVaultConfirmation({
  * Shared verbatim by the switcher's creation modal and the first-run chooser, testids
  * included, so an e2e assertion about the picker holds wherever it is rendered.
  */
+/** Vault types still in alpha or pre-alpha: real, but not where a first impression belongs. */
+export function isEarlyPhaseVaultType(type: VaultType): boolean {
+  const phase = vaultTypePhase(type);
+  return phase === 'alpha' || phase === 'pre-alpha';
+}
+
 export function VaultTypePicker({
   value,
   onChange,
   disabled = false,
+  foldEarlyPhases = false,
 }: {
   value: VaultType;
   onChange: (type: VaultType) => void;
   disabled?: boolean;
+  /**
+   * Keep alpha and pre-alpha types behind one "more types" button. The first-run
+   * screen uses it: someone meeting Nodus for the first time should not have to read
+   * four PRE-ALPHA badges before they have seen anything work. The type in use is
+   * always shown, and the button reveals the rest without hiding anything for good.
+   */
+  foldEarlyPhases?: boolean;
 }) {
+  const [showEarly, setShowEarly] = useState(false);
+  const early = foldEarlyPhases ? CREATE_VAULT_TYPES.filter(isEarlyPhaseVaultType) : [];
+  const visible = foldEarlyPhases && !showEarly
+    ? CREATE_VAULT_TYPES.filter((type) => !isEarlyPhaseVaultType(type) || type === value)
+    : CREATE_VAULT_TYPES;
   return (
     <>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="vault-type-picker">
-        {CREATE_VAULT_TYPES.map((tp) => {
+        {visible.map((tp) => {
           const soon = isComingSoonVaultType(tp);
           return (
             <button
@@ -278,6 +297,11 @@ export function VaultTypePicker({
           );
         })}
       </div>
+      {early.length > 0 && !showEarly && (
+        <button type="button" className="mt-2 inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300" data-testid="vault-type-more" disabled={disabled} onClick={() => setShowEarly(true)}>
+          <Icon name="chevronDown" size={12} /> {tx('Ver {n} tipos más, todavía en desarrollo', { n: early.filter((type) => type !== value).length })}
+        </button>
+      )}
       {vaultTypePhase(value) && <VaultPhaseNotice phase={vaultTypePhase(value)!} />}
       {isPreviewVaultType(value) && <PreviewNotice />}
     </>

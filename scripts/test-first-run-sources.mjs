@@ -126,3 +126,22 @@ test('the first run is wired where the welcome card was, and reaches Zotero with
   assert.match(collections, /ZoteroConnectionNotice/, 'the collections window explains a Zotero that does not answer');
   assert.equal(/zoteroLibraries\(\)\.then\(\(next\) => \{ setLibraries/.test(collections), false, 'no unhandled Zotero read is left behind');
 });
+
+test('the first vault folds the early-phase types, and the first answer leads to ideas', async () => {
+  const [picker, vault, surface, learning, app] = await Promise.all([
+    readFile('src/components/vaultTypeUi.tsx', 'utf8'),
+    readFile('src/views/FirstVaultSetup.tsx', 'utf8'),
+    readFile('src/learning/AcademicLearningSurface.tsx', 'utf8'),
+    readFile('src/learning/useAcademicLearning.ts', 'utf8'),
+    readFile('src/App.tsx', 'utf8'),
+  ]);
+  assert.match(vault, /<VaultTypePicker[^>]*foldEarlyPhases/, 'only the first-run screen folds them');
+  assert.match(picker, /phase === 'alpha' \|\| phase === 'pre-alpha'/, 'beta types stay visible; alpha and pre-alpha fold');
+  assert.match(picker, /!isEarlyPhaseVaultType\(type\) \|\| type === value/, 'the type in use is never hidden');
+  assert.match(picker, /data-testid="vault-type-more"/);
+  assert.match(surface, /data-testid="learning-next-ideas"/, 'a verified first answer offers the ideas of that source');
+  assert.match(surface, /data-testid="learning-extract-current"/, 'extraction runs on the lesson source without finding its row');
+  assert.match(learning, /lessonId:\s*'first-idea'|newPractice\(vault\.id, 'first-idea'/);
+  assert.match(learning, /step: 1, documentId/, 'the ideas lesson starts at "extract" with the source chosen');
+  assert.match(app, /onContinueWithIdeas=\{async documentId =>[\s\S]{0,240}chooseInterface\('intermediate'\)/, 'ideas live in the Intermediate interface');
+});

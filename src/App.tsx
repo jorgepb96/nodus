@@ -2312,6 +2312,10 @@ export function App() {
           {isAcademic && <LearningWorkspaceBar controller={learning} settings={settings}/>}
           {isAcademic && <AcademicLearningCoach controller={learning} settings={settings} blocked={learningSuspended || learningOverlayBusy} navigate={setView} openIdea={openIdea} openGraph={id => navigate('graph', { preset: 'overview', nodeId: id })} prepareQuestion={documentId => {
             requestLearningPrompt({ vaultId: activeVault!.id, sessionId: learning.session!.id, documentId, prompt: learningText('suggestedQuestion', settings.uiLanguage) }); setView('researchChat');
+          }} onContinueWithIdeas={async documentId => {
+            // Ideas live in the Intermediate interface; switching to it starts no analysis.
+            if (settings.academicInterfaceProfile === 'simple') await chooseInterface('intermediate');
+            learning.continueWithIdeas(documentId);
           }} />}
           <div className="min-h-0 flex-1 overflow-hidden">
           <Suspense fallback={<div className="grid h-full place-items-center text-sm text-neutral-500"><span className="flex items-center gap-2"><Icon name="sync" className="animate-spin" /> {t('Cargando...')}</span></div>}>

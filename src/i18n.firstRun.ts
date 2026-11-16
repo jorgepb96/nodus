@@ -7,6 +7,14 @@
  */
 export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' | 'it' | 'tr' | 'zh-CN' | 'zh-TW' | 'ja' | 'ko', Record<string, string>> = {
   en: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "Show {n} more types, still in development",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "What comes next goes beyond chat: the ideas in this source, each with its evidence, connected in a graph.",
+    "Extraer ideas de esta fuente":
+      "Extract ideas from this source",
+    "Ver las ideas de esta fuente":
+      "See the ideas in this source",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "{collections} collection(s) selected, with their subcollections. Nodus prepares a few works first so you can try it right away.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -183,6 +191,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "This plugin is optional and is not used for importing. To bring your Zotero library into Nodus you only need Zotero open: it is done from the Library, with nothing to install.",
   },
   fr: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "Voir {n} autres types, encore en développement",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "La suite va au-delà du chat : les idées de cette source, chacune avec sa preuve, reliées dans un graphe.",
+    "Extraer ideas de esta fuente":
+      "Extraire les idées de cette source",
+    "Ver las ideas de esta fuente":
+      "Voir les idées de cette source",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "{collections} collection(s) sélectionnée(s), avec leurs sous-collections. Nodus prépare d’abord quelques ouvrages pour que vous puissiez essayer tout de suite.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -359,6 +375,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Ce plugin est facultatif et ne sert pas à importer. Pour importer votre bibliothèque Zotero dans Nodus, il suffit que Zotero soit ouvert : cela se fait depuis la Bibliothèque, sans rien installer.",
   },
   de: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "{n} weitere Typen anzeigen, noch in Entwicklung",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "Als Nächstes geht es über den Chat hinaus: die Ideen dieser Quelle, jede mit ihrem Beleg, verbunden in einem Graphen.",
+    "Extraer ideas de esta fuente":
+      "Ideen aus dieser Quelle extrahieren",
+    "Ver las ideas de esta fuente":
+      "Ideen dieser Quelle ansehen",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "{collections} Sammlung(en) ausgewählt, mit ihren Untersammlungen. Nodus bereitet zuerst einige Werke vor, damit du es sofort ausprobieren kannst.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -535,6 +559,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Dieses Plugin ist optional und dient nicht dem Import. Um deine Zotero-Bibliothek in Nodus zu holen, muss nur Zotero geöffnet sein: Das geht in der Bibliothek, ohne etwas zu installieren.",
   },
   pt: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "Ver mais {n} tipos, ainda em desenvolvimento",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "O passo seguinte vai além do chat: as ideias desta fonte, cada uma com a sua evidência, ligadas num grafo.",
+    "Extraer ideas de esta fuente":
+      "Extrair ideias desta fonte",
+    "Ver las ideas de esta fuente":
+      "Ver as ideias desta fonte",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "{collections} coleção(ões) selecionada(s), com as suas subcoleções. O Nodus prepara primeiro algumas obras para que possas experimentar já.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -711,6 +743,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Este plugin é opcional e não serve para importar. Para trazer a tua biblioteca do Zotero para o Nodus basta ter o Zotero aberto: faz-se a partir da Biblioteca, sem instalar nada.",
   },
   "pt-BR": {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "Ver mais {n} tipos, ainda em desenvolvimento",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "O próximo passo vai além do chat: as ideias desta fonte, cada uma com sua evidência, conectadas em um grafo.",
+    "Extraer ideas de esta fuente":
+      "Extrair ideias desta fonte",
+    "Ver las ideas de esta fuente":
+      "Ver as ideias desta fonte",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "{collections} coleção(ões) selecionada(s), com suas subcoleções. O Nodus prepara primeiro algumas obras para que você possa testar já.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -887,6 +927,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Este plugin é opcional e não serve para importar. Para trazer sua biblioteca do Zotero para o Nodus basta ter o Zotero aberto: isso é feito pela Biblioteca, sem instalar nada.",
   },
   it: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "Mostra altri {n} tipi, ancora in sviluppo",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "Il passo successivo va oltre la chat: le idee di questa fonte, ciascuna con le sue prove, collegate in un grafo.",
+    "Extraer ideas de esta fuente":
+      "Estrai le idee da questa fonte",
+    "Ver las ideas de esta fuente":
+      "Vedi le idee di questa fonte",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "{collections} collezione/i selezionata/e, con le relative sottocollezioni. Nodus prepara prima alcune opere, così puoi provarlo subito.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -1063,6 +1111,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Questo plugin è facoltativo e non serve per importare. Per portare la tua biblioteca Zotero in Nodus basta avere Zotero aperto: si fa dalla Biblioteca, senza installare nulla.",
   },
   tr: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "Hâlâ geliştirilmekte olan {n} türü daha göster",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "Sıradaki adım sohbetin ötesine geçiyor: bu kaynağın fikirleri, her biri kanıtıyla, bir grafikte birbirine bağlı.",
+    "Extraer ideas de esta fuente":
+      "Bu kaynaktan fikir çıkar",
+    "Ver las ideas de esta fuente":
+      "Bu kaynağın fikirlerini gör",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "Alt koleksiyonlarıyla birlikte {collections} koleksiyon seçildi. Hemen deneyebilmen için Nodus önce birkaç eseri hazırlar.",
     "{n} obra(s) · {m} subcolección(es)":
@@ -1239,6 +1295,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Bu eklenti isteğe bağlıdır ve içe aktarmak için kullanılmaz. Zotero kütüphaneni Nodus’a getirmek için Zotero’nun açık olması yeterlidir: bu işlem Kütüphane’den, hiçbir şey kurmadan yapılır.",
   },
   "zh-CN": {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "查看另外 {n} 种仍在开发中的类型",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "下一步超越聊天：这份来源中的观点，每个都附有证据，并在图谱中相互连接。",
+    "Extraer ideas de esta fuente":
+      "提取这份来源的观点",
+    "Ver las ideas de esta fuente":
+      "查看这份来源的观点",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "已选择 {collections} 个合集（含其子合集）。Nodus 会先准备其中几份文献，让你马上就能试用。",
     "{n} obra(s) · {m} subcolección(es)":
@@ -1415,6 +1479,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "此插件为可选项，并不用于导入。要将 Zotero 文献库导入 Nodus，只需保持 Zotero 打开：在文献库中即可完成，无需安装任何东西。",
   },
   "zh-TW": {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "查看另外 {n} 種仍在開發中的類型",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "下一步超越聊天：這份來源中的觀點，每個都附有證據，並在圖譜中相互連接。",
+    "Extraer ideas de esta fuente":
+      "擷取這份來源的觀點",
+    "Ver las ideas de esta fuente":
+      "查看這份來源的觀點",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "已選擇 {collections} 個合集（含其子合集）。Nodus 會先準備其中幾份文獻，讓你馬上就能試用。",
     "{n} obra(s) · {m} subcolección(es)":
@@ -1591,6 +1663,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "此外掛為選用項目，並不用於匯入。要將 Zotero 文獻庫匯入 Nodus，只需保持 Zotero 開啟：在文獻庫中即可完成，無需安裝任何東西。",
   },
   ja: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "開発中のタイプをさらに {n} 件表示",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "次はチャットの先へ。この出典のアイデアを根拠付きで取り出し、グラフでつなげます。",
+    "Extraer ideas de esta fuente":
+      "この出典からアイデアを抽出",
+    "Ver las ideas de esta fuente":
+      "この出典のアイデアを見る",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "コレクション {collections} 件を選択しました（サブコレクションを含む）。すぐに試せるよう、Nodus はまず数件の資料を準備します。",
     "{n} obra(s) · {m} subcolección(es)":
@@ -1767,6 +1847,14 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "このプラグインは任意で、インポートには使いません。Zotero ライブラリを Nodus に取り込むには Zotero を開いておくだけで十分です。ライブラリから行え、インストールは不要です。",
   },
   ko: {
+    "Ver {n} tipos más, todavía en desarrollo":
+      "개발 중인 유형 {n}개 더 보기",
+    "Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.":
+      "다음 단계는 채팅을 넘어섭니다. 이 출처의 아이디어를 근거와 함께 그래프로 연결합니다.",
+    "Extraer ideas de esta fuente":
+      "이 출처에서 아이디어 추출",
+    "Ver las ideas de esta fuente":
+      "이 출처의 아이디어 보기",
     "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
       "하위 컬렉션을 포함해 컬렉션 {collections}개를 선택했습니다. 바로 사용해 볼 수 있도록 Nodus가 먼저 자료 몇 개를 준비합니다.",
     "{n} obra(s) · {m} subcolección(es)":

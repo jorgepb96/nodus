@@ -77,6 +77,22 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
   commitSession(next);
   navigate(ACADEMIC_LESSONS.find(l => l.id === lessonId)!.destination as View);
  }, [commitSession, save, navigate]);
+ /**
+  * Straight from a verified answer to the ideas of the same source. The first-idea
+  * lesson starts at "extract" with that document already chosen: the person has just
+  * proved it is searchable, so asking them to pick it again would be a step for nothing.
+  */
+ const continueWithIdeas = useCallback((documentId: string) => {
+  const { vault, settings, enabled } = scope.current;
+  if (!enabled || !vault || !settings) return;
+  setEntry(null); markSkipped('first-idea');
+  const previous = scope.current.session ?? settings.academicPracticeSession;
+  const next: AcademicPracticeSession = { ...newPractice(vault.id, 'first-idea', crypto.randomUUID()), step: 1, documentId };
+  const { checkpoints: _oldCheckpoints, ...oldCheckpoint } = previous ?? {};
+  next.checkpoints = { ...previous?.checkpoints, ...(previous ? { [previous.lessonId]: oldCheckpoint } : {}) };
+  commitSession(next);
+  navigate('library');
+ }, [commitSession, navigate]);
  const open = useCallback((lessonId: AcademicLessonId, mode: 'invite'|'guide'|'demo'|'practice'|'resume' = 'invite') => {
   if (!scope.current.enabled || !LESSON_IDS.includes(lessonId)) return;
   markSkipped(lessonId);
@@ -246,6 +262,6 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
   if(vault?.learningWorkspace)await window.nodus.closeAcademicLearningWorkspace(discard);
  };
  const context: AcademicLearningContextValue | null = enabled && vault ? { vaultId: vault.id, workspace:!!vault.learningWorkspace,epoch:epoch.current, session: session?.vaultId === vault.id ? session : null, observe, requestExtraction, requireModels, prepareAddition } : null;
- return { context, session, entry, modelsPurpose, setModelsPurpose, inventory, policy, ideaCount, error, progress, queue, workWaiting,workspace,returnToWork,open, startPractice, dismiss, selectSource, importSample, refresh, observe, save, pause, requireModels, view };
+ return { context, session, entry, modelsPurpose, setModelsPurpose, inventory, policy, ideaCount, error, progress, queue, workWaiting,workspace,returnToWork,open, startPractice, continueWithIdeas, dismiss, selectSource, importSample, refresh, observe, save, pause, requireModels, view };
 }
 export type AcademicLearningController = ReturnType<typeof useAcademicLearningController>;

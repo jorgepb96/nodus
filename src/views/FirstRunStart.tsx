@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppSettings, ModelRef, RecoveryStatus, VaultSummary, ZoteroCollection } from '@shared/types';
 import { LEARNING_VERSION, newPractice } from '@shared/academicLearning';
 import { DEFAULT_EMBEDDING_MODELS } from '@shared/providers';
@@ -312,10 +312,11 @@ export function FirstRunStart({
   });
 
   const selectedCount = selectedCollections.size;
-  const selectedItems = useMemo(
-    () => (collections ?? []).filter((collection) => selectedCollections.has(collection.key)).reduce((sum, collection) => sum + collection.itemCount, 0),
-    [collections, selectedCollections],
-  );
+  const toggleCollection = (key: string, checked: boolean) => setSelectedCollections((current) => {
+    const next = new Set(current);
+    if (checked) next.add(key); else next.delete(key);
+    return next;
+  });
 
   if (stage === 'recovery' && recoveryStatus) {
     return (
@@ -393,25 +394,10 @@ export function FirstRunStart({
                     <p className="first-run-hint">{t('Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.')}</p>
                     <ul className="first-run-collections" data-testid="first-run-collections">
                       {collections.map((collection) => (
-                        <li key={collection.key}>
-                          <label>
-                            <input
-                              type="checkbox"
-                              data-testid={`first-run-collection-${collection.key}`}
-                              checked={selectedCollections.has(collection.key)}
-                              onChange={(event) => setSelectedCollections((current) => {
-                                const next = new Set(current);
-                                if (event.target.checked) next.add(collection.key); else next.delete(collection.key);
-                                return next;
-                              })}
-                            />
-                            <span className="first-run-collection-name">{collection.library.type === 'group' ? `${collection.library.name} · ` : ''}{collection.name}</span>
-                            <span className="first-run-collection-count">{tx('{n} obra(s)', { n: collection.itemCount })}</span>
-                          </label>
-                        </li>
+                        <CollectionRow key={collection.key} collection={collection} depth={0} selected={selectedCollections} onToggle={toggleCollection} />
                       ))}
                     </ul>
-                    {selectedCount > 0 && <p className="first-run-hint" data-testid="first-run-zotero-summary">{tx('{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.', { collections: selectedCount, items: selectedItems })}</p>}
+                    {selectedCount > 0 && <p className="first-run-hint" data-testid="first-run-zotero-summary">{tx('{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.', { collections: selectedCount })}</p>}
                   </>
                 )
               )}
@@ -531,6 +517,57 @@ export function FirstRunStart({
         )}
       </main>
     </div>
+  );
+}
+
+/**
+ * One collection, and its subcollections on demand.
+ *
+ * Real libraries keep their works in subcollections: a «Thesis» folder with 15 chapters
+ * holds no item of its own, and listing it as "0 works" made it look empty. So a parent
+ * says how many subcollections it has, can be opened to pick one of them, and picking
+ * the parent itself takes everything under it (the sync follows descendants).
+ */
+function CollectionRow({ collection, depth, selected, onToggle }: {
+  collection: ZoteroCollection; depth: number; selected: Set<string>; onToggle: (key: string, checked: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [children, setChildren] = useState<ZoteroCollection[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const expand = () => {
+    setOpen((value) => !value);
+    if (children !== null) return;
+    window.nodus.zoteroChildCollections(collection.key, collection.library)
+      .then(setChildren, () => { setChildren([]); setFailed(true); });
+  };
+  const count = collection.itemCount > 0 && collection.subCount > 0
+    ? tx('{n} obra(s) · {m} subcolección(es)', { n: collection.itemCount, m: collection.subCount })
+    : collection.subCount > 0 ? tx('{m} subcolección(es)', { m: collection.subCount })
+    : tx('{n} obra(s)', { n: collection.itemCount });
+  return (
+    <li>
+      <div className="first-run-collection-row" style={{ paddingLeft: `${0.4 + depth * 1.1}rem` }}>
+        {collection.subCount > 0
+          ? <button type="button" className="first-run-collection-toggle" aria-expanded={open} aria-label={tx('Ver subcolecciones de {name}', { name: collection.name })} data-testid={`first-run-collection-expand-${collection.key}`} onClick={expand}><Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} /></button>
+          : <span className="first-run-collection-toggle" aria-hidden="true" />}
+        <label>
+          <input
+            type="checkbox"
+            data-testid={`first-run-collection-${collection.key}`}
+            checked={selected.has(collection.key)}
+            onChange={(event) => onToggle(collection.key, event.target.checked)}
+          />
+          <span className="first-run-collection-name">{depth === 0 && collection.library.type === 'group' ? `${collection.library.name} · ` : ''}{collection.name}</span>
+          <span className="first-run-collection-count">{count}</span>
+        </label>
+      </div>
+      {open && (
+        children === null
+          ? <p className="first-run-hint" style={{ paddingLeft: `${2 + depth * 1.1}rem` }} role="status"><Icon name="sync" size={12} className="animate-spin" /> {t('Leyendo tus colecciones…')}</p>
+          : failed ? <p className="first-run-hint" style={{ paddingLeft: `${2 + depth * 1.1}rem` }}>{t('No se pudieron leer las subcolecciones. Puedes marcar la colección completa.')}</p>
+          : <ul>{children.map((child) => <CollectionRow key={child.key} collection={child} depth={depth + 1} selected={selected} onToggle={onToggle} />)}</ul>
+      )}
+    </li>
   );
 }
 

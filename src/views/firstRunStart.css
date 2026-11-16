@@ -93,16 +93,21 @@
   border: 1px solid rgb(127 127 127 / 0.25);
   border-radius: 0.7rem;
 }
-.first-run-collections li + li { border-top: 1px solid rgb(127 127 127 / 0.16); }
+.first-run-collections > li + li { border-top: 1px solid rgb(127 127 127 / 0.16); }
+.first-run-collection-row { display: flex; align-items: center; gap: 0.2rem; }
+.first-run-collection-row:hover { background: rgb(127 127 127 / 0.1); }
+.first-run-collection-toggle { display: grid; place-items: center; flex: 0 0 1.4rem; height: 1.4rem; border-radius: 0.35rem; opacity: 0.7; }
+button.first-run-collection-toggle:hover { opacity: 1; background: rgb(127 127 127 / 0.15); }
 .first-run-collections label {
   display: flex;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.2rem;
   font-size: 0.82rem;
   cursor: pointer;
 }
-.first-run-collections label:hover { background: rgb(127 127 127 / 0.1); }
 .first-run-collection-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .first-run-collection-count { flex: 0 0 auto; font-size: 0.72rem; opacity: 0.6; }
 .first-run-detail > .first-run-collections + .first-run-hint { margin-top: 0.5rem; }

@@ -7,6 +7,18 @@
  */
 export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' | 'it' | 'tr' | 'zh-CN' | 'zh-TW' | 'ja' | 'ko', Record<string, string>> = {
   en: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "{collections} collection(s) selected, with their subcollections. Nodus prepares a few works first so you can try it right away.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} work(s) · {m} subcollection(s)",
+    "{m} subcolección(es)":
+      "{m} subcollection(s)",
+    "{n} obra(s)":
+      "{n} work(s)",
+    "Ver subcolecciones de {name}":
+      "Show subcollections of {name}",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "The subcollections could not be read. You can tick the whole collection.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus checks by itself every few seconds, and this notice will change as soon as Zotero answers.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -29,8 +41,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "On this computer",
     "Con un servicio externo (API)":
       "With an external service (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Free and private: your texts never leave the computer. The first time, it downloads a model of about 350 MB.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Free and private: your texts never leave the computer. The first time, it downloads the chosen model, a few hundred MB.",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Nothing to download and fast on any computer. It uses your provider’s key and has a small cost.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -103,8 +115,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Your Zotero has no collections yet. Create one in Zotero with a few works and it will appear here, or start with files on your computer.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Tick one or more collections. A small one is enough to start: you can add the rest of your library later.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} collection(s) · {items} work(s). Nodus prepares a few first so you can try it right away.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Drag your documents here or choose them. Two or three are enough for a first try.",
     "Añadir más":
@@ -173,6 +183,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "This plugin is optional and is not used for importing. To bring your Zotero library into Nodus you only need Zotero open: it is done from the Library, with nothing to install.",
   },
   fr: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "{collections} collection(s) sélectionnée(s), avec leurs sous-collections. Nodus prépare d’abord quelques ouvrages pour que vous puissiez essayer tout de suite.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} ouvrage(s) · {m} sous-collection(s)",
+    "{m} subcolección(es)":
+      "{m} sous-collection(s)",
+    "{n} obra(s)":
+      "{n} ouvrage(s)",
+    "Ver subcolecciones de {name}":
+      "Afficher les sous-collections de {name}",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "Impossible de lire les sous-collections. Vous pouvez cocher la collection entière.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus vérifie tout seul toutes les quelques secondes, et cet avis changera dès que Zotero répondra.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -195,8 +217,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Sur cet ordinateur",
     "Con un servicio externo (API)":
       "Avec un service externe (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Gratuit et privé : vos textes ne quittent pas l’ordinateur. La première fois, un modèle d’environ 350 Mo est téléchargé.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Gratuit et privé : vos textes ne quittent pas l’ordinateur. La première fois, le modèle choisi est téléchargé (quelques centaines de Mo).",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Aucun téléchargement, rapide sur tout ordinateur. Utilise la clé de votre fournisseur et entraîne un faible coût.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -269,8 +291,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Votre Zotero ne contient encore aucune collection. Créez-en une dans Zotero avec quelques ouvrages et elle apparaîtra ici, ou commencez avec des fichiers de votre ordinateur.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Cochez une ou plusieurs collections. Une petite suffit pour commencer : vous pourrez ajouter le reste de votre bibliothèque plus tard.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} collection(s) · {items} ouvrage(s). Nodus en prépare d’abord quelques-uns pour que vous puissiez essayer tout de suite.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Glissez vos documents ici ou choisissez-les. Deux ou trois suffisent pour un premier essai.",
     "Añadir más":
@@ -339,6 +359,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Ce plugin est facultatif et ne sert pas à importer. Pour importer votre bibliothèque Zotero dans Nodus, il suffit que Zotero soit ouvert : cela se fait depuis la Bibliothèque, sans rien installer.",
   },
   de: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "{collections} Sammlung(en) ausgewählt, mit ihren Untersammlungen. Nodus bereitet zuerst einige Werke vor, damit du es sofort ausprobieren kannst.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} Werk(e) · {m} Untersammlung(en)",
+    "{m} subcolección(es)":
+      "{m} Untersammlung(en)",
+    "{n} obra(s)":
+      "{n} Werk(e)",
+    "Ver subcolecciones de {name}":
+      "Untersammlungen von {name} anzeigen",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "Die Untersammlungen konnten nicht gelesen werden. Du kannst die ganze Sammlung markieren.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus prüft das alle paar Sekunden von selbst, und dieser Hinweis ändert sich, sobald Zotero antwortet.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -361,8 +393,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Auf diesem Computer",
     "Con un servicio externo (API)":
       "Mit einem externen Dienst (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Kostenlos und privat: Deine Texte verlassen den Computer nicht. Beim ersten Mal wird ein Modell von etwa 350 MB heruntergeladen.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Kostenlos und privat: Deine Texte verlassen den Computer nicht. Beim ersten Mal wird das gewählte Modell heruntergeladen, einige hundert MB.",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Kein Download und auf jedem Computer schnell. Nutzt den Schlüssel deines Anbieters und verursacht geringe Kosten.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -435,8 +467,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Dein Zotero hat noch keine Sammlungen. Lege in Zotero eine mit ein paar Werken an, dann erscheint sie hier, oder beginne mit Dateien von deinem Computer.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Markiere eine oder mehrere Sammlungen. Für den Anfang reicht eine kleine: Den Rest deiner Bibliothek kannst du später hinzufügen.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} Sammlung(en) · {items} Werk(e). Nodus bereitet zuerst einige vor, damit du es sofort ausprobieren kannst.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Ziehe deine Dokumente hierher oder wähle sie aus. Zwei oder drei reichen für einen ersten Versuch.",
     "Añadir más":
@@ -505,6 +535,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Dieses Plugin ist optional und dient nicht dem Import. Um deine Zotero-Bibliothek in Nodus zu holen, muss nur Zotero geöffnet sein: Das geht in der Bibliothek, ohne etwas zu installieren.",
   },
   pt: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "{collections} coleção(ões) selecionada(s), com as suas subcoleções. O Nodus prepara primeiro algumas obras para que possas experimentar já.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} obra(s) · {m} subcoleção(ões)",
+    "{m} subcolección(es)":
+      "{m} subcoleção(ões)",
+    "{n} obra(s)":
+      "{n} obra(s)",
+    "Ver subcolecciones de {name}":
+      "Ver subcoleções de {name}",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "Não foi possível ler as subcoleções. Podes assinalar a coleção completa.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "O Nodus verifica sozinho de poucos em poucos segundos e este aviso mudará assim que o Zotero responder.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -527,8 +569,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Neste computador",
     "Con un servicio externo (API)":
       "Com um serviço externo (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Gratuito e privado: os teus textos não saem do computador. Da primeira vez descarrega um modelo com cerca de 350 MB.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Gratuito e privado: os teus textos não saem do computador. Da primeira vez descarrega o modelo escolhido, com algumas centenas de MB.",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Não descarrega nada e é rápido em qualquer computador. Usa a chave do teu fornecedor e tem um custo reduzido.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -601,8 +643,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "O teu Zotero ainda não tem coleções. Cria uma no Zotero com algumas obras e ela aparecerá aqui, ou começa com ficheiros do teu computador.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Assinala uma ou várias coleções. Para começar basta uma pequena: o resto da tua biblioteca pode ser adicionado depois.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} coleção(ões) · {items} obra(s). O Nodus prepara primeiro algumas para que possas experimentar já.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Arrasta para aqui os teus documentos ou escolhe-os. Dois ou três bastam para a primeira experiência.",
     "Añadir más":
@@ -671,6 +711,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Este plugin é opcional e não serve para importar. Para trazer a tua biblioteca do Zotero para o Nodus basta ter o Zotero aberto: faz-se a partir da Biblioteca, sem instalar nada.",
   },
   "pt-BR": {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "{collections} coleção(ões) selecionada(s), com suas subcoleções. O Nodus prepara primeiro algumas obras para que você possa testar já.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} obra(s) · {m} subcoleção(ões)",
+    "{m} subcolección(es)":
+      "{m} subcoleção(ões)",
+    "{n} obra(s)":
+      "{n} obra(s)",
+    "Ver subcolecciones de {name}":
+      "Ver subcoleções de {name}",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "Não foi possível ler as subcoleções. Você pode marcar a coleção inteira.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "O Nodus verifica sozinho a cada poucos segundos e este aviso mudará assim que o Zotero responder.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -693,8 +745,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Neste computador",
     "Con un servicio externo (API)":
       "Com um serviço externo (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Gratuito e privado: seus textos não saem do computador. Na primeira vez, baixa um modelo de cerca de 350 MB.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Gratuito e privado: seus textos não saem do computador. Na primeira vez, baixa o modelo escolhido, com algumas centenas de MB.",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Não baixa nada e é rápido em qualquer computador. Usa a chave do seu provedor e tem um custo pequeno.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -767,8 +819,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Seu Zotero ainda não tem coleções. Crie uma no Zotero com algumas obras e ela aparecerá aqui, ou comece com arquivos do seu computador.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Marque uma ou mais coleções. Para começar basta uma pequena: o restante da sua biblioteca pode ser adicionado depois.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} coleção(ões) · {items} obra(s). O Nodus prepara primeiro algumas para que você possa testar já.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Arraste seus documentos para cá ou escolha-os. Dois ou três bastam para o primeiro teste.",
     "Añadir más":
@@ -837,6 +887,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Este plugin é opcional e não serve para importar. Para trazer sua biblioteca do Zotero para o Nodus basta ter o Zotero aberto: isso é feito pela Biblioteca, sem instalar nada.",
   },
   it: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "{collections} collezione/i selezionata/e, con le relative sottocollezioni. Nodus prepara prima alcune opere, così puoi provarlo subito.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} opera/e · {m} sottocollezione/i",
+    "{m} subcolección(es)":
+      "{m} sottocollezione/i",
+    "{n} obra(s)":
+      "{n} opera/e",
+    "Ver subcolecciones de {name}":
+      "Mostra le sottocollezioni di {name}",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "Impossibile leggere le sottocollezioni. Puoi selezionare l’intera collezione.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus controlla da solo ogni pochi secondi e questo avviso cambierà appena Zotero risponde.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -859,8 +921,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Su questo computer",
     "Con un servicio externo (API)":
       "Con un servizio esterno (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Gratuito e privato: i tuoi testi non lasciano il computer. La prima volta scarica un modello di circa 350 MB.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Gratuito e privato: i tuoi testi non lasciano il computer. La prima volta scarica il modello scelto, di qualche centinaio di MB.",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Non scarica nulla ed è veloce su qualsiasi computer. Usa la chiave del tuo fornitore e ha un costo ridotto.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -933,8 +995,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Il tuo Zotero non ha ancora collezioni. Creane una in Zotero con alcune opere e comparirà qui, oppure inizia con i file del tuo computer.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Seleziona una o più collezioni. Per iniziare ne basta una piccola: il resto della biblioteca potrai aggiungerlo dopo.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} collezione/i · {items} opera/e. Nodus ne prepara prima alcune, così puoi provarlo subito.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Trascina qui i tuoi documenti o sceglili. Due o tre bastano per una prima prova.",
     "Añadir más":
@@ -1003,6 +1063,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Questo plugin è facoltativo e non serve per importare. Per portare la tua biblioteca Zotero in Nodus basta avere Zotero aperto: si fa dalla Biblioteca, senza installare nulla.",
   },
   tr: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "Alt koleksiyonlarıyla birlikte {collections} koleksiyon seçildi. Hemen deneyebilmen için Nodus önce birkaç eseri hazırlar.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} eser · {m} alt koleksiyon",
+    "{m} subcolección(es)":
+      "{m} alt koleksiyon",
+    "{n} obra(s)":
+      "{n} eser",
+    "Ver subcolecciones de {name}":
+      "{name} alt koleksiyonlarını göster",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "Alt koleksiyonlar okunamadı. Koleksiyonun tamamını işaretleyebilirsin.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus birkaç saniyede bir kendiliğinden kontrol eder ve Zotero yanıt verir vermez bu uyarı değişir.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -1025,8 +1097,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Bu bilgisayarda",
     "Con un servicio externo (API)":
       "Harici bir hizmetle (API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "Ücretsiz ve gizli: metinlerin bilgisayardan çıkmaz. İlk seferde yaklaşık 350 MB’lık bir model indirilir.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "Ücretsiz ve gizli: metinlerin bilgisayardan çıkmaz. İlk seferde seçilen model indirilir (birkaç yüz MB).",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "Hiçbir şey indirmez ve her bilgisayarda hızlıdır. Sağlayıcının anahtarını kullanır ve küçük bir maliyeti vardır.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -1099,8 +1171,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Zotero’nda henüz koleksiyon yok. Zotero’da birkaç eserle bir koleksiyon oluştur, burada görünecek; ya da bilgisayarındaki dosyalarla başla.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "Bir veya birkaç koleksiyon işaretle. Başlamak için küçük bir tanesi yeter: kütüphanenin geri kalanını sonra ekleyebilirsin.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} koleksiyon · {items} eser. Hemen deneyebilmen için Nodus önce birkaçını hazırlar.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "Belgelerini buraya sürükle ya da seç. İlk deneme için iki üç tanesi yeter.",
     "Añadir más":
@@ -1169,6 +1239,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Bu eklenti isteğe bağlıdır ve içe aktarmak için kullanılmaz. Zotero kütüphaneni Nodus’a getirmek için Zotero’nun açık olması yeterlidir: bu işlem Kütüphane’den, hiçbir şey kurmadan yapılır.",
   },
   "zh-CN": {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "已选择 {collections} 个合集（含其子合集）。Nodus 会先准备其中几份文献，让你马上就能试用。",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} 份文献 · {m} 个子合集",
+    "{m} subcolección(es)":
+      "{m} 个子合集",
+    "{n} obra(s)":
+      "{n} 份文献",
+    "Ver subcolecciones de {name}":
+      "查看 {name} 的子合集",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "无法读取子合集。你可以勾选整个合集。",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus 每隔几秒会自动检查，Zotero 一有响应，此提示就会更新。",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -1191,8 +1273,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "在这台电脑上",
     "Con un servicio externo (API)":
       "使用外部服务（API）",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "免费且私密：你的文本不会离开电脑。首次使用时会下载一个约 350 MB 的模型。",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "免费且私密：你的文本不会离开电脑。首次使用时会下载所选模型，大小约几百 MB。",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "无需下载，在任何电脑上都很快。使用你的服务商密钥，会产生少量费用。",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -1265,8 +1347,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "你的 Zotero 还没有合集。请在 Zotero 中创建一个并放入几份文献，它就会显示在这里；也可以从电脑上的文件开始。",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "勾选一个或多个合集。开始时选一个小的就够了：文献库的其余部分可以之后再添加。",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} 个合集 · {items} 份文献。Nodus 会先准备其中几份，让你马上就能试用。",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "把文档拖到这里，或选择文档。初次试用两三份就够了。",
     "Añadir más":
@@ -1335,6 +1415,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "此插件为可选项，并不用于导入。要将 Zotero 文献库导入 Nodus，只需保持 Zotero 打开：在文献库中即可完成，无需安装任何东西。",
   },
   "zh-TW": {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "已選擇 {collections} 個合集（含其子合集）。Nodus 會先準備其中幾份文獻，讓你馬上就能試用。",
+    "{n} obra(s) · {m} subcolección(es)":
+      "{n} 份文獻 · {m} 個子合集",
+    "{m} subcolección(es)":
+      "{m} 個子合集",
+    "{n} obra(s)":
+      "{n} 份文獻",
+    "Ver subcolecciones de {name}":
+      "查看 {name} 的子合集",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "無法讀取子合集。你可以勾選整個合集。",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus 每隔幾秒會自動檢查，Zotero 一有回應，此提示就會更新。",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -1357,8 +1449,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "在這台電腦上",
     "Con un servicio externo (API)":
       "使用外部服務（API）",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "免費且私密：你的文字不會離開電腦。首次使用時會下載一個約 350 MB 的模型。",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "免費且私密：你的文字不會離開電腦。首次使用時會下載所選模型，大小約幾百 MB。",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "無需下載，在任何電腦上都很快。使用你的服務商金鑰，會產生少量費用。",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -1431,8 +1523,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "你的 Zotero 還沒有合集。請在 Zotero 中建立一個並放入幾份文獻，它就會顯示在這裡；也可以從電腦上的檔案開始。",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "勾選一個或多個合集。開始時選一個小的就夠了：文獻庫的其餘部分可以之後再新增。",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "{collections} 個合集 · {items} 份文獻。Nodus 會先準備其中幾份，讓你馬上就能試用。",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "把文件拖到這裡，或選擇文件。初次試用兩三份就夠了。",
     "Añadir más":
@@ -1501,6 +1591,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "此外掛為選用項目，並不用於匯入。要將 Zotero 文獻庫匯入 Nodus，只需保持 Zotero 開啟：在文獻庫中即可完成，無需安裝任何東西。",
   },
   ja: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "コレクション {collections} 件を選択しました（サブコレクションを含む）。すぐに試せるよう、Nodus はまず数件の資料を準備します。",
+    "{n} obra(s) · {m} subcolección(es)":
+      "資料 {n} 件 · サブコレクション {m} 件",
+    "{m} subcolección(es)":
+      "サブコレクション {m} 件",
+    "{n} obra(s)":
+      "資料 {n} 件",
+    "Ver subcolecciones de {name}":
+      "{name} のサブコレクションを表示",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "サブコレクションを読み込めませんでした。コレクション全体を選択できます。",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus が数秒ごとに自動で確認し、Zotero が応答するとこの表示が切り替わります。",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -1523,8 +1625,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "このコンピューターで",
     "Con un servicio externo (API)":
       "外部サービスで（API）",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "無料でプライベート：テキストはコンピューターの外に出ません。初回は約 350 MB のモデルをダウンロードします。",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "無料でプライベート：テキストはコンピューターの外に出ません。初回は選択したモデル（数百 MB）をダウンロードします。",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "ダウンロード不要で、どのコンピューターでも高速です。プロバイダーのキーを使用し、少額の費用がかかります。",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -1597,8 +1699,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Zotero にまだコレクションがありません。Zotero でいくつかの資料を入れたコレクションを作成するとここに表示されます。コンピューターのファイルから始めることもできます。",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "コレクションを 1 つ以上選んでください。最初は小さなものが 1 つあれば十分です。残りのライブラリは後から追加できます。",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "コレクション {collections} 件 · 資料 {items} 件。すぐに試せるよう、Nodus はまず数件を準備します。",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "文書をここにドラッグするか、選択してください。最初は 2、3 件で十分です。",
     "Añadir más":
@@ -1667,6 +1767,18 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "このプラグインは任意で、インポートには使いません。Zotero ライブラリを Nodus に取り込むには Zotero を開いておくだけで十分です。ライブラリから行え、インストールは不要です。",
   },
   ko: {
+    "{collections} colección(es) seleccionada(s), con sus subcolecciones. Nodus prepara primero unas pocas obras para que puedas probarlo ya.":
+      "하위 컬렉션을 포함해 컬렉션 {collections}개를 선택했습니다. 바로 사용해 볼 수 있도록 Nodus가 먼저 자료 몇 개를 준비합니다.",
+    "{n} obra(s) · {m} subcolección(es)":
+      "자료 {n}개 · 하위 컬렉션 {m}개",
+    "{m} subcolección(es)":
+      "하위 컬렉션 {m}개",
+    "{n} obra(s)":
+      "자료 {n}개",
+    "Ver subcolecciones de {name}":
+      "{name}의 하위 컬렉션 보기",
+    "No se pudieron leer las subcolecciones. Puedes marcar la colección completa.":
+      "하위 컬렉션을 읽지 못했습니다. 컬렉션 전체를 선택할 수 있습니다.",
     "Nodus lo comprueba solo cada pocos segundos y este aviso cambiará en cuanto Zotero responda.":
       "Nodus가 몇 초마다 자동으로 확인하며, Zotero가 응답하는 즉시 이 안내가 바뀝니다.",
     "Tu trabajo se guarda en {folder}, con copias cifradas automáticas. Guarda tu kit de recuperación para poder restaurarlo en otro ordenador.":
@@ -1689,8 +1801,8 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "이 컴퓨터에서",
     "Con un servicio externo (API)":
       "외부 서비스 사용(API)",
-    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.":
-      "무료이며 비공개: 텍스트가 컴퓨터 밖으로 나가지 않습니다. 처음에는 약 350MB 모델을 내려받습니다.",
+    "Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.":
+      "무료이며 비공개: 텍스트가 컴퓨터 밖으로 나가지 않습니다. 처음에는 선택한 모델(수백 MB)을 내려받습니다.",
     "No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.":
       "아무것도 내려받지 않으며 어떤 컴퓨터에서도 빠릅니다. 제공업체 키를 사용하며 소액의 비용이 듭니다.",
     "Ninguno de tus proveedores conectados ofrece este servicio. Lo ofrecen {list}: conecta uno de ellos, o elige «En este equipo».":
@@ -1763,8 +1875,6 @@ export const FIRST_RUN_TRANSLATIONS: Record<'en' | 'fr' | 'de' | 'pt' | 'pt-BR' 
       "Zotero에 아직 컬렉션이 없습니다. Zotero에서 자료 몇 개로 컬렉션을 만들면 여기에 표시됩니다. 컴퓨터의 파일로 시작할 수도 있습니다.",
     "Marca una o varias colecciones. Para empezar basta con una pequeña: el resto de tu biblioteca podrás añadirlo después.":
       "컬렉션을 하나 이상 선택하세요. 처음에는 작은 것 하나면 충분합니다. 나머지 라이브러리는 나중에 추가할 수 있습니다.",
-    "{collections} colección(es) · {items} obra(s). Nodus prepara primero unas pocas para que puedas probarlo ya.":
-      "컬렉션 {collections}개 · 자료 {items}개. 바로 사용해 볼 수 있도록 Nodus가 먼저 몇 개를 준비합니다.",
     "Arrastra aquí tus documentos o elígelos. Dos o tres bastan para la primera prueba.":
       "문서를 여기로 끌어다 놓거나 선택하세요. 첫 시도에는 두세 개면 충분합니다.",
     "Añadir más":

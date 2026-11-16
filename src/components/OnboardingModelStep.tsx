@@ -262,7 +262,7 @@ export function OnboardingModelStep({
       {!firstRun && <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/20 dark:text-amber-200">
         {t('El uso de IA se factura según tu proveedor (OpenAI, Anthropic, Google, OpenRouter…), no por Nodus. Revisa el precio por token y, si quieres evitar sorpresas, establece un límite de gasto (spend limit) desde el panel del proveedor antes de empezar.')}
       </div>}
-      {firstRun && keyBox}
+      {startWithKey && keyBox}
 
       {configured.length > 0 && (
         <p className="text-xs text-emerald-700 dark:text-emerald-300" data-testid="onboarding-configured-keys">
@@ -313,7 +313,7 @@ export function OnboardingModelStep({
               >
                 <span className="flex items-center gap-1.5 text-xs font-semibold"><Icon name={mode === 'local' ? 'monitor' : 'globe'} size={13} />{mode === 'local' ? t('En este equipo') : t('Con un servicio externo (API)')}</span>
                 <span className="mt-0.5 block text-[11px] leading-4 text-neutral-500">{mode === 'local'
-                  ? t('Gratis y privado: tus textos no salen del ordenador. La primera vez descarga un modelo de unos 350 MB.')
+                  ? t('Gratis y privado: tus textos no salen del ordenador. La primera vez descarga el modelo elegido, de unos cientos de MB.')
                   : t('No descarga nada y es rápido en cualquier equipo. Usa la clave de tu proveedor y tiene un coste pequeño.')}</span>
               </button>
             ))}
@@ -368,7 +368,7 @@ export function OnboardingModelStep({
         </p>
       )}
 
-      {!firstRun && keyBox}
+      {!startWithKey && keyBox}
 
       {!firstRun && <p className="text-[11px] leading-5 text-neutral-500">
         {t('Los modelos marcados como locales se ejecutan en este equipo y no tienen coste por token. Podrás cambiar ambos modelos y añadir favoritos en Ajustes.')}

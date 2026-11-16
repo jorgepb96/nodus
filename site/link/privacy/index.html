@@ -1,0 +1,112 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nodus Link Privacy | Nodus Research</title>
+<meta name="description" content="How Nodus Link connects to your own computer and keeps your research private."/>
+<meta name="robots" content="noindex, follow, noarchive"/>
+<meta property="og:title" content="Nodus Link Privacy | Nodus Research"/>
+<meta property="og:description" content="Nodus Link reads your Nodus workspace directly from your own computer. Read what it stores on your device and what it never sends anywhere else."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://nodusresearch.com/link/privacy/"/>
+<meta property="og:site_name" content="Nodus Research"/>
+<meta property="og:locale" content="en_GB"/>
+<meta property="og:image" content="https://nodusresearch.com/favicon.png"/>
+<link rel="canonical" href="https://nodusresearch.com/link/privacy/"/>
+<link rel="icon" href="../../favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="../../favicon.png" sizes="512x512"/>
+<link rel="icon" type="image/svg+xml" href="../../assets/nodus-logo.svg"/>
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png"/>
+<link rel="preload" as="font" type="font/woff2" href="../../assets/fonts/inter-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="../../assets/fonts/fraunces-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="../../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../../assets/css/guide.css?v=20260823a"/>
+<link rel="stylesheet" href="../../assets/css/legal.css?v=20260831"/>
+</head>
+<body class="legal-page">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div data-nodus-site-header data-base="../../"></div>
+<script defer src="../../site-header.js?v=20261109a"></script>
+
+<main id="main">
+<header class="page-hero guide-hero"><div class="wrap"><div class="scrim" style="max-width:850px">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="../../">Nodus Research</a><span class="sep" aria-hidden="true">/</span><a href="../../privacy/">Privacy</a><span class="sep" aria-hidden="true">/</span><span aria-current="page">Nodus Link</span></nav>
+<h1 class="display">Nodus Link privacy</h1>
+<p class="lead">Nodus Link is the iPhone and iPad companion to the Nodus desktop application, maintained by Jorge Pérez Burgueño as part of Nodus Research. It lets you consult the workspace that Nodus keeps on your own computer: ideas and their sources, graphs, argument maps, Deep Research reports, the dictionary and saved podcasts.</p>
+<p>Nodus Link connects only to the computer you pair it with. It has no advertising, tracking or analytics SDK, does not require a Nodus account, and Nodus Research does not receive your research, your documents or your activity.</p>
+<p class="meta">Last updated: 16 November 2026. Applies to Nodus Link for iPhone and iPad.</p>
+</div></div></header>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Your computer is the server</h2></div><div class="guide-body prose">
+<p>Your vaults stay in Nodus on your Mac, Windows or Linux computer. To connect, you pair Nodus Link with that computer by entering a code, scanning a QR code or opening a pairing link shown by Nodus. The app then talks directly to your computer over an encrypted HTTPS connection on your local network or on a VPN you control, such as Tailscale.</p>
+<p>No Nodus Research server sits between the two devices, relays the connection or keeps a copy of what you read. Nodus Link may look for your computer on the local network with Bonjour (DNS-SD) so it can reconnect when the address changes.</p>
+<p>The credential created during pairing is stored in the device Keychain and is sent only to the computer that issued it. You can revoke it from Nodus on your computer at any time, and you can forget a connection in the app.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">What is stored on your device</h2></div><div class="guide-body prose">
+<p>To show your workspace and let you keep reading without waiting for the network, Nodus Link keeps the following in its private app storage:</p>
+<ul>
+<li>Reading copies of the content you open or download, such as reports, dictionary entries, ideas, images and podcast episodes, together with their transcripts and chapters.</li>
+<li>Your reading state: positions in reports and podcasts, read marks, reading bookmarks and highlights.</li>
+<li>Connection details for each paired computer and your app preferences, such as theme, text size and pinned sections.</li>
+</ul>
+<p>Read marks, bookmarks and highlights you make are sent to the computer they belong to, so that Nodus shows the same state there. They are not sent anywhere else. Downloaded podcast audio and other downloads are checked and stored on the device and can be removed in the app’s storage settings.</p>
+<p>The current version of Nodus Link is a consultation companion: it does not edit your vaults, run AI models or send your content to AI providers.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Permissions</h2></div><div class="guide-body prose">
+<ul>
+<li><strong>Camera:</strong> used only while you scan a pairing QR code. Images are processed on the device to read the code and are not stored or sent.</li>
+<li><strong>Local network:</strong> used to reach and rediscover the computer you paired with.</li>
+<li><strong>Face ID or Touch ID:</strong> optional, to lock the app and the copies stored on the device. Biometric data is handled entirely by iOS; the app only receives whether authentication succeeded.</li>
+</ul>
+<p>Podcast playback uses the system’s audio facilities, including background playback and lock-screen controls. Nodus Link does not request access to your location, contacts, calendar, photos, microphone or health data. Permissions can be managed in system settings.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Sharing and other apps</h2></div><div class="guide-body prose">
+<p>Content leaves Nodus Link only when you choose to share it: copying text, saving or sharing a PDF or audio file, or opening a report in Nodus Reader through the system’s Open In menu. What happens to it afterwards is governed by the app or service you choose. If Nodus Reader is not installed, the app opens its public TestFlight page in your browser; the <a href="../../reader/privacy/">Nodus Reader privacy policy</a> applies to that app.</p>
+<p>Links you open, such as source pages, the privacy policy or support pages, open in your browser and are subject to those websites’ policies.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Deleting data</h2></div><div class="guide-body prose">
+<p>Forgetting a connection removes that computer from the app and stops it from being contacted. Downloaded copies can be removed from the app’s storage settings. Deleting the app removes its local storage; Keychain items may remain until the system clears them, and the pairing can also be revoked from Nodus on your computer. Your vaults on the computer are never deleted by Nodus Link.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Apple distribution, diagnostics and support</h2></div><div class="guide-body prose">
+<p>Apple handles App Store and TestFlight distribution and system diagnostics under its own policies. During TestFlight testing, Apple may share crash reports, testing information and feedback you submit with the developer. Nodus Link does not include a separate analytics or crash-reporting SDK.</p>
+<p>If you contact support, the information you choose to send is handled by the email or support service you use. Do not include private documents or pairing codes in a public issue.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Children</h2></div><div class="guide-body prose">
+<p>Nodus Link is a research tool and is not directed at children. It does not knowingly collect personal information from anyone, because it does not collect personal information at all.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="section-head"><h2 class="title">Contact and changes</h2></div><div class="guide-body prose">
+<p>For privacy questions, contact <a href="mailto:contact@nodusresearch.com">contact@nodusresearch.com</a>. For product support, use the <a href="https://github.com/jorgepb96/nodus/issues">Nodus issue tracker</a>.</p>
+<p>Changes to this policy will be published here with an updated date.</p>
+</div></div></section>
+
+<section><div class="wrap"><div class="guide-body prose"><p><strong>Related notices:</strong> <a href="../../privacy/">website privacy</a>, <a href="https://github.com/jorgepb96/nodus/blob/main/PRIVACY.md">Nodus desktop application privacy</a> and <a href="../../cookies/">cookies and local storage</a>.</p></div></div></section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand"><a class="logo" href="../../"><img src="../../assets/nodus-logo.svg" alt=""/> Nodus Research</a><p>A personal, independent open-source project. Nodus is its local-first desktop application.</p></div>
+      <div class="foot-col"><h3>Research</h3><a href="../../research/">Academic research</a><a href="../../zotero/">Nodus and Zotero</a><a href="../../apps/">Nodus Apps</a></div>
+      <div class="foot-col"><h3>Learn</h3><a href="../../wiki/">Wiki</a><a href="../../blog/">Blog</a><a href="../../faq/">FAQ</a></div>
+      <div class="foot-col"><h3>Project</h3><a href="../../about/">About</a><a href="../../legal/">Legal notice</a><a href="../../privacy/">Website privacy</a><a href="../../cookies/">Cookies</a><a href="https://github.com/jorgepb96/nodus" target="_blank" rel="noopener">GitHub</a></div>
+    </div>
+    <div class="foot-base"><span>© 2026 Jorge Pérez Burgueño and Nodus contributors.</span><a href="../../privacy/">Website privacy</a><a href="../../cookies/">Cookies</a><a href="https://nodusresearch.com/link/privacy/">Link privacy</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

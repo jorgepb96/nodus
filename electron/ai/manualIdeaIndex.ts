@@ -5,6 +5,7 @@ import { embedManyStrict } from './aiClient';
 import { isManualAcademic } from './academicMode';
 import { isMobileOperation } from '../desktopBridge/executionBoundary';
 import { embeddingIndexHead } from '../db/embeddingIndexesRepo';
+import { IDEA_EMBEDDING_THEME_LABELS_SQL } from '../db/ideaEmbeddingText';
 
 export interface ManualIndexStatus { state: 'idle' | 'queued' | 'preparing' | 'indexing' | 'ready' | 'error'; error: string | null; }
 type ManualIndexRow = Parameters<typeof ideaNeedsEmbedding>[0] & Parameters<typeof embeddingTextForIdea>[0] & { global_id: string };
@@ -28,6 +29,11 @@ export function manualIndexStatus(): ManualIndexStatus {
   const id = currentVaultId();
   return id ? { ...jobFor(id).status } : { state: 'idle', error: null };
 }
+function withThemes(row: ManualIndexRow & { theme_labels: string }): ManualIndexRow {
+  const { theme_labels: labels, ...rest } = row;
+  return { ...rest, themes: labels ? labels.split(',').filter(Boolean) : [] };
+}
+
 /** Debounced, vault-scoped and independent from the generative scan queue. */
 export function scheduleManualIndex(retry = false): void {
   if (isMobileOperation()) return;
@@ -50,10 +56,14 @@ export async function runManualIndex(id: string): Promise<void> {
   try {
     await withVaultDatabase(id, async () => {
       if (!isManualAcademic()) return;
-      const rows = getDb().prepare(`SELECT i.* FROM embedding_read_ideas i WHERE i.orphaned_at IS NULL AND EXISTS (
+      // Themes are part of an idea's embedding text, and `updateIdeaEmbedding` checks the
+      // text it is given against one that includes them. Reading the row without them
+      // made every manual idea with a theme fail with `embedding_source_changed`, so the
+      // index never became ready.
+      const rows = (getDb().prepare(`SELECT i.*, ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS theme_labels FROM embedding_read_ideas i WHERE i.orphaned_at IS NULL AND EXISTS (
         SELECT 1 FROM embedding_read_notes n WHERE json_valid(n.source_json) AND json_extract(n.source_json,'$.note')='manual-idea'
         AND json_extract(n.source_json,'$.ref')=i.global_id AND n.trashed_at IS NULL
-      )`).all() as ManualIndexRow[];
+      )`).all() as Array<ManualIndexRow & { theme_labels: string }>).map(withThemes);
       const pending = rows.filter(row => ideaNeedsEmbedding(row, embeddingTextForIdea(row)));
       if (process.env.NODUS_MANUAL_INDEX_TRACE === '1') console.info('[manual-index]', id, JSON.stringify({ rows: rows.length, pending: pending.length }));
       if (!pending.length) return;
@@ -67,7 +77,8 @@ export async function runManualIndex(id: string): Promise<void> {
       for (const row of pending) {
         const text = embeddingTextForIdea(row);
         const [vector] = await embedManyStrict([text]);
-        const current = getDb().prepare('SELECT * FROM embedding_read_ideas AS ideas WHERE global_id=?').get(row.global_id) as typeof row | undefined;
+        const read = getDb().prepare(`SELECT i.*, ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS theme_labels FROM embedding_read_ideas AS i WHERE global_id=?`).get(row.global_id) as (ManualIndexRow & { theme_labels: string }) | undefined;
+        const current = read ? withThemes(read) : undefined;
         const now = currentEmbeddingConfig();
         const owner = getDb().prepare("SELECT 1 FROM notes WHERE json_valid(source_json) AND json_extract(source_json,'$.ref')=? AND trashed_at IS NULL").get(row.global_id);
         if (!current || !owner) continue;

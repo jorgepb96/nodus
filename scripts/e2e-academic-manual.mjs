@@ -65,32 +65,28 @@ try {
     await window.nodus.updateSettings({ recoverySetupVersion: 999, mascotEnabled: false, reduceMotion: true, autoBackupFolder: `${profile}/backup`, uiLanguage: 'es' });
   }, { profile, version: require('../package.json').version });
   await page.getByTestId('tutorial-language-es').click();
-  await page.getByTestId('nodi-style-orb').click();
-  await page.getByTestId('tutorial-mode-video').click();
-  await page.getByTestId('basics-tutorial-complete').click();
   await page.getByTestId('first-vault-name').fill('Académico manual · Ejemplo');
   await page.getByTestId('first-vault-create').click();
-  await page.getByTestId('onboarding-mode-manual').waitFor();
-  assert.equal(await page.getByRole('button', { name: 'Siguiente', exact: true }).isDisabled(), true);
-  await page.getByTestId('onboarding-mode-auto').click();
-  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await page.getByTestId('onboarding-library-nodus').waitFor();
-  await page.getByRole('button', { name: 'Atrás', exact: true }).click();
-  await page.getByTestId('onboarding-mode-manual').focus();
-  await page.keyboard.press('Space');
-  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
+  // The first-run start screen: Manual is an advanced option, chosen explicitly, and
+  // "Not now" enters without asking for any model.
+  await page.getByTestId('academic-learning-welcome').waitFor();
+  await page.locator('.first-run-advanced summary').click();
+  await page.getByRole('radio', { name: 'Manual', exact: true }).check();
   assert.equal(await page.getByTestId('onboarding-models').count(), 0);
   await page.screenshot({ path: path.join(evidence, 'manual-onboarding.png') });
-  await page.getByTestId('onboarding-start').click();
-  await page.getByRole('button', { name: 'Abrir Inicio', exact: true }).click({ timeout: 1500 }).catch(() => {});
+  await page.getByTestId('welcome-later').click();
+  await page.getByTestId('library-vault-file-drop-surface').waitFor();
+  // The first run starts in the Simple interface, which has no Home; the manual home is
+  // the Advanced profile's (Intermediate shows a launcher there instead).
+  await page.evaluate(() => window.nodus.updateSettings({ academicInterfaceProfile: 'advanced' }));
+  await page.locator('[data-tour="nav-home"]').click();
   await page.getByTestId('manual-academic-home').waitFor(); await settle();
   const settings = await page.evaluate(() => window.nodus.getSettings());
-  assert.equal(settings.academicMode, 'manual'); assert.equal(settings.embeddingProvider, 'nodus');
+  assert.equal(settings.academicMode, 'manual');
+  assert.equal(settings.chatModel, null, 'Manual mode needs no generative model to start');
+  assert.equal(settings.embeddingProvider, 'nodus', 'Manual ideas are indexed on this computer');
   assert.equal(settings.embeddingModel, 'multilingual-e5-small-int8');
-  log('First-vault wizard: explicit choice, Auto/back/Manual, no generative model requirement.');
+  log('First run: Manual chosen explicitly, entered without a generative model.');
   await page.evaluate(async () => {
     await window.nodus.setApiKey('openai', 'sk-nodus-manual-test-not-a-real-key');
     await window.nodus.updateSettings({ synthesisModel: { provider: 'openai', model: 'gpt-4o-mini' } });
@@ -179,13 +175,14 @@ try {
   assert.deepEqual((await page.evaluate(id => window.nodus.getIdeaEdges(id), a.source.ref)).map(row => [row.edge.id, row.edge.from_id, row.edge.to_id]), savedEdges.map(row => [row.edge.id, row.edge.from_id, row.edge.to_id]));
   await page.locator('[data-tour="nav-workspace"]').click();
   await page.getByTestId(`workspace-item-${a.id}`).click();
-  const workspaceForm = page.locator('[data-testid="manual-idea-form"]:visible');
-  await workspaceForm.waitFor();
-  assert.equal(await workspaceForm.getByTestId('manual-idea-title').inputValue(), a.title);
-  assert.equal(await page.getByTestId('editor-title').count(), 0);
+  // Since the Scriptor workspace (#1124, #1136) a manual idea opens as its text in the
+  // editor, with its works, citations and relations in the side panel (`linksOnly`).
+  await page.locator('[contenteditable="true"]:visible', { hasText: 'La memoria colectiva se construye mediante' }).first().waitFor();
+  await page.getByRole('button', { name: 'Contexto', exact: true }).first().click();
+  await page.locator('[data-testid="manual-idea-form"]:visible').first().waitFor();
   await page.locator('[data-tour="nav-ideas"]').click();
   await page.getByTestId('ideas-tab-idea').filter({ hasText: a.title }).click();
-  log('Same form opened from Graph and Workspace; editing the destination preserves the original relationship identity and direction.');
+  log('Graph opens the idea form and Scriptor opens the idea with its links panel; editing the destination preserves the original relationship identity and direction.');
   const blocked = await page.evaluate(async id => {
     const checks = [() => window.nodus.processFull(id), () => window.nodus.rescan(id, 'deep'), () => window.nodus.summarizeWork(id), () => window.nodus.discoverSemanticBridges(), () => window.nodus.reprocessThemeConnections({ relations: true }), () => window.nodus.reprocessRepairedThemeWorks(), () => window.nodus.startDocumentIndexCampaign({ nodusIds: [id] })];
     return Promise.all(checks.map(async run => { try { await run(); return 'NOT BLOCKED'; } catch (e) { return String(e); } }));
@@ -267,7 +264,11 @@ try {
   await page.getByTestId('onboarding-mode-auto').click();
   for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
   await page.getByTestId('onboarding-models').waitFor();
-  assert.equal(await page.getByTestId('onboarding-start').isDisabled(), true);
+  // Start waits for both models, except in the Simple profile, which reuses the chat model
+  // the person already chose (#1136) — and this test chose one above.
+  const fresh = await page.evaluate(() => window.nodus.getSettings());
+  const reusesChatModel = fresh.academicInterfaceProfile === 'simple' && Boolean(fresh.chatModel || fresh.synthesisModel);
+  assert.equal(await page.getByTestId('onboarding-start').isDisabled(), !reusesChatModel);
   await page.evaluate(id => window.nodus.switchVault(id), original.id);
   await page.evaluate(id => window.nodus.deleteVault(id, true), auto.vault.id);
   await page.reload(); await settle();
@@ -302,7 +303,9 @@ try {
   await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
   await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
   await page.getByTestId('onboarding-start').click();
-  await page.getByTestId('manual-academic-home').waitFor();
+  // A new academic vault starts in the Simple profile, which has no Home (#1136): wait for
+  // the wizard to finish instead of for the Advanced profile's manual home.
+  await waitUntil(() => page.evaluate(async () => { const s = await window.nodus.getSettings(); return s.onboardingComplete && s.academicMode === 'manual'; }));
   const extraManual = await page.evaluate(() => window.nodus.getActiveVault());
   assert.ok((await page.evaluate(() => window.nodus.listWorks())).some(work => work.title === 'Fuente sincronizada · Ejemplo Zotero'));
   assert.equal((await page.evaluate(() => window.nodus.getGraph('ideas'))).nodes.length, 0, 'sync adds bibliography without generated ideas');

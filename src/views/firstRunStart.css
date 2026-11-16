@@ -1,0 +1,185 @@
+/* The first-run "bring your sources" screen.
+ *
+ * Colours are written to hold in both themes without a remap: neutral greys at partial
+ * opacity over whatever the card's background is, and the vault accent for the one
+ * thing that is selected. */
+.first-run {
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vh, 2rem);
+}
+.first-run-card {
+  width: min(860px, 100%);
+  padding: clamp(1.1rem, 2.6vh, 1.75rem);
+}
+.first-run-head {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 1.1rem;
+}
+.first-run-title {
+  margin-top: 0.15rem;
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  font-weight: 650;
+  line-height: 1.15;
+}
+.first-run-lead {
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  opacity: 0.72;
+}
+
+.first-run-sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+.first-run-source {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  column-gap: 0.6rem;
+  row-gap: 0.25rem;
+  padding: 0.85rem;
+  border: 1px solid rgb(127 127 127 / 0.3);
+  border-radius: 0.85rem;
+  text-align: left;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.first-run-source:hover { border-color: rgb(127 127 127 / 0.6); }
+.first-run-source.is-selected {
+  border-color: var(--vault-accent, #6366f1);
+  background: color-mix(in srgb, var(--vault-accent, #6366f1) 10%, transparent);
+}
+.first-run-source-icon { grid-row: span 2; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; }
+.first-run-source-title { font-size: 0.9rem; font-weight: 600; line-height: 1.2; align-self: center; }
+.first-run-source-body { grid-column: 1 / -1; font-size: 0.75rem; line-height: 1.4; opacity: 0.68; }
+.first-run-badge {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 0.2rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 99px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border: 1px solid rgb(127 127 127 / 0.35);
+}
+.first-run-badge.is-ok { color: #059669; border-color: rgb(16 185 129 / 0.5); background: rgb(16 185 129 / 0.1); }
+.first-run-badge.is-warn { color: #b45309; border-color: rgb(245 158 11 / 0.5); background: rgb(245 158 11 / 0.1); }
+.dark .first-run-badge.is-ok { color: #6ee7b7; }
+.dark .first-run-badge.is-warn { color: #fcd34d; }
+
+.first-run-detail {
+  margin-top: 0.8rem;
+  min-height: 7.5rem;
+}
+.first-run-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  opacity: 0.72;
+}
+.first-run-collections {
+  max-height: min(30vh, 15rem);
+  margin-top: 0.5rem;
+  overflow-y: auto;
+  border: 1px solid rgb(127 127 127 / 0.25);
+  border-radius: 0.7rem;
+}
+.first-run-collections > li + li { border-top: 1px solid rgb(127 127 127 / 0.16); }
+.first-run-collection-row { display: flex; align-items: center; gap: 0.2rem; }
+.first-run-collection-row:hover { background: rgb(127 127 127 / 0.1); }
+.first-run-collection-toggle { display: grid; place-items: center; flex: 0 0 1.4rem; height: 1.4rem; border-radius: 0.35rem; opacity: 0.7; }
+button.first-run-collection-toggle:hover { opacity: 1; background: rgb(127 127 127 / 0.15); }
+.first-run-collections label {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.2rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.first-run-collection-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.first-run-collection-count { flex: 0 0 auto; font-size: 0.72rem; opacity: 0.6; }
+.first-run-detail > .first-run-collections + .first-run-hint { margin-top: 0.5rem; }
+
+.first-run-drop {
+  display: grid;
+  justify-items: start;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border: 1.5px dashed rgb(127 127 127 / 0.4);
+  border-radius: 0.8rem;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.first-run-drop.is-dropping {
+  border-color: var(--vault-accent, #6366f1);
+  background: color-mix(in srgb, var(--vault-accent, #6366f1) 10%, transparent);
+}
+.first-run-files {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  max-height: min(24vh, 11rem);
+  overflow-y: auto;
+}
+.first-run-files li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
+.first-run-files li > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.first-run-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.first-run-secondary { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.first-run-error { margin-top: 0.6rem; font-size: 0.8rem; color: #dc2626; }
+.dark .first-run-error { color: #f87171; }
+
+.first-run-advanced { margin-top: 0.7rem; font-size: 0.72rem; opacity: 0.7; }
+.first-run-advanced summary { cursor: pointer; }
+.first-run-advanced p { margin: 0.5rem 0 0.25rem; }
+.first-run-advanced label { display: inline-flex; align-items: center; gap: 0.3rem; }
+
+.first-run-ai { margin-top: 1.1rem; }
+.first-run-steps { display: grid; gap: 0.7rem; margin-top: 1.2rem; }
+.first-run-steps li { display: grid; grid-template-columns: 1.7rem minmax(0, 1fr); gap: 0.6rem; align-items: start; }
+.first-run-steps li > span:last-child { display: grid; gap: 0.1rem; font-size: 0.88rem; }
+.first-run-steps small { font-size: 0.76rem; line-height: 1.45; opacity: 0.7; overflow-wrap: anywhere; }
+.first-run-step-mark {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 99px;
+  border: 1px solid rgb(127 127 127 / 0.35);
+}
+.first-run-steps li[data-state='pending'] { opacity: 0.45; }
+.first-run-steps li[data-state='active'] .first-run-step-mark { border-color: var(--vault-accent, #6366f1); color: var(--vault-accent, #6366f1); }
+.first-run-steps li[data-state='done'] .first-run-step-mark { border-color: rgb(16 185 129 / 0.6); background: rgb(16 185 129 / 0.12); color: #10b981; }
+.first-run-steps li[data-state='failed'] .first-run-step-mark { border-color: rgb(239 68 68 / 0.6); background: rgb(239 68 68 / 0.12); color: #ef4444; }
+.first-run-failure {
+  margin-top: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgb(239 68 68 / 0.4);
+  border-radius: 0.8rem;
+  background: rgb(239 68 68 / 0.06);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .first-run-sources { grid-template-columns: minmax(0, 1fr); }
+  .first-run-head { grid-template-columns: 56px minmax(0, 1fr); }
+}

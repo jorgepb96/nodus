@@ -3,6 +3,7 @@ import {createPortal} from 'react-dom';
 import {placeGuide,guideConnector,type GuideRect} from './spotlightLayout';
 import {visibleGuideRect} from './spotlightTarget';
 import {useGuidedInteraction} from './useGuidedInteraction';
+import {t} from '../i18n';
 import './academicLearning.css';
 
 /** An annotation of real controls, optionally limiting a guided step to its expected actions. */
@@ -11,6 +12,7 @@ export function AcademicLearningSpotlight({targets,allowedTargets=[],guided=fals
  const [target,setTarget]=useState<{key:string;element:HTMLElement;selector:string;rect:GuideRect}|null>(null);
  const [controls,setControls]=useState<GuideRect[]>([]);
  const [allowedRects,setAllowedRects]=useState<GuideRect[]>([]);
+ const [protectedRects,setProtectedRects]=useState<GuideRect[]>([]);
  const [host,setHost]=useState<HTMLElement>(()=>document.querySelector('[data-testid="app-shell"]')??document.body);
  const [size,setSize]=useState({width:318,height:220});
  const [viewport,setViewport]=useState({width:window.innerWidth,height:window.innerHeight});
@@ -60,6 +62,9 @@ export function AcademicLearningSpotlight({targets,allowedTargets=[],guided=fals
     lastControls=performance.now();dirty=false;
     const available=[...(modal??document).querySelectorAll<HTMLElement>('button,input:not([type="hidden"]),textarea,select,[contenteditable="true"],[role="button"],[role="tab"],.research-composer-shell,[data-message-id],[data-learning-protected]')].filter(el=>!el.closest('[data-learning-guide]')).flatMap(el=>{const r=visibleGuideRect(el);return r?[r]:[];});
     setControls(old=>JSON.stringify(old)===JSON.stringify(available)?old:available);
+    // The open dialog's own close controls: the card must leave a way out.
+    const exits=modal?[...modal.querySelectorAll<HTMLElement>('[data-testid$="-close"],[aria-label="'+t('Cerrar')+'"]')].filter(el=>!el.closest('[data-learning-guide]')).flatMap(el=>{const r=visibleGuideRect(el);return r?[r]:[];}):[];
+    setProtectedRects(old=>JSON.stringify(old)===JSON.stringify(exits)?old:exits);
     const permitted=(JSON.parse(permissions) as string[]).flatMap(selector=>[...document.querySelectorAll<HTMLElement>(selector)]).flatMap(el=>{const r=visibleGuideRect(el);return r?[r]:[];});
     setAllowedRects(old=>JSON.stringify(old)===JSON.stringify(permitted)?old:permitted);
    }
@@ -93,7 +98,7 @@ export function AcademicLearningSpotlight({targets,allowedTargets=[],guided=fals
   };
   window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
  },[onPause]);
- const placed=placeGuide(rect,{...size,width:cardWidth},viewport,controls);
+ const placed=placeGuide(rect,{...size,width:cardWidth},viewport,controls,protectedRects);
  const connector=guideConnector(placed,rect,controls);
  // Rendering inside a native dialog keeps the annotation accessible in its focus scope.
  return createPortal(<div ref={layer} className="learning-spotlight-layer" data-learning-guide="true" data-learning-target={currentTarget?.selector} data-learning-step={stepKey} data-browser-native-overlay="true" data-testid="academic-learning-spotlight" style={{position:'fixed',left:0,top:0,width:viewport.width,height:viewport.height}}>

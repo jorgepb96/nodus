@@ -153,6 +153,11 @@
 .light .recovery-hero > p, .light .recovery-success p { color: #596579; }
 .light .recovery-kicker { color: #0f766e; }
 .light .recovery-safety { border-color: #99f6e4; background: #f0fdfa; color: #115e59; }
+.recovery-quick-start { display: grid; gap: 6px; margin-top: 16px; }
+.recovery-quick-start .btn { justify-self: start; gap: 6px; border: 1px solid rgba(255,255,255,.22); color: #f5f5f4; }
+.recovery-quick-start small { color: #a8a29e; font-size: 11px; line-height: 1.45; }
+.light .recovery-quick-start .btn { border-color: #d6d3d1; color: #1c1917; }
+.light .recovery-quick-start small { color: #57534e; }
 .light .recovery-mode-tabs { background: #edf1f7; }
 .light .recovery-mode-tabs button { color: #64748b; }
 .light .recovery-mode-tabs button.active { background: #4f46e5; color: #fff; }

@@ -55,7 +55,10 @@ try {
 
   // The stored status is Spanish source prose; the status handed to the renderer must
   // already be in the UI language.
+  // A first run now prepares the recovery folder by itself, so the reporter's profile —
+  // one that still owes the wizard — has to be put back by hand.
   await page.evaluate(() => window.nodus.updateSettings({
+    recoverySetupVersion: 0,
     autoBackupEnabled: true,
     autoBackupFolder: '',
     lastAutoBackupStatus: 'error: No hay carpeta de destino configurada.',

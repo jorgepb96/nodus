@@ -7,8 +7,15 @@ export function intersectGuideRects(a:GuideRect,b:GuideRect):GuideRect|null {
 const overlap=(a:GuideRect,b:GuideRect)=>Math.max(0,Math.min(a.left+a.width,b.left+b.width)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.top+a.height,b.top+b.height)-Math.max(a.top,b.top));
 const distance=(a:GuideRect,b:GuideRect)=>Math.hypot(Math.max(a.left-b.left-b.width,b.left-a.left-a.width,0),Math.max(a.top-b.top-b.height,b.top-a.top-a.height,0));
 
-/** Prefer nearby free space; use a compact card without an arrow when space is limited. */
-export function placeGuide(target:GuideRect|null,card:{width:number;height:number},viewport:{width:number;height:number},controls:readonly GuideRect[]=[]){
+/**
+ * Prefer nearby free space; use a compact card without an arrow when space is limited.
+ *
+ * `protectedRects` are controls the card must never cover, weighted like the target
+ * itself: the way out of an open dialog. Ordinary controls only weigh a little, so a
+ * large dialog that left no free space used to end up with the card over its close
+ * button, and the person could not dismiss the dialog the guide had just opened.
+ */
+export function placeGuide(target:GuideRect|null,card:{width:number;height:number},viewport:{width:number;height:number},controls:readonly GuideRect[]=[],protectedRects:readonly GuideRect[]=[]){
  const gap=18,margin=12,topMargin=60;
  const width=Math.min(card.width,viewport.width-margin*2),height=Math.min(card.height,viewport.height-topMargin-margin);
  const candidates:{left:number;top:number;edge?:boolean}[]=[];
@@ -26,7 +33,8 @@ export function placeGuide(target:GuideRect|null,card:{width:number;height:numbe
   const placed={left:Math.max(sideMargin,Math.min(candidate.left,viewport.width-width-sideMargin)),top:Math.max(topMargin,Math.min(candidate.top,viewport.height-h-margin)),width,height:h};
   const targetOverlap=target?overlap(placed,{left:target.left-8,top:target.top-8,width:target.width+16,height:target.height+16}):0;
   const controlOverlap=controls.reduce((sum,control)=>sum+overlap(placed,control),0);
-  return {placed,score:targetOverlap*10000+controlOverlap*100+(target?distance(placed,target)*4:0)+(height-h)*2+index*.01};
+  const protectedOverlap=protectedRects.reduce((sum,control)=>sum+overlap(placed,{left:control.left-6,top:control.top-6,width:control.width+12,height:control.height+12}),0);
+  return {placed,score:(targetOverlap+protectedOverlap)*10000+controlOverlap*100+(target?distance(placed,target)*4:0)+(height-h)*2+index*.01};
  });
  return scored.sort((a,b)=>a.score-b.score)[0].placed;
 }

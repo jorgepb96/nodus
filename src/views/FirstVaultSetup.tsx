@@ -70,6 +70,11 @@ export function FirstVaultSetup({
     try {
       await window.nodus.renameVault(vault.id, trimmed);
       await window.nodus.setVaultType(vault.id, type);
+      // Storage is prepared here, without a question: the Library lives in the recovery
+      // folder, and asking a newcomer to choose a folder and a master password before
+      // they have a single document was the step most of them never got past. A failure
+      // is not fatal — the recovery wizard still appears where it always did.
+      await window.nodus.quickStartRecovery(getActiveLang()).catch(() => null);
       // Written last: if either call above fails the screen stays up and can be retried,
       // rather than being marked answered with the vault left half-configured.
       await window.nodus.updateSettings({ firstVaultVersion: FIRST_VAULT_VERSION, ...(type === 'academic' ? { academicInterfaceProfile: 'simple' as const } : { basicsTutorialVersion:0 }) });
@@ -95,7 +100,7 @@ export function FirstVaultSetup({
             <div className="first-vault-copy">
               <p className="tutorial-eyebrow tutorial-language-brand"><Icon name="layers" size={15} /> {t('TU PRIMERA BÓVEDA')}</p>
               <h1 id="first-vault-title">{t('Vamos a crear tu primera bóveda')}</h1>
-              <p>{t('Ponle un nombre y elige su modo. El modo decide qué secciones verás y cómo trabaja la IA contigo; puedes crear más bóvedas, de otros modos, cuando quieras.')}</p>
+              <p>{t('Una bóveda es tu espacio de trabajo: reúne tus fuentes y todo lo que hagas con ellas. Deja «Académico» si vienes a trabajar con tus lecturas. Podrás crear más bóvedas, de otros tipos, cuando quieras.')}</p>
             </div>
           </div>
 
@@ -119,7 +124,7 @@ export function FirstVaultSetup({
 
             <div className="mt-4 text-left">
               <div className="mb-1.5 text-xs text-neutral-500">{t('Tipo de bóveda')}</div>
-              <VaultTypePicker value={type} onChange={setType} disabled={busy} />
+              <VaultTypePicker value={type} onChange={setType} disabled={busy} foldEarlyPhases />
             </div>
 
             {error && <p role="alert" data-testid="first-vault-error" className="mt-3 rounded-lg border border-red-900/60 bg-red-950/20 px-3 py-2 text-left text-xs text-red-300">{error}</p>}

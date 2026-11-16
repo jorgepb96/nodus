@@ -1770,7 +1770,20 @@ export function Library({
               reportSnapshot.current?.(snapshotOf.current());
             }}
             className="flex-1 min-h-0"
-            empty={<div className="p-4 text-neutral-500">{t('No hay obras con los filtros actuales.')}</div>}
+            empty={vaultType === 'academic' && !hasActiveFilters && totalWorks === 0 ? (
+              // An empty vault is not a filter that matched nothing: it is someone who has
+              // not brought a source yet, and the two ways to do it were a "+" icon and
+              // the third level of a menu. Say what to do, with the buttons that do it.
+              <div className="mx-auto grid max-w-md justify-items-center gap-3 p-8 text-center" data-testid="library-empty-start">
+                <Icon name="book" size={26} className="text-neutral-500" />
+                <p className="text-sm font-semibold text-neutral-200">{t('Tu biblioteca está vacía')}</p>
+                <p className="text-xs leading-5 text-neutral-500">{t('Trae unas cuantas fuentes y podrás hacerles preguntas en el chat. Nodus solo lee tus archivos: no cambia nada en Zotero.')}</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button type="button" className="btn btn-primary" data-testid="library-empty-zotero" onClick={onOpenCollections}><Icon name="folder" size={14} /> {t('Traer de Zotero')}</button>
+                  <button type="button" className="btn btn-secondary" data-testid="library-empty-files" onClick={() => addFilesRef.current?.click()}><Icon name="plus" size={14} /> {t('Añadir archivos')}</button>
+                </div>
+              </div>
+            ) : <div className="p-4 text-neutral-500">{t('No hay obras con los filtros actuales.')}</div>}
             renderItem={(w) => {
               const status = statusByWork.get(w.nodus_id);
               return (

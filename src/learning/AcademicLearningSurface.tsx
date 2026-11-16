@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { configureEmbeddingIndex } from '../configureEmbeddingIndex';
+import { saveLearningModels } from './learningModelSetup';
 import type { AppSettings, ModelRef } from '@shared/types';
-import { ACADEMIC_LESSONS, learningModelPatch, learningProgress, learningInvitationPreference } from '@shared/academicLearning';
+import { ACADEMIC_LESSONS, learningProgress, learningInvitationPreference } from '@shared/academicLearning';
 import { learningText, type LearningCopyKey } from '@shared/academicLearningCopy';
-import { getNodusLocalModel, modelRefSupportsExtraction } from '@shared/localAiModels';
+import { modelRefSupportsExtraction } from '@shared/localAiModels';
 import type { AcademicLearningController } from './useAcademicLearning';
 import { LearningDialog } from './LearningDialog';
 import { AcademicLearningSpotlight } from './AcademicLearningSpotlight';
@@ -32,11 +32,12 @@ export function AcademicLearningDialogs({ controller: c, settings, blocked, onAc
  </AcademicLearningSpotlight>;
 }
 
-export function AcademicLearningCoach({ controller: c, settings, blocked, navigate, openIdea, openGraph, prepareQuestion }: { controller: AcademicLearningController; settings: AppSettings; blocked: boolean; navigate: (view: View) => void; openIdea: (id:string) => void; openGraph: (id:string) => void; prepareQuestion: (documentId?:string) => void }) {
+export function AcademicLearningCoach({ controller: c, settings, blocked, navigate, openIdea, openGraph, prepareQuestion, onContinueWithIdeas }: { controller: AcademicLearningController; settings: AppSettings; blocked: boolean; navigate: (view: View) => void; openIdea: (id:string) => void; openGraph: (id:string) => void; prepareQuestion: (documentId?:string) => void; onContinueWithIdeas?: (documentId: string) => void | Promise<void> }) {
  const s=c.session;
  const [interfaceViewed,setInterfaceViewed]=useState(false);
  const [chatBusy,setChatBusy]=useState(false);
  const [controlBusy,setControlBusy]=useState(false);
+ const [extracting,setExtracting]=useState(false);
  useEffect(()=>{
   const read=()=>{setChatBusy(!!document.querySelector('.research-composer-stop'));setControlBusy(!!document.querySelector('[data-testid="hypothesis-generate"]:disabled,[data-testid="reading-refresh"]:disabled,[data-testid="coverage-catalog"][aria-busy="true"],[data-testid="source-citation-loading"]'));};
   read();const observer=new MutationObserver(read);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','aria-busy']});return()=>observer.disconnect();
@@ -62,9 +63,24 @@ export function AcademicLearningCoach({ controller: c, settings, blocked, naviga
  const interfaceTab=(index:number)=>window.dispatchEvent(new CustomEvent('nodus:interface-tab',{detail:{tab:GUIDE_INTERFACE_TABS[index]}}));
  const prepare=()=>{if(manual||!c.requireModels('chat'))openResearchPreparation([s.documentId!]);};
  const waiting=preparing||chatBusy||controlBusy||c.workWaiting;
+ // After the first verified answer, the next thing to show is what a plain document chat
+ // does not do: the ideas of that source, with their evidence, and their connections.
+ const nextIdeas=ready&&s.lessonId==='first-answer'&&!!s.documentId&&!manual&&!!onContinueWithIdeas;
+ // Extract from the lesson's own source in one click, instead of finding and ticking its
+ // row. The Library button stays: it is what the lesson teaches for next time.
+ const extractCurrent=async()=>{
+  if(!s.documentId||c.requireModels('analysis'))return;
+  setExtracting(true);
+  try{
+   await window.nodus.processFull(s.documentId,undefined,{mode:'if-stale'});
+   const queue=await window.nodus.getQueue();
+   const task=queue.items.filter(item=>item.nodus_id===s.documentId&&item.kind==='deep').sort((a,b)=>b.enqueued_at.localeCompare(a.enqueued_at))[0];
+   c.observe({sessionId:s.id,vaultId:s.vaultId,kind:'extraction',documentId:s.documentId,taskId:task?.id});
+  }finally{setExtracting(false);}
+ };
  return <AcademicLearningSpotlight guided={learningRequiresInteraction(s,waiting)} allowedTargets={['[data-testid="learning-workspace-bar"]',...(guidance.wrongView?[]:academicGuideActions(s))]} label={copy(lesson.goal)} targets={waiting?[]:recovery==='missing-source'?['[data-testid^="vault-library-item-"] input[type="checkbox"]','[data-testid="library-vault-add-files"]']:ready?['[data-testid="source-citation-content"]',...guidance.targets]:guidance.targets} stepKey={`${s.id}:${s.step}:${s.phase}:${c.view}`} onPause={c.pause}>
   <div className="learning-coach-head"><div><span className="learning-eyebrow">{copy('guideLabel')} · {copy('progress',{step:Math.min(s.step+1,lesson.steps.length),total:lesson.steps.length})}</span><h2 aria-live="polite">{ready?copy(s.lessonId==='first-idea'?'ideaVerified':['first-answer','research-question'].includes(s.lessonId)?'verified':'completed'):copy(step)}</h2></div><button className="btn btn-ghost" data-testid="learning-pause" aria-label={copy('pause')} onClick={c.pause}><Icon name="x" size={14}/></button></div>
-  <p>{copy(body)}</p>
+  <p>{nextIdeas ? t('Lo siguiente va más allá del chat: las ideas de esta fuente, cada una con su evidencia, conectadas en un grafo.') : copy(body)}</p>
   {sourceSelection&&!c.workspace&&<p>{copy('sampleIsolation')}</p>}
   {doc&&<p className="learning-current-source" title={doc.title}>{doc.title}</p>}
   {s.lessonId==='first-answer'&&s.step===1&&doc&&doc.preparation.passages>0&&<p>{copy('prepared',{ready:doc.preparation.embedded,total:doc.preparation.passages})}</p>}
@@ -75,12 +91,14 @@ export function AcademicLearningCoach({ controller: c, settings, blocked, naviga
    {!ready&&(sourceSelection||recovery==='missing-source')&&<button className="btn btn-ghost border border-neutral-700" data-testid="learning-import-sample" onClick={()=>void c.importSample()}>{copy('sample')}</button>}
    {!ready&&recovery!=='missing-source'&&s.lessonId==='first-answer'&&s.step===1&&s.documentId&&<><button className="btn btn-primary" data-testid="learning-prepare-selected" onClick={prepare}>{copy(modelsNeeded?'configure':'prepare')}</button><button className="btn btn-ghost" data-testid="learning-open-queue" onClick={openResearchPreparationQueue}>{copy('queue')}</button></>}
    {!ready&&['model','provider'].includes(recovery??'')&&<button className="btn btn-ghost" onClick={()=>c.setModelsPurpose(s.lessonId==='first-idea'?'analysis':'chat')}>{copy('configure')}</button>}
+   {!ready&&!manual&&s.lessonId==='first-idea'&&s.step===1&&s.documentId&&!recovery&&<button className="btn btn-primary" data-testid="learning-extract-current" disabled={extracting} onClick={()=>void extractCurrent()}>{t('Extraer ideas de esta fuente')}</button>}
    {!ready&&s.lessonId==='first-idea'&&s.step<=2&&s.step>0&&<><button className="btn btn-ghost" data-testid="learning-open-queue" onClick={openResearchPreparationQueue}>{copy('queue')}</button>{!manual&&!settings.extractionModel&&!settings.synthesisModel&&<button className="btn btn-primary" onClick={()=>c.requireModels('analysis')}>{copy('configure')}</button>}{manual&&s.step===1&&<button className="btn btn-primary" onClick={()=>navigate('ideas')}>{t('Ideas')}</button>}</>}
    {!ready&&(s.lessonId==='first-answer'&&s.step>=2||s.lessonId==='research-question')&&<button className="btn btn-primary" data-testid="learning-suggest-question" onClick={()=>{if(!c.requireModels('chat'))prepareQuestion(s.documentId);}}>{copy('suggest')}</button>}
    {!ready&&s.lessonId==='first-idea'&&s.ideaId&&s.step===3&&<button className="btn btn-primary" data-testid="learning-open-idea" onClick={()=>openIdea(s.ideaId!)}>{copy('ideaEvidence')}</button>}
    {!ready&&s.lessonId==='first-idea'&&s.ideaId&&s.step===4&&<button className="btn btn-primary" data-testid="learning-open-graph" onClick={()=>openGraph(s.ideaId!)}>{copy('graph')}</button>}
    {!ready&&s.lessonId==='interface'&&<button className="btn btn-primary" data-testid="learning-interface-next" onClick={()=>{if(!interfaceViewed){interfaceTab(Math.min(s.step,3));return;}c.observe({sessionId:s.id,vaultId:s.vaultId,kind:'explanation'});if(s.step<3)interfaceTab(s.step+1);}}>{copy(!interfaceViewed?'continue':s.step===3?'finishGuide':'continue')}</button>}
-   {ready&&<><button className="btn btn-primary" data-testid="learning-return-work" onClick={()=>void c.returnToWork()}>{copy('backWork')}</button><button className="btn btn-ghost" onClick={()=>{c.pause();localStorage.setItem('nodus.settingsTarget','tutorials');window.dispatchEvent(new Event('nodus:settings-target'));navigate('settings');}}>{copy('learn')}</button></>}
+   {nextIdeas&&<button className="btn btn-primary" data-testid="learning-next-ideas" onClick={()=>void onContinueWithIdeas!(s.documentId!)}>{t('Ver las ideas de esta fuente')}</button>}
+   {ready&&<><button className={`btn ${nextIdeas?'btn-ghost':'btn-primary'}`} data-testid="learning-return-work" onClick={()=>void c.returnToWork()}>{copy('backWork')}</button>{!nextIdeas&&<button className="btn btn-ghost" onClick={()=>{c.pause();localStorage.setItem('nodus.settingsTarget','tutorials');window.dispatchEvent(new Event('nodus:settings-target'));navigate('settings');}}>{copy('learn')}</button>}</>}
   </div><button className="learning-dismiss-link" onClick={()=>c.dismiss(true)}>{copy('never')}</button>
  </AcademicLearningSpotlight>;
 }
@@ -104,21 +122,13 @@ function LearningModels({ purpose, settings, onClose, onSaved }: { purpose:'chat
   if(!model || needsEmbeddings && !embedding) return;
   setBusy(true);setError('');
   try {
-   const definitions=[...new Set([model,...(needsEmbeddings?[embedding]:[])].filter(m=>m?.provider==='nodus').map(m=>m!.model))].map(id=>getNodusLocalModel(id));
-   if(definitions.length){
-    const status=await window.nodus.getNodusLocalAiStatus();
-    if(definitions.some(d=>d?.runtime==='llama_cpp')&&!status.runtime.ready){setDownload(copy('prepare'));await window.nodus.installNodusLocalRuntime(()=>{});}
-    for(const d of definitions)if(d&&!status.models.some(m=>m.id===d.id&&m.downloaded)){setDownload(d.label);await window.nodus.downloadNodusLocalModel(d.id,()=>{});}
-   }
-   if(needsEmbeddings&&embedding&&!await configureEmbeddingIndex(embedding))return;
-   const fresh=await window.nodus.getSettings();
-   const next=await window.nodus.updateSettings({...learningModelPatch(fresh,purpose,model,needsEmbeddings?embedding:null),favorites:fresh.favorites.some(m=>m.model===model.model&&m.provider===model.provider)?fresh.favorites:[...fresh.favorites,model]});
-   onSaved(next);
+   const next=await saveLearningModels({purpose,model,embedding:needsEmbeddings?embedding:null,onDownload:setDownload,runtimeLabel:copy('prepare')});
+   if(next)onSaved(next);
   }catch(cause){setError(cause instanceof Error?cause.message:String(cause));}finally{setBusy(false);setDownload('');}
  };
  return <LearningDialog title={copy('configure')} testId="learning-model-setup" onClose={()=>{if(!busy)onClose();}}><div className="learning-invitation"><p>{copy(purpose==='chat'?(needsEmbeddings?'twoRoles':'manualPrepare'):'cloud')}</p><p className="learning-muted">{copy('cost')}</p>
   {purpose==='analysis'&&settings.chatModel&&modelRefSupportsExtraction(settings.chatModel)&&<button className="btn btn-ghost border border-neutral-700" onClick={()=>setModel(settings.chatModel)}>{copy('reuseChat')}</button>}
-  <OnboardingModelStep purpose={purpose} cloudFirst showEmbeddings={needsEmbeddings} providerKeys={settings.providerKeys} aiModel={model} embeddingModel={embedding} onAiChange={setModel} onEmbeddingChange={setEmbedding} disabled={busy}/>
+  <OnboardingModelStep purpose={purpose} cloudFirst embeddingChoice showEmbeddings={needsEmbeddings} providerKeys={settings.providerKeys} aiModel={model} embeddingModel={embedding} onAiChange={setModel} onEmbeddingChange={setEmbedding} disabled={busy}/>
   {error&&<p role="alert">{error}</p>}{download&&<p role="status">{download}</p>}
   <div className="flex gap-2"><button className="btn btn-primary" data-testid="learning-model-save" onClick={()=>void save()} disabled={busy||!model||needsEmbeddings&&!embedding}>{busy?copy('prepare'):copy('continue')}</button><button className="btn btn-ghost" disabled={busy} onClick={onClose}>{copy('later')}</button></div>
  </div></LearningDialog>;

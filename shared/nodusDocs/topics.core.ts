@@ -243,12 +243,16 @@ export const CORE_DOC_TOPICS: readonly NodusDocTopic[] = [
 - Los recorridos también aparecen solos la primera vez: el recorrido básico, el avanzado y el del tipo de bóveda correspondiente, en ese orden.
 - La guía esencial aparece en la primera instalación y también al pulsar «Empezar» en Ajustes > Tutoriales; al completarla se marcan como vistos los vídeos de esa guía.
 - Crear una bóveda o cargar datos de demostración no abre los tutoriales: aparecen al crear un vault nuevo de verdad o cuando se piden desde Ajustes.
-- El asistente de bienvenida se puede descartar («Salir y descartar»); si la bóveda se acababa de crear, al descartarlo se vuelve a la bóveda anterior.`,
+- El asistente de bienvenida se puede descartar («Salir y descartar»); si la bóveda se acababa de crear, al descartarlo se vuelve a la bóveda anterior.
+- En una bóveda académica nueva, el primer arranque pregunta «¿Con qué fuentes quieres empezar?»: colecciones de Zotero (se detecta solo), archivos del ordenador o un documento de ejemplo. Después se elige la IA (modelo del chat y dónde se calcula la búsqueda: en este equipo o con un servicio externo) y Nodus prepara unas pocas fuentes y abre el chat con una pregunta escrita. «Ahora no» entra sin configurar nada y «Prefiero una guía paso a paso» abre la guía interactiva.
+- Una biblioteca académica vacía ofrece «Traer de Zotero» y «Añadir archivos».`,
       en: `- Settings > Tutorials gathers the videos and tours: "Nodus and AI essentials guide" ("Start"), "Usage tutorial" ("Watch again"), "Advanced research tutorial" and the per-vault-type tours (genealogy, primary sources, databases, testimonies, study, teaching), all with "Watch again".
 - Tours also run by themselves the first time: the basic tour, the advanced one and the one for the current vault type, in that order.
 - The essentials guide appears on a first installation and when "Start" is pressed in Settings > Tutorials; completing it marks that guide's videos as seen.
 - Creating a vault or loading demo data does not open the tutorials: they appear when a real new vault is created or when requested from Settings.
-- The welcome assistant can be dismissed ("Exit and discard"); if the vault had just been created, dismissing it returns to the previous vault.`,
+- The welcome assistant can be dismissed ("Exit and discard"); if the vault had just been created, dismissing it returns to the previous vault.
+- In a new academic vault the first run asks "Which sources do you want to start with?": Zotero collections (detected automatically), files on the computer or an example document. Then the AI is chosen (the chat model and where search is computed: on this computer or with an external service) and Nodus prepares a few sources and opens the chat with a question written. "Not now" enters with nothing set up and "I'd rather have a step-by-step guide" opens the interactive guide.
+- An empty academic library offers "Bring from Zotero" and "Add files".`,
     },
     related: ['general-vaults-manage', 'settings-interface'],
   },

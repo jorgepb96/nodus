@@ -8,6 +8,7 @@ import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp
 import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { FIRST_RUN_TRANSLATIONS } from './i18n.firstRun';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
@@ -108,6 +109,7 @@ export const PT_BR: Record<string, string> = {
   'El catálogo de documentos guardados tiene un formato inválido.': 'O catálogo de documentos salvos tem um formato inválido.',
   ...EMBEDDING_INDEX_TRANSLATIONS["pt-BR"],
   ...BACKUPS_TRANSLATIONS['pt-BR'],
+  ...FIRST_RUN_TRANSLATIONS['pt-BR'],
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['pt-BR'],
   ...CALENDAR_SYNC_TRANSLATIONS["pt-BR"],

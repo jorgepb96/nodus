@@ -85,6 +85,7 @@ import {
 } from '../logging/pipelineLogCore';
 import {
   AiRequestScheduler,
+  embeddingRequestClass,
   type AiRequestClass,
   type AiRequestDescriptor,
 } from './aiRequestGate';
@@ -2555,7 +2556,7 @@ async function requestEmbeddings(
     model: modelId,
     credentialScope: credentialScope(provider, key, endpoint),
     endpoint,
-    requestClass: 'embedding',
+    requestClass: embeddingRequestClass(provider, options.role),
     estimatedInputTokens: (Array.isArray(input) ? input : [input]).reduce((sum, value) => sum + estimateLocalTokens(value), 0),
     signal,
     jobId: options.jobId,

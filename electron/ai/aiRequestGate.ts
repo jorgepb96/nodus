@@ -2,6 +2,24 @@ import type { AiConcurrencySnapshot } from '@shared/types';
 
 export type AiRequestClass = 'interactive' | 'background' | 'fusion' | 'embedding';
 
+/**
+ * The scheduling class of an embedding request.
+ *
+ * A question's embedding has a person waiting on it; a preparation batch does not. On a
+ * model that runs on this computer both share one scheduler lane (a single slot unless
+ * calibrated otherwise), and as plain `embedding` requests they were served in arrival
+ * order: a question asked while documents were being indexed waited behind every batch
+ * already queued, which on a long document is minutes of "Preparing search". Marking it
+ * interactive lets it go next, so it waits at most for the batch already running.
+ *
+ * Remote providers keep `embedding`: there the interactive class also clamps the
+ * account's concurrency, which would slow every indexing batch for one question.
+ */
+export function embeddingRequestClass(provider: string, role?: string): AiRequestClass {
+  const local = provider === 'nodus' || provider === 'ollama' || provider === 'lmstudio';
+  return role === 'query' && local ? 'interactive' : 'embedding';
+}
+
 export interface AiRequestDescriptor {
   provider: string;
   model: string;

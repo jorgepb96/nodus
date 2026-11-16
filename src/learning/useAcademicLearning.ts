@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppSettings, VaultSummary, QueueProgress } from '@shared/types';
 import type { ResearchPreparationInventory, ResearchPreparationPolicy, ResearchPreparationProgress } from '@shared/researchCorpus';
 import { ACADEMIC_LESSONS, LESSON_IDS, learningProgress, mergeLearningProgressChange, lessonForProfile, newPractice, observeLearning, type AcademicLessonId, type AcademicPracticeSession, type LearningObservation } from '@shared/academicLearning';
+import { isDocumentSearchable } from '@shared/firstRunSources';
 import type { AcademicLearningContextValue } from './AcademicLearningContext';
 import type { View } from '../navigation';
 import type {LearningWorkspaceInfo} from '@shared/learningWorkspace';
@@ -76,6 +77,22 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
   commitSession(next);
   navigate(ACADEMIC_LESSONS.find(l => l.id === lessonId)!.destination as View);
  }, [commitSession, save, navigate]);
+ /**
+  * Straight from a verified answer to the ideas of the same source. The first-idea
+  * lesson starts at "extract" with that document already chosen: the person has just
+  * proved it is searchable, so asking them to pick it again would be a step for nothing.
+  */
+ const continueWithIdeas = useCallback((documentId: string) => {
+  const { vault, settings, enabled } = scope.current;
+  if (!enabled || !vault || !settings) return;
+  setEntry(null); markSkipped('first-idea');
+  const previous = scope.current.session ?? settings.academicPracticeSession;
+  const next: AcademicPracticeSession = { ...newPractice(vault.id, 'first-idea', crypto.randomUUID()), step: 1, documentId };
+  const { checkpoints: _oldCheckpoints, ...oldCheckpoint } = previous ?? {};
+  next.checkpoints = { ...previous?.checkpoints, ...(previous ? { [previous.lessonId]: oldCheckpoint } : {}) };
+  commitSession(next);
+  navigate('library');
+ }, [commitSession, navigate]);
  const open = useCallback((lessonId: AcademicLessonId, mode: 'invite'|'guide'|'demo'|'practice'|'resume' = 'invite') => {
   if (!scope.current.enabled || !LESSON_IDS.includes(lessonId)) return;
   markSkipped(lessonId);
@@ -143,7 +160,10 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
    if(captured.lessonId==='first-answer' && captured.step>=2 && captured.documentRevision && doc.revision!==captured.documentRevision){commitSession({...captured,step:1,phase:'recovery',recovery:'partial',documentRevision:undefined,messageId:undefined,citationIds:undefined});return;}
    if (captured.lessonId === 'first-answer' && captured.step === 1) {
     const state = doc.preparation;
-    if (state.text === 'available' && doc.coverage === 'fulltext' && state.lexical === 'ready' && (state.embeddings === 'ready' || scope.current.settings?.academicMode==='manual') && !state.unpreparedAttachmentIds?.length && (state.status === 'ready' || scope.current.settings?.academicMode==='manual')) event({ kind: 'prepared', valid: true, documentRevision:doc.revision });
+    // Shared with the first-run screen. It no longer asks for `fulltext` coverage: a work
+    // read straight from Zotero stays at `metadata` once prepared, so the guide used to
+    // wait on it forever.
+    if (isDocumentSearchable(doc, scope.current.settings?.academicMode==='manual')) event({ kind: 'prepared', valid: true, documentRevision:doc.revision });
     else if (state.reason === 'no_model') event({ kind: 'recovery', recovery: 'model' });
     else if (state.status === 'paused') event({ kind: 'recovery', recovery: 'paused' });
     else if (state.status === 'cancelled') event({ kind: 'recovery', recovery: 'cancelled' });
@@ -242,6 +262,6 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
   if(vault?.learningWorkspace)await window.nodus.closeAcademicLearningWorkspace(discard);
  };
  const context: AcademicLearningContextValue | null = enabled && vault ? { vaultId: vault.id, workspace:!!vault.learningWorkspace,epoch:epoch.current, session: session?.vaultId === vault.id ? session : null, observe, requestExtraction, requireModels, prepareAddition } : null;
- return { context, session, entry, modelsPurpose, setModelsPurpose, inventory, policy, ideaCount, error, progress, queue, workWaiting,workspace,returnToWork,open, startPractice, dismiss, selectSource, importSample, refresh, observe, save, pause, requireModels, view };
+ return { context, session, entry, modelsPurpose, setModelsPurpose, inventory, policy, ideaCount, error, progress, queue, workWaiting,workspace,returnToWork,open, startPractice, continueWithIdeas, dismiss, selectSource, importSample, refresh, observe, save, pause, requireModels, view };
 }
 export type AcademicLearningController = ReturnType<typeof useAcademicLearningController>;

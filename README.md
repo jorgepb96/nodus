@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/screenshots/readme-banner.png" alt="Nodus Research, an open-source, local-first research workspace for academic research, teaching, study, databases and Zotero integration. Research deeper, teach smarter, study better. Free forever, no account required, on macOS, Windows and Linux.">
+  <img src="docs/screenshots/readme-banner.png" alt="Nodus Research: Nodi on a glowing sphere of connected stars, and the Nodus Research N. Open-source, local-first research workspace. Research deeper, teach smarter, study better. Academic research, teaching, study and databases. Free forever, no account required, on macOS, Windows and Linux.">
 </p>
 
 <p align="center">

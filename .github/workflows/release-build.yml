@@ -115,6 +115,10 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
       CC: clang-15
       CXX: clang++-15
+      # Nodus runs ONNX on the CPU binaries both pinned onnxruntime-node packages
+      # already carry. The optional CUDA download comes from GitHub and must not
+      # gate a release (it returned 404 for v5.19.0), the same as in ci.yml.
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7

@@ -1,0 +1,134 @@
+/*
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+
+The Nodus family: the front page and the page of each app. Loaded after
+nodus.css and home.css, and builds only on what they define.
+*/
+
+/* ============================================================ the phone */
+/* The mobile counterpart of the desktop window in home.css: the same carousel
+   (data-shots, .shots, .shot, arrows), with the screenshot held in an iPhone
+   body instead of a window with three coloured controls. The caption stays a
+   line under the phone, never laid over the screen. */
+.phone {
+  position: relative;
+  width: min(100%, var(--phone-width, 300px));
+  margin-inline: auto;
+}
+.phone .shots { background: transparent; }
+.phone .shot img,
+.phone-still img {
+  display: block; width: 100%; height: auto;
+  aspect-ratio: var(--phone-ratio, 1179 / 2556);
+  object-fit: cover; object-position: top center;
+  border: 9px solid #07060c;
+  border-radius: 46px;
+  background: #07060c;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 0 0 2px color-mix(in srgb, var(--accent, #a78bfa) 18%, transparent),
+    var(--shadow);
+  transition: box-shadow 0.6s var(--ease);
+}
+.scene:hover .phone .shot img,
+.app-card:hover .phone-still img {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 0 2px color-mix(in srgb, var(--accent, #a78bfa) 45%, transparent),
+    var(--shadow);
+}
+/* the Dynamic Island, sitting on the screen of whichever shot is showing */
+.phone .shots::before,
+.phone-still::before {
+  content: ""; position: absolute; z-index: 1; pointer-events: none;
+  top: 19px; left: 50%; transform: translateX(-50%);
+  width: 29%; height: 22px; border-radius: 999px;
+  background: #07060c;
+}
+.phone-still { position: relative; margin: 0; }
+.phone .shot figcaption {
+  border-top: 0; background: none;
+  padding: 16px 4px 0; justify-content: center; text-align: center;
+}
+.phone .shot .shot-step { display: none; }
+/* the arrows sit beside the phone, not over its screen */
+.phone .shot-arrow { top: calc(50% - 24px); }
+.phone .shot-arrow.prev { left: -52px; }
+.phone .shot-arrow.next { right: -52px; }
+.phone-row { display: flex; justify-content: center; padding-inline: 56px; }
+
+/* An iPad shot is landscape and wants a thinner bezel. */
+.phone.is-ipad { --phone-width: 560px; --phone-ratio: 4 / 3; }
+.phone.is-ipad .shot img { border-width: 11px; border-radius: 28px; }
+.phone.is-ipad .shots::before { display: none; }
+
+@media (max-width: 700px) {
+  .phone { --phone-width: 248px; }
+  .phone .shot img, .phone-still img { border-width: 7px; border-radius: 38px; }
+  .phone .shots::before, .phone-still::before { top: 15px; height: 18px; }
+  .phone .shot-arrow.prev { left: -44px; }
+  .phone .shot-arrow.next { right: -44px; }
+  .phone-row { padding-inline: 46px; }
+}
+
+/* ============================================================ app hero */
+.app-mark {
+  display: block; width: 84px; height: 84px; margin: 0 auto 22px;
+  border-radius: 22px;
+  filter: drop-shadow(0 18px 40px color-mix(in srgb, var(--accent, #a78bfa) 35%, transparent));
+}
+.hero .app-platforms {
+  margin-top: 18px;
+  font: 600 11px/1.4 var(--mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hero .app-tagline {
+  font-family: var(--serif); font-size: clamp(26px, 3.6vw, 44px);
+  line-height: 1.1; letter-spacing: -0.03em; color: var(--ink);
+  margin-top: 10px;
+}
+
+/* ============================================================ front page */
+/* The two desktop apps reuse .scene from home.css. The mobile apps are four
+   cards, two by two where there is room for them. */
+.family-mobile {
+  display: grid; gap: clamp(18px, 2.4vw, 28px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: clamp(32px, 4vw, 48px);
+}
+.app-card {
+  display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+  gap: clamp(18px, 2.4vw, 30px); align-items: center;
+  padding: clamp(18px, 2.4vw, 28px);
+  color: inherit; text-decoration: none;
+}
+.app-card .phone-still { width: 100%; }
+.app-card .phone-still img { border-width: 6px; border-radius: 26px; }
+.app-card .phone-still::before { top: 12px; height: 12px; }
+.app-card h3 { font-size: clamp(22px, 2.2vw, 28px); letter-spacing: -0.02em; }
+.app-card h3 .glow { color: var(--accent); }
+.app-card p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.58; color: var(--ink-2); }
+.app-card .app-platforms {
+  margin-top: 12px;
+  font: 600 10.5px/1.4 var(--mono); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.app-card .arrow-link { margin-top: 16px; }
+
+.family-links { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 24px; }
+
+@media (max-width: 900px) {
+  .family-mobile { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 480px) {
+  .app-card { grid-template-columns: minmax(0, 104px) minmax(0, 1fr); }
+  .app-card .phone-still img { border-width: 5px; border-radius: 20px; }
+  .app-card .phone-still::before { top: 9px; height: 9px; }
+}
+
+/* ============================================================ credit line */
+.shot-credit {
+  margin-top: 14px; font-size: 12.5px; line-height: 1.5; color: var(--ink-3);
+}
+.shot-credit a { color: var(--ink-2); }

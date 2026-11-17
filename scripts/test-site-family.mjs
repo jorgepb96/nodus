@@ -39,3 +39,12 @@ test('no page links to homepage-only anchors at the root', () => {
     .map((file) => path.relative(siteRoot, file));
   assert.deepEqual(offenders, []);
 });
+
+test('the family stylesheet frames phones the way home.css frames windows', () => {
+  const css = read('assets/css/family.css');
+  for (const selector of ['.phone ', '.phone .shot img', '.phone .shots::before', '.phone-still', '.family-mobile', '.app-card', '.app-mark']) {
+    assert.ok(css.includes(selector), `family.css styles ${selector.trim()}`);
+  }
+  assert.match(css, /@media \(max-width: 700px\)/, 'phones shrink on small screens');
+  assert.match(css, /\.family-mobile \{ grid-template-columns: minmax\(0, 1fr\); \}/, 'the mobile cards stack below 900px');
+});

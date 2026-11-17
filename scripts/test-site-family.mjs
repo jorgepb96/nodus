@@ -117,3 +117,83 @@ test('the sitemap lists the front page, Nodus Research and every app page', () =
     assert.ok(sitemap.includes(`<loc>https://nodusresearch.com${url}</loc>`), `sitemap lists ${url}`);
   }
 });
+
+const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+const SVG_TAGS = new Set(['svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon', 'defs', 'lineargradient', 'radialgradient', 'stop', 'clippath', 'mask', 'filter', 'use', 'symbol', 'pattern', 'text', 'tspan', 'title', 'desc', 'animate', 'animatetransform']);
+function unbalancedTags(html) {
+  const stack = [];
+  const problems = [];
+  const body = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<script[\s\S]*?<\/script>/g, '');
+  for (const [, closing, name, selfClosing] of body.matchAll(/<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*?(\/?)>/g)) {
+    const tag = name.toLowerCase();
+    if (VOID_TAGS.has(tag) || SVG_TAGS.has(tag) || tag.startsWith('fe') || selfClosing) continue;
+    if (!closing) stack.push(tag);
+    else if (stack.at(-1) === tag) stack.pop();
+    else problems.push(`</${tag}> closes <${stack.at(-1)}>`);
+  }
+  return [...problems, ...stack.filter((tag) => !['html', 'head', 'body'].includes(tag)).map((tag) => `<${tag}> never closes`)];
+}
+
+test('every family page closes the elements it opens', () => {
+  for (const relative of ['index.html', 'nodus/index.html', ...APP_PAGES.map(({ slug }) => `${slug}/index.html`)]) {
+    assert.deepEqual(unbalancedTags(read(relative)), [], `${relative} is well formed`);
+  }
+});
+
+test('the front page offers desktop, mobile and plugin downloads, each in its own dialog', () => {
+  const home = read('index.html');
+  const triggers = [...home.matchAll(/data-download="([a-z-]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(triggers, ['dl-overlay', 'mobile', 'plugins']);
+  assert.match(home, /<div class="dl-overlay" id="dl-overlay">/, 'the default dialog keeps the id the header chip opens');
+  assert.match(home, /<div class="dl-overlay" id="dl-mobile" data-dialog="mobile">/);
+  assert.match(home, /<div class="dl-overlay" id="dl-plugins" data-dialog="plugins">/);
+  for (const asset of ['Nodus-Imago-mac-arm64.dmg', 'Nodus-Imago-mac-x64.dmg', 'Nodus-Imago-win-x64.exe', 'Nodus-Imago-linux-x86_64.AppImage', 'Nodus-Imago-linux-amd64.deb', 'Nodus-Imago-linux-x86_64.rpm']) {
+    assert.match(home, new RegExp(`data-repo="jorgepb96/nodus-imago" data-asset="${asset.replaceAll('.', '\\.')}"`), `the desktop dialog offers ${asset}`);
+  }
+  for (const href of ['https://apps.apple.com/us/app/nodus-presenter/id6818107823', 'https://testflight.apple.com/join/SjCk8AZ1', 'https://testflight.apple.com/join/kAXnsjJS', 'nodus-zotero.xpi', 'chromewebstore.google.com']) {
+    assert.ok(home.includes(href), `a dialog links to ${href}`);
+  }
+});
+
+test('site.js opens named dialogs and only lets the header chip use the default one', () => {
+  const site = read('assets/js/site.js');
+  assert.match(site, /document\.querySelectorAll\('\.dl-overlay'\)/);
+  assert.match(site, /find\(trigger\.dataset\.download\)\.open\(\)/);
+  assert.match(site, /if \(dialogs\.has\('dl-overlay'\)\) window\.openDl =/);
+  assert.match(site, /data-repo/);
+});
+
+const PAGE_GLYPHS = { 'index.html': 'n', 'imago/index.html': 'i', 'link/index.html': 'l', 'reader/index.html': 'r', 'presenter/index.html': 'p', 'drift/index.html': 'd' };
+
+function loadGlyphs() {
+  const source = read('assets/js/organism.js');
+  const start = source.indexOf('  const STROKE_HALF');
+  const end = source.indexOf('  /* ------------------------------------------------------------ the organism */');
+  // eslint-disable-next-line no-new-func
+  return new Function(`${source.slice(start, end)}; return { glyphPoints, GLYPHS };`)();
+}
+
+test('every app letter is drawn in the logo language, inside the area the N uses', () => {
+  const { glyphPoints, GLYPHS } = loadGlyphs();
+  assert.deepEqual(Object.keys(GLYPHS).sort(), ['d', 'i', 'l', 'n', 'p', 'r']);
+  for (const name of Object.keys(GLYPHS)) {
+    const points = glyphPoints(900, name);
+    assert.ok(points.length > 600, `${name} has enough points to read as a letter`);
+    assert.ok(points.some((point) => point[2] === 1), `${name} ends in the logo's discs`);
+    for (const [x, y] of points) {
+      assert.ok(x >= -0.32 && x <= 0.32 && y >= -0.36 && y <= 0.36, `${name} stays inside the N's area`);
+    }
+  }
+  assert.deepEqual(glyphPoints(900, 'unknown'), glyphPoints(900, 'n'), 'an unknown letter falls back to the N');
+});
+
+test('each family page opens with its own letter', () => {
+  const nodus = read('nodus/index.html');
+  assert.match(nodus, /<body data-formation="on">/, '/nodus/ keeps the N, the default');
+  for (const [relative, glyph] of Object.entries(PAGE_GLYPHS)) {
+    const html = read(relative);
+    assert.match(html, new RegExp(`<body data-formation="on" data-glyph="${glyph}">`), `${relative} forms "${glyph}"`);
+    assert.match(html, /root\.classList\.add\('intro-armed'\)/, `${relative} arms the opening`);
+    assert.match(html, /assets\/js\/home\.js\?v=/, `${relative} loads the opening sequence`);
+  }
+});

@@ -35,9 +35,31 @@ SPDX-License-Identifier: AGPL-3.0-only
 <link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
 <link rel="stylesheet" href="../assets/css/nodus.css?v=20261117a"/>
 <link rel="stylesheet" href="../assets/css/home.css?v=20260928t"/>
-<link rel="stylesheet" href="../assets/css/family.css?v=20261117a"/>
+<link rel="stylesheet" href="../assets/css/family.css?v=20261117e"/>
+<script>
+  /* Arm the opening sequence before the first paint. Anything that goes wrong
+     here simply leaves the page in its ordinary, fully visible state. */
+  try {
+    /* Only on a pointer that hovers. On a phone the title sequence holds the
+       whole page back for five seconds on the smallest screen and the slowest
+       connection, which costs a visitor far more than the shot is worth. */
+    if (matchMedia('(min-width: 701px) and (hover: hover) and (pointer: fine)').matches
+        && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var root = document.documentElement;
+      root.classList.add('intro-armed');
+      /* The sequence in home.js normally finishes in about five seconds. This
+         watchdog lives in the same script that armed the page, so a failure to
+         load or run that file can never leave a visitor staring at a blank
+         screen. */
+      setTimeout(function () {
+        root.classList.remove('intro-armed', 'intro-run');
+        root.classList.add('intro-done');
+      }, 6000);
+    }
+  } catch (error) {}
+</script>
 </head>
-<body>
+<body data-formation="on" data-glyph="i">
 
 <a class="skip-link" href="#main">Skip to content</a>
 <canvas id="organism" aria-hidden="true"></canvas>
@@ -51,7 +73,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 <!-- ============================================================ hero -->
 <header class="hero" data-accent="#c084fc" data-second="#7c3aed" data-energy="0.42">
   <div class="hero-inner scrim">
-    <img class="app-mark" src="../assets/family/icons/imago.webp" width="84" height="84" alt=""/>
+    <img class="app-mark" src="../assets/family/icons/imago.webp?v=20261117b" width="84" height="84" alt=""/>
     <h1 class="hero-name">Nodus Imago</h1>
     <p class="hero-title" aria-label="Explore images. Discover history.">
       <span class="line"><i><span class="verb">Explore</span> images</i></span>
@@ -341,8 +363,9 @@ SPDX-License-Identifier: AGPL-3.0-only
   </div>
 </footer>
 
-<script src="../assets/js/organism.js?v=20260820a"></script>
-<script src="../assets/js/site.js?v=20260920c"></script>
+<script src="../assets/js/organism.js?v=20261117a"></script>
+<script src="../assets/js/site.js?v=20261117a"></script>
+<script src="../assets/js/home.js?v=20260928i"></script>
 <script src="../assets/js/vault-shots.js?v=20260928r"></script>
 <script src="../assets/js/back-to-top.js?v=20260817b"></script>
 </body>

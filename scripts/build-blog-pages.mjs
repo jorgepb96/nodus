@@ -206,7 +206,7 @@ ${next ? `        <a class="btn" href="${encodeURIComponent(next.slug)}/">${esca
   </div>
 </footer>
 
-<script src="../assets/js/organism.js?v=20260820a"></script>
+<script src="../assets/js/organism.js?v=20261117a"></script>
 <script src="../assets/js/site.js?v=20260815"></script>
 <script src="../assets/js/back-to-top.js?v=20260817b"></script>
 </body>

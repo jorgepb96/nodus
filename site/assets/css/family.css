@@ -74,8 +74,7 @@ nodus.css and home.css, and builds only on what they define.
 
 /* ============================================================ app hero */
 .app-mark {
-  display: block; width: 84px; height: 84px; margin: 0 auto 22px;
-  border-radius: 22px;
+  --icon: 84px; display: block; margin: 0 auto 22px;
   filter: drop-shadow(0 18px 40px color-mix(in srgb, var(--accent, #a78bfa) 35%, transparent));
 }
 .hero .app-platforms {
@@ -133,5 +132,75 @@ nodus.css and home.css, and builds only on what they define.
 }
 .shot-credit a { color: var(--ink-2); }
 
-/* the small app icon above each mobile card's name */
-.app-card .app-icon { display: block; width: 44px; height: 44px; border-radius: 11px; margin-bottom: 12px; }
+/* ============================================================ app icons */
+/* Every app icon is a full square in its light version, clipped to the same
+   rounded corner, so the family reads as one set at any size. */
+.app-icon, .app-mark {
+  display: inline-block; flex: 0 0 auto;
+  width: var(--icon, 44px); height: var(--icon, 44px);
+  border-radius: 23%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 10px 26px -12px rgba(0, 0, 0, 0.7);
+}
+.app-card .app-icon { display: block; margin-bottom: 12px; }
+.brand-icon { display: inline-grid; place-items: center; }
+.brand-icon svg { width: 58%; height: 58%; }
+
+/* ============================================================ hero launchers */
+/* Under the front-page title: one panel per kind of app, each with its icons,
+   a way to read more and a button that opens its download dialog. */
+.launchers {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px; margin: 34px auto 0; max-width: 860px; text-align: left;
+}
+.launcher {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--membrane); border-radius: var(--r-l);
+  background: linear-gradient(180deg, rgba(22, 18, 38, 0.72), rgba(11, 9, 20, 0.72));
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.3s var(--ease), transform 0.3s var(--ease);
+}
+.launcher:hover { border-color: rgba(167, 139, 250, 0.45); transform: translateY(-2px); }
+.launcher-head { display: flex; flex-direction: column; gap: 4px; color: var(--ink); }
+.launcher-head b { font-size: 17px; letter-spacing: -0.01em; }
+.launcher-kicker {
+  font: 600 10.5px/1.3 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3);
+}
+.launcher-icons { --icon: 40px; display: flex; flex-wrap: wrap; gap: 8px; }
+.launcher-actions { display: flex; gap: 8px; margin-top: auto; }
+.launcher-actions .btn { flex: 1 1 auto; justify-content: center; padding-inline: 12px; }
+@media (max-width: 760px) {
+  .launchers { grid-template-columns: minmax(0, 1fr); max-width: 420px; }
+}
+
+/* ============================================================ dialogs */
+.dl-plat .app-os, .dl-app-group .app-os { border-radius: 23%; object-fit: cover; background: #fff; }
+.dl-plat .app-os { width: 30px; height: 30px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.dl-app-group { display: flex; align-items: center; gap: 12px; }
+.dl-app-group .app-os { --icon: 34px; width: 34px; height: 34px; }
+.dl-app-group > span { display: flex; flex-direction: column; gap: 2px; }
+.dl-app-group .ver { margin: 0; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.dl-chip {
+  display: inline-block; vertical-align: 2px; margin-left: 6px;
+  padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--membrane); color: var(--ink-2);
+  font: 600 10.5px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.dl-hint { margin: 16px 2px 0; font-size: 13px; line-height: 1.55; color: var(--ink-3); }
+.dl-hint b { color: var(--ink-2); font-weight: 600; }
+.dl-hint a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+/* the hero mark keeps its own line, centred above the app's name */
+.hero .app-mark { display: block; }
+
+/* ============================================================ the opening */
+/* The family pages run the same opening as Nodus Research (home.css): the field
+   gathers into the page's own letter, then the hero rises. These are the hero
+   pieces home.css does not know about. */
+.intro-armed .hero .app-mark,
+.intro-armed .hero .app-platforms,
+.intro-armed .hero .launchers { opacity: 0; }
+.intro-run .hero .app-mark { animation: intro-mark 1.1s var(--ease) both; }
+.intro-run .hero .launchers { animation: intro-rise 0.9s var(--ease) 1.36s both; }
+.intro-run .hero .app-platforms { animation: intro-rise 0.9s var(--ease) 1.44s both; }

@@ -10,7 +10,7 @@ const read = (relative) => fs.readFileSync(path.join(repoRoot, relative), 'utf8'
 /** The hero art is generated from the app's components; these assertions guard the
  *  contract around that file, not the hundreds of numbers inside it. */
 test('the home hero draws Nodi from the app components instead of an illustration', () => {
-  const home = read('site/index.html');
+  const home = read('site/nodus/index.html').replaceAll('="../', '="');
   assert.match(home, /<!-- generated:what-nodi:start -->[\s\S]*<!-- generated:what-nodi:end -->/, 'the generated figure block is in place');
   const figure = home.slice(home.indexOf('<!-- generated:what-nodi:start -->'), home.indexOf('<!-- generated:what-nodi:end -->'));
 

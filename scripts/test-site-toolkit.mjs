@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
-const home = read('site/index.html');
+const home = read('site/nodus/index.html').replaceAll('="../', '="');
 const css = read('site/assets/css/home.css');
 const script = read('site/assets/js/home.js');
 

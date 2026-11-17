@@ -176,8 +176,8 @@ ${next ? `        <a class="btn" href="${encodeURIComponent(next.slug)}/">${esca
       </div>
       <div class="foot-col">
         <h3>Product</h3>
-        <a href="../#vaults">The four vaults</a>
-        <a href="../#tools">Nodus Toolkit</a>
+        <a href="../nodus/#vaults">The four vaults</a>
+        <a href="../nodus/#tools">Nodus Toolkit</a>
         <a href="../apps/">Nodus Apps</a>
         <a href="../demo/">Live demos</a>
       </div>

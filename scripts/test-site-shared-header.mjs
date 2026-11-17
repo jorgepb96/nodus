@@ -13,6 +13,7 @@ const systemStyles = read('site/assets/css/nodus.css');
 // Pages that carry the site design system and get the header from nodus.css.
 const systemPages = [
   ['site/index.html', 'home', ''],
+  ['site/nodus/index.html', 'nodus', '../'],
   ['site/research-atlas/index.html', 'atlas', '../'],
   ['site/research/index.html', 'research', '../'],
   ['site/zotero/index.html', 'zotero', '../'],
@@ -163,7 +164,7 @@ test('the home page ships the download dialog the chip hands its click to', () =
   // (`window.openDl`, defined by site.js around #dl-overlay), so the page that
   // carries that dialog is what the chip's promise rests on. On the pages
   // without one the chip stays the link to the releases page it has always been.
-  const home = read('site/index.html');
+  const home = read('site/nodus/index.html').replaceAll('="../', '="');
   assert.match(home, /id="dl-overlay"/, 'the home page carries the download dialog');
   assert.match(home, /assets\/js\/site\.js\?v=[^"]+/, 'and the script that opens it');
   for (const [relative] of standalonePages) {

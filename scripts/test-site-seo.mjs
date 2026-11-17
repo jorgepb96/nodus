@@ -57,7 +57,7 @@ test('all JSON-LD parses and the canonical entities stay consistent', () => {
     }
   }
 
-  const softwareEntities = ['index.html', 'app/index.html', 'cite/index.html'].map((relative) => (
+  const softwareEntities = ['nodus/index.html', 'app/index.html', 'cite/index.html'].map((relative) => (
     jsonLdBlocks(read(relative))[0]['@graph'].find((entry) => entry['@id'] === metadata.softwareId)
   ));
   assert.deepEqual(softwareEntities[1], softwareEntities[0], 'the app page reuses the canonical software entity');
@@ -89,11 +89,11 @@ test('release and citation metadata have one generated source of truth', () => {
   assert.match(citation, new RegExp(`^date-released: "${metadata.releaseDate}"$`, 'm'));
   assert.match(citation, new RegExp(`^doi: "${metadata.citationDoi.replaceAll('.', '\\.')}"$`, 'm'));
 
-  const publicSoftware = jsonLdBlocks(read('index.html'))[0]['@graph']
+  const publicSoftware = jsonLdBlocks(read('nodus/index.html'))[0]['@graph']
     .find((entry) => entry['@id'] === metadata.softwareId);
   const publicVersion = isPrerelease ? publicSoftware.softwareVersion : metadata.version;
   const publicReleaseTag = `v${publicVersion}`;
-  for (const relative of ['index.html', 'app/index.html', 'cite/index.html']) {
+  for (const relative of ['nodus/index.html', 'app/index.html', 'cite/index.html']) {
     assert.ok(read(relative).includes(`"softwareVersion": "${publicVersion}"`), `${relative} has the public softwareVersion`);
     assert.ok(read(relative).includes(`${metadata.repository}/releases/tag/${publicReleaseTag}`), `${relative} has the public release tag`);
     if (isPrerelease) assert.ok(!read(relative).includes(metadata.releaseTag), `${relative} does not advertise a prerelease as stable`);

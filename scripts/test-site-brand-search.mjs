@@ -31,7 +31,7 @@ test('About establishes the Nodus Research entity without targeting unrelated na
 });
 
 test('the three brand queries have one clear landing page each', () => {
-  const home = read('index.html');
+  const home = read('nodus/index.html').replaceAll('="../', '="');
   const app = read('app/index.html');
   const apps = read('apps/index.html');
 

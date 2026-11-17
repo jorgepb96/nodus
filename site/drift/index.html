@@ -1,0 +1,284 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nodus Drift | Ambient sounds for focus, rest and sleep</title>
+<meta name="description" content="Nodus Drift is a free, open-source ambient sound app for iPhone and iPad: 89 sounds, mixes of up to six, saved mixes and binaural presets, fully offline, with no accounts, ads or tracking."/>
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"/>
+<meta property="og:title" content="Nodus Drift | Ambient sounds for focus, rest and sleep"/>
+<meta property="og:description" content="Nodus Drift is a free, open-source ambient sound app for iPhone and iPad: 89 sounds, mixes of up to six, saved mixes and binaural presets, fully offline, with no accounts, ads or tracking."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://nodusresearch.com/drift/"/>
+<meta property="og:site_name" content="Nodus Research"/>
+<meta property="og:locale" content="en_GB"/>
+<meta property="og:image" content="https://nodusresearch.com/assets/social/drift-og.jpg"/>
+<meta property="og:image:type" content="image/jpeg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Nodus Drift: headphones on a rock by a lake at night, with sound icons. Ambient sounds for focus, relax and sleep."/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Nodus Drift | Ambient sounds for focus, rest and sleep"/>
+<meta name="twitter:description" content="Nodus Drift is a free, open-source ambient sound app for iPhone and iPad: 89 sounds, mixes of up to six, saved mixes and binaural presets, fully offline, with no accounts, ads or tracking."/>
+<meta name="twitter:image" content="https://nodusresearch.com/assets/social/drift-og.jpg"/>
+<meta name="twitter:image:alt" content="Nodus Drift: headphones on a rock by a lake at night, with sound icons. Ambient sounds for focus, relax and sleep."/>
+<link rel="canonical" href="https://nodusresearch.com/drift/"/>
+<link rel="icon" href="../favicon.ico" sizes="any"/>
+  <link rel="icon" type="image/png" href="../favicon.png" sizes="512x512"/>
+  <link rel="icon" type="image/svg+xml" href="../assets/nodus-logo.svg"/>
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png"/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/inter-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../assets/css/home.css?v=20260928t"/>
+<link rel="stylesheet" href="../assets/css/family.css?v=20261117a"/>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<canvas id="organism" aria-hidden="true"></canvas>
+<div id="scroll-progress" aria-hidden="true"></div>
+
+<div data-nodus-site-header data-base="../" data-page="mobile"></div>
+<script defer src="../site-header.js?v=20261109a"></script>
+
+<main id="main">
+
+<!-- ============================================================ hero -->
+<header class="hero" data-accent="#86efac" data-second="#a78bfa" data-energy="0.42">
+  <div class="hero-inner scrim">
+    <img class="app-mark" src="../assets/family/icons/drift.webp" width="84" height="84" alt=""/>
+    <h1 class="hero-name">Nodus Drift</h1>
+    <p class="hero-title" aria-label="A little space. to be.">
+      <span class="line"><i><span class="verb">A little space</span></i></span>
+      <span class="line"><i><span class="verb">to</span> be</i></span>
+    </p>
+    <p class="sub">Nodus Drift plays ambient sounds for reading, focus and rest. It includes 89 sounds, mixes of up to six, and works without a network connection.</p>
+    <div class="ctas">
+      <a class="btn primary" href="https://testflight.apple.com/join/kAXnsjJS" target="_blank" rel="noopener" data-magnet="0.16">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 3 4.5 6.5 4.5 10.5L12 22l-4.5-9.5C7.5 8.5 9 5 12 2Z"/><circle cx="12" cy="10" r="2"/></svg>
+        Join the TestFlight beta</a>
+      <a class="btn" href="https://github.com/jorgepb96/nodus-drift" target="_blank" rel="noopener" data-magnet="0.12">
+        <svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Source code</a>
+    </div>
+    <p class="app-platforms">iPhone · iPad · iOS 17 or later</p>
+    <p class="meta">There are no accounts, ads, tracking, subscriptions or purchases. Audio is decoded, mixed and played on the device.</p>
+    <p class="hero-links">Part of the <a href="../">Nodus family</a> · <a href="https://github.com/jorgepb96/nodus-drift" target="_blank" rel="noopener">GitHub</a> · <a href="privacy/">Privacy</a></p>
+  </div>
+  <div class="scroll-cue" aria-hidden="true"><span class="rail"></span>Scroll</div>
+</header>
+
+<section class="scene" data-accent="#86efac" data-second="#a78bfa" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>01</b>
+      </div>
+      <h2>Find your <span class="glow">sound</span></h2>
+      <p class="lead">Rain, nature, animals, places, things, transport, city, noise and binaural: search, mark favourites and sort the way you like.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>89 sounds in nine categories,</b> from light rain to brown noise.</p></div>
+        <div class="cap"><em>02</em><p><b>Seamless loops,</b> stereo white, pink and brown noise, and five binaural presets.</p></div>
+        <div class="cap"><em>03</em><p><b>Search, favourites and filters,</b> sorted by recommendation, name, type or use.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="phone-row">
+      <div class="phone" data-shots>
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Drift · Find your sound in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/drift/home.webp" width="600" height="1304" decoding="async"
+                   alt="Nodus Drift home screen"/>
+              <figcaption><span class="shot-text">A little space to be</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/drift/sound-library.webp" width="600" height="1304" loading="lazy" decoding="async"
+                   alt="Nodus Drift sound library with filters"/>
+              <figcaption><span class="shot-text">Find your sound</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-flip data-accent="#86efac" data-second="#a78bfa" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>02</b>
+      </div>
+      <h2>Mix your <span class="glow">soundscape</span></h2>
+      <p class="lead">Play up to six sounds at once, each with its own volume, under a master volume and a peak limiter.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Up to six sounds,</b> each with its own volume and smooth gain changes.</p></div>
+        <div class="cap"><em>02</em><p><b>Save up to 48 mixes</b> with a name, an icon, sounds and volumes.</p></div>
+        <div class="cap"><em>03</em><p><b>Background playback</b> with lock-screen controls.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="phone-row">
+      <div class="phone" data-shots>
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Drift · Mix your soundscape in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/drift/mix.webp" width="600" height="1304" decoding="async"
+                   alt="Nodus Drift mix with two sounds and their volumes"/>
+              <figcaption><span class="shot-text">Your soundscape</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/drift/saved.webp" width="600" height="1304" loading="lazy" decoding="async"
+                   alt="Nodus Drift saved mixes"/>
+              <figcaption><span class="shot-text">Saved mixes</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-accent="#86efac" data-second="#a78bfa" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>03</b>
+      </div>
+      <h2>Just be <span class="glow">here</span></h2>
+      <p class="lead">A quiet full-screen companion for meditation and rest, with the sounds you chose playing underneath.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>A calm full-screen view</b> for meditation and rest.</p></div>
+        <div class="cap"><em>02</em><p><b>Works in portrait and landscape</b> on iPhone and iPad.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="phone-row">
+      <div class="phone" data-shots>
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Drift · Just be here in 1 screenshot">
+            <figure class="shot is-active">
+              <img src="../assets/family/drift/meditation-controls.webp" width="600" height="1304" decoding="async"
+                   alt="Nodus Drift meditation screen"/>
+              <figcaption><span class="shot-text">Just be here</span><span class="shot-step">01 / 01</span></figcaption>
+            </figure>
+          </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ band -->
+<section class="band section-line" data-accent="#34d399" data-second="#22d3ee" data-energy="0.24">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="kicker" style="justify-content:center">Free, and yours</span>
+      <h2 class="title" data-split>Free to use. Yours to keep.</h2>
+      <p class="lead">Nodus Drift is open source under the MIT licence. It has no accounts, ads, tracking, subscriptions or purchases, and needs no network.</p>
+      <div class="pills">
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Free and open source (MIT)</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Fully offline</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>No tracking</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>No ads or purchases</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>iPhone and iPad</span>
+      </div>
+      <div class="ctas">
+      <a class="btn primary" href="https://testflight.apple.com/join/kAXnsjJS" target="_blank" rel="noopener" data-magnet="0.16">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 3 4.5 6.5 4.5 10.5L12 22l-4.5-9.5C7.5 8.5 9 5 12 2Z"/><circle cx="12" cy="10" r="2"/></svg>
+        Join the TestFlight beta</a>
+      <a class="btn" href="https://github.com/jorgepb96/nodus-drift" target="_blank" rel="noopener" data-magnet="0.12">
+        <svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Source code</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ family -->
+<section class="section-line" data-accent="#a78bfa" data-second="#818cf8" data-energy="0.26">
+  <div class="wrap">
+    <div class="section-head scrim reveal">
+      <span class="kicker">The Nodus family</span>
+      <h2 class="title" data-split>One family of tools for research.</h2>
+      <p class="lead">Nodus Drift is one of the free, open-source apps made by Nodus Research.</p>
+      <div class="family-links">
+        <a class="arrow-link" href="../nodus/">Nodus Research <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../imago/">Nodus Imago <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../link/">Nodus Link <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../reader/">Nodus Reader <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../presenter/">Nodus Presenter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid wide">
+      <div class="foot-brand">
+        <a class="logo" href="../"><img src="../assets/nodus-logo.svg" alt=""/> Nodus Research</a>
+        <p>A personal, independent open-source project. Nodus is its local-first desktop application.</p>
+      </div>
+      <div class="foot-col">
+        <h3>Family</h3>
+        <a href="../nodus/">Nodus Research</a>
+        <a href="../imago/">Nodus Imago</a>
+        <a href="../link/">Nodus Link</a>
+        <a href="../reader/">Nodus Reader</a>
+        <a href="../presenter/">Nodus Presenter</a>
+        <a href="../drift/">Nodus Drift</a>
+      </div>
+      <div class="foot-col">
+        <h3>Research</h3>
+        <a href="../research-atlas/">Research Atlas</a>
+        <a href="../app/">The Nodus App</a>
+        <a href="../research/">Academic research</a>
+        <a href="../zotero/">Nodus and Zotero</a>
+        <a href="../open-source/">Open source</a>
+      </div>
+      <div class="foot-col">
+        <h3>Learn</h3>
+        <a href="../wiki/">Wiki</a>
+        <a href="../blog/">Blog</a>
+        <a href="../faq/">FAQ</a>
+        <a href="../demo/">Live demos</a>
+      </div>
+      <div class="foot-col">
+        <h3>Project</h3>
+        <a href="../about/">About Nodus Research</a>
+        <a href="../cite/">Cite Nodus</a>
+        <a href="../legal/">Legal notice</a>
+        <a href="../contribute/">Contribute</a>
+        <a href="https://github.com/jorgepb96" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Jorge Pérez Burgueño and Nodus contributors.</span>
+      <a href="../privacy/">Website privacy</a>
+      <a href="../cookies/">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/organism.js?v=20260820a"></script>
+<script src="../assets/js/site.js?v=20260920c"></script>
+<script src="../assets/js/vault-shots.js?v=20260928r"></script>
+<script src="../assets/js/back-to-top.js?v=20260817b"></script>
+</body>
+</html>

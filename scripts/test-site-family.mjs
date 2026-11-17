@@ -48,3 +48,41 @@ test('the family stylesheet frames phones the way home.css frames windows', () =
   assert.match(css, /@media \(max-width: 700px\)/, 'phones shrink on small screens');
   assert.match(css, /\.family-mobile \{ grid-template-columns: minmax\(0, 1fr\); \}/, 'the mobile cards stack below 900px');
 });
+
+const APP_PAGES = [
+  { slug: 'imago', page: 'imago' },
+  { slug: 'link', page: 'mobile' },
+  { slug: 'reader', page: 'mobile' },
+  { slug: 'presenter', page: 'mobile' },
+  { slug: 'drift', page: 'mobile' },
+];
+const metaContent = (html, name) => html.match(new RegExp(`<meta (?:name|property)="${name}" content="([^"]+)"`))?.[1];
+
+for (const { slug, page } of APP_PAGES) {
+  test(`app page ${slug}`, () => {
+    const relative = `${slug}/index.html`;
+    assert.ok(fs.existsSync(path.join(siteRoot, relative)), `site/${relative} exists`);
+    const html = read(relative);
+    assert.equal(canonical(html), `https://nodusresearch.com/${slug}/`);
+    assert.equal(metaContent(html, 'og:url'), `https://nodusresearch.com/${slug}/`);
+    assert.match(html, new RegExp(`data-nodus-site-header data-base="\\.\\./" data-page="${page}"`));
+    assert.match(html, /href="\.\.\/assets\/css\/family\.css\?v=/);
+    assert.ok(html.includes('<canvas id="organism" aria-hidden="true"></canvas>'));
+    assert.ok(fs.existsSync(path.join(siteRoot, 'assets/social', `${slug}-og.jpg`)), 'its social image exists');
+    assertLocalReferencesResolve(`site/${relative}`);
+  });
+}
+
+test('every family page has its own title and description', () => {
+  const pages = ['index.html', 'nodus/index.html', ...APP_PAGES.map(({ slug }) => `${slug}/index.html`)];
+  const titles = pages.map((relative) => read(relative).match(/<title>([^<]+)<\/title>/)?.[1]);
+  const descriptions = pages.map((relative) => metaContent(read(relative), 'description'));
+  assert.equal(new Set(titles).size, pages.length, 'titles are unique');
+  assert.equal(new Set(descriptions).size, pages.length, 'descriptions are unique');
+});
+
+test('the App Store privacy pages are still published', () => {
+  for (const slug of ['drift', 'link', 'presenter', 'reader']) {
+    assert.ok(fs.existsSync(path.join(siteRoot, slug, 'privacy/index.html')), `site/${slug}/privacy/ exists`);
+  }
+});

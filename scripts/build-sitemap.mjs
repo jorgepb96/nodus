@@ -11,6 +11,11 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export const STATIC_PAGES = [
   { file: 'index.html', url: '/', sources: ['site/index.html', 'package.json', 'scripts/build-site-metadata.mjs'] },
   { file: 'nodus/index.html', url: '/nodus/', sources: ['site/nodus/index.html', 'package.json', 'scripts/build-site-metadata.mjs'] },
+  { file: 'imago/index.html', url: '/imago/', sources: ['site/imago/index.html'] },
+  { file: 'link/index.html', url: '/link/', sources: ['site/link/index.html'] },
+  { file: 'reader/index.html', url: '/reader/', sources: ['site/reader/index.html'] },
+  { file: 'presenter/index.html', url: '/presenter/', sources: ['site/presenter/index.html'] },
+  { file: 'drift/index.html', url: '/drift/', sources: ['site/drift/index.html'] },
   { file: 'about/index.html', url: '/about/', sources: ['site/about/index.html'] },
   { file: 'research-atlas/index.html', url: '/research-atlas/', sources: ['site/research-atlas/index.html', 'site/data/research-atlas.json', 'site/assets/js/research-atlas.js'] },
   { file: 'app/index.html', url: '/app/', sources: ['site/app/index.html', 'package.json', 'scripts/build-site-metadata.mjs'] },

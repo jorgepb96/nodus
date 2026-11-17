@@ -1,0 +1,349 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nodus Imago | Open-source software for historical photographs</title>
+<meta name="description" content="Nodus Imago is a free, open-source desktop app for historians, art historians and archivists: catalogue images, search by text, likeness or detail, compare historical photographs and analyse your collection."/>
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"/>
+<meta property="og:title" content="Nodus Imago | Open-source software for historical photographs"/>
+<meta property="og:description" content="Nodus Imago is a free, open-source desktop app for historians, art historians and archivists: catalogue images, search by text, likeness or detail, compare historical photographs and analyse your collection."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://nodusresearch.com/imago/"/>
+<meta property="og:site_name" content="Nodus Research"/>
+<meta property="og:locale" content="en_GB"/>
+<meta property="og:image" content="https://nodusresearch.com/assets/social/imago-og.jpg"/>
+<meta property="og:image:type" content="image/jpeg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Nodus Imago: a magnifying glass over an album of historical photographs. Explore images, discover history."/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Nodus Imago | Open-source software for historical photographs"/>
+<meta name="twitter:description" content="Nodus Imago is a free, open-source desktop app for historians, art historians and archivists: catalogue images, search by text, likeness or detail, compare historical photographs and analyse your collection."/>
+<meta name="twitter:image" content="https://nodusresearch.com/assets/social/imago-og.jpg"/>
+<meta name="twitter:image:alt" content="Nodus Imago: a magnifying glass over an album of historical photographs. Explore images, discover history."/>
+<link rel="canonical" href="https://nodusresearch.com/imago/"/>
+<link rel="icon" href="../favicon.ico" sizes="any"/>
+  <link rel="icon" type="image/png" href="../favicon.png" sizes="512x512"/>
+  <link rel="icon" type="image/svg+xml" href="../assets/nodus-logo.svg"/>
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png"/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/inter-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../assets/css/home.css?v=20260928t"/>
+<link rel="stylesheet" href="../assets/css/family.css?v=20261117a"/>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<canvas id="organism" aria-hidden="true"></canvas>
+<div id="scroll-progress" aria-hidden="true"></div>
+
+<div data-nodus-site-header data-base="../" data-page="imago"></div>
+<script defer src="../site-header.js?v=20261109a"></script>
+
+<main id="main">
+
+<!-- ============================================================ hero -->
+<header class="hero" data-accent="#c084fc" data-second="#7c3aed" data-energy="0.42">
+  <div class="hero-inner scrim">
+    <img class="app-mark" src="../assets/family/icons/imago.webp" width="84" height="84" alt=""/>
+    <h1 class="hero-name">Nodus Imago</h1>
+    <p class="hero-title" aria-label="Explore images. Discover history.">
+      <span class="line"><i><span class="verb">Explore</span> images</i></span>
+      <span class="line"><i><span class="verb">Discover</span> history</i></span>
+    </p>
+    <p class="sub">Nodus Imago is a free, open-source desktop application for historians, art historians and archivists who work with photographs, engravings and other visual sources.</p>
+    <div class="ctas">
+      <a class="btn primary" href="https://github.com/jorgepb96/nodus-imago/releases/latest" target="_blank" rel="noopener" data-magnet="0.16">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+        Download Nodus Imago</a>
+      <a class="btn" href="https://github.com/jorgepb96/nodus-imago" target="_blank" rel="noopener" data-magnet="0.12">
+        <svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Source code</a>
+    </div>
+    <p class="app-platforms">macOS · Windows · Linux · Free and open source</p>
+    <p class="meta">Everything stays on your computer. There is no account and no server. AI features can run locally, and external providers are used only if you turn them on.</p>
+    <p class="hero-links">Part of the <a href="../">Nodus family</a> · <a href="https://github.com/jorgepb96/nodus-imago" target="_blank" rel="noopener">GitHub</a></p>
+  </div>
+  <div class="scroll-cue" aria-hidden="true"><span class="rail"></span>Scroll</div>
+</header>
+
+<section class="scene" data-accent="#c084fc" data-second="#7c3aed" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>01</b>
+      </div>
+      <h2>Catalogue and <span class="glow">describe</span></h2>
+      <p class="lead">Every image keeps a catalogue record with the fields you choose. Bring in what you already have, and let an AI model propose descriptions, tags and transcriptions that you approve.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Build image databases with your own fields:</b> text, dates, places, people, single and multiple tags.</p></div>
+        <div class="cap"><em>02</em><p><b>Import from CSV, Tropy, IIIF manifests, Notion or Nodus.</b> Images are matched to their records by file name; originals are never modified.</p></div>
+        <div class="cap"><em>03</em><p><b>Dates stay as cataloguers write them,</b> “c. 1860”, “[1930]”, “1950s”, and still work in filters, the timeline and statistics.</p></div>
+        <div class="cap"><em>04</em><p><b>Describe, tag and transcribe with AI,</b> one record or many at a time. Every result is a proposal until you approve it.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="frame" data-shots>
+        <div class="frame-bar"><i></i><i></i><i></i><span>Nodus Imago</span><button class="frame-zoom" type="button" data-shot-zoom aria-label="Expand the screenshot" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6"/></svg></button></div>
+        <div class="frame-body">
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Imago · Catalogue and describe in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/imago/gallery.webp" width="1280" height="800" decoding="async"
+                   alt="A gallery of nineteenth-century photographs by Jean Laurent in Nodus Imago"/>
+              <figcaption><span class="shot-text">A gallery of photographs by Jean Laurent</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/imago/record.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="A Nodus Imago record with a historical date, its period and a Copy citation button"/>
+              <figcaption><span class="shot-text">A record with its historical date and a citation</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-flip data-accent="#c084fc" data-second="#7c3aed" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>02</b>
+      </div>
+      <h2>Search by words, likeness or <span class="glow">detail</span></h2>
+      <p class="lead">Search by exact words, by meaning or with another image. Mark a region of a photograph and find that detail inside every other image of the collection.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Text and semantic search</b> over records, descriptions and transcriptions.</p></div>
+        <div class="cap"><em>02</em><p><b>Search with an image</b> to find the photographs that look most like it.</p></div>
+        <div class="cap"><em>03</em><p><b>Search for a detail</b> and see exactly where it appears in other images.</p></div>
+        <div class="cap"><em>04</em><p><b>See the whole collection at once:</b> the visual map places every image by likeness, coloured by place, subject or year.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="frame" data-shots>
+        <div class="frame-bar"><i></i><i></i><i></i><span>Nodus Imago</span><button class="frame-zoom" type="button" data-shot-zoom aria-label="Expand the screenshot" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6"/></svg></button></div>
+        <div class="frame-body">
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Imago · Search by words, likeness or detail in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/imago/detail-search.webp" width="1280" height="800" decoding="async"
+                   alt="A detail of the Court of the Lions searched for inside other photographs in Nodus Imago"/>
+              <figcaption><span class="shot-text">A detail of the Court of the Lions found in other photographs</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/imago/visual-map.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="The visual map of the collection in Nodus Imago, coloured by place"/>
+              <figcaption><span class="shot-text">The visual map of the collection, coloured by place</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-accent="#c084fc" data-second="#7c3aed" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>03</b>
+      </div>
+      <h2>Compare historical <span class="glow">photographs</span></h2>
+      <p class="lead">Follow a photograph through its prints, scans and crops, lay one over another to see what changed, and put a view next to the same place today.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Variants</b> finds the same photograph in different records, in date order.</p></div>
+        <div class="cap"><em>02</em><p><b>The comparison table</b> shows up to six images side by side with shared zoom, or overlays two of them.</p></div>
+        <div class="cap"><em>03</em><p><b>Then and now</b> sets a historical view beside present-day photographs from Wikimedia Commons.</p></div>
+        <div class="cap"><em>04</em><p><b>Restore without touching the original:</b> restored, repaired or colourised versions are kept apart and marked as AI modified.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="frame" data-shots>
+        <div class="frame-bar"><i></i><i></i><i></i><span>Nodus Imago</span><button class="frame-zoom" type="button" data-shot-zoom aria-label="Expand the screenshot" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6"/></svg></button></div>
+        <div class="frame-body">
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Imago · Compare historical photographs in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/imago/compare-overlay.webp" width="1280" height="800" decoding="async"
+                   alt="Two prints of the same view of Toledo laid over each other on the Nodus Imago comparison table"/>
+              <figcaption><span class="shot-text">Two prints of the same view of Toledo, overlaid</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/imago/then-and-now.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Then and now in Nodus Imago: the Puerta del Sol in the 1860s next to present-day photographs"/>
+              <figcaption><span class="shot-text">Then and now: the Puerta del Sol in the 1860s and today</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-flip data-accent="#c084fc" data-second="#7c3aed" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>04</b>
+      </div>
+      <h2>Analyse and <span class="glow">link</span></h2>
+      <p class="lead">Turn the catalogue into evidence: maps, a timeline, statistics and a network of who and what appears together, linked to the authorities historians already use.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Statistics:</b> frequencies, cross-tabs with chi-square and Cramér’s V, co-occurrence and trends.</p></div>
+        <div class="cap"><em>02</em><p><b>Maps and viewpoints:</b> place records with the direction the camera faced and find photographs taken from the same spot.</p></div>
+        <div class="cap"><em>03</em><p><b>A timeline and a network</b> of places, people and subjects across the collection.</p></div>
+        <div class="cap"><em>04</em><p><b>Link to Wikidata, Getty and Iconclass,</b> and copy citations in Chicago, ISO 690 or APA.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="frame" data-shots>
+        <div class="frame-bar"><i></i><i></i><i></i><span>Nodus Imago</span><button class="frame-zoom" type="button" data-shot-zoom aria-label="Expand the screenshot" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6"/></svg></button></div>
+        <div class="frame-body">
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Imago · Analyse and link in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/imago/network.webp" width="1280" height="800" decoding="async"
+                   alt="The network of places and subjects in a Nodus Imago collection"/>
+              <figcaption><span class="shot-text">The network of places and subjects</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/imago/authorities.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Places of the collection with proposed links to Wikidata, Getty TGN identifiers and coordinates in Nodus Imago"/>
+              <figcaption><span class="shot-text">Places linked to Wikidata and Getty TGN</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="wrap">
+    <p class="shot-credit">Screenshots show photographs by Jean Laurent and his studio (1850s–1880s) from public collections. See the <a href="https://github.com/jorgepb96/nodus-imago/blob/main/docs/screenshots/README.md" target="_blank" rel="noopener">image credits</a>.</p>
+</div>
+
+<!-- ============================================================ band -->
+<section class="band section-line" data-accent="#34d399" data-second="#22d3ee" data-energy="0.24">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="kicker" style="justify-content:center">Free, and yours</span>
+      <h2 class="title" data-split>Free to use. Yours to keep.</h2>
+      <p class="lead">Nodus Imago is open source under the AGPL-3.0-only licence. Your images, catalogue and search index stay on your computer, and full backups can be scheduled and encrypted.</p>
+      <div class="pills">
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Free and open source (AGPL-3.0-only)</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Local storage</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Local AI or your own provider</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Encrypted backups</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>CSV, JSON and XLSX export</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>IIIF and Tropy import</span>
+      </div>
+      <div class="ctas">
+      <a class="btn primary" href="https://github.com/jorgepb96/nodus-imago/releases/latest" target="_blank" rel="noopener" data-magnet="0.16">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+        Download Nodus Imago</a>
+      <a class="btn" href="https://github.com/jorgepb96/nodus-imago" target="_blank" rel="noopener" data-magnet="0.12">
+        <svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Source code</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ family -->
+<section class="section-line" data-accent="#a78bfa" data-second="#818cf8" data-energy="0.26">
+  <div class="wrap">
+    <div class="section-head scrim reveal">
+      <span class="kicker">The Nodus family</span>
+      <h2 class="title" data-split>One family of tools for research.</h2>
+      <p class="lead">Nodus Imago is one of the free, open-source apps made by Nodus Research.</p>
+      <div class="family-links">
+        <a class="arrow-link" href="../nodus/">Nodus Research <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../link/">Nodus Link <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../reader/">Nodus Reader <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../presenter/">Nodus Presenter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../drift/">Nodus Drift <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid wide">
+      <div class="foot-brand">
+        <a class="logo" href="../"><img src="../assets/nodus-logo.svg" alt=""/> Nodus Research</a>
+        <p>A personal, independent open-source project. Nodus is its local-first desktop application.</p>
+      </div>
+      <div class="foot-col">
+        <h3>Family</h3>
+        <a href="../nodus/">Nodus Research</a>
+        <a href="../imago/">Nodus Imago</a>
+        <a href="../link/">Nodus Link</a>
+        <a href="../reader/">Nodus Reader</a>
+        <a href="../presenter/">Nodus Presenter</a>
+        <a href="../drift/">Nodus Drift</a>
+      </div>
+      <div class="foot-col">
+        <h3>Research</h3>
+        <a href="../research-atlas/">Research Atlas</a>
+        <a href="../app/">The Nodus App</a>
+        <a href="../research/">Academic research</a>
+        <a href="../zotero/">Nodus and Zotero</a>
+        <a href="../open-source/">Open source</a>
+      </div>
+      <div class="foot-col">
+        <h3>Learn</h3>
+        <a href="../wiki/">Wiki</a>
+        <a href="../blog/">Blog</a>
+        <a href="../faq/">FAQ</a>
+        <a href="../demo/">Live demos</a>
+      </div>
+      <div class="foot-col">
+        <h3>Project</h3>
+        <a href="../about/">About Nodus Research</a>
+        <a href="../cite/">Cite Nodus</a>
+        <a href="../legal/">Legal notice</a>
+        <a href="../contribute/">Contribute</a>
+        <a href="https://github.com/jorgepb96" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Jorge Pérez Burgueño and Nodus contributors.</span>
+      <a href="../privacy/">Website privacy</a>
+      <a href="../cookies/">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/organism.js?v=20260820a"></script>
+<script src="../assets/js/site.js?v=20260920c"></script>
+<script src="../assets/js/vault-shots.js?v=20260928r"></script>
+<script src="../assets/js/back-to-top.js?v=20260817b"></script>
+</body>
+</html>

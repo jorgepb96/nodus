@@ -603,11 +603,11 @@ footer.site-foot {
 }
 .foot-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  /* As many link columns as the footer carries (three to five), each at least
+     wide enough for its longest link; tracks left empty collapse away. */
+  grid-template-columns: minmax(0, 1.4fr) repeat(auto-fit, minmax(118px, 1fr));
   gap: 40px 32px;
 }
-/* the home page carries one column more than the inner pages */
-.foot-grid.wide { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr)); }
 .foot-brand { display: flex; flex-direction: column; gap: 14px; }
 .foot-brand .logo {
   display: inline-flex; align-items: center; gap: 10px;

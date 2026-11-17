@@ -24,7 +24,7 @@ const site = path.join(root, 'site');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const readSite = (relative) => fs.readFileSync(path.join(site, relative), 'utf8');
 
-const home = read('site/index.html');
+const home = read('site/nodus/index.html').replaceAll('="../', '="');
 const css = read('site/assets/css/home.css');
 
 /* One chunk per vault scene, so a check on one window cannot accidentally count

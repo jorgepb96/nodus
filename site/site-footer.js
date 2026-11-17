@@ -27,6 +27,15 @@ Hosts opt in with a placeholder element:
         <p>A personal, independent open-source project. Nodus is its local-first desktop application.</p>
       </div>
       <div class="foot-col">
+        <h3>Family</h3>
+        <a href="${base}nodus/">Nodus Research</a>
+        <a href="${base}imago/">Nodus Imago</a>
+        <a href="${base}link/">Nodus Link</a>
+        <a href="${base}reader/">Nodus Reader</a>
+        <a href="${base}presenter/">Nodus Presenter</a>
+        <a href="${base}drift/">Nodus Drift</a>
+      </div>
+      <div class="foot-col">
         <h3>Research</h3>
         <a href="${base}research-atlas/">Research Atlas</a>
         <a href="${base}research/">Academic research</a>

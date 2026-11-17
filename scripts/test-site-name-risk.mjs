@@ -12,9 +12,8 @@ const graph = (relative) => JSON.parse(
 )['@graph'];
 
 test('project and application remain distinct in structured data', () => {
-  const home = graph('index.html');
-  const website = home.find((entry) => entry['@type'] === 'WebSite');
-  const software = home.find((entry) => entry['@type'] === 'SoftwareApplication');
+  const website = graph('index.html').find((entry) => entry['@type'] === 'WebSite');
+  const software = graph('nodus/index.html').find((entry) => entry['@type'] === 'SoftwareApplication');
 
   assert.equal(website.name, 'Nodus Research');
   assert.deepEqual(website.alternateName, ['nodusresearch.com']);
@@ -30,7 +29,7 @@ test('project and application remain distinct in structured data', () => {
 });
 
 test('public identity copy records independence and current status', () => {
-  const home = read('index.html');
+  const home = read('nodus/index.html').replaceAll('="../', '="');
   const about = read('about/index.html');
 
   for (const [page, html] of [['home', home], ['About', about]]) {
@@ -80,7 +79,7 @@ test('site footers preserve the independence statement and legal notice', () => 
 test('the repository keeps its identity generic and makes no public donation solicitation', () => {
   const readme = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
   const notice = fs.readFileSync(path.join(repoRoot, 'NAME_NOTICE.md'), 'utf8');
-  const publicIdentity = `${readme}\n${notice}\n${read('index.html')}\n${read('about/index.html')}`;
+  const publicIdentity = `${readme}\n${notice}\n${read('nodus/index.html')}\n${read('about/index.html')}`;
 
   assert.doesNotMatch(publicIdentity, /(?:®|™)/);
   assert.doesNotMatch(readme, /paypal\.me|ko-fi\.com/i);

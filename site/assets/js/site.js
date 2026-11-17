@@ -187,57 +187,107 @@ page is still a complete, readable document.
 
   /* ------------------------------------------------------------ download dialog */
 
+  /* A page may carry several dialogs (the front page offers desktop builds,
+     mobile apps and plugins). Each is a .dl-overlay; `data-dialog` names it, and
+     a trigger's `data-download="<name>"` picks it. #dl-overlay is the default
+     one: a bare `data-download`, and the header's download chip, open it. */
   function downloads() {
-    const overlay = document.getElementById('dl-overlay');
-    if (!overlay) return;
+    const overlays = [...document.querySelectorAll('.dl-overlay')];
+    if (!overlays.length) return;
 
-    const modal = overlay.querySelector('.dl-modal');
     let lastFocus = null;
-    let loaded = false;
+    const dialogs = new Map();
+    for (const overlay of overlays) {
+      dialogs.set(overlay.dataset.dialog || overlay.id, dialog(overlay));
+    }
+    const fallback = dialogs.get('dl-overlay') || dialogs.values().next().value;
+    const find = (name) => (name && dialogs.get(name)) || fallback;
+    const openDialog = () => overlays.find((overlay) => overlay.classList.contains('open'));
 
-    const close = () => {
-      overlay.classList.remove('open');
-      document.body.style.overflow = '';
-      if (lastFocus) lastFocus.focus();
-    };
-
-    const open = () => {
-      lastFocus = document.activeElement;
-      overlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      (modal.querySelector('.dl-plat') || modal).focus();
-      if (!loaded) { loaded = true; fetchRelease(); }
-    };
-
-    window.openDl = open;
-    window.closeDl = close;
+    // The header's download chip hands its click to window.openDl, so only a page
+    // with the default dialog publishes it; other dialogs open from their buttons.
+    if (dialogs.has('dl-overlay')) window.openDl = (name) => find(typeof name === 'string' ? name : '').open();
+    window.closeDl = () => dialogs.forEach((entry) => entry.close());
 
     for (const trigger of document.querySelectorAll('[data-download]')) {
-      trigger.addEventListener('click', (event) => { event.preventDefault(); open(); });
+      trigger.addEventListener('click', (event) => { event.preventDefault(); find(trigger.dataset.download).open(); });
     }
 
-    /* Rows that reveal the builds behind them, one disclosure per platform. */
-    for (const toggle of modal.querySelectorAll('.dl-toggle')) {
-      const panel = document.getElementById(toggle.getAttribute('aria-controls'));
-      if (!panel) continue;
-      toggle.addEventListener('click', () => {
-        const expanded = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', String(!expanded));
-        panel.hidden = expanded;
-      });
-    }
-    overlay.addEventListener('click', (event) => { if (event.target === overlay) close(); });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && overlay.classList.contains('open')) close();
-      if (event.key !== 'Tab' || !overlay.classList.contains('open')) return;
+      const overlay = openDialog();
+      if (!overlay) return;
+      if (event.key === 'Escape') { window.closeDl(); return; }
+      if (event.key !== 'Tab') return;
       // keep focus inside the dialog while it is open
-      const focusable = modal.querySelectorAll('a[href], button:not([disabled])');
+      const focusable = overlay.querySelectorAll('a[href], button:not([disabled])');
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
+
+    function dialog(overlay) {
+      const modal = overlay.querySelector('.dl-modal');
+      let loaded = false;
+
+      const close = () => {
+        if (!overlay.classList.contains('open')) return;
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+        if (lastFocus) lastFocus.focus();
+      };
+      const open = () => {
+        window.closeDl();
+        lastFocus = document.activeElement;
+        overlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        (modal.querySelector('.dl-plat') || modal).focus();
+        if (!loaded) {
+          loaded = true;
+          if (modal.querySelector('#dl-version')) fetchRelease();
+          fetchRepoAssets(modal);
+        }
+      };
+
+      /* Rows that reveal the builds behind them, one disclosure per platform. */
+      for (const toggle of modal.querySelectorAll('.dl-toggle')) {
+        const panel = document.getElementById(toggle.getAttribute('aria-controls'));
+        if (!panel) continue;
+        toggle.addEventListener('click', () => {
+          const expanded = toggle.getAttribute('aria-expanded') === 'true';
+          toggle.setAttribute('aria-expanded', String(!expanded));
+          panel.hidden = expanded;
+        });
+      }
+      overlay.addEventListener('click', (event) => { if (event.target === overlay) close(); });
+      return { open, close };
+    }
+
+    /* Rows that name their own build: `data-repo` (owner/name) and `data-asset`
+       (the exact file name in that repository's latest release). The row keeps
+       its releases-page href until the release answers. */
+    function fetchRepoAssets(modal) {
+      const repos = new Set([...modal.querySelectorAll('[data-repo]')].map((element) => element.dataset.repo));
+      for (const repo of repos) {
+        fetch(`https://api.github.com/repos/${repo}/releases/latest`, { cache: 'no-store' })
+          .then((response) => (response.ok ? response.json() : Promise.reject(new Error('no release'))))
+          .then((release) => {
+            const assets = release.assets || [];
+            for (const version of modal.querySelectorAll(`[data-repo="${repo}"][data-release-version]`)) {
+              version.textContent = `Latest release · ${release.tag_name} · ${new Date(release.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+            }
+            for (const anchor of modal.querySelectorAll(`a[data-repo="${repo}"][data-asset]`)) {
+              const asset = assets.find((entry) => entry.name === anchor.dataset.asset);
+              if (!asset) continue;
+              anchor.href = asset.browser_download_url;
+              const note = anchor.querySelector('.note');
+              if (note) note.textContent = `${(asset.size / 1048576).toFixed(0)} MB${anchor.dataset.suffix || ''}`;
+            }
+          })
+          .catch(() => {});
+      }
+    }
 
     function fetchRelease() {
       const version = document.getElementById('dl-version');

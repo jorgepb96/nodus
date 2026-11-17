@@ -1,0 +1,306 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nodus Presenter | Run Nodus Research presentations from your phone</title>
+<meta name="description" content="Nodus Presenter is the free, open-source iPhone and iPad controller for Nodus Research presentations: slides, speaker notes, pointer, spotlight, drawing and magnifier, paired with a QR code."/>
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1"/>
+<meta property="og:title" content="Nodus Presenter | Run Nodus Research presentations from your phone"/>
+<meta property="og:description" content="Nodus Presenter is the free, open-source iPhone and iPad controller for Nodus Research presentations: slides, speaker notes, pointer, spotlight, drawing and magnifier, paired with a QR code."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://nodusresearch.com/presenter/"/>
+<meta property="og:site_name" content="Nodus Research"/>
+<meta property="og:locale" content="en_GB"/>
+<meta property="og:image" content="https://nodusresearch.com/assets/social/presenter-og.jpg"/>
+<meta property="og:image:type" content="image/jpeg"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Nodus Presenter: a presentation remote in front of a laptop showing slides. You run the show."/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="Nodus Presenter | Run Nodus Research presentations from your phone"/>
+<meta name="twitter:description" content="Nodus Presenter is the free, open-source iPhone and iPad controller for Nodus Research presentations: slides, speaker notes, pointer, spotlight, drawing and magnifier, paired with a QR code."/>
+<meta name="twitter:image" content="https://nodusresearch.com/assets/social/presenter-og.jpg"/>
+<meta name="twitter:image:alt" content="Nodus Presenter: a presentation remote in front of a laptop showing slides. You run the show."/>
+<link rel="canonical" href="https://nodusresearch.com/presenter/"/>
+<link rel="icon" href="../favicon.ico" sizes="any"/>
+  <link rel="icon" type="image/png" href="../favicon.png" sizes="512x512"/>
+  <link rel="icon" type="image/svg+xml" href="../assets/nodus-logo.svg"/>
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png"/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/inter-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="../assets/css/nodus.css?v=20261117a"/>
+<link rel="stylesheet" href="../assets/css/home.css?v=20260928t"/>
+<link rel="stylesheet" href="../assets/css/family.css?v=20261117f"/>
+<script>
+  /* Arm the opening sequence before the first paint. Anything that goes wrong
+     here simply leaves the page in its ordinary, fully visible state. */
+  try {
+    /* Only on a pointer that hovers. On a phone the title sequence holds the
+       whole page back for five seconds on the smallest screen and the slowest
+       connection, which costs a visitor far more than the shot is worth. */
+    if (matchMedia('(min-width: 701px) and (hover: hover) and (pointer: fine)').matches
+        && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var root = document.documentElement;
+      root.classList.add('intro-armed');
+      /* The sequence in home.js normally finishes in about five seconds. This
+         watchdog lives in the same script that armed the page, so a failure to
+         load or run that file can never leave a visitor staring at a blank
+         screen. */
+      setTimeout(function () {
+        root.classList.remove('intro-armed', 'intro-run');
+        root.classList.add('intro-done');
+      }, 6000);
+    }
+  } catch (error) {}
+</script>
+</head>
+<body data-formation="on" data-glyph="p">
+
+<a class="skip-link" href="#main">Skip to content</a>
+<canvas id="organism" aria-hidden="true"></canvas>
+<div id="scroll-progress" aria-hidden="true"></div>
+
+<div data-nodus-site-header data-base="../" data-page="mobile"></div>
+<script defer src="../site-header.js?v=20261117a"></script>
+
+<main id="main">
+
+<!-- ============================================================ hero -->
+<header class="hero" data-accent="#818cf8" data-second="#a78bfa" data-energy="0.42">
+  <div class="hero-inner scrim">
+    <img class="app-mark" src="../assets/family/icons/presenter.webp?v=20261117b" width="84" height="84" alt=""/>
+    <h1 class="hero-name">Nodus Presenter</h1>
+    <p class="hero-title" aria-label="You run the show.">
+      <span class="line"><i><span class="verb">You run</span> the show</i></span>
+    </p>
+    <p class="sub">Nodus Presenter is the iPhone and iPad controller for Nodus Research presentations. Scan a QR code and your phone becomes your slides, your notes and your remote.</p>
+    <div class="ctas">
+      <a class="btn primary" href="https://apps.apple.com/us/app/nodus-presenter/id6818107823" target="_blank" rel="noopener" data-magnet="0.16">
+        <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.54c-.03-2.68 2.19-3.97 2.29-4.03-1.25-1.82-3.19-2.07-3.87-2.1-1.63-.17-3.2.96-4.03.96-.84 0-2.12-.94-3.49-.91-1.79.03-3.45 1.04-4.37 2.65-1.87 3.24-.48 8.03 1.34 10.66.89 1.29 1.95 2.73 3.34 2.68 1.34-.05 1.85-.87 3.47-.87 1.62 0 2.08.87 3.49.84 1.44-.02 2.35-1.31 3.23-2.6 1.02-1.49 1.44-2.94 1.46-3.01-.03-.01-2.8-1.08-2.83-4.28ZM14.4 4.67c.74-.9 1.24-2.14 1.1-3.38-1.07.04-2.36.71-3.12 1.6-.68.79-1.28 2.06-1.12 3.27 1.19.09 2.4-.6 3.14-1.49Z"/></svg>
+        Download on the App Store</a>
+      <a class="btn" href="https://github.com/jorgepb96/nodus-presenter" target="_blank" rel="noopener" data-magnet="0.12">
+        <svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Source code</a>
+    </div>
+    <p class="app-platforms">iPhone · iPad · iOS 18 or later · Pairs with Nodus Research on Mac, Windows or Linux</p>
+    <p class="meta">No IP address or PIN to type. Once paired, PDFs, notes and controls work without internet.</p>
+    <p class="hero-links">Part of the <a href="../">Nodus family</a> · <a href="https://github.com/jorgepb96/nodus-presenter" target="_blank" rel="noopener">GitHub</a> · <a href="privacy/">Privacy</a></p>
+  </div>
+  <div class="scroll-cue" aria-hidden="true"><span class="rail"></span>Scroll</div>
+</header>
+
+<section class="scene" data-accent="#818cf8" data-second="#a78bfa" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>01</b>
+      </div>
+      <h2>Pair in a <span class="glow">second</span></h2>
+      <p class="lead">Open the presenter in Nodus Research and scan its code. Mac pairing can use Wi-Fi peer-to-peer; Windows and Linux use the same local network.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Scan the QR code</b> shown by Nodus Research. It carries a session key that should not be shared.</p></div>
+        <div class="cap"><em>02</em><p><b>See every slide at a glance</b> and jump to any of them from the thumbnail grid.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="phone-row">
+      <div class="phone" data-shots>
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Presenter · Pair in a second in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/presenter/home.webp" width="600" height="1304" decoding="async"
+                   alt="Nodus Presenter welcome screen with the QR pairing button"/>
+              <figcaption><span class="shot-text">Scan the code to pair</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/presenter/slides.webp" width="600" height="1304" loading="lazy" decoding="async"
+                   alt="Nodus Presenter slide grid"/>
+              <figcaption><span class="shot-text">Every slide at a glance</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-flip data-accent="#818cf8" data-second="#a78bfa" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>02</b>
+      </div>
+      <h2>Your notes, <span class="glow">your pace</span></h2>
+      <p class="lead">The current slide, the next one and your notes in one view, with a timer you can pause and reset.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Tap or swipe to move</b> between slides, and control what the audience sees.</p></div>
+        <div class="cap"><em>02</em><p><b>Notes in their own panel,</b> with a split you can adjust and keep.</p></div>
+        <div class="cap"><em>03</em><p><b>System, light or dark,</b> and nine accent colours.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="phone-row">
+      <div class="phone" data-shots>
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Presenter · Your notes, your pace in 2 screenshots">
+            <figure class="shot is-active">
+              <img src="../assets/family/presenter/notes-dark.webp" width="600" height="1304" decoding="async"
+                   alt="Nodus Presenter showing the current slide and speaker notes in dark mode"/>
+              <figcaption><span class="shot-text">Slide, next slide and notes</span><span class="shot-step">01 / 02</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="../assets/family/presenter/notes-light.webp" width="600" height="1304" loading="lazy" decoding="async"
+                   alt="Nodus Presenter showing the current slide and speaker notes in light mode"/>
+              <figcaption><span class="shot-text">The same view in light mode</span><span class="shot-step">02 / 02</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-accent="#818cf8" data-second="#a78bfa" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>03</b>
+      </div>
+      <h2>Point, light and <span class="glow">draw</span></h2>
+      <p class="lead">Pointer, spotlight, drawing, magnifier and black screen. A selected tool takes your taps without changing the slide.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Spotlight and magnifier</b> to guide the room to one detail.</p></div>
+        <div class="cap"><em>02</em><p><b>Draw on the slide</b> with your colour and size, and erase it after.</p></div>
+        <div class="cap"><em>03</em><p><b>Video controls</b> appear when a slide contains video.</p></div>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="phone-row">
+      <div class="phone" data-shots>
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Presenter · Point, light and draw in 1 screenshot">
+            <figure class="shot is-active">
+              <img src="../assets/family/presenter/tools.webp" width="600" height="1304" decoding="async"
+                   alt="Nodus Presenter tools panel with the spotlight"/>
+              <figcaption><span class="shot-text">The tools, with the spotlight on the slide</span><span class="shot-step">01 / 01</span></figcaption>
+            </figure>
+          </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ band -->
+<section class="band section-line" data-accent="#34d399" data-second="#22d3ee" data-energy="0.24">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="kicker" style="justify-content:center">Free, and yours</span>
+      <h2 class="title" data-split>Free to use. Yours to keep.</h2>
+      <p class="lead">Nodus Presenter is open source under the AGPL-3.0-only licence. It talks only to the Nodus Research session it is paired with.</p>
+      <div class="pills">
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Free and open source (AGPL-3.0-only)</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>QR pairing</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Works offline once paired</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Mac, Windows and Linux hosts</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>iPhone and iPad</span>
+      </div>
+      <div class="ctas">
+      <a class="btn primary" href="https://apps.apple.com/us/app/nodus-presenter/id6818107823" target="_blank" rel="noopener" data-magnet="0.16">
+        <svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.54c-.03-2.68 2.19-3.97 2.29-4.03-1.25-1.82-3.19-2.07-3.87-2.1-1.63-.17-3.2.96-4.03.96-.84 0-2.12-.94-3.49-.91-1.79.03-3.45 1.04-4.37 2.65-1.87 3.24-.48 8.03 1.34 10.66.89 1.29 1.95 2.73 3.34 2.68 1.34-.05 1.85-.87 3.47-.87 1.62 0 2.08.87 3.49.84 1.44-.02 2.35-1.31 3.23-2.6 1.02-1.49 1.44-2.94 1.46-3.01-.03-.01-2.8-1.08-2.83-4.28ZM14.4 4.67c.74-.9 1.24-2.14 1.1-3.38-1.07.04-2.36.71-3.12 1.6-.68.79-1.28 2.06-1.12 3.27 1.19.09 2.4-.6 3.14-1.49Z"/></svg>
+        Download on the App Store</a>
+      <a class="btn" href="https://github.com/jorgepb96/nodus-presenter" target="_blank" rel="noopener" data-magnet="0.12">
+        <svg class="ic" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Source code</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ family -->
+<section class="section-line" data-accent="#a78bfa" data-second="#818cf8" data-energy="0.26">
+  <div class="wrap">
+    <div class="section-head scrim reveal">
+      <span class="kicker">The Nodus family</span>
+      <h2 class="title" data-split>One family of tools for research.</h2>
+      <p class="lead">Nodus Presenter is one of the free, open-source apps made by Nodus Research.</p>
+      <div class="family-links">
+        <a class="arrow-link" href="../nodus/">Nodus Research <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../imago/">Nodus Imago <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../link/">Nodus Link <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../reader/">Nodus Reader <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="../drift/">Nodus Drift <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid wide">
+      <div class="foot-brand">
+        <a class="logo" href="../"><img src="../assets/nodus-logo.svg" alt=""/> Nodus Research</a>
+        <p>A personal, independent open-source project. Nodus is its local-first desktop application.</p>
+      </div>
+      <div class="foot-col">
+        <h3>Family</h3>
+        <a href="../nodus/">Nodus Research</a>
+        <a href="../imago/">Nodus Imago</a>
+        <a href="../link/">Nodus Link</a>
+        <a href="../reader/">Nodus Reader</a>
+        <a href="../presenter/">Nodus Presenter</a>
+        <a href="../drift/">Nodus Drift</a>
+      </div>
+      <div class="foot-col">
+        <h3>Research</h3>
+        <a href="../research-atlas/">Research Atlas</a>
+        <a href="../app/">The Nodus App</a>
+        <a href="../research/">Academic research</a>
+        <a href="../zotero/">Nodus and Zotero</a>
+        <a href="../open-source/">Open source</a>
+      </div>
+      <div class="foot-col">
+        <h3>Learn</h3>
+        <a href="../wiki/">Wiki</a>
+        <a href="../blog/">Blog</a>
+        <a href="../faq/">FAQ</a>
+        <a href="../demo/">Live demos</a>
+      </div>
+      <div class="foot-col">
+        <h3>Project</h3>
+        <a href="../about/">About Nodus Research</a>
+        <a href="../cite/">Cite Nodus</a>
+        <a href="../legal/">Legal notice</a>
+        <a href="../contribute/">Contribute</a>
+        <a href="https://github.com/jorgepb96" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Jorge Pérez Burgueño and Nodus contributors.</span>
+      <a href="../privacy/">Website privacy</a>
+      <a href="../cookies/">Cookies</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/organism.js?v=20261117a"></script>
+<script src="../assets/js/site.js?v=20261117a"></script>
+<script src="../assets/js/home.js?v=20260928i"></script>
+<script src="../assets/js/vault-shots.js?v=20260928r"></script>
+<script src="../assets/js/back-to-top.js?v=20260817b"></script>
+</body>
+</html>

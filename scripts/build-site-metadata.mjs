@@ -41,6 +41,20 @@ const breadcrumb = (name, url) => ({
 replaceBlock('index.html', 'homepage-jsonld', generatedJsonLd([
   personEntity(metadata),
   websiteEntity(metadata),
+]));
+
+const nodusUrl = `${metadata.siteUrl}/nodus/`;
+replaceBlock('nodus/index.html', 'nodus-jsonld', generatedJsonLd([
+  breadcrumb('Nodus Research', nodusUrl),
+  {
+    '@type': 'WebPage',
+    '@id': `${nodusUrl}#webpage`,
+    url: nodusUrl,
+    name: 'Nodus Research',
+    isPartOf: { '@id': metadata.websiteId },
+    breadcrumb: { '@id': `${nodusUrl}#breadcrumb` },
+    mainEntity: { '@id': metadata.softwareId },
+  },
   softwareEntity(metadata),
 ]));
 

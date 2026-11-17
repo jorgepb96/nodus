@@ -199,8 +199,8 @@ for reduced motion.
     return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
   }
 
-  /* ------------------------------------------------------------ the N glyph */
-  /* Sample the Nodus mark so the field can assemble into it.
+  /* ------------------------------------------------------------ the glyphs */
+  /* Sample the Nodus mark (or another app's letter) so the field can assemble into it.
 
      The mark is not just an N: it is four nodes joined by three strokes, and the
      four discs are what makes it read as the logo rather than as a letter. Each
@@ -209,8 +209,6 @@ for reduced motion.
      from near-white at the top left to deep violet at the bottom right.
 
      Point format: [x, y, hub, tint], with x and y normalised to -0.5..0.5. */
-  const GLYPH_CORNERS = [[18, 16], [18, 48], [46, 48], [46, 16]];
-  const CORNER_TINT = [0.95, 0.6, 0.34, 0.1]; // #ddd6fe · #a78bfa · #8b5cf6 · #7c3aed
   const STROKE_HALF = 3.25;  // the logo draws its strokes at width 6.5 in a 64 box
   const DISC_R = 6.5;        // and its terminal nodes at radius 6.5
 
@@ -221,13 +219,54 @@ for reduced motion.
     return Math.max(0, Math.min(1, 0.95 - along * 0.9));
   }
 
-  function glyphPoints(count) {
-    // the logo path, in its own 64x64 box: M18 48 V16 L46 48 V16
-    const segments = [
-      [18, 48, 18, 16],
-      [18, 16, 46, 48],
-      [46, 48, 46, 16],
-    ];
+  /* Points along a circular arc, in the 64 box, for the round letters. */
+  function arc(cx, cy, r, from, to, steps = 12) {
+    const points = [];
+    for (let i = 0; i <= steps; i++) {
+      const angle = ((from + (to - from) * (i / steps)) * Math.PI) / 180;
+      points.push([cx + Math.cos(angle) * r, cy + Math.sin(angle) * r]);
+    }
+    return points;
+  }
+
+  /* Each app of the family forms its own letter in the logo's language: strokes
+     of the logo's width ending in its discs, inside the same 18–46 × 16–48 area
+     the N uses, so every letter is laid out and sized exactly like the N. A page
+     picks its letter with <body data-glyph="…">; the default is the Nodus N.
+     `strokes` are polylines; `discs` are [x, y, tint], tint null = the gradient. */
+  const GLYPHS = {
+    n: { // the logo path: M18 48 V16 L46 48 V16
+      strokes: [[[18, 48], [18, 16], [46, 48], [46, 16]]],
+      discs: [[18, 16, 0.95], [18, 48, 0.6], [46, 48, 0.34], [46, 16, 0.1]], // #ddd6fe · #a78bfa · #8b5cf6 · #7c3aed
+    },
+    i: { // Imago: a capital I with its bar ends as nodes
+      strokes: [[[22, 16], [42, 16]], [[32, 16], [32, 48]], [[22, 48], [42, 48]]],
+      discs: [[22, 16, 0.95], [42, 16, 0.6], [22, 48, 0.34], [42, 48, 0.1]],
+    },
+    l: { // Link
+      strokes: [[[22, 16], [22, 48], [44, 48]]],
+      discs: [[22, 16, 0.95], [22, 48, 0.5], [44, 48, 0.1]],
+    },
+    r: { // Reader
+      strokes: [[[20, 48], [20, 16], [30, 16], ...arc(30, 25, 9, -90, 90, 10).slice(1), [20, 34]], [[29, 34], [44, 48]]],
+      discs: [[20, 16, 0.95], [20, 48, 0.5], [44, 48, 0.1]],
+    },
+    p: { // Presenter
+      strokes: [[[20, 48], [20, 16], [31, 16], ...arc(31, 26, 10, -90, 90, 10).slice(1), [20, 36]]],
+      discs: [[20, 16, 0.95], [20, 48, 0.3]],
+    },
+    d: { // Drift
+      strokes: [[[20, 48], [20, 16], [28, 16], ...arc(28, 32, 16, -90, 90, 16).slice(1), [20, 48]]],
+      discs: [[20, 16, 0.95], [20, 48, 0.3]],
+    },
+  };
+
+  function glyphPoints(count, name = 'n') {
+    const glyph = GLYPHS[name] || GLYPHS.n;
+    const segments = [];
+    for (const line of glyph.strokes) {
+      for (let k = 1; k < line.length; k++) segments.push([...line[k - 1], ...line[k]]);
+    }
     const lengths = segments.map(([x1, y1, x2, y2]) => Math.hypot(x2 - x1, y2 - y1));
     const strokeLength = lengths.reduce((a, b) => a + b, 0);
 
@@ -235,7 +274,7 @@ for reduced motion.
     // the pitch that fills that area evenly. This is what gives the mark a real
     // stroke width instead of a single-file chain of beads.
     const strokeArea = strokeLength * STROKE_HALF * 2;
-    const discArea = GLYPH_CORNERS.length * Math.PI * DISC_R * DISC_R;
+    const discArea = glyph.discs.length * Math.PI * DISC_R * DISC_R;
     const strokeShare = Math.max(24, Math.round(count * strokeArea / (strokeArea + discArea)));
     const pitch = Math.max(0.6, Math.sqrt(strokeArea / strokeShare));
     const rows = Math.max(3, Math.round((STROKE_HALF * 2) / pitch) + 1);
@@ -266,9 +305,9 @@ for reduced motion.
       }
     }
 
-    // the four terminal nodes, filled to the logo's radius so they read as discs
-    GLYPH_CORNERS.forEach(([cx, cy], index) => {
-      const tint = CORNER_TINT[index];
+    // the terminal nodes, filled to the logo's radius so they read as discs
+    glyph.discs.forEach(([cx, cy, discTint]) => {
+      const tint = discTint;
       push(cx, cy, 1, tint);
       for (let r = pitch; r <= DISC_R; r += pitch) {
         const around = Math.max(6, Math.round((2 * Math.PI * r) / pitch));
@@ -406,7 +445,7 @@ for reduced motion.
       // active node and walk them in order: wrapping with `i % glyph.length`
       // instead piles the surplus nodes onto the first stroke, which then reads as
       // a bright bar with two faint strokes beside it rather than as a letter.
-      const glyph = glyphPoints(Math.max(60, count));
+      const glyph = glyphPoints(Math.max(60, count), (document.body && document.body.dataset.glyph) || 'n');
       // The glyph occupies 0.44 of `size` across and 0.5 of it down, so fit the
       // letter itself rather than its box: without this the N is comfortable on a
       // desktop and a postage stamp on a phone, where width is the tight axis.

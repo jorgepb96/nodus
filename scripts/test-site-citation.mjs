@@ -52,7 +52,7 @@ test('the citation page identifies the current version and its DOI state', () =>
 });
 
 test('project-level metadata uses the conceptual DOI consistently', () => {
-  for (const relative of ['site/index.html', 'site/app/index.html', 'README.md']) {
+  for (const relative of ['site/nodus/index.html', 'site/app/index.html', 'README.md']) {
     const source = readRepo(relative);
     assert.ok(source.includes(CONCEPT_DOI), `${relative} includes the conceptual DOI`);
   }

@@ -127,7 +127,7 @@ ${(post.tags || []).map((tag) => `<meta property="article:tag" content="${escape
 <link rel="alternate" type="application/rss+xml" title="Nodus Blog" href="feed.xml"/>
 <link rel="preload" as="font" type="font/woff2" href="../assets/fonts/inter-latin.woff2" crossorigin/>
 <link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
-<link rel="stylesheet" href="../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../assets/css/nodus.css?v=20261117a"/>
 <link rel="stylesheet" href="blog.css?v=20260817"/>
 <script type="application/ld+json">${structuredData}</script>
 </head>
@@ -138,7 +138,7 @@ ${(post.tags || []).map((tag) => `<meta property="article:tag" content="${escape
 <div id="scroll-progress" aria-hidden="true"></div>
 
 <div data-nodus-site-header data-base="../" data-page="blog"></div>
-<script defer src="../site-header.js?v=20261109a"></script>
+<script defer src="../site-header.js?v=20261117a"></script>
 
 <main id="main" data-accent="#c084fc" data-second="#a78bfa" data-energy="0.22">
   <article class="post-page">
@@ -176,8 +176,8 @@ ${next ? `        <a class="btn" href="${encodeURIComponent(next.slug)}/">${esca
       </div>
       <div class="foot-col">
         <h3>Product</h3>
-        <a href="../#vaults">The four vaults</a>
-        <a href="../#tools">Nodus Toolkit</a>
+        <a href="../nodus/#vaults">The four vaults</a>
+        <a href="../nodus/#tools">Nodus Toolkit</a>
         <a href="../apps/">Nodus Apps</a>
         <a href="../demo/">Live demos</a>
       </div>
@@ -206,7 +206,7 @@ ${next ? `        <a class="btn" href="${encodeURIComponent(next.slug)}/">${esca
   </div>
 </footer>
 
-<script src="../assets/js/organism.js?v=20260820a"></script>
+<script src="../assets/js/organism.js?v=20261117a"></script>
 <script src="../assets/js/site.js?v=20260815"></script>
 <script src="../assets/js/back-to-top.js?v=20260817b"></script>
 </body>

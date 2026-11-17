@@ -29,15 +29,24 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.18.1');
-  assert.equal(current.highlights.length, 4);
+  assert.equal(current.version, '5.19.0');
+  assert.equal(current.highlights.length, 10);
   assert.deepEqual(releaseNoteSections(current).map(section => [section.category, section.highlights.length]),
-    [['new', 1], ['enhancement', 1], ['fix', 2]]);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['general', 'general', 'academic', 'academic']);
-  assert.match(current.highlights[0].en, /^Download selected sections and podcast episodes/);
-  assert.match(current.highlights[1].en, /^Mobile connection appears under Application/);
-  assert.match(current.highlights[2].en, /^The linked reader receives Deep Research read marks/);
-  assert.match(current.highlights[3].en, /^Search ideas and themes in one field/);
+    [['new', 2], ['enhancement', 4], ['fix', 4]]);
+  assert.deepEqual(current.highlights.map(h => h.scope),
+    ['academic', 'academic', 'zotero', 'library', 'general', 'general', 'ai', 'zotero', 'academic', 'academic']);
+  assert.match(current.highlights[0].en, /^New academic vaults start with your sources/);
+  assert.match(current.highlights[1].en, /^After the first cited answer, the guide offers See the ideas in this source/);
+  assert.match(current.highlights[2].en, /^When Zotero does not answer, Nodus shows the two steps/);
+  assert.match(current.highlights[3].en, /^An empty Library offers Bring from Zotero and Add files/);
+  assert.match(current.highlights[4].en, /^The backup setup offers Start now and protect it later/);
+  assert.match(current.highlights[5].en, /^Nodus Link readers show their header actions as icons/);
+  assert.match(current.highlights[6].en, /^With a local embedding model, questions no longer wait/);
+  assert.match(current.highlights[7].en, /^Documents read from Zotero count as prepared/);
+  assert.match(current.highlights[8].en, /^In Manual mode, ideas that have a theme are indexed/);
+  assert.match(current.highlights[9].en, /^The guide card no longer covers the close button/);
+  // 5.18.1 brought offline downloads to Nodus Link. Its notes stay as published.
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.18.1').highlights[0].en, /^Download selected sections and podcast episodes/);
   // 5.17.1 finished long Podcast episodes. Its notes stay as published.
   assert.match(RELEASE_NOTES.find(note => note.version === '5.17.1').highlights[0].en, /^Podcast episodes longer than about 20 minutes now finish/);
   // 5.17.0 introduced Podcast. Its notes stay as published.
@@ -108,11 +117,13 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: one new feature, one enhancement and two fixes.
+  // Independently authored displayed order: two new features, four enhancements (general
+  // first, as the largest scope group) and four fixes (academic first, for the same reason).
+  const list = indexes => indexes.map(i => `- ${current.highlights[i].en}`).join('\n\n');
   const expected = `# Nodus ${pkg.version}\n\n`
-    + `## New features\n\n- ${current.highlights[0].en}\n\n`
-    + `## Enhancements\n\n- ${current.highlights[3].en}\n\n`
-    + `## Fixes\n\n- ${current.highlights[1].en}\n\n- ${current.highlights[2].en}\n`;
+    + `## New features\n\n${list([0, 1])}\n\n`
+    + `## Enhancements\n\n${list([4, 5, 2, 3])}\n\n`
+    + `## Fixes\n\n${list([8, 9, 6, 7])}\n`;
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);
   await assert.rejects(generateReleaseNotes('v99.0.0'), /does not match/);
   const dir = await mkdtemp(path.join(os.tmpdir(), 'nodus-release-description-'));

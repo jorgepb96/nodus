@@ -1,5 +1,23 @@
 # Changelog
 
+## 5.19.0 — 2026-11-17
+
+### New features
+- Rebuild the first run of new academic vaults around sources: Zotero collections with subcollections or local files, then the chat model and where embeddings are computed. Nodus prepares a starter set and opens Research chat with a suggested question once one document is searchable.
+- After the first verified citation, offer the ideas in that source: switch to the Intermediate interface and start the first-idea lesson at its extraction step with the same document.
+
+### Enhancements
+- Let the backup wizard start now and protect later: a default `~/Nodus` folder with generated credentials and a verified first snapshot, plus a reminder a day later to save the recovery kit.
+- Nodus Link readers: icon header actions, filters in an anchored popover and an A–Z index for the dictionary.
+- Show why Zotero is not answering, with the two steps to enable its local API and an automatic re-check, in the first run, the collections window and Settings. State that the plugin is not needed to import.
+- Offer Bring from Zotero and Add files in an empty Library.
+
+### Fixes
+- Manual mode: index ideas with a theme without `embedding_source_changed`, and select the local Multilingual E5 index explicitly in the first run.
+- Keep the close controls of a dialog visible when the guide card is placed.
+- Run query embeddings for local models in the interactive scheduler class so questions no longer wait behind indexing batches.
+- Treat documents read from Zotero as ready once their text is searchable, instead of waiting on `coverage`.
+
 ## 5.18.1 — 2026-11-15
 
 ### New features

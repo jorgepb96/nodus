@@ -197,3 +197,14 @@ test('each family page opens with its own letter', () => {
     assert.match(html, /assets\/js\/home\.js\?v=/, `${relative} loads the opening sequence`);
   }
 });
+
+test('each launcher icon leads to its app', () => {
+  const home = read('index.html');
+  const icons = home.slice(home.indexOf('<div class="launchers">'), home.indexOf('<p class="meta">'));
+  for (const [slug, page] of [['research', 'nodus/'], ['imago', 'imago/'], ['link', 'link/'], ['reader', 'reader/'], ['presenter', 'presenter/'], ['drift', 'drift/']]) {
+    assert.match(icons, new RegExp(`<a class="icon-link" href="${page}"><img class="app-icon" src="assets/family/icons/${slug}\\.webp`), `the ${slug} icon links to /${page}`);
+  }
+  assert.match(icons, /<a class="icon-link" href="zotero-plugin\/" aria-label="Zotero plugin">/);
+  assert.match(icons, /<a class="icon-link" href="https:\/\/chromewebstore\.google\.com\/detail\/[^"]+" target="_blank" rel="noopener" aria-label="Chrome extension on the Chrome Web Store">/);
+  assert.match(read('assets/css/family.css'), /\.launcher-icons \{[^}]*justify-content: center;/);
+});

@@ -426,7 +426,7 @@ test('internal navigation only advertises canonical directory URLs', () => {
   }
 
   const header = read('site-header.js');
-  assert.match(header, /href: \(base\) => base \|\| '\.\/'/, 'the shared Home link resolves to the canonical directory');
+  assert.match(header, /<a class="logo" href="\$\{base \|\| '\.\/'\}"/, 'the shared logo, the way home, resolves to the canonical directory');
   assert.match(header, /pathname\.endsWith\('\/index\.html'\)[\s\S]*?location\.replace/, 'GitHub Pages index aliases are replaced client-side');
 
   const demoSwitcher = read('demo/vault-switcher.js');

@@ -132,3 +132,6 @@ nodus.css and home.css, and builds only on what they define.
   margin-top: 14px; font-size: 12.5px; line-height: 1.5; color: var(--ink-3);
 }
 .shot-credit a { color: var(--ink-2); }
+
+/* the small app icon above each mobile card's name */
+.app-card .app-icon { display: block; width: 44px; height: 44px; border-radius: 11px; margin-bottom: 12px; }

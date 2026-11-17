@@ -86,3 +86,27 @@ test('the App Store privacy pages are still published', () => {
     assert.ok(fs.existsSync(path.join(siteRoot, slug, 'privacy/index.html')), `site/${slug}/privacy/ exists`);
   }
 });
+
+test('front page presents the family', () => {
+  const home = read('index.html');
+  assert.match(home, /id="desktop"/);
+  assert.match(home, /id="mobile"/);
+  for (const slug of ['nodus', 'imago', 'link', 'reader', 'presenter', 'drift']) {
+    assert.ok(home.includes(`href="${slug}/"`), `the front page links to /${slug}/`);
+  }
+  assert.match(home, /"@type": "WebSite"/);
+  assertLocalReferencesResolve('site/index.html');
+});
+
+test('the header and the footers lead to every app', () => {
+  const header = read('site-header.js');
+  const destinations = [...header.matchAll(/\{ id: '([a-z]+)', label: '([^']+)'/g)].map((match) => match[1]);
+  assert.deepEqual(destinations.slice(0, 3), ['nodus', 'imago', 'mobile']);
+  assert.match(header, /href: \(base\) => `\$\{base\}#mobile`/);
+  const footers = [read('site-footer.js'), read('index.html'), read('nodus/index.html')];
+  for (const footer of footers) {
+    for (const slug of ['nodus', 'imago', 'link', 'reader', 'presenter', 'drift']) {
+      assert.match(footer, new RegExp(`href="(?:\\$\\{base\\}|\\.\\./)?${slug}/">Nodus `), `footer links to ${slug}`);
+    }
+  }
+});

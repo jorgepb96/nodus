@@ -98,7 +98,9 @@ test('the shared component owns every control visible in the header', () => {
   assert.deepEqual(
     destinations,
     [
-      'home:Home',
+      'nodus:Nodus',
+      'imago:Imago',
+      'mobile:Mobile',
       'bookmarks:Bookmarks',
       'wiki:Wiki',
       'blog:Blog',
@@ -107,7 +109,7 @@ test('the shared component owns every control visible in the header', () => {
       'models:Models',
       'contribute:Support',
     ],
-    'the header reads Home, Wiki, Blog, Atlas, FAQ, Models, Support',
+    'the header reads Nodus, Imago, Mobile, Wiki, Blog, Atlas, FAQ, Models, Support; the logo is the way home',
   );
 });
 

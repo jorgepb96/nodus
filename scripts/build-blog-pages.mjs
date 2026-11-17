@@ -127,7 +127,7 @@ ${(post.tags || []).map((tag) => `<meta property="article:tag" content="${escape
 <link rel="alternate" type="application/rss+xml" title="Nodus Blog" href="feed.xml"/>
 <link rel="preload" as="font" type="font/woff2" href="../assets/fonts/inter-latin.woff2" crossorigin/>
 <link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
-<link rel="stylesheet" href="../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../assets/css/nodus.css?v=20261117a"/>
 <link rel="stylesheet" href="blog.css?v=20260817"/>
 <script type="application/ld+json">${structuredData}</script>
 </head>
@@ -138,7 +138,7 @@ ${(post.tags || []).map((tag) => `<meta property="article:tag" content="${escape
 <div id="scroll-progress" aria-hidden="true"></div>
 
 <div data-nodus-site-header data-base="../" data-page="blog"></div>
-<script defer src="../site-header.js?v=20261109a"></script>
+<script defer src="../site-header.js?v=20261117a"></script>
 
 <main id="main" data-accent="#c084fc" data-second="#a78bfa" data-energy="0.22">
   <article class="post-page">

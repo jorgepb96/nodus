@@ -33,8 +33,9 @@ SPDX-License-Identifier: AGPL-3.0-only
   <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/inter-latin.woff2" crossorigin/>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/fraunces-latin.woff2" crossorigin/>
-<link rel="stylesheet" href="assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="assets/css/nodus.css?v=20261117a"/>
 <link rel="stylesheet" href="assets/css/home.css?v=20260928t"/>
+<link rel="stylesheet" href="assets/css/family.css?v=20261117a"/>
 <!-- generated:homepage-jsonld:start -->
 <script type="application/ld+json">
 {
@@ -75,15 +76,252 @@ SPDX-License-Identifier: AGPL-3.0-only
 <div id="scroll-progress" aria-hidden="true"></div>
 
 <div data-nodus-site-header data-base="" data-page="home"></div>
-<script defer src="site-header.js?v=20261109a"></script>
+<script defer src="site-header.js?v=20261117a"></script>
 
 <main id="main">
+
+<!-- ============================================================ hero -->
 <header class="hero" data-accent="#a78bfa" data-second="#22d3ee" data-energy="0.42">
   <div class="hero-inner scrim">
+    <svg class="n-mark" viewBox="0 0 64 64" role="img" aria-label="Nodus">
+      <defs><linearGradient id="hero-n" x1="14" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#ddd6fe"/><stop offset="0.45" stop-color="#a78bfa"/><stop offset="1" stop-color="#7c3aed"/>
+      </linearGradient></defs>
+      <path d="M18 48V16L46 48V16" fill="none" stroke="url(#hero-n)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="18" cy="16" r="6.5" fill="#ddd6fe"/><circle cx="18" cy="48" r="6.5" fill="#a78bfa"/>
+      <circle cx="46" cy="48" r="6.5" fill="#8b5cf6"/><circle cx="46" cy="16" r="6.5" fill="#7c3aed"/>
+    </svg>
     <h1 class="hero-name">Nodus</h1>
-    <p><a class="btn primary" href="nodus/">Nodus Research</a></p>
+    <p class="hero-title" aria-label="Open tools for research. Made to be yours.">
+      <span class="line"><i><span class="verb">Open</span> tools for research</i></span>
+      <span class="line"><i>Made to be <span class="verb">yours</span></i></span>
+    </p>
+    <p class="sub">Free, open-source, local-first apps for research, teaching and study: two applications for your desktop and four companions for iPhone and iPad.</p>
+    <div class="ctas">
+      <a class="btn primary" href="#desktop" data-magnet="0.16">Desktop apps</a>
+      <a class="btn" href="#mobile" data-magnet="0.12">Mobile apps</a>
+    </div>
+    <p class="meta"><b>Nodus Research is a personal, independent open-source project.</b> It currently sells no product or service. Every Nodus app is free to download and use, with no accounts, subscriptions or telemetry.</p>
+    <p class="hero-links">Read on: <a href="app/">the Nodus app</a> · <a href="research/">Nodus for academic research</a> · <a href="zotero/">the Zotero integration</a> · <a href="about/">about the project</a></p>
   </div>
+  <div class="scroll-cue" aria-hidden="true"><span class="rail"></span>Scroll</div>
 </header>
+
+<!-- ============================================================ desktop -->
+<section id="desktop" class="section-line" data-accent="#818cf8" data-second="#22d3ee" data-energy="0.3">
+  <div class="wrap">
+    <div class="section-head scrim reveal">
+      <span class="kicker">Desktop · macOS, Windows and Linux</span>
+      <h2 class="title" data-split>Two applications for your desk.</h2>
+      <p class="lead">One workspace for research, study and teaching, and one for the photographs and visual sources that history is made of. Both keep your work on your own computer.</p>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-accent="#818cf8" data-second="#6366f1" data-energy="0.36">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>01</b>
+      </div>
+      <h2>Nodus <span class="glow">Research</span></h2>
+      <p class="lead">A workspace that brings sources, notes, data, ideas and learning materials together. Each project lives in a vault shaped for the work it holds.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Academic.</b> Turn a Zotero library into a graph of ideas for your literature review, with debates, gaps, argument maps, Deep Research and verifiable citations.</p></div>
+        <div class="cap"><em>02</em><p><b>Study.</b> Subjects, readings and recordings, with question banks, practice tests, flashcards and spaced review.</p></div>
+        <div class="cap"><em>03</em><p><b>Teaching.</b> Courses, timetables, gradebooks, rubrics and exams. Student data is never sent to a model.</p></div>
+        <div class="cap"><em>04</em><p><b>Databases and Genealogy.</b> Typed tables with relations and formulas, and family trees that keep every link tied to its evidence.</p></div>
+      </div>
+      <div class="family-links">
+        <a class="arrow-link" href="nodus/">Explore Nodus Research
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="demo/">Try the live demo
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="https://github.com/jorgepb96/nodus/releases/latest" target="_blank" rel="noopener">Download
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="frame" data-shots>
+        <div class="frame-bar"><i></i><i></i><i></i><span>Nodus Research</span><button class="frame-zoom" type="button" data-shot-zoom aria-label="Expand the screenshot" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6"/></svg></button></div>
+        <div class="frame-body">
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Research in 5 screenshots">
+            <figure class="shot is-active">
+              <img src="assets/screenshots/academic-demo.webp" width="1280" height="800" decoding="async"
+                   alt="Academic vault demo with a twelve-theme knowledge graph in Nodus Research"/>
+              <figcaption><span class="shot-text">Academic vault: a knowledge graph of themes</span><span class="shot-step">01 / 05</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/screenshots/teaching-demo.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Teaching vault demo in Nodus Research"/>
+              <figcaption><span class="shot-text">Teaching vault: courses, groups and materials</span><span class="shot-step">02 / 05</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/screenshots/study-demo.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Study vault demo in Nodus Research"/>
+              <figcaption><span class="shot-text">Study vault: subjects, readings and review</span><span class="shot-step">03 / 05</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/screenshots/databases-demo.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Databases vault demo in Nodus Research"/>
+              <figcaption><span class="shot-text">Databases vault: typed fields, relations and views</span><span class="shot-step">04 / 05</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/screenshots/genealogy-tree.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Genealogy vault family tree in Nodus Research"/>
+              <figcaption><span class="shot-text">Genealogy vault: a family tree tied to its evidence</span><span class="shot-step">05 / 05</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene" data-flip data-accent="#c084fc" data-second="#7c3aed" data-energy="0.34">
+  <div class="wrap scene-inner">
+    <div class="scene-copy scrim reveal">
+      <div class="scene-index">
+        <b>02</b>
+      </div>
+      <h2>Nodus <span class="glow">Imago</span></h2>
+      <p class="lead">For historians, art historians and archivists who work with photographs, engravings and other images: catalogue them, search them and read them as historical sources.</p>
+      <div class="caps">
+        <div class="cap"><em>01</em><p><b>Catalogue</b> with your own fields and historical dates, and let AI propose descriptions, tags and transcriptions you approve.</p></div>
+        <div class="cap"><em>02</em><p><b>Search by words, meaning, likeness or a detail</b> marked inside a photograph.</p></div>
+        <div class="cap"><em>03</em><p><b>Compare historical photographs:</b> variants, overlays and then and now beside the same place today.</p></div>
+        <div class="cap"><em>04</em><p><b>Analyse the collection</b> with statistics, maps, a timeline and a network, linked to Wikidata, Getty and Iconclass.</p></div>
+      </div>
+      <div class="family-links">
+        <a class="arrow-link" href="imago/">Explore Nodus Imago
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="arrow-link" href="https://github.com/jorgepb96/nodus-imago/releases/latest" target="_blank" rel="noopener">Download
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+    <div class="scene-visual reveal" style="--delay:120ms">
+      <div class="frame" data-shots>
+        <div class="frame-bar"><i></i><i></i><i></i><span>Nodus Imago</span><button class="frame-zoom" type="button" data-shot-zoom aria-label="Expand the screenshot" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6"/></svg></button></div>
+        <div class="frame-body">
+          <div class="shots" role="group" aria-roledescription="carousel" aria-label="Nodus Imago in 4 screenshots">
+            <figure class="shot is-active">
+              <img src="assets/family/imago/gallery.webp" width="1280" height="800" decoding="async"
+                   alt="A gallery of nineteenth-century photographs by Jean Laurent in Nodus Imago"/>
+              <figcaption><span class="shot-text">A catalogue of photographs by Jean Laurent</span><span class="shot-step">01 / 04</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/family/imago/detail-search.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="A detail of the Court of the Lions searched for inside other photographs in Nodus Imago"/>
+              <figcaption><span class="shot-text">A detail searched for inside other photographs</span><span class="shot-step">02 / 04</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/family/imago/compare-overlay.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Two prints of the same view of Toledo laid over each other in Nodus Imago"/>
+              <figcaption><span class="shot-text">Two prints of the same view, overlaid</span><span class="shot-step">03 / 04</span></figcaption>
+            </figure>
+            <figure class="shot" aria-hidden="true">
+              <img src="assets/family/imago/then-and-now.webp" width="1280" height="800" loading="lazy" decoding="async"
+                   alt="Then and now in Nodus Imago: the Puerta del Sol in the 1860s next to present-day photographs"/>
+              <figcaption><span class="shot-text">Then and now</span><span class="shot-step">04 / 04</span></figcaption>
+            </figure>
+            <button class="shot-arrow prev" type="button" data-shots-prev hidden aria-label="Show the previous screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+            </button>
+            <button class="shot-arrow next" type="button" data-shots-next hidden aria-label="Show the next screenshot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <p class="shot-credit">Photographs by Jean Laurent and his studio from public collections. <a href="https://github.com/jorgepb96/nodus-imago/blob/main/docs/screenshots/README.md" target="_blank" rel="noopener">Image credits</a>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ mobile -->
+<section id="mobile" class="section-line" data-accent="#a78bfa" data-second="#86efac" data-energy="0.3">
+  <div class="wrap">
+    <div class="section-head scrim reveal">
+      <span class="kicker">Mobile · iPhone and iPad</span>
+      <h2 class="title" data-split>Companions for iPhone and iPad.</h2>
+      <p class="lead">Take your research with you, read and listen to your library, run your presentations and make a little quiet room to work in.</p>
+    </div>
+    <div class="family-mobile">
+      <a class="card lit app-card reveal" href="link/" style="--delay:0ms">
+        <figure class="phone-still"><img src="assets/family/link/home.webp" width="600" height="1304" loading="lazy" decoding="async" alt="Nodus Link home screen with the sections of an example vault"/></figure>
+        <div>
+          <img class="app-icon" src="assets/family/icons/link.webp" width="44" height="44" alt=""/>
+          <h3>Nodus <span class="glow">Link</span></h3>
+          <p>Your Nodus Research on iPhone and iPad: ideas, graph, argument maps, Deep Research, the dictionary and saved podcasts, over a private connection to your desktop.</p>
+          <p class="app-platforms">iPhone · iPad · Beta</p>
+          <span class="arrow-link">Explore Nodus Link
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card lit app-card reveal" href="reader/" style="--delay:70ms">
+        <figure class="phone-still"><img src="assets/family/reader/library.webp" width="600" height="1304" loading="lazy" decoding="async" alt="Nodus Reader library on iPhone"/></figure>
+        <div>
+          <img class="app-icon" src="assets/family/icons/reader.webp" width="44" height="44" alt=""/>
+          <h3>Nodus <span class="glow">Reader</span></h3>
+          <p>Read EPUB and PDF beautifully, with highlights and notes, and listen to your library with AI voices that run on your device.</p>
+          <p class="app-platforms">iPhone · iPad · Mac soon</p>
+          <span class="arrow-link">Explore Nodus Reader
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card lit app-card reveal" href="presenter/" style="--delay:140ms">
+        <figure class="phone-still"><img src="assets/family/presenter/notes-dark.webp" width="600" height="1304" loading="lazy" decoding="async" alt="Nodus Presenter showing the current slide and speaker notes"/></figure>
+        <div>
+          <img class="app-icon" src="assets/family/icons/presenter.webp" width="44" height="44" alt=""/>
+          <h3>Nodus <span class="glow">Presenter</span></h3>
+          <p>Run Nodus Research presentations from your phone: slides, speaker notes, pointer, spotlight, drawing and zoom.</p>
+          <p class="app-platforms">iPhone · iPad · App Store</p>
+          <span class="arrow-link">Explore Nodus Presenter
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="card lit app-card reveal" href="drift/" style="--delay:210ms">
+        <figure class="phone-still"><img src="assets/family/drift/home.webp" width="600" height="1304" loading="lazy" decoding="async" alt="Nodus Drift home screen"/></figure>
+        <div>
+          <img class="app-icon" src="assets/family/icons/drift.webp" width="44" height="44" alt=""/>
+          <h3>Nodus <span class="glow">Drift</span></h3>
+          <p>Ambient sounds for focus, rest and sleep: 89 sounds, mixes of up to six, fully offline and private.</p>
+          <p class="app-platforms">iPhone · iPad · Beta</p>
+          <span class="arrow-link">Explore Nodus Drift
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ band -->
+<section class="band section-line" data-accent="#34d399" data-second="#22d3ee" data-energy="0.24">
+  <div class="wrap">
+    <div class="reveal">
+      <span class="kicker" style="justify-content:center">Open research, open software</span>
+      <h2 class="title" data-split>Free to use. Yours to keep.</h2>
+      <p class="lead">Research should be open. Every Nodus app is free and open source: Nodus Research, Imago, Link, Reader and Presenter under AGPL-3.0-only, and Drift under MIT. There are no accounts, and your work stays on your own devices.</p>
+      <div class="pills">
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Free forever</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Open source</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>Local-first</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>No accounts</span>
+        <span class="pill"><svg viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></svg>No telemetry</span>
+      </div>
+      <div class="ctas">
+        <a class="btn primary" href="nodus/" data-magnet="0.16">Explore Nodus Research</a>
+        <a class="btn" href="https://github.com/jorgepb96" target="_blank" rel="noopener" data-magnet="0.12">All the code on GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
 </main>
 
 <footer class="site-foot">
@@ -92,6 +330,15 @@ SPDX-License-Identifier: AGPL-3.0-only
       <div class="foot-brand">
         <a class="logo" href=""><img src="assets/nodus-logo.svg" alt=""/> Nodus Research</a>
         <p>A personal, independent open-source project. Nodus is its local-first desktop application.</p>
+      </div>
+      <div class="foot-col">
+        <h3>Family</h3>
+        <a href="nodus/">Nodus Research</a>
+        <a href="imago/">Nodus Imago</a>
+        <a href="link/">Nodus Link</a>
+        <a href="reader/">Nodus Reader</a>
+        <a href="presenter/">Nodus Presenter</a>
+        <a href="drift/">Nodus Drift</a>
       </div>
       <div class="foot-col">
         <h3>Research</h3>
@@ -141,6 +388,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <script src="assets/js/organism.js?v=20260820a"></script>
 <script src="assets/js/site.js?v=20260920c"></script>
+<script src="assets/js/vault-shots.js?v=20260928r"></script>
 <script src="assets/js/back-to-top.js?v=20260817b"></script>
 </body>
 </html>

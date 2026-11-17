@@ -276,7 +276,7 @@ they agree.
 }
 .site-foot .foot-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.4fr) repeat(auto-fit, minmax(118px, 1fr));
   gap: 40px 32px;
 }
 .site-foot .foot-brand { display: flex; flex-direction: column; gap: 14px; }

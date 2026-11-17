@@ -17,9 +17,13 @@ test('Support and diagnostic runtime downloads do not count as main Nodus instal
 test('the real website chooses main installers even when Support assets appear first',async()=>{
  const names={'dl-win':'Nodus-win-x64.exe','dl-mac-arm':'Nodus-mac-arm64.dmg','dl-mac-intel':'Nodus-mac-x64.dmg','dl-linux-appimage':'Nodus-linux-x86_64.AppImage','dl-linux-deb':'Nodus-linux-amd64.deb','dl-linux-rpm':'Nodus-linux-x86_64.rpm'};
  const anchors=new Map(Object.keys(names).map(id=>[id,{href:'unchanged',querySelector:()=>({textContent:''})}]));
- const noop=()=>{},classes={add:noop,remove:noop,contains:()=>false},modal={querySelector:()=>null,querySelectorAll:()=>[],focus:noop};
- const overlay={classList:classes,querySelector:()=>modal,addEventListener:noop};
- const document={readyState:'complete',getElementById:id=>id==='dl-overlay'?overlay:anchors.get(id)??null,querySelectorAll:()=>[],addEventListener:noop,documentElement:{classList:classes},body:{style:{}}};
+ // site.js finds its dialogs as .dl-overlay elements and only publishes window.openDl
+ // when the default #dl-overlay is among them. Its modal carries #dl-version, which
+ // is what makes it fetch the main release.
+ const noop=()=>{},classes={add:noop,remove:noop,contains:()=>false},version={textContent:''};
+ const modal={querySelector:selector=>selector==='#dl-version'?version:null,querySelectorAll:()=>[],focus:noop};
+ const overlay={id:'dl-overlay',dataset:{},classList:classes,querySelector:()=>modal,addEventListener:noop};
+ const document={readyState:'complete',activeElement:null,getElementById:id=>id==='dl-overlay'?overlay:id==='dl-version'?version:anchors.get(id)??null,querySelectorAll:selector=>selector==='.dl-overlay'?[overlay]:[],addEventListener:noop,documentElement:{classList:classes},body:{style:{}}};
  const assets=[...Object.values(names).map(name=>({name:name.replace('Nodus-','Nodus-Support-'),size:1,browser_download_url:'WRONG-SUPPORT'})),...Object.values(names).map(name=>({name,size:1,browser_download_url:'https://example.invalid/'+name}))];
  const context={document,window:{},matchMedia:query=>({matches:query.includes('prefers-reduced-motion')}),fetch:async()=>({ok:true,json:async()=>({assets})})};
  vm.runInNewContext(fs.readFileSync(path.resolve(import.meta.dirname,'../site/assets/js/site.js'),'utf8'),context);context.window.openDl();

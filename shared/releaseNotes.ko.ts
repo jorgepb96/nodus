@@ -1,3 +1,4 @@
+import { RELEASE_5_19_0_HIGHLIGHTS } from './releaseNotes5190';
 import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
 import { RELEASE_5_17_1_HIGHLIGHTS } from './releaseNotes5171';
@@ -752,3 +753,4 @@ export const RELEASE_NOTES_KO: Record<string, string[]> = {
 };
 
 RELEASE_NOTES_KO["5.18.1"] = RELEASE_5_18_1_HIGHLIGHTS.map(row => row["ko"]);
+RELEASE_NOTES_KO["5.19.0"] = RELEASE_5_19_0_HIGHLIGHTS.map(row => row["ko"]);

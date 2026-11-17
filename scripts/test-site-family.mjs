@@ -110,3 +110,10 @@ test('the header and the footers lead to every app', () => {
     }
   }
 });
+
+test('the sitemap lists the front page, Nodus Research and every app page', () => {
+  const sitemap = read('sitemap.xml');
+  for (const url of ['/', '/nodus/', '/imago/', '/link/', '/reader/', '/presenter/', '/drift/']) {
+    assert.ok(sitemap.includes(`<loc>https://nodusresearch.com${url}</loc>`), `sitemap lists ${url}`);
+  }
+});

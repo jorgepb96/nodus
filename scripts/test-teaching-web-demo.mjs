@@ -13,8 +13,8 @@ test('the Teaching web demo is reachable from every live vault demo', () => {
   const sharedHeader = read('site/site-header.js');
   assert.match(teachingHtml, /data-nodus-site-header data-base="\.\.\/" data-context="demo"/);
   assert.match(teachingHtml, /src="\.\.\/site-header\.js/);
-  // the route back to the vault catalogue is now the header's Home link
-  assert.match(sharedHeader, /\{ id: 'home', label: 'Home', href: \(base\) => base \|\| '\.\/' \}/);
+  // the vault catalogue lives at /nodus/ since the family front page, and the header's Nodus link returns to it
+  assert.match(sharedHeader, /\{ id: 'nodus', label: 'Nodus', href: \(base\) => `\$\{base\}nodus\/` \}/);
   assert.match(teachingHtml, /src="teaching-data\.js/);
   assert.match(teachingHtml, /src="teaching-app\.js/);
   assert.match(teachingHtml, /AI for generating teaching content only; AI never evaluates students/);
@@ -61,8 +61,9 @@ test('the browser fixture preserves the important facts from the real app fixtur
 test('landing copy describes the current Teaching scope and names Nodus directly', () => {
   // The site was rebuilt in English only in August 2026, so this no longer checks
   // translation keys — only that the Teaching claims themselves stay honest.
-  const landing = read('site/index.html');
-  assert.match(landing, /href="demo\/teaching\.html"/, 'the landing opens the Teaching demo');
+  // The Nodus landing moved to site/nodus/ when site/index.html became the family front page.
+  const landing = read('site/nodus/index.html');
+  assert.match(landing, /href="\.\.\/demo\/teaching\.html"/, 'the landing opens the Teaching demo');
   assert.doesNotMatch(landing, /Tú traes los datos, él hace los números/);
   assert.doesNotMatch(landing, /You bring the data, it runs the numbers/);
   assert.doesNotMatch(landing, /Teaching guide · linked/);

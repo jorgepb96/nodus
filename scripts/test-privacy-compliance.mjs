@@ -263,7 +263,7 @@ test('new study materials use a remembered in-app AI processing decision', async
 
 test('public copy matches the no-AI-student-evaluation product boundary', async () => {
   const [readme, faq, landing, teachingDemo] = await Promise.all([
-    read('README.md'), read('site/faq.js'), read('site/index.html'), read('site/demo/teaching.html'),
+    read('README.md'), read('site/faq.js'), read('site/nodus/index.html'), read('site/demo/teaching.html'),
   ]);
   for (const source of [readme, faq, landing, teachingDemo]) {
     assert.doesNotMatch(source, /When AI assists with feedback or assessment|student-name pseudonymisation|códigos seudónimos locales siempre que interviene la IA/i);

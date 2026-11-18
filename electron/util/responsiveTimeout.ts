@@ -8,6 +8,7 @@ export function responsiveTimeout(callback: () => void, timeoutMs: number): () =
   let remaining = timeoutMs;
   let last = performance.now();
   let stopped = false;
+  let stalled = false;
   let timer: NodeJS.Timeout;
   const arm = () => {
     const delay = Math.min(250, remaining);
@@ -16,7 +17,13 @@ export function responsiveTimeout(callback: () => void, timeoutMs: number): () =
       const now = performance.now();
       const elapsed = now - last;
       last = now;
-      if (elapsed <= delay * 2) remaining -= elapsed;
+      // A tick more than twice late is a host stall: forgive it once so the child still
+      // gets a turn. Consecutive late ticks are a saturated host, where time does pass,
+      // so each one spends its nominal delay. Otherwise the deadline could never expire.
+      const late = elapsed > delay * 2;
+      if (!late) remaining -= elapsed;
+      else if (stalled) remaining -= delay;
+      stalled = late;
       if (remaining <= 0) { stopped = true; callback(); }
       else arm();
     }, delay);

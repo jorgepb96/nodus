@@ -54,6 +54,19 @@ test('a host stall does not spend the child startup budget before spawn can be d
   assert.equal(expired, false);
 });
 
+test('an absent child still times out on a host that never gets an idle turn', async () => {
+  // A saturated machine (or a loaded CI runner) makes every tick arrive more than twice
+  // late. Each late tick may be forgiven once, but a run of them is time passing, not a
+  // single stall, or the deadline would never expire and the caller would wait forever.
+  const busy = setInterval(() => { const until = performance.now() + 80; while (performance.now() < until) { /* busy host */ } }, 0);
+  let expired = false;
+  const cancel = responsiveTimeout(() => { expired = true; }, 30);
+  const deadline = Date.now() + 3_000;
+  try { while (!expired && Date.now() < deadline) await delay(10); }
+  finally { cancel(); clearInterval(busy); }
+  assert.equal(expired, true);
+});
+
 test('an absent child still times out while the parent is responsive', async () => {
   let expired = false;
   const cancel = responsiveTimeout(() => { expired = true; }, 30);

@@ -62,3 +62,36 @@ test('an absent child still times out while the parent is responsive', async () 
   cancel();
   assert.equal(expired, true);
 });
+
+/** A host whose every timer runs `lateness` times its delay, driven by hand. */
+function slowHost(lateness) {
+  let now = 0, next = null;
+  return {
+    host: { now: () => now, setTimeout: (callback, ms) => { next = { callback, ms }; return {}; }, clearTimeout: () => { next = null; } },
+    tick() { const { callback, ms } = next; next = null; now += ms * lateness; callback(); },
+    get now() { return now; },
+    get armed() { return next !== null; },
+  };
+}
+
+test('an absent child still times out when every tick of a slow host arrives late', () => {
+  const clock = slowHost(3); // Each tick runs past the two-tick stall threshold.
+  let expired = false;
+  responsiveTimeout(() => { expired = true; }, 1_000, clock.host);
+  clock.tick(); // A 250 ms tick runs 750 ms: one stall, charged two ticks.
+  assert.equal(expired, false, 'a single stall leaves the child a turn');
+  for (let ticks = 1; clock.armed && ticks < 20; ticks++) clock.tick();
+  assert.equal(expired, true, 'sustained lateness must spend the budget');
+  assert.ok(clock.now <= 3_000, `expired after ${clock.now} ms of host time`);
+});
+
+test('a stall that exhausts the budget grants exactly one more tick', () => {
+  const clock = slowHost(10);
+  let expired = false;
+  responsiveTimeout(() => { expired = true; }, 40, clock.host);
+  clock.tick();
+  assert.equal(expired, false, 'spawn queued during the stall gets a turn');
+  assert.equal(clock.armed, true);
+  clock.tick();
+  assert.equal(expired, true);
+});

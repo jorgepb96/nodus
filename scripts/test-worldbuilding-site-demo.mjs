@@ -125,11 +125,12 @@ test('every live demo returns through the shared header and the homepage links W
   }
 
   const sharedHeader = await readFile(path.join(root, 'site', 'site-header.js'), 'utf8')
-  // the route back to the vault catalogue is now the header's Home link
-  assert.match(sharedHeader, /\{ id: 'home', label: 'Home', href: \(base\) => base \|\| '\.\/' \}/)
-  const homepage = await readFile(path.join(root, 'site', 'index.html'), 'utf8')
+  // the vault catalogue lives at /nodus/ since the family front page, and the header's Nodus link returns to it
+  assert.match(sharedHeader, /\{ id: 'nodus', label: 'Nodus', href: \(base\) => `\$\{base\}nodus\/` \}/)
+  // The Nodus landing moved to site/nodus/ when site/index.html became the family front page.
+  const homepage = await readFile(path.join(root, 'site', 'nodus', 'index.html'), 'utf8')
   assert.match(homepage, /<h3>Worldbuilding<\/h3>/)
-  assert.match(homepage, /href="demo\/worldbuilding\.html"/)
+  assert.match(homepage, /href="\.\.\/demo\/worldbuilding\.html"/)
 })
 
 test('Families and Settings render their upgraded interactive interfaces', async () => {

@@ -1,5 +1,5 @@
 # Nodus release asset downloads, one row per uploaded file.
-# taken	2026-11-21T23:09:01.356Z
+# taken	2026-11-22T11:06:13.740Z
 tag	published	asset	downloads
 v5.19.0	2026-11-18T14:09:34Z	Nodus-Support-Runtime-linux-x64.zip	0
 v5.19.0	2026-11-18T14:09:34Z	Nodus-Support-Runtime-win32-x64.zip	0
@@ -15,27 +15,27 @@ v5.19.0	2026-11-18T14:09:34Z	Nodus-Support-x86-64.AppImage	0
 v5.19.0	2026-11-18T14:09:34Z	Nodus-linux-amd64.deb	5
 v5.19.0	2026-11-18T14:09:34Z	Nodus-linux-x86_64.AppImage	7
 v5.19.0	2026-11-18T14:09:34Z	Nodus-linux-x86_64.rpm	1
-v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-arm64.dmg	7
+v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-arm64.dmg	8
 v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-arm64.dmg.blockmap	1
-v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-arm64.zip	8
+v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-arm64.zip	10
 v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-arm64.zip.blockmap	4
 v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-x64.dmg	1
 v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-x64.dmg.blockmap	0
 v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-x64.zip	0
 v5.19.0	2026-11-18T14:09:34Z	Nodus-mac-x64.zip.blockmap	0
-v5.19.0	2026-11-18T14:09:34Z	Nodus-win-x64.exe	19
-v5.19.0	2026-11-18T14:09:34Z	Nodus-win-x64.exe.blockmap	11
+v5.19.0	2026-11-18T14:09:34Z	Nodus-win-x64.exe	22
+v5.19.0	2026-11-18T14:09:34Z	Nodus-win-x64.exe.blockmap	12
 v5.19.0	2026-11-18T14:09:34Z	Nodus-x86_64.AppImage	11
 v5.19.0	2026-11-18T14:09:34Z	Nodus-x86_64.AppImage.zsync	16
 v5.19.0	2026-11-18T14:09:34Z	latest-linux.yml	40
-v5.19.0	2026-11-18T14:09:34Z	latest-mac.yml	37
-v5.19.0	2026-11-18T14:09:34Z	latest.yml	35
+v5.19.0	2026-11-18T14:09:34Z	latest-mac.yml	54
+v5.19.0	2026-11-18T14:09:34Z	latest.yml	40
 v5.19.0	2026-11-18T14:09:34Z	nodus-support-app-darwin-arm64.json	0
 v5.19.0	2026-11-18T14:09:34Z	nodus-support-app-darwin-x64.json	0
 v5.19.0	2026-11-18T14:09:34Z	nodus-support-app-linux-x64.json	0
 v5.19.0	2026-11-18T14:09:34Z	nodus-support-app-win32-x64.json	0
 v5.19.0	2026-11-18T14:09:34Z	nodus-zotero.xpi	28
-v5.19.0	2026-11-18T14:09:34Z	updates.json	187
+v5.19.0	2026-11-18T14:09:34Z	updates.json	199
 v5.18.1	2026-11-15T12:19:45Z	Nodus-Support-Runtime-linux-x64.zip	2
 v5.18.1	2026-11-15T12:19:45Z	Nodus-Support-Runtime-win32-x64.zip	1
 v5.18.1	2026-11-15T12:19:45Z	Nodus-Support-linux-amd64.deb	1

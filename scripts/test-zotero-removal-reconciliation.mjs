@@ -43,15 +43,16 @@ const Database = require('better-sqlite3');
 const { runMigrations } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
 const sync = require(path.join(repoRoot, 'electron/sync/syncService.ts'));
 const removal = require(path.join(repoRoot, 'electron/sync/zoteroRemoval.ts'));
+const { collectionPresence } = require(path.join(repoRoot, 'electron/zotero/zoteroClient.ts'));
 const { mergeWorks } = require(path.join(repoRoot, 'electron/db/dedupe.ts'));
 const { lexicalPassageSearch } = require(path.join(repoRoot, 'electron/db/passagesRepo.ts'));
-let version, observed, presences, requests, probes, failCollection, missingGroups, groupVersions, onFetch;
+let version, observed, presences, requests, probes, failCollection, missingGroups, groupVersions, onFetch, deletedCollections;
 const originalFetch = globalThis.fetch;
 function reset() {
   sync.stopZoteroSync();
   db?.close(); db = new Database(':memory:'); runMigrations(db);
   version = 42; observed = []; presences = new Map(); requests = []; probes = [];
-  failCollection = false; missingGroups = new Set(); groupVersions = new Map([['42', 17]]); onFetch = () => {};
+  failCollection = false; deletedCollections = new Set(); missingGroups = new Set(); groupVersions = new Map([['42', 17]]); onFetch = () => {};
   settings.monitoredCollections = ['MONITOR1'];
   settings.syncMode = 'realtime';
   activeVault = { id: 'review', type: 'research' }; corpusChanges = 0;
@@ -91,6 +92,11 @@ globalThis.fetch = async (url, options) => {
   if (group && missingGroups.has(group)) return json({}, 404, libraryVersion);
   if (p === '/api/users/0/groups') return json([...groupVersions.keys()].filter(id => !missingGroups.has(id)).map(id => ({ id, data: { name: `Group ${id}` } })));
   if (p.endsWith('/collections/top')) return json(group ? [] : [{ key: 'MONITOR1', data: { name: 'Monitored', parentCollection: false } }], 200, libraryVersion);
+  const collection = p.match(/\/collections\/([^/]+)(\/|$)/)?.[1];
+  // Zotero's local API answers a deleted key with a 404 for the collection and a 500 for
+  // its children (it looks the parent up by a missing id).
+  if (collection && deletedCollections.has(collection)) return p.endsWith(`/collections/${collection}`) ? new Response('Not found', { status: 404 }) : json({}, 500);
+  if (/\/collections\/[^/]+$/.test(p)) return json({ key: collection, data: { key: collection, name: collection } }, 200, libraryVersion);
   if (/\/collections\/[^/]+\/collections$/.test(p)) return json([], 200, libraryVersion);
   if (/\/collections\/MONITOR[12]\/items\/top$/.test(p)) return failCollection ? json({}, 500) : json(observed);
   if (/\/api\/(users|groups)\/[^/]+\/items$/.test(p)) return json([], 200, libraryVersion);
@@ -106,6 +112,7 @@ globalThis.fetch = async (url, options) => {
   }
   throw Error(`Unexpected URL: ${url}`);
 };
+const healthyFetch = globalThis.fetch;
 const pass = () => sync.fullSync('manual', { catalogOnly: true });
 const drain = (ids = [], options = {}) => removal.archiveWorksRemovedFromZotero('0', ids, { monitored: settings.monitoredCollections, ...options });
 const pending = () => removal.hasPendingZoteroRemovalChecks();
@@ -128,6 +135,38 @@ try {
       assert.equal(db.prepare('SELECT COUNT(*) n FROM passages').get().n, 1);
       assert.equal(lexicalPassageSearch('quimioterapia', 10).length, 0);
     }
+  });
+  await test('a monitored collection deleted in Zotero reads as empty instead of failing every pass', async () => {
+    reset(); settings.monitoredCollections = ['MONITOR1', 'MONITOR2']; deletedCollections.add('MONITOR2');
+    db.prepare("INSERT INTO collections(collection_key,name,parent_key) VALUES('MONITOR2','Old shelf',NULL)").run();
+    work('elsewhere', 'MOVED001', 'MONITOR2'); work('trashed', 'TRASH001', 'MONITOR2'); presences.set('TRASH001', 'trashed');
+    work('both', 'BOTH0001', 'MONITOR1'); membership('both', 'MONITOR2'); observed = [item('BOTH0001', ['MONITOR1'])];
+    const result = await pass();
+    assert.match(result.summary, /una colección monitorizada ya no existe en Zotero \(Old shelf\)/);
+    assert.ok(!requests.some(request => request.startsWith('/api/users/0/collections/MONITOR2/')), 'a deleted root is not traversed');
+    assert.equal(state('elsewhere'), 0, 'an item still in the library keeps its work');
+    assert.equal(state('trashed'), 1);
+    assert.equal(state('both'), 0);
+    assert.deepEqual(db.prepare('SELECT nodus_id, collection_key FROM work_collections ORDER BY nodus_id').all()
+      .map(row => ({ ...row })), [{ nodus_id: 'both', collection_key: 'MONITOR1' }]);
+    assert.ok(db.prepare("SELECT value FROM settings WHERE key='library_versions'").get(), 'the checkpoint advances');
+    assert.deepEqual(settings.monitoredCollections, ['MONITOR1', 'MONITOR2'], 'the setting is never rewritten');
+    requests = []; await tick();
+    assert.ok(!requests.some(request => request.includes('/collections/')), 'realtime polling stops restarting full syncs');
+    deletedCollections.clear(); observed = [item('MOVED001', ['MONITOR2'])]; version += 1;
+    await pass(); assert.deepEqual(db.prepare("SELECT nodus_id FROM work_collections WHERE collection_key='MONITOR2'").all()
+      .map(row => row.nodus_id), ['elsewhere'], 'a collection that comes back is traversed again');
+  });
+  await test('a collection 404 is a deletion only while its library answers', async () => {
+    reset(); deletedCollections.add('MONITOR2'); missingGroups.add('99');
+    assert.equal(await collectionPresence('0', 'MONITOR1'), 'present');
+    assert.equal(await collectionPresence('0', 'MONITOR2'), 'gone');
+    assert.equal(await collectionPresence('0', 'groups:99:SHELF001'), 'unknown');
+    globalThis.fetch = async () => new Response('', { status: 403 });
+    try { assert.equal(await collectionPresence('0', 'MONITOR2'), 'unknown'); }
+    finally { globalThis.fetch = healthyFetch; }
+    settings.monitoredCollections = ['MONITOR1', 'groups:99:SHELF001'];
+    await assert.rejects(pass(), /incompleta/);
   });
   await test('a live alias outside monitored collections protects an explicit merge', async () => {
     reset(); merged(); presences.set('GONE0001', 'gone'); await pass();

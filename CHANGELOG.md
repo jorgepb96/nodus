@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.19.1 — 2026-11-23
+
+### Fixes
+- Fix Zotero sync staying incomplete after a monitored collection was deleted in Zotero. The collection's items and subcollections answered with errors, so every pass skipped membership reconciliation for all monitored collections and never saved the library version, and realtime mode restarted a full sync on every poll. A collection that answers 404 while its library still answers is now read as empty, its items are reconciled like any other departure, and the sync log names it.
+
 ## 5.19.0 — 2026-11-17
 
 ### New features

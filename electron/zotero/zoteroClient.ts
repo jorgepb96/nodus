@@ -478,6 +478,28 @@ export async function collectionItems(
   return out;
 }
 
+export type ZoteroCollectionPresence = 'present' | 'gone' | 'unknown';
+
+/**
+ * Whether a collection still exists. Zotero keeps a trashed collection addressable, so
+ * `gone` means deleted for good (the trash was emptied). A 404 is authoritative only
+ * while the collection's library still answers; anything else is `unknown`.
+ */
+export async function collectionPresence(userId: string, collectionKey: string, signal?: AbortSignal): Promise<ZoteroCollectionPresence> {
+  const parsed = parseCanonicalKey(collectionKey, { ...PERSONAL_LIBRARY, id: userId });
+  const base = `${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}`;
+  try {
+    const res = await zfetch(`${base}/collections/${encodeURIComponent(parsed.rawKey)}`, signal);
+    if (res.ok) return 'present';
+    if (res.status !== 404) return 'unknown';
+    const library = await zfetch(`${base}/collections/top?limit=1`, signal);
+    return library.ok ? 'gone' : 'unknown';
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    return 'unknown';
+  }
+}
+
 /**
  * Items in a collection AND all its descendant subcollections, de-duplicated by key.
  * The Zotero API has no reliable recursive parameter, so we traverse the tree.

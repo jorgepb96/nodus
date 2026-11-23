@@ -1,3 +1,4 @@
+import { RELEASE_5_19_1_HIGHLIGHTS } from './releaseNotes5191';
 import { RELEASE_5_19_0_HIGHLIGHTS } from './releaseNotes5190';
 import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
@@ -678,3 +679,4 @@ RELEASE_NOTES_IT["5.4.1"] = RELEASE_NOTES_IT["5.4.0"];
 
 RELEASE_NOTES_IT["5.18.1"] = RELEASE_5_18_1_HIGHLIGHTS.map(row => row["it"]);
 RELEASE_NOTES_IT["5.19.0"] = RELEASE_5_19_0_HIGHLIGHTS.map(row => row["it"]);
+RELEASE_NOTES_IT["5.19.1"] = RELEASE_5_19_1_HIGHLIGHTS.map(row => row["it"]);

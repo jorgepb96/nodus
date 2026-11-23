@@ -23,6 +23,7 @@ import { RELEASE_5_15_0_HIGHLIGHTS } from './releaseNotes5150';
 import { RELEASE_5_16_1_HIGHLIGHTS } from './releaseNotes5161';
 import { RELEASE_5_17_0_HIGHLIGHTS } from './releaseNotes5170';
 import { RELEASE_5_19_0_HIGHLIGHTS } from './releaseNotes5190';
+import { RELEASE_5_19_1_HIGHLIGHTS } from './releaseNotes5191';
 import { RELEASE_5_18_1_HIGHLIGHTS } from './releaseNotes5181';
 import { RELEASE_5_18_0_HIGHLIGHTS } from './releaseNotes5180';
 import { RELEASE_5_17_1_HIGHLIGHTS } from './releaseNotes5171';
@@ -3133,6 +3134,7 @@ const RELEASE_5_2_2_HIGHLIGHTS: RawReleaseHighlight[] = [
 ];
 
 const RAW_RELEASE_NOTES: RawReleaseNote[] = [
+  { version: '5.19.1', date: '2026-11-23', highlights: RELEASE_5_19_1_HIGHLIGHTS },
   { version: '5.19.0', date: '2026-11-17', highlights: RELEASE_5_19_0_HIGHLIGHTS },
   { version: '5.18.1', date: '2026-11-15', highlights: RELEASE_5_18_1_HIGHLIGHTS },
   { version: '5.18.0', date: '2026-11-14', highlights: RELEASE_5_18_0_HIGHLIGHTS },

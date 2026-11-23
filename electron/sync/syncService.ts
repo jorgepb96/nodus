@@ -15,7 +15,7 @@ import {
   setArchived,
 } from '../db/worksRepo';
 import { setWorkCollections, addWorkCollections, upsertCollections, expandCollectionKeys } from '../db/collectionsRepo';
-import { collectionItems, libraries as zoteroLibraries, libraryVersion, topCollections, childCollections } from '../zotero/zoteroClient';
+import { collectionItems, collectionPresence, libraries as zoteroLibraries, libraryVersion, topCollections, childCollections } from '../zotero/zoteroClient';
 import { archiveWorksRemovedFromZotero, hasPendingZoteroRemovalChecks, unobservedUnmonitoredWorks } from './zoteroRemoval';
 import type { ZoteroCollection, ZoteroLibrary } from '@shared/types';
 import { scanQueue } from '../pipeline/scanQueue';
@@ -256,6 +256,25 @@ async function collectionItemsRecursiveObserved(
   return [...seen.values()];
 }
 
+/** Monitored roots that Zotero deleted for good. Each one is read as an empty collection,
+ * so its items are reconciled like any other departure instead of a missing collection
+ * failing every pass (and, in realtime mode, restarting a full sync on every poll). The
+ * setting is left alone: an unknown answer keeps the root, and a collection that comes
+ * back (a library restored from the online copy) is traversed again on the next pass. */
+async function deletedMonitoredCollections(userId: string, monitored: string[], signal: AbortSignal): Promise<Set<string>> {
+  const deleted = new Set<string>();
+  for (const key of new Set(monitored)) {
+    if (typeof key !== 'string' || !key) continue;
+    if (await collectionPresence(userId, key, signal) === 'gone') deleted.add(key);
+  }
+  return deleted;
+}
+
+function storedCollectionName(key: string): string {
+  const row = getDb().prepare('SELECT name FROM collections WHERE collection_key = ?').get(key) as { name: string | null } | undefined;
+  return row?.name || key;
+}
+
 /**
  * Reconcile only the legacy Zotero memberships observed by this complete pass.
  * A work row (and therefore its notes, analysis and local files) is never deleted:
@@ -393,13 +412,21 @@ async function performFullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions,
   // descendant afterwards, but its historical membership edge is still in scope
   // for this reconciliation pass.
   const previousMonitoredScope = expandCollectionKeys(settings.monitoredCollections);
+  // A deleted root stays in the reconciliation scope (its stored subtree loses its edges)
+  // but is not traversed: Zotero has nothing to list for it.
+  const deletedRoots = await deletedMonitoredCollections(userId, settings.monitoredCollections, signal);
+  assertActive();
+  const liveRoots = settings.monitoredCollections.filter((key) => !deletedRoots.has(key));
+  for (const key of deletedRoots) {
+    console.warn(`[zotero-sync] monitored collection "${storedCollectionName(key)}" (${key}) no longer exists in Zotero`);
+  }
 
   // Keep the collection tree current so the Library collection filter shows names
   // and can expand a parent to its subcollections.
-  await refreshCollectionTree(userId, settings.monitoredCollections, collectionFailures, signal, cooperate);
+  await refreshCollectionTree(userId, liveRoots, collectionFailures, signal, cooperate);
   assertActive();
 
-  for (const collectionKey of settings.monitoredCollections) {
+  for (const collectionKey of liveRoots) {
     // Recurse into subcollections so monitoring a parent captures everything under it.
     // A failed child is recorded and skipped, instead of being silently treated as empty.
     const items = await collectionItemsRecursiveObserved(userId, collectionKey, collectionFailures, signal);
@@ -527,10 +554,13 @@ async function performFullSync(mode: ZoteroSyncMode, options: ZoteroSyncOptions,
 
   for (const failure of collectionFailures) console.warn(`[zotero-sync] collection traversal failed: ${failure}`);
   const failureSummary = collectionFailures.length ? `, ${collectionFailures.length} fallos de colección` : '';
+  const deletedSummary = deletedRoots.size
+    ? `; ${deletedRoots.size === 1 ? 'una colección monitorizada ya no existe' : `${deletedRoots.size} colecciones monitorizadas ya no existen`} en Zotero (${[...deletedRoots].map(storedCollectionName).join(', ')})`
+    : '';
   const baselineSummary = baselined > 0 ? `, ${baselined} revisiones locales adoptadas` : '';
   const summary = catalogOnly
-    ? `${added} altas, ${changed} cambios${baselineSummary}; catálogo actualizado sin iniciar análisis${failureSummary}`
-    : `${added} altas, ${changed} cambios${baselineSummary}, ${lightQueued} temas encolados, ${deepQueued} profundos encolados${failureSummary}`;
+    ? `${added} altas, ${changed} cambios${baselineSummary}; catálogo actualizado sin iniciar análisis${failureSummary}${deletedSummary}`
+    : `${added} altas, ${changed} cambios${baselineSummary}, ${lightQueued} temas encolados, ${deepQueued} profundos encolados${failureSummary}${deletedSummary}`;
   const log = addSyncLog(mode, summary);
   if ((added > 0 || changed > 0) && getActiveVault().type === 'academic') {
     // Basic preparation follows the profile's prior consent independently of
